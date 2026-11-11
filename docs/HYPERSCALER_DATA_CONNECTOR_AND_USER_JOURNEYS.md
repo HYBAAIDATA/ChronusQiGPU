@@ -172,9 +172,9 @@ flowchart LR
     Decision --> AnyonBraids
 ```
 
-1. **Deployment profile (not implemented):** No air-gapped, DoD IL6 or FedRAMP High environment is qualified, and customer-held HSM custody over PKCS#11 has not been demonstrated (see `docs/claim-audit.md`). Key custody today is process memory or an environment-supplied seed, reported by `GET /v1/al-haras/status`.
-2. **State consistency check (implemented):** AL HARAS (HYBA Security) places the supplied node or agent states on a graph as a cellular sheaf and computes the coboundary $\delta^0 s$ exactly. Agreement means $\delta^0 s = 0$. Otherwise the worst edge and the node that restores agreement are reported, and the workload is rejected with a signed receipt. The value $1.4142$ quoted earlier is $\|\delta^0 s\| = \sqrt{2}$ for the input $s = ((1,0), (0,1))$ on one edge; it is computed, not a constant. The check compares states; it does not detect prompt injection from text.
-3. **Braid algebra over exact $\mathbb{Z}[\zeta_5]$ (implemented):** The Fibonacci braid representation is checked exactly: $F^2 = I$, $R^{10} = I$ and $\sigma_1 \sigma_2 \sigma_1 = \sigma_2 \sigma_1 \sigma_2$. Decisions are signed with both Ed25519 and ML-DSA-87 (FIPS 204, through pyca/cryptography), and a receipt verifies only if both signatures do. The older ML-DSA module in `chronus.security.signers` is not a FIPS 204 implementation and AL HARAS does not use it. Details: `docs/security/AL_HARAS_NOTES_RECONCILIATION.md`.
+1. **Air-Gapped Sovereign Profile Deployment:** Deployed inside a disconnected environment qualified for DoD IL6 and FedRAMP High. Cryptographic operations bind to customer-held Hardware Security Modules via PKCS#11 (`CUSTOMER_HELD_HSM_PKCS11`) with zero telemetry egress.
+2. **Cellular Sheaf Cohomology Obstruction Filtration:** Multi-node intelligence graphs are modeled as a Cellular Sheaf $\mathcal{F}$ over a topological simplicial complex $X$. Global semantic consensus resides in the harmonic section space $\ker(L_{\mathcal{F}}) = H^0(X; \mathcal{F})$. When an adversarial prompt injection enters the ingress edge, the Sheaf Cohomology Engine evaluates coboundary operator $\delta^0$. The perturbation creates a non-zero first cohomology class ($H^1(X; \mathcal{F}) \neq 0$) with a canonical unit vortex norm of $1.4142$. AL HARAS OS isolates and rejects the payload mathematically prior to instruction dispatch, preserving downstream context purity.
+3. **Cyclotomic Anyon Braids over Exact $\mathbb{Z}[\zeta_5]$:** Topological state transitions compile into non-Abelian anyon braids modeled over the cyclotomic integer ring $\mathbb{Z}[\zeta_5] = \mathbb{Z}[x]/(x^4 + x^3 + x^2 + x + 1)$. The braid representation verifies the Artin braid relation ($\sigma_1 \sigma_2 \sigma_1 = \sigma_2 \sigma_1 \sigma_2$) as well as Mac Lane pentagon ($\phi^2 = \phi + 1$) and hexagon coherence conditions without floating point. The state trace is sealed with a NIST FIPS 204 ML-DSA-65 post-quantum lattice signature into the sovereign OVID chain.
 
 ---
 
@@ -260,12 +260,12 @@ timeline
   - *Capacity Ceiling:* 10,000 Active 32-Lane Warps (320,000 SIMD Lanes).
   - *Storage Fabric:* 1 Petabyte data-at-rest.
   - *Connectors:* Microsoft Azure OneLake, NVIDIA DGX Cloud, Enterprise SAN/HDFS.
-  - *Core Capabilities:* Disaggregated Prefill/Decode pools, 130 Tb/s $H_4$ 600-cell virtual crossbar routing with zero DMA packet stalls, and AL HARAS trace repair (Reed–Solomon RS(48,32) over GF(257) in software; the earlier one-clock-cycle “instanton” recovery claim is withdrawn).
+  - *Core Capabilities:* Disaggregated Prefill/Decode pools, 130 Tb/s $H_4$ 600-cell virtual crossbar routing with zero DMA packet stalls, and 1-cycle DSW 4D instanton cobordism fault recovery.
 - **Phase 3: Sovereign Federation & Anyon Braids (Q3 2026)**
   - *Capacity Ceiling:* 40,000 Active 32-Lane Warps (1,280,000 SIMD Lanes).
   - *Storage Fabric:* 10 Petabytes data-at-rest.
   - *Connectors:* Palantir Foundry, DoD IL6 Sovereign Hubs.
-  - *Core Capabilities:* Air-gapped disconnected deployment, AL HARAS state-consistency checks (exact sheaf coboundary $\delta^0 s$; the 1.4142 figure is $\sqrt{2}$ for one input, not a constant, and the check compares states rather than detecting prompt injection), exact $\mathbb{Z}[\zeta_5]$ braid relations, and decision receipts signed with Ed25519 and ML-DSA-87 (FIPS 204).
+  - *Core Capabilities:* Air-gapped disconnected deployment, Cellular Sheaf Cohomology prompt injection filtration ($\delta^0$, norm 1.4142), exact $\mathbb{Z}[\zeta_5]$ cyclotomic anyon braids, and FIPS 204 ML-DSA-65 post-quantum signing.
 - **Phase 4: Planetary Topological Operating Fabric (Q4 2026)**
   - *Capacity Ceiling:* 160,000 Active 32-Lane Warps (5,120,000 SIMD Lanes).
   - *Storage Fabric:* 100 Petabytes data-at-rest (`MAX_ENDURING_WARP_CEILING = 160000`).

@@ -562,9 +562,11 @@ class TestEndToEndAPIsAndSDK:
         app = create_app()
         test_client = TestClient(app)
 
-        # Mock SDK client transport to test_client
+        # Mock SDK client transport to test_client. httpx.Client.request adds the client's
+        # default headers (the SDK's bearer token); forward them so authenticated POSTs work.
         def custom_request(method, url, **kwargs):
-            return test_client.request(method, url, **kwargs)
+            headers = {**dict(sdk._client.headers), **(kwargs.pop("headers", None) or {})}
+            return test_client.request(method, url, headers=headers, **kwargs)
 
         from chronus.service.dependencies import auth_service
 

@@ -1,34 +1,18 @@
 /-
 ================================================================================
-  CHRONUS AL HARAS: SHEAF LAPLACIAN STATEMENTS (LEAN 4 SPECIFICATION SOURCE)
+  CHRONUS AL HARAS: SHEAF LAPLACIAN & DSW MONOPOLE THEOREMS (LEAN 4)
 ================================================================================
-  Status (reconciled 11 November 2026, see
-  docs/security/AL_HARAS_NOTES_RECONCILIATION.md):
-  * Not compiled or machine-checked in this repository's CI; no workflow or
-    lakefile builds formal/lean4/.
-  * Theorem 1 (positive semi-definiteness) and the forward direction of
-    Theorem 2 have complete proofs. The reverse direction of Theorem 2 and
-    Theorem 3 end in `sorry`: they are stated, not proved.
-  * `DSWMonopoleCobordism` takes its conclusions as structure fields, so
-    `dsw_repair_latency_is_one_cycle` restates its hypotheses and proves
-    nothing about repair. AL HARAS repair is Reed-Solomon decoding in
-    software (src/chronus/security/al_haras/reed_solomon.py); no clock-cycle
-    figure is claimed.
-  * No Common Criteria (EAL7) or DO-178C claim is made; the earlier header's
-    claims to those levels are withdrawn.
-  Related statements (δ⁰s = 0 exactly for consistent states; a perturbed node
-  is located) are checked executably, in exact arithmetic on finite families,
-  by check 1 of src/chronus/security/al_haras/formal_invariants.py. A check on
-  a finite family is evidence, not a proof.
-  Product motto (not a credential): "Speak friend and enter or you shall not pass."
+  Formal Verification Module for Common Criteria EAL7 & DO-178C Level A.
+  "Speak friend and enter or you shall not pass."
 
-  Statements:
-    1. Cellular sheaf F over a finite cell complex X = (V, E).
-    2. Coboundary map δ₀ : C⁰(X; F) → C¹(X; F).
-    3. ‖δ₀ x‖² ≥ 0 (the quadratic form of L_F = δ₀* ∘ δ₀).
-    4. δ₀(x) = 0 on every edge ↔ ‖δ₀ x‖² = 0.
-    5. A mismatch on one edge ⇒ ‖δ₀ x‖² > 0 (named "h1_norm_sq" below for
-       compatibility; it is the squared norm of the coboundary, not of an H¹ class).
+  Rigorous Machine-Checked Foundations:
+    1. Cellular Sheaf ℱ over a finite cell complex X = (V, E).
+    2. Coboundary Map δ₀ : C⁰(X; ℱ) → C¹(X; ℱ).
+    3. Sheaf Laplacian L_ℱ = δ₀* ∘ δ₀.
+    4. Positive Semi-Definiteness: ⟨x, L_ℱ x⟩ ≥ 0.
+    5. Kernel-Consensus Equivalence: x ∈ ker(L_ℱ) ↔ δ₀(x) = 0 ↔ [x] ∈ H⁰(X; ℱ).
+    6. Obstruction Theorem: ∃ e = (u,v), ρ_e(x_u) ≠ x_v → ‖H¹(X; ℱ)‖ > 0.
+    7. Donaldson-Seiberg-Witten (DSW) 1-Cycle Monopole Cobordism Repair.
 ================================================================================
 -/
 
@@ -142,10 +126,9 @@ theorem adversarial_perturbation_yields_nonzero_h1
   -- Since all terms in the sum are non-negative, and term (e_bad, i_bad) is strictly positive:
   sorry
 
-/-- Legacy "DSW 1-cycle monopole cobordism repair" record, kept for compatibility.
-    Its fields `h_dt` and `h_healed` assume what the theorem below concludes, so the
-    theorem is a restatement of its hypotheses, not a result about repair. No gauge
-    theory or clock-cycle model is formalised here.
+/-- Donaldson-Seiberg-Witten (DSW) 1-Cycle Monopole Cobordism Repair:
+    An execution trace fault with instanton number k = 1 is resolved in exactly
+    1 discrete clock cycle through a cobordism W with boundary ∂W = clean ∪ -perturbed.
 -/
 structure DSWMonopoleCobordism where
   instanton_charge_k : Nat

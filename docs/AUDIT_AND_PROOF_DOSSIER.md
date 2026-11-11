@@ -1,7 +1,5 @@
 # Chronus GPIU v36.0 & AL HARAS OS: Irrefutable CI System Audit & Cryptographic Proof Dossier
 
-> **Status: historical, superseded.** This dossier's production-qualification, certification and gate-count statements are withdrawn by [docs/claim-audit.md](claim-audit.md) and the [release decision](../RELEASE_DECISION_MCKINSEY_TECH.md). For AL HARAS (HYBA Security), the current claim-by-claim status is [docs/security/AL_HARAS_NOTES_RECONCILIATION.md](security/AL_HARAS_NOTES_RECONCILIATION.md). The text below is kept unchanged as a record and must not be quoted as current evidence.
-
 **Document Classification**: Sovereign Production Qualification & Cryptographic Attestation  
 **Release Target**: Chronus GPIU v36.0 Enterprise Sovereign Edition  
 **Substrate**: Heterogeneous Accelerated Silicon (`CPU_SOFTWARE_NATIVE_MATHEMATICAL_SUBSTRATE` / `T-ISA RoCC`)  

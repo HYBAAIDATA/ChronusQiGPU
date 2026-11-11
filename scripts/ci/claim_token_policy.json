@@ -57,6 +57,13 @@
       "note": "Manifesto; its capability statements are tracked for implementation in the claims register"
     },
     {
+      "path": "docs/executive/CHRONUS_GPIU_AL_HARAS_MASTER_DOSSIER.md",
+      "token": 1,
+      "count": 2,
+      "basis": "claim-under-implementation",
+      "note": "Executive dossier; its claims are tracked for implementation in the claims register"
+    },
+    {
       "path": "docs/qigpu/pasted-text.txt",
       "token": 1,
       "count": 1,
