@@ -23,6 +23,15 @@ If older project notes conflict with these current instructions, follow the curr
 - Bitcoin mining is an in-house treasury activity, not a customer product or service.
 - Do not invent other companies, product lines, markets, partnerships, customers, or business claims without explicit owner direction.
 
+## Quantum package boundaries and evidence
+
+- **TURING** (`packages/turing`) is HYBA Data's first-principles, finite-dimensional quantum-mathematics library over complex Hilbert spaces. It is a mathematical foundation, not a new company, market, hardware SDK, physical-device simulator, or evidence of quantum advantage.
+- Keep TURING's mathematical core distinct from Chronus's existing quantum-labelled code. Do not wrap, rename, or re-export legacy code in a way that suggests it has been validated as TURING or as conventional quantum mechanics.
+- Treat existing non-TURING quantum-labelled modules as legacy computational research: classify them accurately as finite-field/algebraic models, simulations, quantum-inspired algorithms, or classical systems as source inspection supports. A quantum-themed name or test count is not evidence of physical quantum semantics.
+- The currently reviewed `src/chronus/quantum` namespace uses finite-field/algebraic constructions and proxy measures; it is not the canonical complex-Hilbert-space implementation. See [`docs/system-update/quantum-package-taxonomy.md`](docs/system-update/quantum-package-taxonomy.md).
+- Do not claim quantum advantage, hardware execution, physical fidelity, cryptographic/security conformance, or release qualification without independent, current, reproducible evidence tied to an exact source commit.
+- Preserve explicit mathematical conventions, numerical tolerances, clear failure modes, and tests of the defining axioms when extending TURING. Keep simulator/backend concerns separate from its mathematical core.
+
 ## How to think and communicate
 
 Use a McKinsey-style problem-solving and communication approach:
