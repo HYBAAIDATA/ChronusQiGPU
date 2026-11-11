@@ -1,0 +1,58 @@
+name: Workbench (scratch branch, never merged)
+
+# Scratch workflow that exists only on the cowork/workbench-20261111 branch.
+# Each push runs .workbench/run.sh against a fresh checkout of main (or a fix
+# branch), posts the output to draft PR #25, and can push prepared fix
+# branches. It is never merged into main.
+
+on:
+  push:
+    branches: [cowork/workbench-20261111]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: workbench
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13'
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10.12.4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Run workbench script
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COLUMNS: '200'
+        run: |
+          set +e
+          export WB="$RUNNER_TEMP/wb"
+          cp -r .workbench "$WB"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          bash "$WB/run.sh" > "$RUNNER_TEMP/out.txt" 2>&1
+          echo "run.sh exit=$?" >> "$RUNNER_TEMP/out.txt"
+          cd "$RUNNER_TEMP"
+          split -b 60000 -d out.txt part_
+          n=0
+          for f in part_*; do
+            n=$((n+1))
+            [ "$n" -gt 4 ] && break
+            { echo "### workbench ${GITHUB_SHA::8} part $n"; echo '```text'; cat "$f"; echo; echo '```'; } > body.md
+            gh pr comment 25 --repo "$GITHUB_REPOSITORY" --body-file body.md
+          done
