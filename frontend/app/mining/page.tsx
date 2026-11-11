@@ -995,7 +995,7 @@ export default function MiningDashboardPage() {
                 </div>
                 <div className="flex gap-2">
                   <span className="rounded bg-neutral-900 border border-neutral-800 px-2.5 py-1 text-[11px] font-mono text-neutral-300">
-                    Last Block Mined: <span className="text-emerald-400">#{lastMinedBlock}</span>
+                    Last Block Mined: <span className="text-neutral-400">not reported by the miner</span>
                   </span>
                   <span className="rounded bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 text-[11px] font-mono text-emerald-300">
                     IP Ban Rate: 0.00%
