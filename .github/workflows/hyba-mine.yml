@@ -11,10 +11,10 @@ name: HYBA Mine deploy
 #
 # Control: edit deploy/hyba-mine/control.env on branch hyba-mine/control and push,
 # or run the workflow manually once it is on main. Azure sign-in is OpenID Connect
-# to the managed identity id-hyba-mine-github (Reader and AcrPush on the registry,
-# Virtual Machine Contributor on the mining host), which trusts only this
-# repository's refs/heads/hyba-mine/control and refs/heads/main. There are no
-# stored secrets.
+# to the managed identity id-hyba-mine-github (Reader on the mining resource group,
+# AcrPush on the registry, Virtual Machine Contributor on the mining host), which
+# trusts only this repository's refs/heads/hyba-mine/control and refs/heads/main.
+# There are no stored secrets.
 #
 # Every run writes its report (step outcomes, build, self-test and host output; no
 # credentials) to hyba-mine/runs/ on the private results branch.
@@ -119,11 +119,23 @@ jobs:
 
       - name: Azure sign-in (OpenID Connect)
         id: login
-        uses: azure/login@8216e11d8cd9b42fe925c852af8e76311ff067ac # v2
-        with:
-          client-id: ${{ env.AZURE_CLIENT_ID }}
-          tenant-id: ${{ env.AZURE_TENANT_ID }}
-          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          oidc="$(curl -fsS -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=api://AzureADTokenExchange" \
+            | python3 -c 'import json, sys; print(json.load(sys.stdin)["value"])')"
+          echo "::add-mask::${oidc}"
+          {
+            echo "== azure sign-in"
+            python3 -c 'import base64, json, sys; p = sys.argv[1].split(".")[1]; p += "=" * (-len(p) % 4); c = json.loads(base64.urlsafe_b64decode(p)); [print("token", k + ":", c.get(k)) for k in ("iss", "aud", "sub", "repository", "ref")]' "${oidc}"
+            az login --service-principal --username "$AZURE_CLIENT_ID" --tenant "$AZURE_TENANT_ID" \
+              --federated-token "${oidc}" --allow-no-subscriptions --output none
+            echo "subscriptions visible to the deploy identity:"
+            az account list --query "[].id" --output tsv
+            az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+            echo "signed in to subscription $AZURE_SUBSCRIPTION_ID"
+          } 2>&1 | tee -a "$RUNNER_TEMP/hyba-mine-report.txt"
 
       - name: Push the image to the private registry
         id: push
