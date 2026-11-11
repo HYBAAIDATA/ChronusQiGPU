@@ -1,0 +1,248 @@
+name: CI diagnostics (temporary, not for merge)
+
+# Temporary workflow on a draft pull request. It re-runs the commands of the
+# failing CI jobs and posts their output to the pull request so the failures
+# can be diagnosed without log access. It is never merged into main.
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  PR_NUMBER: ${{ github.event.pull_request.number }}
+  GH_TOKEN: ${{ github.token }}
+  COLUMNS: '220'
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Collect
+        shell: bash
+        run: |
+          set +e
+          {
+            echo "tracked files: $(git ls-files | wc -l)"
+            echo "== files per top-level entry"
+            git ls-files | awk -F/ '{print $1}' | sort | uniq -c | sort -rn | head -90
+            echo "== largest tracked files (bytes)"
+            git ls-files -z | xargs -0 stat -c '%s %n' 2>/dev/null | sort -rn | head -50
+            echo "== tracked files matched by .gitignore"
+            git ls-files -ci --exclude-standard | head -150
+          } > out.txt 2>&1
+      - name: Post
+        if: always()
+        shell: bash
+        run: |
+          { echo "### diag: inventory"; echo '```text'; tail -c 60000 out.txt; echo '```'; } > body.md
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file body.md
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13'
+      - name: Collect
+        shell: bash
+        env:
+          CHRONUS_WORKLOAD_DB_PATH: ${{ runner.temp }}/chronus-tests.sqlite3
+        run: |
+          set +e
+          python -m pip install -q -e '.[dev]' > install.txt 2>&1
+          echo "pip exit=$?" >> install.txt
+          python -m pytest -q -p no:cacheprovider -rfE --tb=line \
+            --continue-on-collection-errors \
+            --cov=chronus.execution --cov=chronus.backends --cov=chronus.service \
+            --cov=chronus.sdk --cov=chronus.security --cov=chronus.stratum \
+            --cov=chronus.math --cov=chronus.hw --cov=chronus.storage \
+            --cov-report= > full.txt 2>&1
+          echo "pytest exit=$?" >> full.txt
+          {
+            echo "== install (tail)"; tail -n 12 install.txt
+            echo "== summary lines"
+            grep -E '^(FAILED|ERROR) |^=+ .*(passed|failed|error)|pytest exit=' full.txt | tail -n 500
+          } > out.txt
+          grep -vE '^(FAILED|ERROR) ' full.txt | head -c 58000 > out2.txt
+      - name: Post
+        if: always()
+        shell: bash
+        run: |
+          { echo "### diag: tests (summary)"; echo '```text'; tail -c 60000 out.txt; echo '```'; } > body.md
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file body.md
+          { echo "### diag: tests (tracebacks, head)"; echo '```text'; cat out2.txt; echo '```'; } > body2.md
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file body2.md
+
+  lint-and-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13'
+      - name: Collect
+        shell: bash
+        run: |
+          set +e
+          {
+            python -m pip install -q -e '.[dev]' ruff build twine 2>&1 | tail -n 8
+            echo "== ruff $(ruff --version)"
+            ruff check --select F --output-format concise src/chronus/execution src/chronus/backends src/chronus/service src/chronus/sdk src/chronus/security src/chronus/stratum src/chronus/math src/chronus/hw tests
+            echo "ruff exit=$?"
+            echo "== compileall"
+            python -m compileall -q src/chronus/config.py src/chronus/execution src/chronus/backends src/chronus/service src/chronus/sdk src/chronus/security src/chronus/stratum src/chronus/math src/chronus/hw
+            echo "compileall exit=$?"
+            echo "== build"
+            python -m build > build.txt 2>&1
+            echo "build exit=$?"
+            tail -n 40 build.txt
+            echo "== twine"
+            twine check dist/*
+            echo "twine exit=$?"
+          } > out.txt 2>&1
+      - name: Post
+        if: always()
+        shell: bash
+        run: |
+          { echo "### diag: lint, compile, package"; echo '```text'; tail -c 60000 out.txt; echo '```'; } > body.md
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file body.md
+
+  purity-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13'
+      - name: Collect
+        shell: bash
+        run: |
+          set +e
+          python -m pip install -q -e '.[dev]' > install.txt 2>&1
+          {
+            tail -n 5 install.txt
+            for s in purity_gate.py test_the_tests.py sovereign_attestation.py manifest.py; do
+              echo "== $s"
+              timeout 900 python "scripts/ci/$s" > step.txt 2>&1
+              code=$?
+              tail -n 120 step.txt
+              echo "$s exit=$code"
+            done
+          } > out.txt 2>&1
+      - name: Post
+        if: always()
+        shell: bash
+        run: |
+          { echo "### diag: purity gate scripts"; echo '```text'; tail -c 60000 out.txt; echo '```'; } > body.md
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file body.md
+
+  bandit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13'
+      - name: Collect
+        shell: bash
+        run: |
+          set +e
+          {
+            python -m pip install -q bandit 2>&1 | tail -n 3
+            bandit -q -r src/chronus/execution src/chronus/backends src/chronus/service src/chronus/sdk src/chronus/security -ll -ii -f custom --msg-template '{relpath}:{line} {test_id} [{severity}/{confidence}] {msg}'
+            echo "bandit exit=$?"
+          } > out.txt 2>&1
+      - name: Post
+        if: always()
+        shell: bash
+        run: |
+          { echo "### diag: bandit"; echo '```text'; tail -c 60000 out.txt; echo '```'; } > body.md
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file body.md
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10.12.4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Collect
+        shell: bash
+        working-directory: frontend
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: |
+          set +e
+          {
+            echo "== tracked files under frontend/lib"; git ls-files lib | head -50
+            echo "== pnpm install"
+            pnpm install --frozen-lockfile > install.txt 2>&1
+            echo "install exit=$?"
+            tail -n 40 install.txt
+            echo "== pnpm build"
+            pnpm build > build.txt 2>&1
+            echo "build exit=$?"
+            tail -n 200 build.txt
+          } > ../out.txt 2>&1
+      - name: Post
+        if: always()
+        shell: bash
+        run: |
+          { echo "### diag: frontend build"; echo '```text'; tail -c 60000 out.txt; echo '```'; } > body.md
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file body.md
+
+  qigpu-model:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13'
+      - name: Collect
+        shell: bash
+        run: |
+          set +e
+          {
+            python -m pip install -q coverage==7.17.2 2>&1 | tail -n 3
+            python -m coverage erase
+            timeout 900 python -m coverage run --branch docs/qigpu/pasted-text.txt > run.txt 2>&1
+            echo "coverage run exit=$?"
+            tail -n 150 run.txt
+            python -m coverage json -o qigpu-coverage.json > /dev/null 2>&1
+            echo "coverage json exit=$?"
+            python - <<'PY'
+          import ast, json
+          from pathlib import Path
+          source = 'docs/qigpu/pasted-text.txt'
+          tree = ast.parse(Path(source).read_text())
+          data = json.loads(Path('qigpu-coverage.json').read_text())['files'][source]
+          skip = set()
+          for n in tree.body:
+              if isinstance(n, ast.ClassDef) and n.name.startswith('Test'):
+                  skip.update(range(n.lineno, n.end_lineno + 1))
+          executed = {n for n in data['executed_lines'] if n not in skip}
+          missing = {n for n in data['missing_lines'] if n not in skip}
+          taken = [b for b in data['executed_branches'] if b[0] not in skip]
+          untaken = [b for b in data['missing_branches'] if b[0] not in skip]
+          print('statements %.2f%% (%d/%d); branches %.2f%% (%d/%d)' % (
+              100 * len(executed) / max(1, len(executed) + len(missing)), len(executed), len(executed) + len(missing),
+              100 * len(taken) / max(1, len(taken) + len(untaken)), len(taken), len(taken) + len(untaken)))
+          print('missing lines (first 200):', sorted(missing)[:200])
+          PY
+            echo "threshold script exit=$?"
+          } > out.txt 2>&1
+      - name: Post
+        if: always()
+        shell: bash
+        run: |
+          { echo "### diag: qigpu model"; echo '```text'; tail -c 60000 out.txt; echo '```'; } > body.md
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file body.md
