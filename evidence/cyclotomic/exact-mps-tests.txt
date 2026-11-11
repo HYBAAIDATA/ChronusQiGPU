@@ -1,0 +1,17 @@
+test_adversarial_dimensions (test_exact_mps_reference.ExactMPSTests.test_adversarial_dimensions) ... ok
+test_e2e_bounded_product_workflow (test_exact_mps_reference.ExactMPSTests.test_e2e_bounded_product_workflow) ... ok
+test_edge_refusal (test_exact_mps_reference.ExactMPSTests.test_edge_refusal) ... ok
+test_integration_artin_action (test_exact_mps_reference.ExactMPSTests.test_integration_artin_action) ... ok
+test_invariant_scalar_is_same_ring (test_exact_mps_reference.ExactMPSTests.test_invariant_scalar_is_same_ring) ... ok
+test_property_product (test_exact_mps_reference.ExactMPSTests.test_property_product) ... ok
+test_unit_single_site (test_exact_mps_reference.ExactMPSTests.test_unit_single_site) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.514s
+
+OK
+Name                              Stmts   Miss  Cover   Missing
+---------------------------------------------------------------
+src/chronus/tensor/exact_mps.py      39      1    97%   27
+---------------------------------------------------------------
+TOTAL                                39      1    97%

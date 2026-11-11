@@ -1,0 +1,24 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.15, pytest-9.2.0, pluggy-1.7.0 -- /usr/local/bin/python
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: /data/cyclo
+plugins: hypothesis-6.170.15, cov-7.1.0, anyio-4.16.0
+collecting ... collected 8 items
+
+tests/test_ring_codec_seven_classes.py::TestInvariant::test_exhaustive_octets PASSED [ 12%]
+tests/test_ring_codec_seven_classes.py::TestProperty::test_roundtrip_and_length PASSED [ 25%]
+tests/test_ring_codec_seven_classes.py::TestAdversarial::test_bad_input_and_tampering PASSED [ 37%]
+tests/test_ring_codec_seven_classes.py::TestAdversarial::test_no_inexact_numeric_literals PASSED [ 50%]
+tests/test_ring_codec_seven_classes.py::TestEdge::test_empty_maximum_and_limit PASSED [ 62%]
+tests/test_ring_codec_seven_classes.py::TestUnit::test_fixed_symbol_encoding PASSED [ 75%]
+tests/test_ring_codec_seven_classes.py::TestIntegration::test_math_inverse PASSED [ 87%]
+tests/test_ring_codec_seven_classes.py::TestEndToEnd::test_file_roundtrip PASSED [100%]
+
+============================== 8 passed in 0.49s ===============================
+Name                                Stmts   Miss Branch BrPart  Cover   Missing
+-------------------------------------------------------------------------------
+src/chronus/quantum/ring_codec.py      38      0     18      0   100%
+-------------------------------------------------------------------------------
+TOTAL                                  38      0     18      0   100%
+Wrote JSON report to evidence/acceleration/ring-codec-coverage.json

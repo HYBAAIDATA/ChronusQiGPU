@@ -1,0 +1,26 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.15, pytest-9.2.0, pluggy-1.7.0 -- /usr/local/bin/python
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: /data/cyclo
+plugins: hypothesis-6.170.15, cov-7.1.0, anyio-4.16.0
+collecting ... collected 10 items
+
+tests/test_cyclotomic_seven_classes.py::TestInvariant::test_bounded_exhaustive_addition_multiplication PASSED [ 10%]
+tests/test_cyclotomic_seven_classes.py::TestInvariant::test_phi_and_zeta_across_integer_powers PASSED [ 20%]
+tests/test_cyclotomic_seven_classes.py::TestProperty::test_associative_and_distributive PASSED [ 30%]
+tests/test_cyclotomic_seven_classes.py::TestProperty::test_projection_is_ring_homomorphism PASSED [ 40%]
+tests/test_cyclotomic_seven_classes.py::TestAdversarial::test_bad_coefficients_and_projection PASSED [ 50%]
+tests/test_cyclotomic_seven_classes.py::TestEdge::test_unbounded_integers_and_zero PASSED [ 60%]
+tests/test_cyclotomic_seven_classes.py::TestUnit::test_known_ring_and_field_values PASSED [ 70%]
+tests/test_cyclotomic_seven_classes.py::TestUnit::test_other_public_apis PASSED [ 80%]
+tests/test_cyclotomic_seven_classes.py::TestIntegration::test_vertices_projection_and_braid PASSED [ 90%]
+tests/test_cyclotomic_seven_classes.py::TestEndToEnd::test_input_to_exact_result PASSED [100%]
+
+============================== 10 passed in 1.18s ==============================
+Name                                          Stmts   Miss Branch BrPart  Cover   Missing
+-----------------------------------------------------------------------------------------
+src/chronus/quantum/geometric_polychoron.py     233      0     66      0   100%
+-----------------------------------------------------------------------------------------
+TOTAL                                           233      0     66      0   100%
+Wrote JSON report to evidence/acceleration/ring-coverage.json
