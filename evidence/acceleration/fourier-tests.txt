@@ -1,0 +1,35 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.15, pytest-9.2.0, pluggy-1.7.0 -- /usr/local/bin/python
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: /vercel/sandbox/data/accel
+plugins: hypothesis-6.170.15, cov-7.1.0, anyio-4.16.0
+collecting ... collected 16 items
+
+tests/acceleration/test_fourier.py::TestInvariant::test_small_basis_exhaustive_and_inverse PASSED [  6%]
+tests/acceleration/test_fourier.py::TestProperty::test_norm_and_linearity PASSED [ 12%]
+tests/acceleration/test_fourier.py::TestAdversarial::test_invalid_or_excessive_inputs_are_rejected[values0] PASSED [ 18%]
+tests/acceleration/test_fourier.py::TestAdversarial::test_invalid_or_excessive_inputs_are_rejected[values1] PASSED [ 25%]
+tests/acceleration/test_fourier.py::TestAdversarial::test_invalid_or_excessive_inputs_are_rejected[values2] PASSED [ 31%]
+tests/acceleration/test_fourier.py::TestAdversarial::test_invalid_or_excessive_inputs_are_rejected[values3] PASSED [ 37%]
+tests/acceleration/test_fourier.py::TestAdversarial::test_invalid_or_excessive_inputs_are_rejected[values4] PASSED [ 43%]
+tests/acceleration/test_fourier.py::TestAdversarial::test_invalid_flag_and_overflow PASSED [ 50%]
+tests/acceleration/test_fourier.py::TestEdge::test_refusal[values0] PASSED [ 56%]
+tests/acceleration/test_fourier.py::TestEdge::test_refusal[values1] PASSED [ 62%]
+tests/acceleration/test_fourier.py::TestEdge::test_refusal[values2] PASSED [ 68%]
+tests/acceleration/test_fourier.py::TestEdge::test_refusal[None] PASSED  [ 75%]
+tests/acceleration/test_fourier.py::TestEdge::test_singleton_and_limit PASSED [ 81%]
+tests/acceleration/test_fourier.py::TestUnit::test_known_transform PASSED [ 87%]
+tests/acceleration/test_fourier.py::TestIntegration::test_transform_convolution PASSED [ 93%]
+tests/acceleration/test_fourier.py::TestEndToEnd::test_user_public_api_processing_and_recovery PASSED [100%]
+
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.13.15-final-0 _______________
+
+Name                                  Stmts   Miss Branch BrPart  Cover   Missing
+---------------------------------------------------------------------------------
+src/chronus/acceleration/fourier.py      20      0     10      0   100%
+---------------------------------------------------------------------------------
+TOTAL                                    20      0     10      0   100%
+Coverage JSON written to file evidence/acceleration/fourier-coverage.json
+============================== 16 passed in 1.36s ==============================
