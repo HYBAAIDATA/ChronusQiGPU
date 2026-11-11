@@ -1,0 +1,6 @@
+turing: stage tensor not present yet; it and any later stage wait
+turing: no stage present; skipped
+geodesic: stage geodesic not present yet; it and any later stage wait
+geodesic: no stage present; skipped
+partner: stage partner-c3 not present yet; it and any later stage wait
+partner: no stage present; skipped

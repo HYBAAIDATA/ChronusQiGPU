@@ -1,0 +1,22 @@
+exists: feat/geodesic-11d 8c7679cead24c286f9abe6faa6a92abaa706fa94
+== open pull requests
+#32 cowork/supervisor-wb-20261111 -> main 47eb3b2 draft=false Cowork/supervisor wb 20261111
+#31 cowork/payload-20261111 -> main 44bfa22 draft=false Cowork/payload 20261111
+#27 cowork/workbench-20261111 -> main a9bfc22 draft=true Scratch workbench (never merge)
+#26 al-haras/notes-alignment -> main 6e098c5 draft=false AL HARAS: align implementation with the notes (work in progress)
+== branch heads
+origin/al-haras/notes-alignment 6e098c5 2026-11-11 14:07:16 +0000
+origin/cowork-systems/workbench-20261111 8c7679c 2026-11-11 09:24:37 +0000
+origin/cowork/payload-20261111 44bfa22 2026-11-11 15:47:33 +0000
+origin/cowork/supervisor-results-20261111 98909d6 2026-11-11 13:32:38 +0000
+origin/cowork/supervisor-wb-20261111 47eb3b2 2026-11-11 15:55:20 +0000
+origin/cowork/workbench-20261111 a9bfc22 2026-11-11 12:20:54 +0000
+origin/feat/execution-guard 8c7679c 2026-11-11 09:24:37 +0000
+origin/feat/folded-accelerator-composition b6f6bc9 2026-11-11 01:03:37 +0000
+origin/feat/geodesic-11d 8c7679c 2026-11-11 09:24:37 +0000
+origin/feat/partner-distribution 2995803 2026-11-11 09:29:54 +0000
+origin/feat/security-stark-fri 8c7679c 2026-11-11 09:24:37 +0000
+origin/feat/theseus-durable-storage 8c7679c 2026-11-11 09:24:37 +0000
+origin/feat/turing-exact-algorithms a0ffe1c 2026-11-11 11:51:18 +0000
+origin/main 8c7679c 2026-11-11 09:24:37 +0000
+origin/work/prime-codec-bounded-decode 8fddfd1 2026-11-09 18:43:02 +0000
