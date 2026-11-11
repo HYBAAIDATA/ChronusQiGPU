@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
-# Supervisor workbench run 6+ (idempotent; every push to the workbench re-runs it).
-#  1. Branch upkeep: delete branches whose pull requests are merged (only when
-#     GitHub reports the PR merged and the branch still points at the PR head);
-#     create feat/geodesic-11d from main when absent; list open PRs.
-#  2. Staged work under .supervisor/stage/<name>/ (files/, MANIFEST.tsv,
-#     DELETE.txt, COMMIT_MSG.txt) is applied to its target branch with git
-#     (deletions included) after merging main, every blob SHA is checked, the
-#     CI-equivalent gates run, and the branch is pushed only if all pass.
-#     A stage already present on its branch is skipped.
+# Supervisor workbench (idempotent; every push to the workbench re-runs it).
+#  1. Branch upkeep: create feat/geodesic-11d from main when absent; list open
+#     pull requests and branch heads.
+#  1b. Full-history search of every branch for earlier Shor, period-finding,
+#     order-finding and phase-estimation code (paths and contents).
+#  2. Staged work under .supervisor/stage/<name>/ (files/, optional files.b64/,
+#     EMPTY.txt and DELETE.txt, MANIFEST.tsv, COMMIT_MSG.txt) is applied in order to its
+#     target branch after merging main, every blob SHA is checked, each stage
+#     becomes one commit carrying a "Supervisor-Stage: <name> <id>" trailer,
+#     the CI-equivalent gates run, and the branch is pushed only if all pass.
+#     A stage whose trailer is already on the branch is skipped.
 set +e
 cd "$GITHUB_WORKSPACE" || exit 1
 git fetch -q origin '+refs/heads/*:refs/remotes/origin/*'
@@ -15,17 +17,6 @@ REPO="$GITHUB_REPOSITORY"
 
 # 1. Branch upkeep -----------------------------------------------------------
 {
-for pair in "29:chore/turing-packaging-consolidation-20261111" "30:feat/hendrix-structured-search"; do
-  pr="${pair%%:*}"; br="${pair#*:}"
-  merged=$(gh api "repos/$REPO/pulls/$pr" --jq '.merged' 2>&1)
-  head=$(gh api "repos/$REPO/pulls/$pr" --jq '.head.sha' 2>&1)
-  tip=$(git rev-parse -q --verify "origin/$br")
-  if [ "$merged" = "true" ] && [ -n "$tip" ] && [ "$tip" = "$head" ]; then
-    git push -q origin --delete "$br" && echo "deleted (PR #$pr merged, head $head): $br"
-  else
-    echo "kept $br: merged=$merged pr_head=$head branch_tip=${tip:-absent}"
-  fi
-done
 for b in feat/geodesic-11d; do
   if git rev-parse -q --verify "origin/$b" >/dev/null; then echo "exists: $b $(git rev-parse "origin/$b")"
   else git push -q origin "$(git rev-parse origin/main):refs/heads/$b" && echo "created from main: $b $(git rev-parse origin/main)"; fi
@@ -34,27 +25,46 @@ git fetch -q origin '+refs/heads/*:refs/remotes/origin/*'
 echo "== open pull requests"
 gh api "repos/$REPO/pulls?state=open&per_page=50" --jq '.[] | "#\(.number) \(.head.ref) -> \(.base.ref) \(.head.sha[0:7]) draft=\(.draft) \(.title)"'
 echo "== branch heads"
-git for-each-ref --format='%(refname:short) %(objectname:short)' refs/remotes/origin | grep -v HEAD
+git for-each-ref --format='%(refname:short) %(objectname:short) %(committerdate:iso8601)' refs/remotes/origin | grep -v HEAD
 } > "$OUT/branches.txt" 2>&1
 
-# 2. Staged work -------------------------------------------------------------
-stage_present() { [ -f "$SUP/stage/$1/MANIFEST.tsv" ]; }
+# 1b. Full-history search (only when the workbench commit subject contains [history]) ---
+if git log -1 --format=%s | grep -qF '[history]'; then
+{
+PAT='shor|period[_ -]?find|order[_ -]?find|continued[_ -]?fraction|modular[_ -]?exponent|phase[_ -]?estimation'
+echo "== paths matching shor / period / order finding / qpe / phase estimation, in any commit on any branch"
+git log --all --format='commit %h %ad %an: %s' --date=iso --name-status --diff-filter=ADR \
+  | awk '/^commit /{c=$0; next} NF{ if (tolower($0) ~ /shor|period.?find|order.?find|qpe|phase.?estim/) print c " | " $0 }' | sort -u | head -300
+echo
+echo "== branch tips: Python files whose content matches (case-insensitive)"
+for ref in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin | grep -v HEAD); do
+  hits=$(git grep -I -i -l -E "$PAT" "$ref" -- '*.py' 2>/dev/null | sed "s|^$ref:||" | head -80)
+  [ -n "$hits" ] && { echo "-- $ref"; echo "$hits"; }
+done
+echo
+echo "== commits on any branch whose Python diff adds or removes matching lines"
+timeout 1200 git log --all --regexp-ignore-case -G "$PAT" --format='%h %ad %an: %s' --date=iso -- '*.py' | head -300
+echo "search exit=$?"
+} > "$OUT/history_shor.txt" 2>&1
+fi
 
-stage_done() {  # every staged blob present on the checkout and every deletion done
-  local ST="$SUP/stage/$1" sha path
-  while IFS=$'\t' read -r sha path; do
-    [ -z "$path" ] && continue
-    [ -f "$path" ] && [ "$(git hash-object "$path")" = "$sha" ] || return 1
-  done < "$ST/MANIFEST.tsv"
-  if [ -f "$ST/DELETE.txt" ]; then
-    while read -r path; do [ -n "$path" ] && [ -e "$path" ] && return 1; done < "$ST/DELETE.txt"
-  fi
-  return 0
-}
+# 2. Staged work -------------------------------------------------------------
+stage_present() { [ -f "$SUP/stage/$1/MANIFEST.tsv" ] && [ -f "$SUP/stage/$1/COMMIT_MSG.txt" ]; }
+stage_id() { sha256sum "$SUP/stage/$1/MANIFEST.tsv" | cut -c1-16; }
+stage_done() { git log --format=%B HEAD | grep -qx "Supervisor-Stage: $1 $(stage_id "$1")"; }
 
 apply_stage() {  # returns 0 committed, 1 error
-  local ST="$SUP/stage/$1" sha path got bad=0 extra
-  cp -a "$ST/files/." .
+  local ST="$SUP/stage/$1" sha path got bad=0 extra f
+  [ -d "$ST/files" ] && cp -a "$ST/files/." .
+  if [ -d "$ST/files.b64" ]; then
+    while read -r f; do
+      mkdir -p "$(dirname "${f%.b64}")"
+      base64 -d "$ST/files.b64/$f" > "${f%.b64}" || { echo "stage $1: cannot decode $f"; return 1; }
+    done < <(cd "$ST/files.b64" && find . -type f -name '*.b64' | sed 's|^\./||')
+  fi
+  if [ -f "$ST/EMPTY.txt" ]; then
+    while read -r path; do [ -n "$path" ] && mkdir -p "$(dirname "$path")" && : > "$path"; done < "$ST/EMPTY.txt"
+  fi
   if [ -f "$ST/DELETE.txt" ]; then
     while read -r path; do [ -n "$path" ] && [ -e "$path" ] && git rm -q -r -- "$path" && echo "deleted: $path"; done < "$ST/DELETE.txt"
   fi
@@ -69,13 +79,14 @@ apply_stage() {  # returns 0 committed, 1 error
   { cut -f2 "$ST/MANIFEST.tsv"; [ -f "$ST/DELETE.txt" ] && cat "$ST/DELETE.txt"; } | grep . | sort -u > "$RUNNER_TEMP/expected.txt"
   extra=$(comm -23 "$RUNNER_TEMP/changed.txt" "$RUNNER_TEMP/expected.txt")
   [ -z "$extra" ] || { echo "stage $1: unexpected changed paths:"; echo "$extra"; return 1; }
-  git commit -q -F "$ST/COMMIT_MSG.txt" || { echo "stage $1: commit failed"; return 1; }
+  { cat "$ST/COMMIT_MSG.txt"; printf '\nSupervisor-Stage: %s %s\n' "$1" "$(stage_id "$1")"; } > "$RUNNER_TEMP/msg.txt"
+  git commit -q -F "$RUNNER_TEMP/msg.txt" || { echo "stage $1: commit failed"; return 1; }
   echo "stage $1 committed $(git rev-parse HEAD) ($(wc -l < "$RUNNER_TEMP/changed.txt") paths)"
   return 0
 }
 
 verify() {  # $1 = output prefix; sets GATES_OK
-  local P=99 R1=99 R2=99 C=99 TW=99 CL1=99 CL2=99 TI=99 TC=99 HEADSHA
+  local P=99 R1=99 R2=99 C=99 TW=99 CL1=99 CL2=99 TI=99 TC=99 HEADSHA BOK=0
   HEADSHA=$(git rev-parse HEAD); GATES_OK=0
   python -m venv "$RUNNER_TEMP/v_$1" && . "$RUNNER_TEMP/v_$1/bin/activate"
   python -m pip install -q --upgrade pip > /dev/null 2>&1
@@ -96,7 +107,7 @@ verify() {  # $1 = output prefix; sets GATES_OK
     python -m build --outdir dist/turing packages/turing > "$RUNNER_TEMP/b2.txt" 2>&1; echo "build hyba-turing exit=$?"; tail -n 2 "$RUNNER_TEMP/b2.txt"
     python -m twine check dist/chronus/* dist/turing/*; echo "twine exit=$?"
     python scripts/ci/check_wheels.py dist/chronus dist/turing; echo "wheel check exit=$?"; } > "$OUT/$1_build.txt" 2>&1
-  local BOK=0; grep -q 'build hyba-chronus exit=0' "$OUT/$1_build.txt" && grep -q 'build hyba-turing exit=0' "$OUT/$1_build.txt" \
+  grep -q 'build hyba-chronus exit=0' "$OUT/$1_build.txt" && grep -q 'build hyba-turing exit=0' "$OUT/$1_build.txt" \
     && grep -q 'twine exit=0' "$OUT/$1_build.txt" && grep -q 'wheel check exit=0' "$OUT/$1_build.txt" && BOK=1
   { for s in purity_gate.py test_the_tests.py; do echo "== $s"; timeout 900 python "scripts/ci/$s" > "$RUNNER_TEMP/step.txt" 2>&1; c=$?; tail -n 6 "$RUNNER_TEMP/step.txt"; echo "$s exit=$c"; done; } > "$OUT/$1_purity.txt" 2>&1
   git checkout -q -- . ; git clean -fdq -e dist
@@ -113,28 +124,28 @@ verify() {  # $1 = output prefix; sets GATES_OK
   if [ "$P" = 0 ] && [ "$R1" = 0 ] && [ "$R2" = 0 ] && [ "$C" = 0 ] && [ "$TW" = 0 ] && [ "$CL1" = 0 ] && [ "$CL2" = 0 ] && [ "$BOK" = 1 ] && [ "$TI" = 0 ] && [ "$TC" = 0 ]; then GATES_OK=1; fi
 }
 
-# process_branch <prefix> <branch> <create-from-main 0|1> <require-path|-> <stage>...
+# process_branch <prefix> <branch> <create-from-main 0|1> <require-path|-> <stage>...  (stages apply in order)
 process_branch() {
   local prefix="$1" br="$2" create="$3" req="$4"; shift 4
-  local any=0 s changed=0 start
-  for s in "$@"; do stage_present "$s" && any=1; done
-  [ "$any" = 1 ] || { echo "$prefix: no stage present; skipped"; return 0; }
+  local s start avail=() pending=0
+  for s in "$@"; do
+    if stage_present "$s"; then avail+=("$s"); else echo "$prefix: stage $s not present yet; it and any later stage wait"; break; fi
+  done
+  [ "${#avail[@]}" -gt 0 ] || { echo "$prefix: no stage present; skipped"; return 0; }
   if git rev-parse -q --verify "origin/$br" >/dev/null; then git checkout -q -B "$br" "origin/$br"
   elif [ "$create" = 1 ]; then git checkout -q -B "$br" origin/main; echo "$prefix: $br will be created from main"
   else echo "$prefix: $br does not exist; nothing done"; return 1; fi
   start=$(git rev-parse HEAD); echo "$prefix: $br head before $start"
   if [ "$req" != "-" ] && [ ! -e "$req" ]; then echo "$prefix: required $req is not on $br yet; nothing done"; return 1; fi
-  local pending=0
-  for s in "$@"; do stage_present "$s" && ! stage_done "$s" && pending=1; done
-  [ "$pending" = 1 ] || { echo "$prefix: all stages already on $br; nothing to do"; return 0; }
+  for s in "${avail[@]}"; do stage_done "$s" || pending=1; done
+  [ "$pending" = 1 ] || { echo "$prefix: stages ${avail[*]} already on $br; nothing to do"; return 0; }
   if ! git merge-base --is-ancestor origin/main HEAD; then
     if ! git merge -q --no-edit origin/main > "$OUT/${prefix}_merge.txt" 2>&1; then
       echo "$prefix: merge of main conflicted; nothing pushed"; git diff --name-only --diff-filter=U >> "$OUT/${prefix}_merge.txt"; git merge --abort; return 1
     fi
     echo "$prefix: merged main $(git rev-parse --short origin/main)"
   fi
-  for s in "$@"; do
-    stage_present "$s" || continue
+  for s in "${avail[@]}"; do
     if stage_done "$s"; then echo "$prefix: stage $s already present"; continue; fi
     apply_stage "$s" || { echo "$prefix: nothing pushed"; return 1; }
   done
@@ -150,6 +161,6 @@ process_branch turing feat/turing-exact-algorithms 0 packages/turing/tests/test_
 git checkout -q -- . 2>/dev/null; git clean -fdq 2>/dev/null
 process_branch geodesic feat/geodesic-11d 1 - geodesic
 git checkout -q -- . 2>/dev/null; git clean -fdq 2>/dev/null
-process_branch partner feat/partner-distribution 0 packages/hyba-client/pyproject.toml partner-hardening
+process_branch partner feat/partner-distribution 0 - partner-c3 partner-hardening
 } > "$OUT/stages.txt" 2>&1
 git checkout -q -- . 2>/dev/null; git clean -fdq 2>/dev/null
