@@ -1,6 +1,6 @@
 # Chronusv2
 
-Chronusv2 is a software prototype exploring exact mathematical representations and workload execution. This repository is **not release-qualified** and does not establish production readiness, enterprise security, regulatory compliance, customer deployments, or performance advantages. See the [claim audit](docs/claim-audit.md) before relying on any older product, benchmark, valuation, or release document.
+Chronusv2 is a HYBA Data software prototype exploring exact mathematical representations and workload execution. **Chronus is a HYBA Data product/platform, not a separate company.** HYBA’s two market-facing companies are HYBA Data and HYBA Security; **AL HARAS is HYBA Security**. This repository is **not release-qualified** and does not establish production readiness, enterprise security, regulatory compliance, customer deployments, or performance advantages. See the [claim audit](docs/claim-audit.md) before relying on any older product, benchmark, valuation, or release document.
 
 ## What the source supports
 
@@ -33,6 +33,11 @@ Running this command is a local test action, not a release qualification or cert
 
 ## Documentation
 
+- [Repository agent instructions](AGENTS.md)
+- [HYBA product style guide](docs/directives/PRODUCT_STYLE_GUIDE.md)
+- [Frontend implementation standard](docs/directives/FRONTEND.md)
+- [Product packaging and market framing](docs/directives/PACKAGING.md)
+- [HYBA funding pitch — positioning draft](funding/FUNDING_PITCH.md)
 - [iGPU Manifesto: Chronus ONE & The Virtual GPIU](docs/IGPU_MANIFESTO.md)
 - [Claim audit and disposition](docs/claim-audit.md)
 - [Current implementation assessment](docs/system-update/current-state-assessment.md)

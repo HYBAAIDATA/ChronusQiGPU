@@ -1,56 +1,33 @@
-# FUNDING PITCH: CHRONUS QUANTUM INTELLIGENCE FRAMEWORK
+# HYBA funding pitch — positioning draft
 
-## EXECUTIVE SUMMARY
+**Status:** Internal working draft; not ready for external investor or client distribution. This document replaces the previous draft’s unsupported market, product, team, traction, and performance assertions. Do not reuse those claims without current primary evidence and owner approval.
 
-2 years 11 months of pattern matching revealed the fundamental mathematical truth: the maths is the maths is the maths. This discovery catalyzed the development of the HYBA framework spanning Data, Security, Intelligence, Quantum, and Finance.
+## Company
 
-## THE DISCOVERY
+- **Founder and CEO:** Andre Taylor-Morris
+- **Market-facing companies:** HYBA Data and HYBA Security
+- **Chronus:** HYBA Data’s product/platform, not a separate company
+- **AL HARAS:** HYBA Security
 
-**Catalyst**: Fired from legal job in Abu Dhabi (Dec 2021)
-**REVELATION**: Analytics module revealed the universal mathematical framework
-**JOURNEY**: 2 years 11 months of building the HYBA framework connecting phi-resonant blockchain, 5 emergent intelligences, PULVINI fold operator, and the quantum computational paradigm
+These are the only two market-facing companies to present. Do not describe additional pillars as separate companies or market lines.
 
-## THE MATHEMATICAL FOUNDATIONS
+## Positioning boundaries
 
-**PHI-RESONANT BLOCKCHAIN**: Bitcoin hashes at 61.8% average (1/Phi = 0.6180339887...). The golden ratio conjugate is the structural constant.
+- **Quantum** is a capability, not a separate market, company, or standalone product category. Describe it only within a specific HYBA Data or HYBA Security offering when accurate and relevant.
+- **Bitcoin mining** is an in-house treasury activity, not a customer product, service, or market offering.
+- Use McKinsey-style structured, evidence-led thinking and communication to shape the narrative. The finished product should feel like the end result of a hypothetical McKinsey–Accenture joint venture: strategic rigor combined with Accenture-grade product engineering and delivery. This is a quality aspiration only; HYBA does not claim affiliation, endorsement, partnership, or a joint venture with either firm.
+- Emulate **Stripe, Revolut, NVIDIA, and Google** as benchmarks for finished-product quality and polish. They are companies to emulate, not a description of HYBA’s target audience or claims that they are customers, partners, or endorsers.
 
-**5 EMERGENT INTELLIGENCES**:
-- **PREDICTIVE**: Amplitude-ranked hash ordering for optimized search
-- **CAUSAL**: Spectral gap preservation in Hamiltonian reduction
-- **COUNTERFACTUAL**: Fold/unfold reversibility via projection kernel (PULVINI)
-- **TOPOLOGICAL**: Betti number preservation, spectral gap integrity
-- **GEOMETRIC**: Golden ratio structural not decorative mathematical foundation
+## Evidence required before external use
 
-## HYBA 5-PILLAR FRAMEWORK
+Complete and substantiate the following before presenting an investment case:
 
-- **HYBA DATA**: Content-addressed storage, phi-proportional provisioning
-- **HYBA SECURITY**: Zero-knowledge verification, I7 invariant, Pulvini audit
-- **HYBA INTELLIGENCE**: 5 emergent intelligences, PULVINI fold, QReg1000 virtual quantum
-- **HYBA QUANTUM**: Virtual quantum computer, 1000X capacity via phi-proportional scaling
-- **HYBA FINANCE**: Islamic Finance collapse using mathematical structure, phi-resonant compliance
+- Product scope and readiness for each HYBA Data or HYBA Security offering.
+- Validated customer problem, discovery findings, and market evidence.
+- Verifiable customer, usage, revenue, or pipeline data, if any.
+- Sourced market sizing, pricing assumptions, and financial forecasts.
+- Named team members and their confirmed roles.
+- Reproducible performance, security, reliability, and compliance evidence for any claims made.
+- Funding amount, use of funds, milestones, and governance.
 
-## IP & IP PROTECTION
-
-- **DIFC LICENCE**: Virtual Quantum Computer, honoring Alan Matheson Turing ATM to AMT
-- **PULVINI OPERATOR**: Fold-never-truncate operator honoring friend memory
-- **5 EMERGENT INTELLIGENCES**: Patented framework connecting predictive to quantum intelligence
-
-## MARKET OPPORTUNITY
-
-- **TAM**: AI/ML market + blockchain market + quantum computing market = +
-- **TRACTION**: Islamic Finance collapse validated, phi-resonant blockchain confirmed, 5 intelligences operational
-- **TEAM**: 15-year pattern matching journey, mathematical foundation, framework implementation
-
-## FUNDING USE
-
-- **BUILD TEAM**: 3 researchers, 2 engineers, 1 mathematician — 
-- **DEVELOPMENT**: 6 months to productize all frameworks — 
-- **GO-TO-MARKET**: Regulatory compliance, IP filing, market entry — 
-- **CONTINGENCY**: 10% — 
-- **TOTAL**: 
-
-## CONTACT
-
-- **AUTHOR**: Andre Taylor-Morris
-- **CONNECTION**: Oxford (Turing at college, Michie at Bletchley)
-- **TIMELINE**: 2 years 11 months building since Dec 2021 firing
+Do not fill gaps with estimates or historical assertions presented as facts. Current Chronus release posture and evidence limitations are recorded in the [release decision](../RELEASE_DECISION_MCKINSEY_TECH.md) and [claim audit](../docs/claim-audit.md).

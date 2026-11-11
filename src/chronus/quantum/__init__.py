@@ -1,8 +1,10 @@
-"""Exact finite-field quantum evolution for Chronus.
+"""Legacy finite-field and algebraic research code for Chronus.
 
-Quantum behavior here comes from mathematics, not vendor hardware facades:
-statevectors evolve over F_257 with exact field arithmetic — no floating
-point, no simulated noise, no fabricated fidelities, no external backends.
+This namespace is not TURING and is not a conventional complex-Hilbert-space
+quantum-mathematics library. Its finite-field and algebraic constructions are
+research models; names and exact arithmetic do not establish physical quantum
+semantics, hardware execution, or quantum advantage. See the package README and
+``docs/system-update/quantum-package-taxonomy.md`` for scope and limitations.
 """
 
 from chronus.quantum.extension_search import (
