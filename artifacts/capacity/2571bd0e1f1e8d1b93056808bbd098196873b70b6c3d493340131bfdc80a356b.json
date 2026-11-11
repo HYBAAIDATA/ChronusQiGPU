@@ -1,0 +1,71 @@
+{
+  "command": "/usr/local/bin/python harness/capacity.py --data-dir artifacts/samples --labels harness/sample-labels.json --hardware harness/reference-hardware.json --output-dir artifacts/capacity --export-commit 18f3b8225e01e796b6d5433b32e95f521dde12a9 --export-codec-blob fb514a06f65473526e4ed43a0070e7dafcb1d657",
+  "hardware_spec": {
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.90GHz (virtualized environment)",
+    "disk": "/data on xfs, /dev/vdb; codec operations in memory",
+    "gpu": "not used",
+    "ram": "4387300 kB reported by /proc/meminfo"
+  },
+  "label": "Reference implementation measurement. Not a product capacity claim. The product capacity claim requires the specification-conformant codec.",
+  "per_class": {
+    "synthetic-text": {
+      "decode_latency_ns": {
+        "method": "nearest rank; one sample per decode call",
+        "p50": 20637,
+        "p95": 32802,
+        "p99": 39791,
+        "samples": [
+          32802,
+          24423,
+          21843,
+          20809,
+          20937,
+          20786,
+          20637,
+          20694,
+          20667,
+          20613,
+          20537,
+          20627,
+          20545,
+          20528,
+          20418,
+          20575,
+          39791,
+          20781,
+          20601,
+          20495
+        ],
+        "variance_population": 23239346.0475
+      },
+      "encoded_bytes_including_header": 225,
+      "files": 1,
+      "input_bytes": 90,
+      "input_to_encoded_ratio": 0.4,
+      "recovery_reason": "Not measured: reference codec detects corruption but has no recovery module.",
+      "recovery_success_rate": null,
+      "recovery_time_ns": null,
+      "write_amplification": null,
+      "write_amplification_reason": "Not measured: codec is in-memory; device writes are not observed."
+    }
+  },
+  "raw_stdout": "measured reference.txt class synthetic-text round-trip verified\n",
+  "runtime": "3.13.15",
+  "sample_hash_method": "SHA-256 of UTF-8 canonical compact sorted-key JSON sample_manifest",
+  "sample_hash_sha256": "f5da4332fd93255b7e29ef7fdb41ef7b7b5bd97e72608045f71959373391eae9",
+  "sample_manifest": [
+    {
+      "class": "synthetic-text",
+      "path": "reference.txt",
+      "sha256": "c6953b72b718d94a2b29178cb47ad0c094a1237d8a6df8a40213ccae99e418f0",
+      "size": 90
+    }
+  ],
+  "source": {
+    "codec_git_blob": "fb514a06f65473526e4ed43a0070e7dafcb1d657",
+    "commit": "18f3b8225e01e796b6d5433b32e95f521dde12a9",
+    "verification": "export: blob verified locally; commit association requires external verification"
+  },
+  "wall_clock_end": "2026-11-09T20:38:56.017775+00:00",
+  "wall_clock_start": "2026-11-09T20:38:56.017064+00:00"
+}
