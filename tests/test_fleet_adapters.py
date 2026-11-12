@@ -183,6 +183,7 @@ class FakeMX:
     """NumPy stand-in for mlx.core with 32-bit integer semantics, run on the host."""
 
     uint8 = np.uint8
+    uint16 = np.uint16
     uint32 = np.uint32
     gpu = "gpu"
 
@@ -208,6 +209,16 @@ class FakeMX:
 
 class MLXArithmeticTests(unittest.TestCase):
     """The MLX kernels' integer arithmetic, checked under 32-bit lanes without a GPU."""
+
+    def test_field_scaling_uint16_and_uint32_arithmetic(self):
+        import struct
+        from chronus.execution.pv_scale_fleet import PVFieldScaleKernel
+        engine = MLXEngine(FakeMX(), np)
+        kernel = PVFieldScaleKernel()
+        for answer in kernel.known_answers():
+            output = engine.pv_field_scale(answer.payload, int(answer.params['scale_index']))
+            self.assertEqual(output, kernel.reference_output(answer.params, answer.payload))
+            self.assertTrue(all(v <= 256 for pair in struct.iter_unpack('<HH',output) for v in pair))
 
     def setUp(self):
         self.engine = MLXEngine(FakeMX(), np)

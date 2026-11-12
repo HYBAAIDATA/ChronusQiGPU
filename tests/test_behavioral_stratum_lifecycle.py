@@ -226,3 +226,17 @@ class TestBehavioralStratumLifecycle(unittest.IsolatedAsyncioTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ConfigureTimeoutTests(unittest.IsolatedAsyncioTestCase):
+    async def test_legacy_configure_timeout_continues_to_subscription(self):
+        import asyncio
+        from unittest.mock import AsyncMock
+        gateway=StratumGateway('127.0.0.1',3333,'test','x')
+        gateway.send_rpc=AsyncMock(side_effect=[asyncio.TimeoutError(),
+            {'result':[[], 'ab', 4]}, {'result':True}, {'result':True}])
+        await gateway.execute_handshake()
+        self.assertEqual(gateway.pool_mask_hex,'00000000')
+        self.assertEqual(gateway.extranonce1_hex,'ab')
+        self.assertEqual([call.args[0] for call in gateway.send_rpc.call_args_list],
+                         ['mining.configure','mining.subscribe','mining.extranonce.subscribe','mining.authorize'])

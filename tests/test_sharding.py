@@ -73,6 +73,21 @@ class TestSharding(unittest.TestCase):
         self.assertTrue(ledger.record("job_alpha", "00002000", "00000001", "60000000", 123457))
         self.assertTrue(ledger.record("job_alpha", "00004000", "00000001", "60000000", 123456))
 
+    def test_discard_job_preserves_other_entries_and_eviction_order(self):
+        ledger = DedupLedger(max_entries=2)
+        key = ("00000000", "00000001", "60000000", 100)
+        ledger.record("replaced", *key)
+        ledger.record("retained", *key)
+        ledger.discard_job("replaced")
+        ledger.discard_job("absent")
+        self.assertFalse(ledger.is_duplicate("replaced", *key))
+        self.assertTrue(ledger.is_duplicate("retained", *key))
+        self.assertTrue(ledger.record("replacement", *key))
+        self.assertTrue(ledger.record("next", *key))
+        self.assertFalse(ledger.is_duplicate("retained", *key))
+        self.assertTrue(ledger.is_duplicate("replacement", *key))
+        self.assertTrue(ledger.is_duplicate("next", *key))
+
     def test_emit_share_candidate_bounded_queue(self):
         """Validates that emit_share_candidate enforces queue bounds and dedup."""
         queue = asyncio.Queue(maxsize=2)

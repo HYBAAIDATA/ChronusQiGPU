@@ -707,7 +707,9 @@ def load_plugin_kernels(modules: Sequence[str]) -> list[Kernel]:
 
 def default_registry(plugins: Sequence[str] | None = None) -> KernelRegistry:
     """Built-in kernels plus plugins named in ``CHRONUS_FLEET_KERNELS``."""
-    registry = KernelRegistry(cls() for cls in BUILTIN_KERNELS)
+    from chronus.execution.pv_scale_fleet import PVFieldScaleKernel
+
+    registry = KernelRegistry(cls() for cls in (*BUILTIN_KERNELS, PVFieldScaleKernel))
     if plugins is None:
         plugins = [m for m in os.environ.get(PLUGIN_ENV, "").split(",") if m.strip()]
     for kernel in load_plugin_kernels(plugins):

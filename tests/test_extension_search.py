@@ -78,3 +78,46 @@ def test_extension_state_serializes_for_storage():
     assert data["extension_order"] == 66048
     assert data["scale_index"] == 11
     assert data["norm_parity_verified"] is True
+
+
+@pytest.mark.parametrize("scale", [10**12, 10**15, 10**18, 10**20])
+def test_large_pv_scale_matches_independent_matrix_power(scale):
+    def multiply(x, y):
+        return tuple(tuple(sum(x[i][k] * y[k][j] for k in range(2)) % P
+                           for j in range(2)) for i in range(2))
+    matrix, result, exponent = ((1, 1), (1, 0)), ((1, 0), (0, 1)), scale
+    while exponent:
+        if exponent & 1:
+            result = multiply(result, matrix)
+        matrix = multiply(matrix, matrix)
+        exponent //= 2
+    assert phi_element_power(scale) == (result[1][1], result[0][1])
+    state = exact_extension_search(32, 1, scale)
+    assert state.marked_amplitude == phi_element_power(scale)
+    assert state.unmarked_amplitude == (0, 0)
+    assert state.norm_parity_verified
+
+
+def test_fast_pv_scale_preserves_linear_recurrence_for_small_indices():
+    expected = (1, 0)
+    for scale in range(1000):
+        assert phi_element_power(scale) == expected
+        expected = (expected[1], (expected[0] + expected[1]) % P)
+
+
+def test_phi_exact_period_anti_period_and_packed_storage():
+    from chronus.quantum.extension_search import PHI_PERIOD, _PHI_POWER_TABLE
+    assert PHI_PERIOD == 516
+    assert _PHI_POWER_TABLE.readonly
+    assert _PHI_POWER_TABLE.nbytes == 2064
+    assert pow(5, 128, 257) == 256
+    assert phi_element_power(258) == (256, 0)
+    assert phi_element_power(172) == (194, 125)
+    assert phi_element_power(12) == (89, 144)
+    assert phi_element_power(516) == (1, 0)
+    for exponent in range(1, 516):
+        assert phi_element_power(exponent) != (1, 0)
+    for exponent in range(516):
+        a, b = phi_element_power(exponent)
+        assert phi_element_power(exponent + 258) == ((-a) % P, (-b) % P)
+        assert phi_element_power(exponent + 516 * 10**20) == (a, b)

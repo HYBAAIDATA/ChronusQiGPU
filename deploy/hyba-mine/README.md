@@ -10,10 +10,17 @@ cryptomining in Actions, on GitHub-hosted and self-hosted runners alike.
 - The documented miner image (`Dockerfile`, target `miner-runtime`, the same image
   as `docker compose --profile miner`), with `runner.py` and `bist.py` added
   (`deploy/hyba-mine/Dockerfile`).
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:f1342fac041fa268a85d9839779e6bc87dd24a24b246c0854bd6426a0964ea9e -->
+
 - `runner.py` runs the canonical Stratum V1 miner
-  (`chronus.execution.mining_entrypoint.ChronusRealMiningEngine`) unchanged and adds
-  two guards: a pool session that ends stops the process so the container restarts
-  with a fresh handshake, and one `[STATS]` line a minute with the miner's counters.
+  (`chronus.execution.mining_entrypoint.ChronusRealMiningEngine`) with startup
+  self-test and session supervision, plus one `[STATS]` line a minute with the
+  miner's counters. See [search integration and readiness](READINESS.md) for
+  TURING, Hendrix, geometric/Galois wiring and remaining release gates.
+
+<!-- /coderabbit-ai-generated:v1 -->
 - `bist.py` is the built-in self-test: known-answer checks of the miner's own hash
   path against blocks 0 and 1 (coinbase and merkle root, prevhash word order,
   80-byte header, SHA-256d, share and network targets, version rolling, and the
