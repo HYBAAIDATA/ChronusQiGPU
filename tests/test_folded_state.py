@@ -223,9 +223,15 @@ def test_adapter_raises_without_pyopencl(monkeypatch):
 
 def test_opencl_device_dispatch_roundtrip():
     cl = pytest.importorskip("pyopencl")
+    try:
+        platforms = cl.get_platforms()
+    except cl.LogicError as exc:
+        if exc.code == -1001:  # PLATFORM_NOT_FOUND_KHR: driver is not installed.
+            pytest.skip("No OpenCL platform is installed")
+        raise
     if not any(
         device.type & cl.device_type.GPU
-        for platform in cl.get_platforms()
+        for platform in platforms
         for device in platform.get_devices()
     ):
         pytest.skip("No OpenCL GPU device is available")
