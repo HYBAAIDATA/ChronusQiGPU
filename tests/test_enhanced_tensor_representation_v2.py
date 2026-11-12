@@ -31,10 +31,7 @@ from chronus.tensor.enhanced_representation import (
     RefusedError,
     SearchResult,
 )
-import importlib
-
-production_hr_api_v2_module = importlib.import_module("production_hr_api-v2")
-app = production_hr_api_v2_module.app
+from chronus.service.production_hr_api_v2 import app
 
 
 class TestEnhancedTensorCharter(unittest.TestCase):

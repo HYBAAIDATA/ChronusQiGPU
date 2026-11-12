@@ -32,3 +32,12 @@ Before publishing TURING, confirm the distribution/import names, license, mainta
 - Describe legacy Chronus algorithms as finite-field, algebraic, simulated, quantum-inspired, or classical only as supported by their actual implementation. Do not call a module “classical dressed as quantum” as a substitute for documenting the actual model.
 - Never infer correctness or release readiness from a name, test count, demo, workflow file, or repository description.
 - Link every material technical claim to the exact source, check, commit, raw result, limitations, and reviewer.
+
+## Update 2026-11-11: one TURING distribution
+
+The exact cyclotomic library formerly at `src/turing` (a second top-level
+package also named `turing`, which collided with `packages/turing`) now lives
+inside the TURING distribution as `turing.exact`
+(packages/turing/src/turing/exact). Its tests (tests/test_turing.py) are
+unchanged apart from the import path. TURING remains the foundation layer and
+does not import `chronus`; Chronus depends on TURING, never the reverse.
