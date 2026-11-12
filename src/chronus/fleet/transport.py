@@ -86,9 +86,12 @@ class FleetHTTPServer(ThreadingHTTPServer):
             raise
 
     def process_request_thread(self, request, client_address):
+        # TLS wrapping detaches request's fd. A duplicate still refers to the
+        # same TCP connection, so shutdown interrupts TLS handshake and reads.
+        deadline_socket = request.dup()
         def expire():
             try:
-                request.shutdown(socket.SHUT_RDWR)
+                deadline_socket.shutdown(socket.SHUT_RDWR)
             except OSError:
                 pass
         deadline = threading.Timer(self.connection_timeout, expire)
@@ -98,6 +101,7 @@ class FleetHTTPServer(ThreadingHTTPServer):
             super().process_request_thread(request, client_address)
         finally:
             deadline.cancel()
+            deadline_socket.close()
             self._connection_slots.release()
 
     def finish_request(self, request: Any, client_address: Any) -> None:

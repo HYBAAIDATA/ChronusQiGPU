@@ -161,15 +161,15 @@ chronus-fleet run --coordinator https://Andres-iMac.local:8740 \
 
 `status` lists the workers, the backend each one selected and their measured throughput. It also shows the tier: with four workers, 4 × 8,000 virtual units = 1,000 logical warps against Tier 1's entitlement of 1,024 (provisioning, not a performance claim). `run` sends a 16 MiB job across the fleet, checks that the result is exact, verifies the ML-DSA-65 receipt and saves it as `receipt-job-….json`. To check a saved receipt again later:
 
-```bash
 <!-- coderabbit-ai-generated:v1 -->
 
-<!-- coderabbit-ai-generated-section:v1:75584bee6ec7af891322638a566e69814dd55b6a19420d412de9816f1972f58d -->
+<!-- coderabbit-ai-generated-section:v1:42b107bb61d5990ce7d9bebd78a2dee6a833ff25ff6cd0dae8f67d14b6c95cc3 -->
 
+```bash
 chronus-fleet verify-receipt receipt-job-<id>.json --public-key <coordinator-public-key-hex>
+```
 
 <!-- /coderabbit-ai-generated:v1 -->
-```
 
 <!-- coderabbit-ai-generated:v1 -->
 

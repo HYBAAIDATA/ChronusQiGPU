@@ -764,6 +764,9 @@ class FleetCoordinator:
             tiles = payload.get("tiles")
             if not isinstance(tiles, list) or any(not isinstance(item, dict) for item in tiles):
                 return 400, {"error": "tiles must be an array of result objects"}
+            if any(type(item.get("index")) is not int or not isinstance(item.get("record"), dict)
+                   or not isinstance(item["record"].get("executed_route"), str) for item in tiles):
+                return 400, {"error": "result indices and route records are malformed"}
             self.scheduler.release(lease.lease_id)
             job = self.jobs.get(lease.group.job_id)
             if job is None or job.status != "running":
@@ -846,6 +849,8 @@ class FleetCoordinator:
     ) -> str | None:
         tile = job.tiles[index]
         executed = record.get("executed_route")
+        if not isinstance(executed, str):
+            return "record executed_route is invalid"
         if claimed != digest or record.get("output_sha256") != digest:
             return "output bytes do not match the reported digest"
         if executed not in node.routes or job.kernel.name not in node.routes[executed]["verified_kernels"]:
@@ -1310,6 +1315,8 @@ class FleetCoordinator:
         lattice = SchedulingLattice(unit.virtual_units)
         tiles = lattice.plan(prepared.items)
         with self._lock:
+            if self._stop.is_set():
+                raise FleetError("coordinator is stopping")
             offering = [n for n in self.nodes.values() if n.offers(kernel.name, kernel.version, unit.route)]
             if not offering:
                 what = f"route {unit.route}" if unit.route != ROUTE_AUTO else "a verified route"
