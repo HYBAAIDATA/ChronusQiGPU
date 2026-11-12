@@ -390,6 +390,7 @@ class TestRetainedWork(unittest.IsolatedAsyncioTestCase):
 def test_replacement_job_reuses_tuple_without_forgetting_other_job_duplicates():
     gateway=StratumGateway("localhost",3333,"test")
     gateway.current_difficulty=Fraction(1,10**100)
+    gateway.pool_mask_hex="1fffe000"  # A successfully negotiated version-rolling mask.
     gateway._process_notify(notify("retained"))
     gateway._process_notify(notify(clean=False))
     gatekeeper=LocalPreSubmitGatekeeper()
