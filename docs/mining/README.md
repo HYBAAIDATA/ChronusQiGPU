@@ -35,8 +35,16 @@ mining baseline was not located in the inspected PR descriptions/reviews.
 
 ## Fleet integration and deployment
 
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:364a6c6480dc2402c9eac3cfde8e36a977262f89906d47b658784b1cda8d8032 -->
+
 [Structural fleet scaling](../fleet/PV_SCALING.md) documents the reusable exact
 scaling kernel and the distinction between field and integer lattice domains.
+[Folded state execution](../fleet/FOLDED_STATE.md) documents the optional exact
+OpenCL state pipeline, one-launch jumps and host-owned high quotient limbs.
+
+<!-- /coderabbit-ai-generated:v1 -->
 [Deployment readiness](../../deploy/hyba-mine/READINESS.md) lists the operational
 gates. Local synthetic-pool tests and isolated image self-tests do not replace
 host pool acceptance, physical GPU measurements or a sustained operational run.

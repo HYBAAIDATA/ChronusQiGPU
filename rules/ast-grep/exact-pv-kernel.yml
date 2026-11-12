@@ -5,6 +5,7 @@ message: PV field kernels require exact arithmetic and residue storage of at lea
   16 bits.
 files:
 - src/chronus/kernels/pv_lattice.cl
+- src/chronus/kernels/pv_folded.cl
 rule:
   any:
   - kind: number_literal

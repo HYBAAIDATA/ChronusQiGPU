@@ -40,6 +40,7 @@ jobs:
           tests/test_hendrix_oracles.py tests/test_hendrix_structured.py
           tests/test_turing.py packages/turing/tests tests/test_scaling_paths.py
           tests/test_pv_scale_fleet.py tests/test_fleet_adapters.py tests/test_lattice.py
+          tests/test_folded_state.py
       - name: Exact Galois parity and measured scale arithmetic
         run: python tools/verify_galois_invariant.py --output "$RUNNER_TEMP/mining-galois-invariant.json"
       - name: Retain measured Galois parity evidence
