@@ -84,17 +84,17 @@ def register_login(username: str, password: str) -> None:
     SECRETS.register_password(password)
 
 
-def redact_payload(value):
+def redact_payload(value, *, redact_keys: bool = True):
     """Redact secrets in values and keys while preserving numeric types."""
     if isinstance(value, str):
         return SECRETS.redact(value)
     if isinstance(value, list):
-        return [redact_payload(item) for item in value]
+        return [redact_payload(item, redact_keys=redact_keys) for item in value]
     if isinstance(value, dict):
         out = {}
         for key, item in value.items():
             target = key
-            if isinstance(key, str) and SECRETS.contains(key):
+            if redact_keys and isinstance(key, str) and SECRETS.contains(key):
                 suffix = 0
                 target = "_redacted_key_0"
                 while target in value or target in out:
@@ -102,7 +102,7 @@ def redact_payload(value):
                     target = f"_redacted_key_{suffix}"
             out[target] = (REDACTED if isinstance(key, str) and key.lower() in
                            {"password", "passwd", "authorization", "username", "login"}
-                           else redact_payload(item))
+                           else redact_payload(item, redact_keys=redact_keys or key in {"reply", "literal"}))
         return out
     return value
 

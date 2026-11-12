@@ -273,3 +273,34 @@ class LateResponseTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(len(replies),1);self.assertTrue(replies[0]['late']);self.assertTrue(replies[0]['accepted'])
             finally:
                 session.stop();await session.disconnect();await asyncio.wait_for(task,1);await pool.stop();h.runtime.dispatcher.close()
+
+
+class DurabilityBoundaryTests(unittest.TestCase):
+    def tearDown(self):
+        SECRETS.clear()
+
+    def test_username_cannot_rename_structural_event_keys(self):
+        register_login('pool','synthetic-password')
+        with TempHome() as home:
+            ledger=Ledger(home.layout.ledger)
+            record=ledger.append('pool_connected',{'pool':'viabtc','reply':{'pool':1}})
+            self.assertEqual(record['data']['pool'],'viabtc')
+            self.assertNotIn('pool',record['data']['reply'])
+            self.assertTrue(ledger.verify().ok)
+
+    def test_recovery_syncs_prefix_before_intent_and_directory_after_unlink(self):
+        import stat
+        with TempHome() as home:
+            ledger=Ledger(home.layout.ledger);ledger.append('first')
+            with ledger.path.open('ab') as handle:handle.write(b'torn')
+            inode=ledger.path.stat().st_ino;sync=os.fsync;events=[]
+            def observe(fd):
+                info=os.fstat(fd)
+                events.append('ledger' if info.st_ino==inode else 'directory' if stat.S_ISDIR(info.st_mode) else 'intent')
+                sync(fd)
+            with patch('hyba_mine.ledger.os.fsync',side_effect=observe):ledger.append('after')
+            self.assertEqual(events[0],'ledger')
+            self.assertEqual(events[-1],'directory')
+            self.assertLess(events.index('ledger'),events.index('intent'))
+            self.assertFalse(ledger._recovery_path.exists())
+            self.assertTrue(ledger.verify().ok)

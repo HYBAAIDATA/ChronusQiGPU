@@ -133,6 +133,13 @@ class Ledger:
                 remaining -= len(chunk)
         return digest.hexdigest()
 
+    def _sync_directory(self) -> None:
+        fd = os.open(self.path.parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+        try:
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+
     def _complete_recovery(self) -> None:
         """Finish a persisted recovery append; never replace existing bytes."""
         if not self._recovery_path.exists():
@@ -160,6 +167,7 @@ class Ledger:
         finally:
             os.close(fd)
         self._recovery_path.unlink()
+        self._sync_directory()
 
     def append(self, kind: str, data: Optional[dict] = None) -> dict:
         if not isinstance(kind, str) or not kind:
@@ -167,7 +175,7 @@ class Ledger:
         data = {} if data is None else data
         if not isinstance(data, dict):
             raise ValueError("ledger record data must be a JSON object")
-        clean = redact_payload(data)
+        clean = redact_payload(data, redact_keys=False)
         if clean != data:
             data = {**clean, "_redacted": True}
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -196,15 +204,13 @@ class Ledger:
                 line = b"\n" + line
                 # Persist intent before completing a torn line. A second crash
                 # resumes exactly this append rather than creating nested fragments.
+                with open(self.path, "rb") as prefix:
+                    os.fsync(prefix.fileno())
                 offset = self.path.stat().st_size
                 intent = {"offset": offset, "prefix_sha256": self._prefix_digest(offset),
                           "payload_hex": line.hex()}
                 write_private_file(self._recovery_path, _canonical(intent))
-                directory_fd = os.open(self.path.parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
-                try:
-                    os.fsync(directory_fd)
-                finally:
-                    os.close(directory_fd)
+                self._sync_directory()
                 self._complete_recovery()
                 self._cache = (self.path.stat().st_size, record["seq"], record["hash"])
                 return record
