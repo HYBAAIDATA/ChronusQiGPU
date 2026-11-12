@@ -26,6 +26,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from chronus.fleet.adapters import AdapterRegistry, PreparedRoutes
+from chronus.fleet.errors import AuthenticationError
 from chronus.fleet.auth import FleetAuth
 from chronus.fleet.backends import BACKEND_AUTO, DEFAULT_PREFERENCE, BackendSelection, check_backend, check_preference
 from chronus.fleet.canonical import b64decode, b64encode
@@ -68,6 +69,7 @@ class FleetWorker:
         self.kernels = kernels or default_registry()
         self.adapters = adapters or AdapterRegistry(config.routes)
         self.auth = FleetAuth(config.token)
+        self._node_auth = None
         self.node_id: str | None = None
         self.state: str | None = None
         self.prepared: PreparedRoutes | None = None
@@ -134,7 +136,10 @@ class FleetWorker:
         }
 
     def _client(self, node_id: str) -> FleetClient:
-        return FleetClient(self.config.coordinator_url, self.auth, node_id, self.config.tls_ca)
+        auth = self.auth if node_id.startswith("join:") else self._node_auth
+        if auth is None:
+            raise AuthenticationError("worker has no node credential; rejoin required")
+        return FleetClient(self.config.coordinator_url, auth, node_id, self.config.tls_ca)
 
     def join(self) -> dict[str, Any]:
         payload = self.join_payload()
@@ -145,6 +150,7 @@ class FleetWorker:
         if not payload["routes"]:
             raise DeviceUnavailableError(f"no route passed its self-test: {payload['unavailable_routes']}")
         response = self._client("join:" + self.config.label[:60]).post("/v1/join", payload)
+        self._node_auth = FleetAuth(response["node_credential"])
         self.node_id = response["node_id"]
         self.state = response.get("state", "active")
         if self.state == "waiting":

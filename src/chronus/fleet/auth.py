@@ -85,6 +85,7 @@ def write_token_file(path: str | Path, token: str) -> Path:
     path = Path(path).expanduser()
     path.parent.mkdir(parents=True, exist_ok=True)
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    os.fchmod(fd, 0o600)
     with os.fdopen(fd, "w", encoding="utf-8") as handle:
         handle.write(token + "\n")
     return secure_secret_file(path)
@@ -110,7 +111,7 @@ class ReplayCache:
             if nonce in self._seen:
                 return False
             if len(self._seen) >= self._capacity:
-                self._seen.popitem(last=False)
+                return False  # Never evict a nonce while its request can still be valid.
             self._seen[nonce] = now_ns
             return True
 
@@ -252,6 +253,7 @@ def generate_self_signed(
     key_path = out / "coordinator-key.pem"
     cert_path.write_bytes(cert.public_bytes(serialization.Encoding.PEM))
     fd = os.open(key_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    os.fchmod(fd, 0o600)
     with os.fdopen(fd, "wb") as handle:
         handle.write(
             key.private_bytes(

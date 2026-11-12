@@ -32,6 +32,8 @@ Honesty rules enforced here:
 
 from __future__ import annotations
 
+import logging
+
 import os
 import platform
 import time
@@ -69,6 +71,9 @@ MODE_LABELS = {
     MODE_B: "host GPU, Mode B (Metal, OpenCL or CUDA)",
 }
 ALL_ROUTES = DEVICE_ROUTES
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -566,7 +571,8 @@ class AdapterRegistry:
             for name in record.verified_kernels:
                 try:
                     measurement = adapter.measure(kernels.get(name), budget_ns=budget_ns)
-                except DeviceUnavailableError:
+                except Exception as exc:
+                    logger.warning("optional benchmark %s/%s failed: %s", name, adapter.route, type(exc).__name__)
                     continue
                 prepared.measurements.append(measurement)
                 self._throughput[(name, adapter.route)] = measurement.items_per_second

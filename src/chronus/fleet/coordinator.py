@@ -242,6 +242,7 @@ class FleetCoordinator:
         self.tier_source = "default"
         self.grants: dict[str, ScaleGrant] = {}
         self.retired_grants: dict[str, str] = {}
+        self._downgrade_cover: dict[int, ScaleGrant] = {}
         self.scale_events: list[ScaleEvent] = []
         self._tier_documents: set[str] = set()
         self._lock = threading.RLock()
@@ -261,6 +262,7 @@ class FleetCoordinator:
         self._resolve_tier()
         self.gate_status: EntitlementCheck = evaluate_entitlement(self.tier, 0, 0, 0, self.connectors)
         self.started_at = iso_utc()
+        self._node_credentials: dict[str, FleetAuth] = {}
         self._stop = threading.Event()
         self._threads: list[threading.Thread] = []
         self._server: FleetHTTPServer | None = None
@@ -304,15 +306,24 @@ class FleetCoordinator:
                 candidates.append((grant.tier, grant))
             elif number < SCALE_TIER_NUMBER and grant.tier_number >= number:
                 candidates.append((tier_by_number(number), grant))
+        covering = self._downgrade_cover.get(number)
+        if covering is not None and covering.valid_at() and number < SCALE_TIER_NUMBER:
+            candidates.append((tier_by_number(number), covering))
         candidates = [c for c in candidates if c[0].connectors <= self.connectors]
         if not candidates:
             return None
-        return max(candidates, key=lambda c: (c[0].warps, c[1].expires_at_ns if c[1] else 0))
+        return max(candidates, key=lambda c: (c[0].warps, c[0].storage_tb, c[1].expires_at_ns if c[1] else 0))
 
     def _covering_tier(self, warps: int, lanes: int, storage: int) -> tuple[Tier, ScaleGrant | None] | None:
         """The lowest authorised tier above the current one whose entitlement covers this demand."""
-        for number in range(self.tier.number + 1, SCALE_TIER_NUMBER + 1):
+        for number in range(min(self.tier.number + 1, SCALE_TIER_NUMBER), SCALE_TIER_NUMBER + 1):
             found = self._authorised_tier(number)
+            if number == SCALE_TIER_NUMBER:
+                covering = [g for g in self._valid_grants() if g.tier_number == number
+                            and g.tier.connectors <= self.connectors and g.tier.covers(warps,lanes,storage)]
+                if covering:
+                    grant = min(covering,key=lambda g:(g.tier.warps,g.tier.storage_tb))
+                    found = (grant.tier,grant)
             if found is not None and found[0].covers(warps, lanes, storage):
                 return found
         return None
@@ -419,7 +430,7 @@ class FleetCoordinator:
         with self._lock:
             body = verify_selection(document, self.signer.public_key, self.fleet_id)
             number = body["tier"]
-            if number > self.tier.number:
+            if number > self.tier.number or number == self.tier.number == SCALE_TIER_NUMBER:
                 found = self._authorised_tier(number)
                 if found is None:
                     raise ScaleGrantRejected(
@@ -430,6 +441,12 @@ class FleetCoordinator:
                     self._tier_documents.add(write_document(self.state_dir, document).name)
                 self._set_tier(found[0], f"tier set {body['selection_id']}", found[1])
             elif number < self.tier.number:
+                # The signed selection caps existing authorization at the lower
+                # tier, without modifying or reactivating the retired grant.
+                covering = self._authorised_tier(number)
+                self._downgrade_cover.clear()
+                if number > 1 and covering is not None and covering[1] is not None:
+                    self._downgrade_cover[number] = covering[1]
                 if persist:
                     self._tier_documents.add(write_document(self.state_dir, document).name)
                 for grant in list(self.grants.values()):
@@ -508,7 +525,7 @@ class FleetCoordinator:
     def start(self) -> "FleetCoordinator":
         context = tls_server_context(self.config.tls_cert, self.config.tls_key) if self.tls else None
         self._server = FleetHTTPServer(
-            (self.config.host, self.config.port), self.handle, self.auth, context, self.config.max_body_bytes
+            (self.config.host, self.config.port), self.handle, self.auth, context, self.config.max_body_bytes, auth_resolver=self._request_auth
         )
         self.verifier = ReferenceVerifier(self._on_verification, self.config.verifier_threads)
         self.ledger.append("note", sha256_hex(self.fleet_id.encode()), {"event": "coordinator-start", "tier": self.tier.name})
@@ -522,6 +539,9 @@ class FleetCoordinator:
 
     def stop(self) -> None:
         self._stop.set()
+        with self._lock:
+            for job in self.jobs.values():
+                self._fail(job, "coordinator stopped before completion")
         if self._server is not None:
             self._server.shutdown()
             self._server.server_close()
@@ -550,6 +570,8 @@ class FleetCoordinator:
     # ---------------------------------------------------------------- routing
     def handle(self, method: str, path: str, node_id: str, payload: Mapping[str, Any]) -> tuple[int, Mapping[str, Any]]:
         try:
+            if self._stop.is_set() and method == "POST":
+                return 503, {"error": "coordinator is stopping"}
             if method == "POST" and path == "/v1/join":
                 return self._join(node_id, payload)
             if method == "POST" and path == "/v1/heartbeat":
@@ -574,6 +596,12 @@ class FleetCoordinator:
             return 400, {"error": str(exc)}
         except FleetError as exc:
             return 409, {"error": str(exc)}
+
+    def _request_auth(self, path, node_id):
+        if path in {"/v1/heartbeat", "/v1/leave", "/v1/lease", "/v1/result"}:
+            with self._lock:
+                return self._node_credentials.get(node_id)
+        return self.auth
 
     def _node(self, header_node: str, payload: Mapping[str, Any]) -> NodeInfo | None:
         node_id = payload.get("node_id")
@@ -638,6 +666,8 @@ class FleetCoordinator:
                 ):
                     node.throughput[(measurement["kernel"], measurement["route"])] = measurement["items_per_second"]
             self.nodes[node_id] = node
+            credential = secrets.token_urlsafe(32)
+            self._node_credentials[node_id] = FleetAuth(credential)
             if admitted:
                 self.scheduler.add_node(node_id)
             self.ledger.append("note", digest_json({"node_id": node_id, "backend": backend}), {
@@ -646,6 +676,7 @@ class FleetCoordinator:
         logger.info("node %s joined (%s, routes %s, %s)", node_id, label, sorted(routes), node.state)
         return 200, {
             "node_id": node_id,
+            "node_credential": credential,
             "fleet_id": self.fleet_id,
             "state": node.state,
             "scale": event.message if event is not None else None,
@@ -730,6 +761,9 @@ class FleetCoordinator:
             lease = self.scheduler.inflight.get(str(payload.get("lease_id")))
             if lease is None or lease.node_id != node.node_id:
                 return self._late_result(node, payload)
+            tiles = payload.get("tiles")
+            if not isinstance(tiles, list) or any(not isinstance(item, dict) for item in tiles):
+                return 400, {"error": "tiles must be an array of result objects"}
             self.scheduler.release(lease.lease_id)
             job = self.jobs.get(lease.group.job_id)
             if job is None or job.status != "running":
@@ -1098,7 +1132,7 @@ class FleetCoordinator:
         logger.info("job %s completed: %s", job.job_id, receipt["receipt_id"])
 
     def _fail(self, job: Job, reason: str) -> None:
-        if job.status != "running":
+        if job.status not in ("running", "queued"):
             return
         job.status = "failed"
         job.error = reason
@@ -1109,7 +1143,7 @@ class FleetCoordinator:
 
     def _prune(self) -> None:
         finished = sorted(
-            (j for j in self.jobs.values() if j.status != "running"), key=lambda j: j.completed_ns or 0
+            (j for j in self.jobs.values() if j.status in ("completed", "failed")), key=lambda j: j.completed_ns or 0
         )
         for job in finished[: max(0, len(finished) - self.config.max_retained_jobs)]:
             del self.jobs[job.job_id]
@@ -1256,6 +1290,8 @@ class FleetCoordinator:
         return 202, {"job_id": job.job_id, "tiles": len(job.tiles), "lattice": job.lattice.describe()}
 
     def submit(self, unit: WorkUnit, submitter: str = "local") -> Job:
+        if self._stop.is_set():
+            raise FleetError("coordinator is stopping")
         """Admit a job (scaling under a grant when needed) or queue it until a grant covers it."""
         kernel = self.kernels.get(unit.kernel, unit.kernel_version)
         prepared = kernel.prepare(unit.params, unit.payload)

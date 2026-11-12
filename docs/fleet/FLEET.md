@@ -99,7 +99,13 @@ Demand is checked on every join, every job and every 2-second fabric tick. A mac
 2. admits the work if a valid scale grant authorises a tier that covers it, moving to the lowest such tier;
 3. otherwise queues it and reports `scale available: Tier N+1`. A fifth Mac joins and waits (heartbeating, no leases) rather than being turned away; a job stays `queued`. Both are admitted the moment a grant covers them.
 
-A **scale grant** is the coordinator owner's ML-DSA-65 signature (the same v36 signer and key as the receipts) over a tier or a Scale contract figure, and an expiry. Grants from any other key, for another fleet, altered after signing or expired are rejected. When a grant expires the fleet moves down to the highest tier still authorised and the newest machines wait. **Downgrade** is always possible: `tier set` to a lower tier retires grants above it and moves the newest machines back to the queue.
+A **scale grant** is the coordinator owner's ML-DSA-65 signature (the same v36 signer and key as the receipts) over a tier or a Scale contract figure, and an expiry. Grants from any other key, for another fleet, altered after signing or expired are rejected. When a grant expires the fleet moves down to the highest tier still authorised and the newest machines wait. <!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:bcaaaaf3e87d8b2a9e0fdb35cdce8e8afa981c89cd069f9d6d835ec72ed73efe -->
+
+**Downgrade** is always possible: `tier set` to a lower tier retires grants above it and moves the newest machines back to the queue. The signed selection caps the original authorization at the lower tier through its existing expiry. Retired upper-tier authority cannot be reused to scale back up. A new valid Scale contract can increase an existing Scale fleet when it covers demand.
+
+<!-- /coderabbit-ai-generated:v1 -->
 
 ```bash
 chronus-fleet tier status --coordinator https://<imac>.local:8740 --tls-ca ...   # tier, entitlement, demand, scale available
@@ -118,9 +124,21 @@ chronus-fleet tier grant --tier scale --warps 500000 --storage-tb 250000 --contr
 
 ## Security
 
-- **Shared fleet token.** At least 32 characters; 256-bit by default from `chronus-fleet init`. It is stored in `~/.chronus/fleet/token` with mode 600 and is never sent over the network.
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:a30a6d37348552169794dcfc8d5df700ffa5acc6f994677606ec58ba1b420360 -->
+
+- **Shared fleet token.** At least 32 characters; 256-bit by default from `chronus-fleet init`. It is stored in `~/.chronus/fleet/token` with mode 600 and is never sent over the network. It authenticates onboarding and client submissions. Each worker receives its own random credential during authenticated join; heartbeats, leases, results and leave calls require that credential. The shared token cannot impersonate a joined worker. Coordinators and workers must be upgraded together and workers must rejoin after coordinator restart. Node credentials stay in memory and are absent from status, receipts and logs.
+
+<!-- /coderabbit-ai-generated:v1 -->
 - **Mutual HMAC-SHA256.** Every request is MACed (method, path, node, timestamp, nonce, body digest), and every response is MACed over the request's nonce. The coordinator rejects replays and clock skew beyond 5 minutes. A worker rejects a coordinator that cannot MAC its answers.
-- **TLS.** Optional and recommended. `init --tls-host` creates a self-signed certificate; workers pin it with `--tls-ca`. TLS is required from Tier 2. Without TLS, tile data is authenticated but readable on the network.
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:9927a0cf6cac287ee02dfd578d5216afc6377142fa61b134756cbf0c8c4aae7d -->
+
+- **TLS.** Required whenever clients or coordinators use a non-loopback address, at every tier. `init --tls-host` creates a self-signed certificate; workers pin it with `--tls-ca`. Plain HTTP is limited to loopback testing. Tier 2 and above retain their TLS connector requirement.
+
+<!-- /coderabbit-ai-generated:v1 -->
 - **Receipt signing.** ML-DSA-65 through the existing v36 `MLDSASigner` (pyca/cryptography, OpenSSL). One key per fleet, stored as a seed with mode 600. There is no KMS or HSM custody.
 - **Kernels.** Workers run only kernels registered on their own machine; the coordinator cannot send code.
 
@@ -149,7 +167,24 @@ with FleetExecutor.embedded("~/.chronus/fleet-local", local_workers=2) as fleet:
     print(result.receipt["devices"])
 ```
 
-## Python API for other HYBA systems
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:a8f0c7bf9b4d39c15a8e595d57a40c6256209c914f5a711a27b1059e1f871469 -->
+
+## Shutdown and transport budgets
+
+Shutdown stops admission and marks unfinished jobs failed, signaling waiters
+before transport and verification stop. Replay capacity fails closed rather
+than evicting still-valid nonces. HTTP connections have a 15-second absolute
+deadline, including TLS and request parsing, and at most 64 active handlers.
+Client response bodies are limited to 64 MiB by default; direct API callers can
+set a different positive `max_response_bytes`. Existing request-body limits
+still apply. A ledger append failure makes that writer unusable until reopened
+and verified, preventing cached sequence reuse after failed durability.
+
+## Python API
+
+<!-- /coderabbit-ai-generated:v1 --> for other HYBA systems
 
 `FleetExecutor.submit(work_unit)` returns `FleetResult(output, receipt, check)`. It returns only after the receipt has been verified against the coordinator key pinned at connection, the result bytes against the signed digest and the work unit against its digest. The fleet holds no domain logic. A system such as HYBA Mine supplies its own kernel (a subclass of `chronus.fleet.Kernel` with an exact `run_reference`, optional `run_simd` or `run_metal`, a `merge` and known answers), installs it on every machine, and names its module in `CHRONUS_FLEET_KERNELS`:
 

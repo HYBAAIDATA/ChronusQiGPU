@@ -10,6 +10,8 @@ TLS wraps the connection when the coordinator is given a certificate.
 from __future__ import annotations
 
 import http.client
+import ipaddress
+import threading
 import json
 import logging
 import socket
@@ -18,7 +20,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Callable, Mapping
 from urllib.parse import urlsplit
 
-from chronus.fleet.auth import FleetAuth, ReplayCache, tls_client_context
+from chronus.fleet.auth import FleetAuth, ReplayCache, tls_client_context, H_NODE
 from chronus.fleet.canonical import canonical_json
 from chronus.fleet.errors import AuthenticationError, TransportError
 
@@ -27,6 +29,15 @@ DEFAULT_PORT = 8740
 MAX_BODY_BYTES = 64 * 1024 * 1024
 
 Handler = Callable[[str, str, str, Mapping[str, Any]], tuple[int, Mapping[str, Any]]]
+
+
+def _loopback(host):
+    if host == 'localhost':
+        return True
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
 
 
 class FleetHTTPServer(ThreadingHTTPServer):
@@ -41,13 +52,53 @@ class FleetHTTPServer(ThreadingHTTPServer):
         auth: FleetAuth,
         tls_context: ssl.SSLContext | None = None,
         max_body: int = MAX_BODY_BYTES,
+        auth_resolver=None,
+        connection_timeout: int = 15,
+        max_connections: int = 64,
     ) -> None:
+        if tls_context is None and not _loopback(address[0]):
+            raise TransportError("non-loopback fleet listeners require TLS")
+        if type(connection_timeout) is not int or connection_timeout < 1 or type(max_connections) is not int or max_connections < 1:
+            raise ValueError("connection budgets must be positive integers")
+        self.auth_resolver = auth_resolver
+        self.connection_timeout = connection_timeout
+        self._connection_slots = threading.BoundedSemaphore(max_connections)
         self.fleet_handler = handler
         self.fleet_auth = auth
         self.replay = ReplayCache()
         self.tls_context = tls_context
         self.max_body = max_body
         super().__init__(address, _RequestHandler)
+
+    def get_request(self):
+        request, address = super().get_request()
+        request.settimeout(self.connection_timeout)
+        return request, address
+
+    def process_request(self, request, client_address):
+        if not self._connection_slots.acquire(blocking=False):
+            self.shutdown_request(request)
+            return
+        try:
+            super().process_request(request, client_address)
+        except BaseException:
+            self._connection_slots.release()
+            raise
+
+    def process_request_thread(self, request, client_address):
+        def expire():
+            try:
+                request.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+        deadline = threading.Timer(self.connection_timeout, expire)
+        deadline.daemon = True
+        deadline.start()
+        try:
+            super().process_request_thread(request, client_address)
+        finally:
+            deadline.cancel()
+            self._connection_slots.release()
 
     def finish_request(self, request: Any, client_address: Any) -> None:
         if self.tls_context is None:
@@ -82,6 +133,7 @@ class _RequestHandler(BaseHTTPRequestHandler):
         self._handle("POST")
 
     def _plain(self, status: int, message: str) -> None:
+        self.close_connection = True
         body = canonical_json({"error": message})
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
@@ -102,7 +154,11 @@ class _RequestHandler(BaseHTTPRequestHandler):
             return
         body = self.rfile.read(length) if length else b""
         try:
-            node_id, nonce = server.fleet_auth.verify_request(method, self.path, self.headers, body, server.replay)
+            request_auth = (server.auth_resolver(self.path, self.headers.get(H_NODE))
+                            if server.auth_resolver is not None else server.fleet_auth)
+            if request_auth is None:
+                raise AuthenticationError("unknown worker credential")
+            node_id, nonce = request_auth.verify_request(method, self.path, self.headers, body, server.replay)
         except AuthenticationError as exc:
             logger.warning("rejected request from %s: %s", self.address_string(), exc)
             self._plain(401, "unauthenticated")
@@ -119,7 +175,7 @@ class _RequestHandler(BaseHTTPRequestHandler):
             status, response = 500, {"error": f"{type(exc).__name__}: {exc}"}
         out = canonical_json(response)
         self.send_response(status)
-        for name, value in server.fleet_auth.sign_response(nonce, status, out).items():
+        for name, value in request_auth.sign_response(nonce, status, out).items():
             self.send_header(name, value)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(out)))
@@ -137,12 +193,18 @@ class FleetClient:
         node_id: str,
         tls_ca: str | None = None,
         timeout: float = 60.0,
+        max_response_bytes: int = MAX_BODY_BYTES,
     ) -> None:
         parts = urlsplit(base_url if "://" in base_url else "http://" + base_url)
         if parts.scheme not in ("http", "https") or not parts.hostname:
             raise TransportError(f"coordinator URL must be http(s)://host:port, not {base_url!r}")
         if parts.path not in ("", "/"):
             raise TransportError("coordinator URL must not contain a path")
+        if parts.scheme == 'http' and not _loopback(parts.hostname):
+            raise TransportError("non-loopback fleet clients require HTTPS")
+        if type(max_response_bytes) is not int or max_response_bytes < 1:
+            raise ValueError("max_response_bytes must be a positive integer")
+        self.max_response_bytes = max_response_bytes
         self.scheme = parts.scheme
         self.host = parts.hostname
         self.port = parts.port or DEFAULT_PORT
@@ -167,7 +229,9 @@ class FleetClient:
         try:
             conn.request(method, path, body=body, headers=headers)
             response = conn.getresponse()
-            data = response.read()
+            data = response.read(self.max_response_bytes + 1)
+            if len(data) > self.max_response_bytes:
+                raise TransportError("coordinator response exceeds configured byte limit")
             status = response.status
             response_headers = response.headers
         except (OSError, http.client.HTTPException, socket.timeout) as exc:

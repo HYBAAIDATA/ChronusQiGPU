@@ -172,7 +172,10 @@ def cmd_join(args: argparse.Namespace) -> int:
     thread = threading.Thread(target=run, name="fleet-worker", daemon=True)
     thread.start()
     for sig in (signal.SIGINT, signal.SIGTERM):
-        signal.signal(sig, lambda *_: stop.set())
+        def shutdown(*_):
+            stop.set()
+            worker.stop(leave=False)
+        signal.signal(sig, shutdown)
     if worker.wait_joined(timeout=120):
         if worker.state == "waiting":
             print(f"joined as {worker.node_id}; waiting for the fleet to scale (see: chronus-fleet tier status). "
@@ -308,7 +311,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     out = Path(args.receipt_out or f"receipt-{result.job_id}.json")
     out.write_text(json.dumps(result.receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     _print(summarise(result.receipt), True)
-    print(f"receipt verified (ML-DSA-65, ledger-anchored) and saved to {out}")
+    print(f"receipt signature and result digest verified (ML-DSA-65) and saved to {out}")
     return 0
 
 

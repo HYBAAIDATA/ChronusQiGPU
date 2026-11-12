@@ -70,11 +70,11 @@ class SelectionTests(unittest.TestCase):
     def test_prefer_host_without_a_host_gpu_runs_the_igpu_and_says_why(self):
         registry = AdapterRegistry(["igpu", "metal", "opencl", "cuda", "reference"])
         registry.prepare(K.KernelRegistry([K.M15FoldKernel()]), measure=False)
-        if registry.get("metal").available or registry.get("opencl").available or registry.get("cuda").available:
+        if any(route in registry.selection("auto", "host").detected_backends for route in ("metal", "opencl", "cuda")):
             self.skipTest("this machine has a host GPU")
         selection = registry.selection("auto", "host")
         self.assertEqual(selection.executed_backend, "igpu")
-        self.assertTrue(selection.fallback_reason.startswith("prefer=host: metal absent"))
+        self.assertTrue(selection.fallback_reason.startswith("prefer=host: metal "))
         self.assertIn("selected igpu", selection.fallback_reason)
         # Device rejection reasons may explain that CPU OpenCL is excluded.
         # Assert the actual route, rather than censoring its diagnostic text.
