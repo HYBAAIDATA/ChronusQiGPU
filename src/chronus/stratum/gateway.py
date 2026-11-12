@@ -319,10 +319,12 @@ class StratumGateway:
         previous = self.jobs.get(job_id)
         header_fields = (
             "prevhash_hex", "coinb1_hex", "coinb2_hex",
-            "version_hex", "nbits_hex",
+            "nbits_hex",
         )
         if previous is not None and (
             any(previous[field].lower() != job_data[field].lower() for field in header_fields)
+            or ((int(previous["version_hex"], 16) ^ int(version_hex, 16))
+                & ~int(self.pool_mask_hex, 16)) != 0
             or [branch.lower() for branch in previous["merkle_branches"]]
             != [branch.lower() for branch in merkle_branches]
         ):

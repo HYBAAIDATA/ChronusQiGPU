@@ -399,7 +399,7 @@ def test_replacement_job_reuses_tuple_without_forgetting_other_job_duplicates():
             job_data=gateway.jobs[job_id], extranonce1_hex="ab",
             extranonce2_hex="00000001", extranonce2_size=4,
             ntime_hex=ntime_hex, nonce_int=7, version_bits_hex="00000000",
-            pool_mask_hex="00000000", current_difficulty=gateway.current_difficulty,
+            pool_mask_hex=gateway.pool_mask_hex, current_difficulty=gateway.current_difficulty,
             dedup_ledger=gateway.dedup_ledger, active_job_ids=gateway.jobs,
         )
 
@@ -428,6 +428,14 @@ def test_replacement_job_reuses_tuple_without_forgetting_other_job_duplicates():
     equivalent[2]=equivalent[2].upper()
     gateway._process_notify(equivalent)
     assert verify("job")[1] is DropReason.DUP
+    masked_version=list(replacement)
+    masked_version[5]="20002000"  # This bit is supplied by version rolling, not the base.
+    gateway._process_notify(masked_version)
+    assert verify("job")[1] is DropReason.DUP
+    changed_version=list(replacement)
+    changed_version[5]="40000000"  # An unmasked base bit changes the actual header.
+    gateway._process_notify(changed_version)
+    assert verify("job")[0]
     for index in range(17):
         gateway._process_notify(notify(f"next-{index}",clean=False))
     assert "job" not in gateway.jobs
