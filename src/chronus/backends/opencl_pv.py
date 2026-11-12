@@ -51,7 +51,7 @@ class OpenCLPVBackend:
     def backend_id(self) -> str:
         return self.name
 
-    def __init__(self) -> None:
+    def __init__(self, device=None) -> None:
         try:
             import numpy as np
             import pyopencl as cl
@@ -75,7 +75,9 @@ class OpenCLPVBackend:
             ]
             if not devices:
                 raise HardwareUnavailableError("No OpenCL GPU device is available")
-            self.device = devices[0]
+            if device is not None and device not in devices:
+                raise HardwareUnavailableError("Selected device is not an available OpenCL GPU")
+            self.device = devices[0] if device is None else device
             self.context = cl.Context([self.device])
             self.queue = cl.CommandQueue(self.context)
             self.program = cl.Program(self.context, source.decode("utf-8")).build()
