@@ -208,6 +208,7 @@ class FollowupRepairTests(unittest.TestCase):
         import time
         from hyba_mine.credentials import FileStore
         with TempHome() as home:
+            if not home.file_permissions:self.skipTest('filesystem does not preserve private file modes')
             store=FileStore(home.layout.credentials);original=store._load
             def slow_load():
                 data=original();time.sleep(0.01);return data
@@ -224,7 +225,7 @@ class FollowupRepairTests(unittest.TestCase):
         with TempHome() as home:
             home.put_login('viabtc');update_state(home.layout,active_pool='braiins')
             block_pool(home.layout,'viabtc','rejected')
-            with patch('hyba_mine.cli._miner_pid',return_value=123):
+            with patch('hyba_mine.cli.open_store',return_value=home.store()), patch('hyba_mine.cli._miner_pid',return_value=123):
                 self.assertEqual(cmd_pool(Namespace(action='use',pool='viabtc',wait=0)),EXIT_CONFIG)
             self.assertEqual(load_state(home.layout)['active_pool'],'braiins')
 
@@ -233,7 +234,7 @@ class FollowupRepairTests(unittest.TestCase):
         from hyba_mine.cli import cmd_pool
         with TempHome() as home:
             home.put_login('viabtc');update_state(home.layout,active_pool='braiins')
-            with patch('hyba_mine.cli._miner_pid',return_value=123):
+            with patch('hyba_mine.cli.open_store',return_value=home.store()), patch('hyba_mine.cli._miner_pid',return_value=123):
                 cmd_pool(Namespace(action='use',pool='viabtc',wait=0))
             self.assertEqual(load_state(home.layout)['active_pool'],'braiins')
             self.assertEqual(read_control_request(home.layout)['pool_id'],'viabtc')
@@ -271,6 +272,7 @@ class LateResponseTests(unittest.IsolatedAsyncioTestCase):
                 await asyncio.sleep(0)
                 replies=[r['data'] for r in h.ledger.records() if r['kind']=='pool_response']
                 self.assertEqual(len(replies),1);self.assertTrue(replies[0]['late']);self.assertTrue(replies[0]['accepted'])
+                self.assertTrue(h.ledger.verify().ok)
             finally:
                 session.stop();await session.disconnect();await asyncio.wait_for(task,1);await pool.stop();h.runtime.dispatcher.close()
 
