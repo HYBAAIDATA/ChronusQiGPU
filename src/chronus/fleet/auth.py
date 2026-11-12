@@ -81,12 +81,21 @@ def load_token(token: str | None = None, token_file: str | Path | None = None) -
     return token
 
 
+def _private_fdopen(fd: int, *args, **kwargs):
+    try:
+        if os.name != "nt":
+            os.fchmod(fd, 0o600)
+        return os.fdopen(fd, *args, **kwargs)
+    except BaseException:
+        os.close(fd)
+        raise
+
+
 def write_token_file(path: str | Path, token: str) -> Path:
     path = Path(path).expanduser()
     path.parent.mkdir(parents=True, exist_ok=True)
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-    os.fchmod(fd, 0o600)
-    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+    with _private_fdopen(fd, "w", encoding="utf-8") as handle:
         handle.write(token + "\n")
     return secure_secret_file(path)
 
@@ -253,8 +262,7 @@ def generate_self_signed(
     key_path = out / "coordinator-key.pem"
     cert_path.write_bytes(cert.public_bytes(serialization.Encoding.PEM))
     fd = os.open(key_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-    os.fchmod(fd, 0o600)
-    with os.fdopen(fd, "wb") as handle:
+    with _private_fdopen(fd, "wb") as handle:
         handle.write(
             key.private_bytes(
                 serialization.Encoding.PEM,

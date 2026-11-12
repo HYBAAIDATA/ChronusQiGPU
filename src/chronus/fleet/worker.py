@@ -182,6 +182,9 @@ class FleetWorker:
                     continue
                 try:
                     response = self._client(self.node_id).post("/v1/lease", {"node_id": self.node_id})
+                except AuthenticationError:
+                    self._rejoin.set()
+                    continue
                 except TransportError as exc:
                     self._on_transport_error(exc)
                     continue
@@ -217,6 +220,8 @@ class FleetWorker:
                 leases = sorted(self._active)
             try:
                 self._client(self.node_id).post("/v1/heartbeat", {"node_id": self.node_id, "leases": leases})
+            except AuthenticationError:
+                self._rejoin.set()
             except TransportError as exc:
                 if exc.status == 404:
                     self._rejoin.set()
@@ -232,6 +237,8 @@ class FleetWorker:
             payload = self.execute_lease(lease)
             try:
                 self._client(self.node_id).post("/v1/result", payload)
+            except AuthenticationError:
+                self._rejoin.set()
             except TransportError as exc:
                 self._on_transport_error(exc)
         finally:

@@ -40,6 +40,8 @@ def test_work_identity_copies_and_freezes_nested_parameters():
     assert WorkUnit.from_wire(unit.to_wire()).digest()==digest
     with pytest.raises(TypeError): unit.params['new']=1
     with pytest.raises(TypeError): unit.params['nested']['items'] += (3,)
+    assert unit.params['nested']['items']==[1,2]
+    assert unit.digest()==digest
     for params in [{1:'bad'},{'nested':{2:'bad'}}]:
         with pytest.raises(KernelError): WorkUnit('kernel',params=params)
 
@@ -249,3 +251,78 @@ def test_value_share_credits_only_explicit_verified_counts():
              {'owner':'c','verified_items':True,'measured':True}]
     assert contributions_from_receipts([{'submitter':'d','devices':devices}])==[Contribution('b','d',7)]
     with pytest.raises(VerificationError):reconcile_value_share(TIER_4,['a','b','c','d'],[],['a','b','c','d','a'],True)
+
+
+def test_tls_partial_request_has_absolute_deadline(tmp_path):
+    import socket,ssl,threading,time
+    from chronus.fleet.auth import generate_self_signed,tls_server_context
+    cert,key=generate_self_signed(tmp_path/'tls',['127.0.0.1'])
+    server=FleetHTTPServer(('127.0.0.1',0),lambda *_:(200,{}),FleetAuth(new_token()),
+                           tls_server_context(cert,key),connection_timeout=1,max_connections=1)
+    thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+    stopped=threading.Event()
+    try:
+        with socket.create_connection(server.server_address,timeout=3) as raw:
+            with ssl.create_default_context(cafile=str(cert)).wrap_socket(raw,server_hostname='127.0.0.1') as connection:
+                connection.settimeout(3)
+                connection.sendall(b'POST /v1/join HTTP/1.1\r\nHost: localhost\r\nContent-Length: 10000\r\n\r\nx')
+                def drip():
+                    while not stopped.wait(0.1):
+                        try:connection.sendall(b'x')
+                        except OSError:return
+                sender=threading.Thread(target=drip,daemon=True);sender.start()
+                started=time.monotonic();data=connection.recv(4096)
+                assert time.monotonic()-started<3
+                assert not data or b'401' in data
+                stopped.set();sender.join(timeout=1)
+    finally:
+        stopped.set();server.shutdown();server.server_close();thread.join(timeout=2)
+
+
+def test_private_descriptor_closes_on_chmod_failure_and_windows_skips_it(tmp_path):
+    from chronus.fleet.auth import _private_fdopen
+    fd=os.open(tmp_path/'failure',os.O_WRONLY|os.O_CREAT,0o600)
+    with patch('chronus.fleet.auth.os.fchmod',side_effect=OSError('synthetic mode failure')):
+        with pytest.raises(OSError):_private_fdopen(fd,'w')
+    with pytest.raises(OSError):os.fstat(fd)
+    fd=os.open(tmp_path/'windows',os.O_WRONLY|os.O_CREAT,0o600)
+    with patch('chronus.fleet.auth.os.name','nt'),patch('chronus.fleet.auth.os.fchmod') as chmod:
+        with _private_fdopen(fd,'w') as handle:handle.write('synthetic')
+    chmod.assert_not_called()
+
+
+def test_nested_malformed_route_retains_lease(tmp_path):
+    from tests.test_fleet_tiers import TierFleet
+    from tests.test_fleet_coordinator import answer
+    fleet=TierFleet(tmp_path);node=fleet.join('worker',80)['node_id']
+    fleet.coordinator.submit(WorkUnit('m15_fold',payload=b'\x01\x02',virtual_units=80))
+    lease=fleet.lease(node)['lease']
+    payload=answer(lease,node,executed_route=[])
+    status,_=fleet.coordinator.handle('POST','/v1/result',node,payload)
+    assert status==400 and lease['lease_id'] in fleet.coordinator.scheduler.inflight
+
+
+def test_shutdown_during_prepare_cannot_admit_a_new_job(tmp_path):
+    from tests.test_fleet_tiers import TierFleet
+    from chronus.fleet.errors import FleetError
+    fleet=TierFleet(tmp_path);fleet.join('worker',80)
+    kernel=fleet.coordinator.kernels.get('m15_fold');prepare=kernel.prepare
+    def stopping_prepare(*args):
+        result=prepare(*args);fleet.coordinator.stop();return result
+    with patch.object(kernel,'prepare',side_effect=stopping_prepare):
+        with pytest.raises(FleetError,match='stopping'):
+            fleet.coordinator.submit(WorkUnit('m15_fold',payload=b'\x01\x02'))
+    assert not fleet.coordinator.jobs
+
+
+def test_worker_rejoins_after_node_credentials_are_lost(tmp_path):
+    import time
+    with FleetExecutor.embedded(tmp_path/'fleet',local_workers=1,worker_routes=['reference'],measure=False) as fleet:
+        worker=fleet._embedded.workers[0];original=worker.node_id
+        with fleet.coordinator._lock:fleet.coordinator._node_credentials.clear()
+        deadline=time.monotonic()+5
+        while worker.node_id==original and time.monotonic()<deadline:time.sleep(0.02)
+        assert worker.node_id!=original
+        assert worker.stats['rejoins']>=1
+        result=fleet.submit(WorkUnit('m15_fold',b'\x01\x02'*128,virtual_units=80),timeout=5)
+        assert result.verified
