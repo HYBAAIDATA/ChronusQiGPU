@@ -178,6 +178,9 @@ class RegistryTests(unittest.TestCase):
         registry = K.default_registry(plugins=["tests.fleet_test_kernels"])
         self.assertIn("m15_fold", registry)
         self.assertIn("m15_fold_paced", registry)
+        plugin = registry.get("m15_fold_paced")
+        answer = plugin.known_answers()[0]
+        self.assertEqual(hashlib.sha256(plugin.reference_output(answer.params, answer.payload)).hexdigest(), answer.output_sha256)
         with self.assertRaises(KernelError):
             registry.get("m15_fold", version="99")
         with self.assertRaises(KernelError):

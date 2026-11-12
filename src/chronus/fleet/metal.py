@@ -218,7 +218,11 @@ class MetalAdapter(DeviceAdapter):
         for name, detect in (("mlx", _detect_mlx), ("pyobjc", _detect_pyobjc)):
             if choice not in ("auto", name):
                 continue
-            available, device, reason, engine = detect()
+            try:
+                available, device, reason, engine = detect()
+            except Exception as exc:
+                reasons.append(f"{name}: {type(exc).__name__}")
+                continue
             if available:
                 return True, device, None, engine
             reasons.append(reason)

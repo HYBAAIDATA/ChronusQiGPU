@@ -663,7 +663,7 @@ class KernelRegistry:
     def register(self, kernel: Kernel) -> None:
         if not isinstance(kernel, Kernel) or not kernel.name:
             raise KernelError("kernels must be Kernel instances with a name")
-        if kernel.implementation(ROUTE_REFERENCE) is None:
+        if kernel.implementation(ROUTE_REFERENCE) is None or type(kernel).run_reference is Kernel.run_reference:
             raise KernelError(f"kernel {kernel.name} has no reference implementation")
         if kernel.name in self._kernels:
             raise KernelError(f"kernel {kernel.name} is already registered")

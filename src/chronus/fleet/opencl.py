@@ -53,7 +53,7 @@ class OpenCLEngine:
         try:
             from chronus.backends.opencl_pv import OpenCLPVBackend
 
-            self.pv_backend = OpenCLPVBackend()
+            self.pv_backend = OpenCLPVBackend(device=device)
             self.ops.add("pv_lattice_fold")
         except Exception as exc:
             self.pv_reason = f"{type(exc).__name__}: {exc}"

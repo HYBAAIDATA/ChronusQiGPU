@@ -103,7 +103,10 @@ class KillOneWorkerTests(unittest.TestCase):
             return next(n.node_id for n in self.coordinator.nodes.values() if n.label == label and n.alive)
 
     def test_kill_one_worker_mid_job(self):
-        joined = wait_for(lambda: sum(n.alive for n in self.coordinator.nodes.values()) == 3, JOIN_TIMEOUT_S)
+        def live_count():
+            with self.coordinator._lock:
+                return sum(n.alive for n in self.coordinator.nodes.values())
+        joined = wait_for(lambda: live_count() == 3, JOIN_TIMEOUT_S)
         self.assertTrue(joined, "workers did not join:\n" + self.logs())
         victim_node = self.node_of("w0")
         victim_process = self.workers[0][0]
@@ -175,8 +178,11 @@ class KillOneWorkerTests(unittest.TestCase):
             process.send_signal(signal.SIGTERM)
         for process, _ in self.workers[1:]:
             self.assertEqual(process.wait(timeout=30), 0)
+        def any_alive():
+            with self.coordinator._lock:
+                return any(n.alive for n in self.coordinator.nodes.values())
         self.assertTrue(
-            wait_for(lambda: not any(n.alive for n in self.coordinator.nodes.values()), 10),
+            wait_for(lambda: not any_alive(), 10),
             "surviving workers did not leave cleanly",
         )
 

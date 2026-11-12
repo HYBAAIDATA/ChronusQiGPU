@@ -13,6 +13,23 @@ fleet itself knows nothing about what the kernel means.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+
+
+class _FrozenDict(dict):
+    def _immutable(self, *args, **kwargs):
+        raise TypeError("work unit parameters are immutable")
+    __setitem__ = __delitem__ = clear = pop = popitem = setdefault = update = __ior__ = _immutable
+
+
+def _snapshot(value):
+    if isinstance(value, Mapping):
+        if any(not isinstance(key, str) for key in value):
+            raise KernelError("params keys must be strings at every level")
+        return _FrozenDict((key, _snapshot(item)) for key,item in value.items())
+    if isinstance(value, (list,tuple)):
+        return tuple(_snapshot(item) for item in value)
+    return value
+
 from typing import Any, Mapping
 
 from chronus.fleet.backends import PREFERENCES
@@ -48,6 +65,7 @@ class WorkUnit:
         object.__setattr__(self, "payload", bytes(self.payload))
         if not isinstance(self.params, Mapping):
             raise KernelError("params must be a mapping")
+        object.__setattr__(self, "params", _snapshot(self.params))
         try:
             canonical_json(dict(self.params))
         except (TypeError, ValueError) as exc:

@@ -261,7 +261,7 @@ class LeaseScheduler:
                 if other != node_id and queue and self.crossbar.placed(other)
             }
             for victim in self.crossbar.steal_order(node_id, victims):
-                group = self._take(self.queues[victim], usable, from_tail=True)
+                group = self._take(self.queues[victim], lambda g: g.incident is None and usable(g), from_tail=True)
                 if group is not None:
                     source = f"stolen-from:{victim}"
                     break
@@ -283,7 +283,7 @@ class LeaseScheduler:
         renewed = 0
         for lease_id in lease_ids:
             lease = self.inflight.get(lease_id)
-            if lease is not None and lease.node_id == node_id:
+            if lease is not None and lease.node_id == node_id and now_ns <= lease.expires_ns:
                 lease.expires_ns = min(now_ns + self.lease_ttl_ns, lease.deadline_ns)
                 renewed += 1
         return renewed

@@ -92,7 +92,7 @@ class Tier:
 TIER_1 = Tier(
     "TIER_1", 1, 1024, 32_768, 100,
     frozenset({CONNECTOR_FLEET_HTTP}),
-    ("1.1 instant onboarding", "1.2 in-place schema discovery", "1.3 Binet-Zeckendorf ingest", "1.4 KMS custody"),
+    ("1.1 instant onboarding", "1.2 in-place schema discovery", "1.3 Binet-Zeckendorf ingest"),
 )
 TIER_2 = Tier(
     "TIER_2", 2, 10_000, 320_000, 1000, TLS_CONNECTORS,

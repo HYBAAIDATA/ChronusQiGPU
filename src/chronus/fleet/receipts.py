@@ -97,7 +97,7 @@ def verify_receipt(
         return ReceiptCheck(False, ["missing ML-DSA-65 signature"])
     try:
         embedded = bytes.fromhex(signature.get("public_key", ""))
-    except ValueError:
+    except (ValueError, TypeError):
         return ReceiptCheck(False, ["signature public key is not hex"])
     found_key = key_id(embedded)
     if signature.get("key_id") != found_key:
@@ -129,7 +129,7 @@ def verify_receipt(
             reasons.append(f"ledger fails verification: {check.reason}")
         else:
             ledger = AnchorLedger(ledger_path)
-            entry = ledger.find(receipt.get("receipt_id", ""))
+            entry = ledger.find(receipt.get("receipt_id", ""), seq=anchor.get("seq"))
             if entry is None or entry["seq"] != anchor.get("seq") or entry["entry_hash"] != anchor.get("entry_hash"):
                 reasons.append("receipt is not anchored at the stated ledger position")
     return ReceiptCheck(not reasons, reasons, found_key)

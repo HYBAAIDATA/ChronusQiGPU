@@ -136,6 +136,8 @@ def reconcile_value_share(
         raise VerificationError("the period must be closed before reconciliation")
     if len(set(designated)) != DESIGNATED_COUNT:
         raise VerificationError(f"P11: exactly {DESIGNATED_COUNT} designated participants are required")
+    if set(participants) != set(designated) or len(participants) != DESIGNATED_COUNT:
+        raise VerificationError("P11: participants must be exactly the four designated members")
     matrix = build_value_share_matrix(contributions, participants)
     if any(value < 0 for row in matrix for value in row):
         raise VerificationError("V must be non-negative")

@@ -162,10 +162,28 @@ chronus-fleet run --coordinator https://Andres-iMac.local:8740 \
 `status` lists the workers, the backend each one selected and their measured throughput. It also shows the tier: with four workers, 4 × 8,000 virtual units = 1,000 logical warps against Tier 1's entitlement of 1,024 (provisioning, not a performance claim). `run` sends a 16 MiB job across the fleet, checks that the result is exact, verifies the ML-DSA-65 receipt and saves it as `receipt-job-….json`. To check a saved receipt again later:
 
 ```bash
-chronus-fleet verify-receipt receipt-job-<id>.json
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:75584bee6ec7af891322638a566e69814dd55b6a19420d412de9816f1972f58d -->
+
+chronus-fleet verify-receipt receipt-job-<id>.json --public-key <coordinator-public-key-hex>
+
+<!-- /coderabbit-ai-generated:v1 -->
 ```
 
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:39415cef16b6b2646d2251905fa15bb7348406542ce5e06ddb9c354976b9aefd -->
+
+Obtain the coordinator public key directly from the coordinator machine's
+owner-controlled state or an authenticated status response, and compare it over
+a separate trusted channel. Do not take the verification key from the receipt
+file being checked. Receipt signature verification does not independently prove
+ledger inclusion unless the verifier also checks the local ledger file.
+
 ## 7. Other laptops and servers
+
+<!-- /coderabbit-ai-generated:v1 -->
 
 On Linux or Windows with Python 3.10 or later, install the repository the same way (`python -m pip install -e .`; add `".[fleet-opencl]"` on a machine with an OpenCL GPU). Copy `token` and `coordinator-cert.pem` across, then run:
 

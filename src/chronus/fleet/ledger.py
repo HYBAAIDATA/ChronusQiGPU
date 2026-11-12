@@ -131,6 +131,7 @@ class AnchorLedger:
             raise LedgerError(f"ledger {self.path} fails verification at line {check.first_bad_seq}: {check.reason}")
         self._seq = check.entries
         self._head = check.head_hash
+        self._failed = False
 
     @property
     def head(self) -> tuple[int, str]:
@@ -146,6 +147,8 @@ class AnchorLedger:
         if len(canonical_json(meta)) > 4096:
             raise LedgerError("ledger meta must fit in 4 KiB; anchor a digest instead")
         with self._lock:
+            if self._failed:
+                raise LedgerError("ledger append previously failed; reopen and verify before writing")
             with self.path.open("a+", encoding="utf-8") as handle:
                 if _fcntl is not None:
                     _fcntl.flock(handle.fileno(), _fcntl.LOCK_EX)
@@ -164,6 +167,9 @@ class AnchorLedger:
                     handle.write(json.dumps(entry, sort_keys=True, separators=(",", ":")) + "\n")
                     handle.flush()
                     os.fsync(handle.fileno())
+                except BaseException:
+                    self._failed = True
+                    raise
                 finally:
                     if _fcntl is not None:
                         _fcntl.flock(handle.fileno(), _fcntl.LOCK_UN)
@@ -171,13 +177,13 @@ class AnchorLedger:
             self._head = entry["entry_hash"]
             return entry
 
-    def find(self, digest: str) -> dict[str, Any] | None:
+    def find(self, digest: str, seq: int | None = None) -> dict[str, Any] | None:
         """The first entry anchoring digest, or None."""
         if not self.path.exists():
             return None
         for _, line in _iter_lines(self.path):
             entry = json.loads(line)
-            if entry.get("digest") == digest:
+            if entry.get("digest") == digest and (seq is None or entry.get("seq") == seq):
                 return entry
         return None
 
