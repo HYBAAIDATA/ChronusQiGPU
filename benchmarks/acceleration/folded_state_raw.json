@@ -1,0 +1,318 @@
+{
+  "_provenance": {
+    "generated_by": "CodeRabbit Coding Agent",
+    "task_id": "f77d97e8-279f-4ff4-ba2d-b4ad6de3ebe2"
+  },
+  "workload": "period-516 F_257[phi] folded-state fold/step/unfold over reference vectors",
+  "lut_sha256": "d2636d5112632065c6cf059d1a49ca5c27e1135b58ff82da025c36a16d0d5a6d",
+  "lut_bytes": 2064,
+  "pisano_period": 516,
+  "warmups": 1,
+  "repetitions": 7,
+  "timer": "perf_counter_ns",
+  "timing_scope": "complete function call; exact round-trip verification excluded",
+  "python": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]",
+  "platform": "Linux-6.18.56-x86_64-with-glibc2.43",
+  "results": [
+    {
+      "scale_index": 10000,
+      "operation": "fold_scale_index",
+      "times_ns": [
+        3020,
+        1530,
+        707,
+        565,
+        485,
+        490,
+        457
+      ],
+      "median_ns": 565,
+      "function_sha256": "1c70c8b98e061741d3d3d2edd45fb1de948ffdc535b3ef80728bc8e5e2099dd8",
+      "epoch_q": 19,
+      "r_mod_516": 196,
+      "coeff_a": 170,
+      "coeff_b": 73,
+      "roundtrip_exact": true
+    },
+    {
+      "scale_index": 10000,
+      "operation": "step_folded_record",
+      "times_ns": [
+        3798,
+        1928,
+        1162,
+        1362,
+        1038,
+        1189,
+        988
+      ],
+      "median_ns": 1189,
+      "function_sha256": "c54b6ffb926837c48f57209f615a45216753368ad2e93e7a33f49dab3644875c"
+    },
+    {
+      "scale_index": 10000,
+      "operation": "unfold_scale_record",
+      "times_ns": [
+        516,
+        504,
+        495,
+        472,
+        461,
+        490,
+        433
+      ],
+      "median_ns": 490,
+      "function_sha256": "13d07e474411fa26fe0afbb70ae717707157f38f67516ca79ee6733f2c152bc1"
+    },
+    {
+      "scale_index": 100000,
+      "operation": "fold_scale_index",
+      "times_ns": [
+        801,
+        735,
+        643,
+        466,
+        459,
+        446,
+        487
+      ],
+      "median_ns": 487,
+      "function_sha256": "1c70c8b98e061741d3d3d2edd45fb1de948ffdc535b3ef80728bc8e5e2099dd8",
+      "epoch_q": 193,
+      "r_mod_516": 412,
+      "coeff_a": 186,
+      "coeff_b": 210,
+      "roundtrip_exact": true
+    },
+    {
+      "scale_index": 100000,
+      "operation": "step_folded_record",
+      "times_ns": [
+        1320,
+        1068,
+        1167,
+        1053,
+        1053,
+        1020,
+        1063
+      ],
+      "median_ns": 1063,
+      "function_sha256": "c54b6ffb926837c48f57209f615a45216753368ad2e93e7a33f49dab3644875c"
+    },
+    {
+      "scale_index": 100000,
+      "operation": "unfold_scale_record",
+      "times_ns": [
+        552,
+        529,
+        503,
+        456,
+        443,
+        493,
+        443
+      ],
+      "median_ns": 493,
+      "function_sha256": "13d07e474411fa26fe0afbb70ae717707157f38f67516ca79ee6733f2c152bc1"
+    },
+    {
+      "scale_index": 1000000000000,
+      "operation": "fold_scale_index",
+      "times_ns": [
+        803,
+        659,
+        529,
+        467,
+        467,
+        474,
+        474
+      ],
+      "median_ns": 474,
+      "function_sha256": "1c70c8b98e061741d3d3d2edd45fb1de948ffdc535b3ef80728bc8e5e2099dd8",
+      "epoch_q": 1937984496,
+      "r_mod_516": 64,
+      "coeff_a": 87,
+      "coeff_b": 160,
+      "roundtrip_exact": true
+    },
+    {
+      "scale_index": 1000000000000,
+      "operation": "step_folded_record",
+      "times_ns": [
+        1357,
+        1232,
+        1159,
+        1059,
+        1089,
+        1079,
+        1052
+      ],
+      "median_ns": 1089,
+      "function_sha256": "c54b6ffb926837c48f57209f615a45216753368ad2e93e7a33f49dab3644875c"
+    },
+    {
+      "scale_index": 1000000000000,
+      "operation": "unfold_scale_record",
+      "times_ns": [
+        574,
+        735,
+        579,
+        538,
+        569,
+        552,
+        542
+      ],
+      "median_ns": 569,
+      "function_sha256": "13d07e474411fa26fe0afbb70ae717707157f38f67516ca79ee6733f2c152bc1"
+    },
+    {
+      "scale_index": 1000000000000000,
+      "operation": "fold_scale_index",
+      "times_ns": [
+        702,
+        865,
+        525,
+        484,
+        471,
+        472,
+        472
+      ],
+      "median_ns": 484,
+      "function_sha256": "1c70c8b98e061741d3d3d2edd45fb1de948ffdc535b3ef80728bc8e5e2099dd8",
+      "epoch_q": 1937984496124,
+      "r_mod_516": 16,
+      "coeff_a": 96,
+      "coeff_b": 216,
+      "roundtrip_exact": true
+    },
+    {
+      "scale_index": 1000000000000000,
+      "operation": "step_folded_record",
+      "times_ns": [
+        1329,
+        1243,
+        1076,
+        1102,
+        1059,
+        1289,
+        1058
+      ],
+      "median_ns": 1102,
+      "function_sha256": "c54b6ffb926837c48f57209f615a45216753368ad2e93e7a33f49dab3644875c"
+    },
+    {
+      "scale_index": 1000000000000000,
+      "operation": "unfold_scale_record",
+      "times_ns": [
+        538,
+        663,
+        569,
+        553,
+        729,
+        575,
+        781
+      ],
+      "median_ns": 575,
+      "function_sha256": "13d07e474411fa26fe0afbb70ae717707157f38f67516ca79ee6733f2c152bc1"
+    },
+    {
+      "scale_index": 1000000000000000000,
+      "operation": "fold_scale_index",
+      "times_ns": [
+        739,
+        689,
+        594,
+        564,
+        527,
+        570,
+        530
+      ],
+      "median_ns": 570,
+      "function_sha256": "1c70c8b98e061741d3d3d2edd45fb1de948ffdc535b3ef80728bc8e5e2099dd8",
+      "epoch_q": 1937984496124031,
+      "r_mod_516": 4,
+      "coeff_a": 2,
+      "coeff_b": 3,
+      "roundtrip_exact": true
+    },
+    {
+      "scale_index": 1000000000000000000,
+      "operation": "step_folded_record",
+      "times_ns": [
+        1178,
+        1123,
+        1117,
+        1079,
+        1055,
+        1142,
+        1108
+      ],
+      "median_ns": 1117,
+      "function_sha256": "c54b6ffb926837c48f57209f615a45216753368ad2e93e7a33f49dab3644875c"
+    },
+    {
+      "scale_index": 1000000000000000000,
+      "operation": "unfold_scale_record",
+      "times_ns": [
+        576,
+        651,
+        534,
+        575,
+        558,
+        536,
+        529
+      ],
+      "median_ns": 558,
+      "function_sha256": "13d07e474411fa26fe0afbb70ae717707157f38f67516ca79ee6733f2c152bc1"
+    },
+    {
+      "scale_index": 100000000000000000000,
+      "operation": "fold_scale_index",
+      "times_ns": [
+        763,
+        687,
+        562,
+        525,
+        493,
+        603,
+        488
+      ],
+      "median_ns": 562,
+      "function_sha256": "1c70c8b98e061741d3d3d2edd45fb1de948ffdc535b3ef80728bc8e5e2099dd8",
+      "epoch_q": 193798449612403100,
+      "r_mod_516": 400,
+      "coeff_a": 248,
+      "coeff_b": 130,
+      "roundtrip_exact": true
+    },
+    {
+      "scale_index": 100000000000000000000,
+      "operation": "step_folded_record",
+      "times_ns": [
+        1404,
+        1189,
+        1164,
+        1101,
+        1087,
+        1160,
+        1100
+      ],
+      "median_ns": 1160,
+      "function_sha256": "c54b6ffb926837c48f57209f615a45216753368ad2e93e7a33f49dab3644875c"
+    },
+    {
+      "scale_index": 100000000000000000000,
+      "operation": "unfold_scale_record",
+      "times_ns": [
+        548,
+        645,
+        651,
+        545,
+        529,
+        544,
+        529
+      ],
+      "median_ns": 545,
+      "function_sha256": "13d07e474411fa26fe0afbb70ae717707157f38f67516ca79ee6733f2c152bc1"
+    }
+  ]
+}
