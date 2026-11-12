@@ -230,13 +230,13 @@ class FleetWorker:
             self._active.add(lease_id)
         try:
             payload = self.execute_lease(lease)
+            try:
+                self._client(self.node_id).post("/v1/result", payload)
+            except TransportError as exc:
+                self._on_transport_error(exc)
         finally:
             with self._active_lock:
                 self._active.discard(lease_id)
-        try:
-            self._client(self.node_id).post("/v1/result", payload)
-        except TransportError as exc:
-            self._on_transport_error(exc)
 
     def execute_lease(self, lease: dict[str, Any]) -> dict[str, Any]:
         """Run every tile of a lease; on the first refusal stop and report the rest as failed."""

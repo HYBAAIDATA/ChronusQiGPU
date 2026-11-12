@@ -1,3 +1,7 @@
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:06dbddd89e5f09a0aa1952b9fb32bd17156e5461ee4d02a4a3459755e576f15a -->
+
 # Chronus iGPU fleet: many machines, one Chronus iGPU
 
 Copyright (c) 2026 HYBA Software Ltd. All rights reserved. Chronus is a HYBA Data product.
@@ -228,3 +232,21 @@ Run the tests with `python -m pytest -q tests/test_fleet_*.py`, or `python -m un
 - The ledger is a local, tamper-evident hash chain. It is not replicated, not distributed and not a blockchain.
 - The fleet does not provide KMS or HSM key custody, multi-tenant isolation, or an SLA.
 - Fleet transfers go over HTTP(S) on your network. Within one machine, MLX and Metal use unified memory; across machines, each tile's bytes are sent once.
+
+## Verified contribution counts and fault boundaries
+
+Each signed device entry keeps `items` as its total executed count and adds
+`verified_items` for tiles independently checked against the reference or
+accepted by the blind recovery check. Value-share extraction uses only the
+latter. Historical receipts without this field contribute no credit; callers
+must verify signatures against the pinned fleet key, output digests and ledger
+anchors before passing receipt bodies to `contributions_from_receipts`.
+
+The ledger remains append-only and fails closed after an I/O fault. It refuses
+further appends until reopened and verified. Complete persisted records are
+retained even when an fsync acknowledgement failed. A truncated or damaged
+record requires operator recovery from trusted evidence; startup rejects it
+rather than deleting audit data automatically.
+
+
+<!-- /coderabbit-ai-generated:v1 -->

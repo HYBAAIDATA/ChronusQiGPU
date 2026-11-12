@@ -25,7 +25,7 @@ LATTICE_LABEL = "scheduling lattice: logical virtual units, not physical cores"
 
 
 def require_rung(virtual_units: Any) -> int:
-    if virtual_units not in RESIDENT_RUNGS or isinstance(virtual_units, bool):
+    if type(virtual_units) is not int or virtual_units not in RESIDENT_RUNGS:
         raise LatticeError(
             f"virtual_units must be one of {RESIDENT_RUNGS} (a scheduling lattice rung), not {virtual_units!r}"
         )

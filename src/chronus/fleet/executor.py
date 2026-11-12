@@ -99,9 +99,9 @@ class FleetExecutor:
                     WorkerConfig(coordinator.url, token, label=f"local-{i}", routes=worker_routes, measure=measure)
                 )
                 worker.start_thread()
+                embedded.workers.append(worker)
                 if not worker.wait_joined(60):
                     raise TransportError(f"in-process worker local-{i} did not join")
-                embedded.workers.append(worker)
             executor = cls(coordinator.url, token=token, name="embedded")
         except Exception:
             for worker in embedded.workers:

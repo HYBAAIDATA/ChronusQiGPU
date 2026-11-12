@@ -130,6 +130,12 @@ class ProtocolTests(unittest.TestCase):
             self.assertEqual(backend["executed_backends"], {"reference": len(job.tiles)})
             self.assertEqual(job.receipt["devices"][0]["executed_backends"], {"reference": len(job.tiles)})
             self.assertEqual(job.receipt["devices"][0]["preferences"], ["ours"])
+            device = job.receipt["devices"][0]
+            verified_items = sum(r.record["items"] for r in job.results.values()
+                                 if r.status.startswith(("verified", "recovered-blind")))
+            self.assertEqual(device["verified_items"], verified_items)
+            self.assertGreater(device["items"], device["verified_items"])
+
             self.assertEqual(job.receipt["tier"]["entitlement"]["label"], "Tier 1")
             anchor = self.coordinator.ledger.find(job.receipt["receipt_id"])
             self.assertEqual(anchor["meta"]["requested_backend"], "auto")

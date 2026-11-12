@@ -41,13 +41,18 @@ class Contribution:
 
 
 def contributions_from_receipts(receipts: Iterable[Mapping[str, Any]]) -> list[Contribution]:
-    """Verified items per (device owner, job submitter) from signed receipts."""
+    """Extract verified work counts from already verified, signed receipts.
+
+    Callers must first verify each signature, pinned fleet key, output digest
+    and ledger anchor with verify_receipt. This helper does not authenticate
+    mappings. Historical receipts without verified_items contribute no credit.
+    """
     out = []
     for receipt in receipts:
         consumer = str(receipt.get("submitter") or "unknown")
         for device in receipt.get("devices", []):
-            share = int(device.get("items", 0))
-            if device.get("measured") is True and share > 0:
+            share = device.get("verified_items", 0)
+            if device.get("measured") is True and type(share) is int and share > 0:
                 out.append(Contribution(str(device.get("owner") or "unknown"), consumer, share))
     return out
 
@@ -134,7 +139,7 @@ def reconcile_value_share(
         raise TierGateRejected("value-share reconciliation is a Tier 4 (and Scale) capability")
     if not period_closed:
         raise VerificationError("the period must be closed before reconciliation")
-    if len(set(designated)) != DESIGNATED_COUNT:
+    if len(designated) != DESIGNATED_COUNT or len(set(designated)) != DESIGNATED_COUNT:
         raise VerificationError(f"P11: exactly {DESIGNATED_COUNT} designated participants are required")
     if set(participants) != set(designated) or len(participants) != DESIGNATED_COUNT:
         raise VerificationError("P11: participants must be exactly the four designated members")
