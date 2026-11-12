@@ -35,6 +35,7 @@ def test_work_identity_copies_and_freezes_nested_parameters():
     params={'nested':{'items':[1,2]}}
     unit=WorkUnit('kernel',params=params); digest=unit.digest()
     params['nested']['items'].append(3)
+    assert isinstance(unit.params['nested']['items'],list)
     assert unit.digest()==digest
     assert WorkUnit.from_wire(unit.to_wire()).digest()==digest
     with pytest.raises(TypeError): unit.params['new']=1

@@ -21,13 +21,19 @@ class _FrozenDict(dict):
     __setitem__ = __delitem__ = clear = pop = popitem = setdefault = update = __ior__ = _immutable
 
 
+class _FrozenList(list):
+    def _immutable(self, *args, **kwargs):
+        raise TypeError("work unit parameters are immutable")
+    __setitem__ = __delitem__ = append = extend = insert = pop = remove = clear = sort = reverse = __iadd__ = __imul__ = _immutable
+
+
 def _snapshot(value):
     if isinstance(value, Mapping):
         if any(not isinstance(key, str) for key in value):
             raise KernelError("params keys must be strings at every level")
         return _FrozenDict((key, _snapshot(item)) for key,item in value.items())
     if isinstance(value, (list,tuple)):
-        return tuple(_snapshot(item) for item in value)
+        return _FrozenList(_snapshot(item) for item in value)
     return value
 
 from typing import Any, Mapping
