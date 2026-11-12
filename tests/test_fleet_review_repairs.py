@@ -279,14 +279,19 @@ def test_tls_partial_request_has_absolute_deadline(tmp_path):
         stopped.set();server.shutdown();server.server_close();thread.join(timeout=2)
 
 
-def test_private_descriptor_closes_on_chmod_failure_and_windows_skips_it(tmp_path):
+@pytest.mark.skipif(os.name == 'nt', reason='fchmod failure path is POSIX-only')
+def test_private_descriptor_closes_on_chmod_failure(tmp_path):
     from chronus.fleet.auth import _private_fdopen
     fd=os.open(tmp_path/'failure',os.O_WRONLY|os.O_CREAT,0o600)
     with patch('chronus.fleet.auth.os.fchmod',side_effect=OSError('synthetic mode failure')):
         with pytest.raises(OSError):_private_fdopen(fd,'w')
     with pytest.raises(OSError):os.fstat(fd)
+
+
+def test_private_descriptor_skips_chmod_on_windows(tmp_path):
+    from chronus.fleet.auth import _private_fdopen
     fd=os.open(tmp_path/'windows',os.O_WRONLY|os.O_CREAT,0o600)
-    with patch('chronus.fleet.auth.os.name','nt'),patch('chronus.fleet.auth.os.fchmod') as chmod:
+    with patch('chronus.fleet.auth.os.name','nt'),patch('chronus.fleet.auth.os.fchmod',create=True) as chmod:
         with _private_fdopen(fd,'w') as handle:handle.write('synthetic')
     chmod.assert_not_called()
 
@@ -326,3 +331,27 @@ def test_worker_rejoins_after_node_credentials_are_lost(tmp_path):
         assert worker.stats['rejoins']>=1
         result=fleet.submit(WorkUnit('m15_fold',b'\x01\x02'*128,virtual_units=80),timeout=5)
         assert result.verified
+
+
+def test_socket_duplication_failure_releases_admission_and_closes_request():
+    import socket
+    from unittest.mock import Mock
+    server=FleetHTTPServer(('127.0.0.1',0),lambda *_:(200,{}),FleetAuth(new_token()),max_connections=1)
+    try:
+        for operation in ('dup', 'timer'):
+            request,peer=socket.socketpair()
+            assert server._connection_slots.acquire(blocking=False)
+            try:
+                if operation == 'dup':
+                    request_mock=Mock(wraps=request)
+                    request_mock.dup.side_effect=OSError('synthetic descriptor exhaustion')
+                    with pytest.raises(OSError):server.process_request_thread(request_mock,('127.0.0.1',0))
+                else:
+                    with patch('chronus.fleet.transport.threading.Timer',side_effect=RuntimeError('synthetic setup failure')):
+                        with pytest.raises(RuntimeError):server.process_request_thread(request,('127.0.0.1',0))
+                assert request.fileno()==-1
+                assert server._connection_slots.acquire(blocking=False)
+                server._connection_slots.release()
+            finally:
+                request.close();peer.close()
+    finally:server.server_close()
