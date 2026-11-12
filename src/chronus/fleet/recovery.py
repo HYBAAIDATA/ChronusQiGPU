@@ -28,6 +28,7 @@ other nodes and the receipt records ``one_cycle: false``.
 from __future__ import annotations
 
 import secrets
+import random
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable, Mapping
 
@@ -174,11 +175,7 @@ class BaselineChannel:
 
 
 def _draw(items: list[TileKey], size: int) -> list[TileKey]:
-    pool = list(items)
-    chosen = []
-    for _ in range(size):
-        chosen.append(pool.pop(secrets.randbelow(len(pool))))
-    return chosen
+    return random.SystemRandom().sample(items, size)
 
 
 @dataclass

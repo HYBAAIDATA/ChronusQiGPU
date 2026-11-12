@@ -243,9 +243,9 @@ def read_documents(state_dir: str | Path) -> list[tuple[str, dict[str, Any]]]:
             document = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             continue
-        if isinstance(document, dict):
+        if isinstance(document, dict) and type(document.get("issued_at_ns")) is int:
             found.append((path.name, document))
-    found.sort(key=lambda item: (int(item[1].get("issued_at_ns") or 0), item[0]))
+    found.sort(key=lambda item: (item[1]["issued_at_ns"], item[0]))
     return found
 
 

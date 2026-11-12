@@ -41,9 +41,10 @@ class MatrixTests(unittest.TestCase):
         self.assertFalse(is_irreducible([[0]]))
 
     def test_contributions_come_from_measured_receipt_devices(self):
+        # Extraction fixture represents a body after signature/anchor verification.
         receipts = [
-            {"submitter": "hyba-data", "devices": [{"owner": "hyba", "items": 10, "measured": True},
-                                                   {"owner": "x", "items": 4, "measured": False}]}
+            {"submitter": "hyba-data", "devices": [{"owner": "hyba", "items": 20, "verified_items": 10, "measured": True},
+                                                   {"owner": "x", "items": 4, "verified_items": 4, "measured": False}]}
         ]
         self.assertEqual(contributions_from_receipts(receipts), [Contribution("hyba", "hyba-data", 10)])
 

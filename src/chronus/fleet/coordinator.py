@@ -864,8 +864,17 @@ class FleetCoordinator:
             return "record preference does not match the work unit"
         if not isinstance(record.get("detected_backends"), list) or executed not in record["detected_backends"]:
             return "record does not list the executed backend among the detected backends"
-        if record.get("items") != tile.items or not isinstance(record.get("duration_ns"), int) or record["duration_ns"] < 0:
+        if (type(record.get("items")) is not int or record["items"] != tile.items
+                or type(record.get("duration_ns")) is not int or record["duration_ns"] < 0):
             return "record items or duration are invalid"
+        for name in ("bytes_in", "bytes_out"):
+            if type(record.get(name)) is not int or record[name] < 0:
+                return f"record {name} is invalid"
+        for name in ("started_at", "finished_at", "mode"):
+            if not isinstance(record.get(name), str):
+                return f"record {name} is invalid"
+        if not all(isinstance(name, str) for name in record["detected_backends"]):
+            return "record detected_backends must be strings"
         return None
 
     def _learn_throughput(self, node: NodeInfo, kernel: str, record: Mapping[str, Any]) -> None:
@@ -1175,6 +1184,7 @@ class FleetCoordinator:
                     "bytes_out": 0,
                     "exec_ns": 0,
                     "verified_tiles": 0,
+                    "verified_items": 0,
                     "first_started_at": record["started_at"],
                     "last_finished_at": record["finished_at"],
                     "fallback_reasons": 0,
@@ -1198,7 +1208,9 @@ class FleetCoordinator:
             entry["bytes_in"] += record["bytes_in"]
             entry["bytes_out"] += record["bytes_out"]
             entry["exec_ns"] += record["duration_ns"]
-            entry["verified_tiles"] += 1 if result.status.startswith(("verified", "recovered-blind")) else 0
+            if result.status.startswith(("verified", "recovered-blind")):
+                entry["verified_tiles"] += 1
+                entry["verified_items"] += record["items"]
             entry["first_started_at"] = min(entry["first_started_at"], record["started_at"])
             entry["last_finished_at"] = max(entry["last_finished_at"], record["finished_at"])
             entry["fallback_reasons"] += 1 if record.get("fallback_reason") else 0

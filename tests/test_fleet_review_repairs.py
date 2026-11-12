@@ -185,3 +185,67 @@ def test_queued_job_is_not_pruned_as_completed(tmp_path):
     fleet.coordinator._prune()
     assert job.job_id in fleet.coordinator.jobs
     assert not job.done.is_set()
+
+
+@pytest.mark.parametrize('field,value', [('bytes_in',None),('bytes_out','1'),('duration_ns',True),
+                                        ('mode',[]),('started_at',0),('finished_at',None),
+                                        ('detected_backends',['reference',1])])
+def test_malformed_record_is_rejected_before_receipt(tmp_path,field,value):
+    from chronus.fleet.coordinator import FleetCoordinator, CoordinatorConfig
+    from tests.test_fleet_coordinator import join, answer
+    c=FleetCoordinator(CoordinatorConfig(token=new_token(),state_dir=tmp_path/'fleet',sample_rate_ppm=0))
+    _,node=join(c,'reference',{'reference':'cpu'})
+    job=c.submit(WorkUnit('m15_fold',b'\x01\x02'*128,virtual_units=80))
+    _,reply=c.handle('POST','/v1/lease',node['node_id'],{'node_id':node['node_id']})
+    lease=reply['lease']; payload=answer(lease,node['node_id'],**{field:value})
+    _,reply=c.handle('POST','/v1/result',node['node_id'],payload)
+    assert reply['accepted']==0 and reply['rejected']
+    assert not job.results and job.status=='running'
+
+
+def test_result_upload_still_renews_active_lease(tmp_path):
+    from chronus.fleet.worker import FleetWorker, WorkerConfig
+    from chronus.fleet.adapters import AdapterRegistry
+    worker=FleetWorker(WorkerConfig('http://127.0.0.1:1',new_token(),measure=False),adapters=AdapterRegistry(['reference']))
+    worker.node_id='test'; observed=[]
+    class Client:
+        def post(self,path,payload):
+            observed.append('lease' in worker._active)
+            raise TransportError('synthetic upload failure')
+    with patch.object(worker,'execute_lease',return_value={}),patch.object(worker,'_client',return_value=Client()),patch.object(worker,'_on_transport_error'):
+        worker._work({'lease_id':'lease'})
+    assert observed==[True] and not worker._active
+
+
+def test_failed_embedded_join_stops_started_worker(tmp_path):
+    from chronus.fleet.worker import FleetWorker
+    with patch.object(FleetWorker,'start_thread'),patch.object(FleetWorker,'wait_joined',return_value=False),patch.object(FleetWorker,'stop') as stopped:
+        with pytest.raises(TransportError): FleetExecutor.embedded(tmp_path/'fleet',local_workers=1,worker_routes=['reference'])
+    stopped.assert_called_once()
+
+
+def test_bad_tier_timestamp_does_not_hide_valid_documents(tmp_path):
+    import json
+    from chronus.fleet.scale import read_documents, TIER_DIRNAME
+    dest=tmp_path/TIER_DIRNAME;dest.mkdir()
+    for i,value in enumerate(['bad',{},[],True,None,12]):
+        (dest/f'{i}.json').write_text(json.dumps({'issued_at_ns':value}))
+    assert read_documents(tmp_path)==[('5.json',{'issued_at_ns':12})]
+
+
+def test_lattice_rung_requires_exact_integer():
+    from chronus.fleet.errors import LatticeError
+    for value in [8000.0,True,'8000']:
+        with pytest.raises(LatticeError):WorkUnit('m15_fold',virtual_units=value)
+
+
+def test_value_share_credits_only_explicit_verified_counts():
+    from chronus.fleet.value_share import contributions_from_receipts, Contribution, reconcile_value_share
+    from chronus.fleet.phase import TIER_4
+    from chronus.fleet.errors import VerificationError
+    # Bodies after signature/anchor verification; old aggregate counts are insufficient.
+    devices=[{'owner':'a','items':100,'measured':True},
+             {'owner':'b','items':100,'verified_items':7,'measured':True},
+             {'owner':'c','verified_items':True,'measured':True}]
+    assert contributions_from_receipts([{'submitter':'d','devices':devices}])==[Contribution('b','d',7)]
+    with pytest.raises(VerificationError):reconcile_value_share(TIER_4,['a','b','c','d'],[],['a','b','c','d','a'],True)
