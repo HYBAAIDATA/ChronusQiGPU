@@ -56,6 +56,7 @@ __kernel void step_folded_states(
     if (gid >= count) return;
 
     FoldedState16 st = states[gid];
+    if (st.r_mod_516 >= PISANO_PERIOD || delta_r >= PISANO_PERIOD) return;
 
     // Host has reduced and checked the exact jump before dispatch.
     ulong dq = delta_q;
