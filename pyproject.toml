@@ -60,6 +60,18 @@ accelerator = [
     "numpy>=1.26,<3",
     "pyopencl>=2024.1",
 ]
+fleet-metal = [
+    "mlx>=0.25; sys_platform == 'darwin' and platform_machine == 'arm64'",
+]
+fleet-metal-pyobjc = [
+    "pyobjc-framework-Metal>=10; sys_platform == 'darwin'",
+]
+fleet-opencl = [
+    "pyopencl>=2024.1",
+]
+
+[project.scripts]
+chronus-fleet = "chronus.fleet.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
