@@ -7,11 +7,16 @@ import ast
 import sys
 from pathlib import Path
 
+import pytest
+
 _SRC = str(Path(__file__).resolve().parents[1] / "src")
 if sys.path[:1] != [_SRC]:
     sys.path.insert(0, _SRC)
 
 PACKAGE = Path(__file__).resolve().parents[1]
+if not (PACKAGE / "src" / "turing").is_dir():
+    pytest.skip("source-policy checks require a source checkout", allow_module_level=True)
+
 SOURCE_FILES = sorted((PACKAGE / "src" / "turing" / "algebra").glob("*.py")) + \
     sorted((PACKAGE / "src" / "turing" / "algorithms").glob("*.py"))
 TEST_FILES = sorted((PACKAGE / "tests").glob("test_turing_*.py"))
