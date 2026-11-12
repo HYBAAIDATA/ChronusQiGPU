@@ -182,7 +182,8 @@ class ChronusRealMiningEngine:
                 await self._submission_changed.wait()
                 continue
             remaining = (min(self._pending_submits.values())
-                         + self.gateway.pool_timeout_sec - time.monotonic())
+                         + int(self.gateway.pool_timeout_sec * 1_000_000_000)
+                         - time.perf_counter_ns()) / 1_000_000_000
             if remaining <= 0:
                 raise TimeoutError("Pool submission acknowledgement timed out")
             try:
@@ -415,7 +416,7 @@ class ChronusRealMiningEngine:
                         raise ConnectionError("Too many unacknowledged submissions")
                     # Register before drain yields, so a fast acknowledgement cannot race us.
                     rpc_id = self.gateway.msg_id + 1
-                    self._pending_submits[rpc_id] = time.monotonic()
+                    self._pending_submits[rpc_id] = time.perf_counter_ns()
                     self._submission_changed.set()
                     await self.gateway.write_rpc("mining.submit", submit_params)
                     self.shares_submitted += 1

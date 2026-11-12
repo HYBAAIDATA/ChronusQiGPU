@@ -94,7 +94,7 @@ class TestMiningReadiness(unittest.IsolatedAsyncioTestCase):
     async def test_idle_pool_times_out(self):
         gw = StratumGateway("localhost", 3333, "test", pool_timeout_sec=0.02)
         gw.reader = asyncio.StreamReader()
-        with pytest.raises(TimeoutError):
+        with pytest.raises(asyncio.TimeoutError):
             await gw.read_line()
 
     async def test_replaced_job_candidate_is_never_submitted(self):
@@ -338,7 +338,7 @@ class TestSubmissionWatchdog(unittest.IsolatedAsyncioTestCase):
         miner.gateway.pool_timeout_sec = 0.02
         watchdog = asyncio.create_task(miner._monitor_submissions())
         await asyncio.sleep(0)
-        miner._pending_submits[1] = time.monotonic()
+        miner._pending_submits[1] = time.perf_counter_ns()
         miner._submission_changed.set()
         with pytest.raises(TimeoutError, match="acknowledgement timed out"):
             await asyncio.wait_for(watchdog, 0.2)
