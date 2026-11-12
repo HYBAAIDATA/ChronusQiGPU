@@ -70,7 +70,8 @@ def verify_and_measure(repetitions=15):
     source_path = inspect.getsourcefile(phi_element_power)
     return {
         "_provenance": {"authored_by": "CodeRabbit Coding Agent",
-                        "generator": "tools/verify_galois_invariant.py"},
+                        "generator": "tools/verify_galois_invariant.py",
+                        "task_id": "f77d97e8-279f-4ff4-ba2d-b4ad6de3ebe2"},
         "schema_version": 1, "status": "PASS", "period": PHI_PERIOD,
         "table_payload_bytes": _PHI_POWER_TABLE.nbytes,
         "residue_storage_bits": _PHI_POWER_TABLE.itemsize * 8,

@@ -53,8 +53,8 @@ class OpenCLEngine:
         try:
             from chronus.backends.opencl_pv import OpenCLPVBackend
 
-            self.pv_backend = OpenCLPVBackend()
-            self.ops.add("pv_lattice_fold")
+            self.pv_backend = OpenCLPVBackend(device=device)
+            self.ops.update({"pv_lattice_fold", "pv_field_scale"})
         except Exception as exc:
             self.pv_reason = f"{type(exc).__name__}: {exc}"
 
@@ -79,6 +79,13 @@ class OpenCLEngine:
             raise DeviceUnavailableError(f"OpenCL PV backend unavailable: {self.pv_reason}")
         outputs, _ = self.pv_backend.dispatch_pv_fold(values, order)
         return outputs
+
+    def pv_field_scale(self, tile: bytes, index: int) -> bytes:
+        import struct
+        if self.pv_backend is None:
+            raise DeviceUnavailableError(f"OpenCL PV backend unavailable: {self.pv_reason}")
+        outputs = self.pv_backend.dispatch_field_scale(list(struct.iter_unpack('<HH', tile)), index)
+        return b''.join(struct.pack('<HH', *pair) for pair in outputs)
 
 
 class OpenCLAdapter(DeviceAdapter):

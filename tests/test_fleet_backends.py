@@ -76,7 +76,10 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual(selection.executed_backend, "igpu")
         self.assertTrue(selection.fallback_reason.startswith("prefer=host: metal absent"))
         self.assertIn("selected igpu", selection.fallback_reason)
-        self.assertNotIn("cpu", selection.fallback_reason.lower())
+        # Device rejection reasons may explain that CPU OpenCL is excluded.
+        # Assert the actual route, rather than censoring its diagnostic text.
+        self.assertNotIn(selection.executed_backend, ("opencl", "cuda", "metal"))
+        self.assertNotIn("opencl", selection.detected_backends)
 
     def test_a_named_backend_that_is_absent_fails_closed(self):
         registry, _ = machine_with_a_host_gpu()

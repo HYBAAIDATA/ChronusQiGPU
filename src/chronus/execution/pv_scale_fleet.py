@@ -1,6 +1,6 @@
-"""Fleet plugin for structural PV scaling, shared by HYBA workload consumers.
+"""Fleet kernel for structural PV scaling, shared by HYBA workload consumers.
 
-Load with CHRONUS_FLEET_KERNELS=chronus.execution.pv_scale_fleet. Residue pairs
+Registered by default on the coordinator and every worker. Residue pairs
 use little-endian uint16 wire storage. The original index remains a decimal
 string in work parameters and receipts; only the field factor is reduced.
 """
@@ -62,4 +62,3 @@ class PVFieldScaleKernel(Kernel):
 
 
 _KNOWN_ANSWERS = (('10000', 'b48ac868eb05ebfdfcd24038c699b0908f50f8ca17ffce132cd0de16d0db66a2'), ('100000', '753797b1aa6e148f0cb2d34ded3d5e880cd04abeaf2f0680f48a9141954574f3'), ('1000000000000', '28a83ed75c2840df14e781b0945122e6a798dc383e61cce2de88b2a7d7f40af7'), ('1000000000000000', 'd8874bbb5481705d10318483b0988758fe6f515f7d4b6933fdf265fc6f314deb'), ('1000000000000000000', 'b23dfd2aa2892d1e440593d719fe665bbd80a668b50c178af0e1e5fc23445ad9'), ('100000000000000000000', '8ff60f0f192bbaf9506e76d5599b372201ee85182e112198853e1af08845c31a'))
-FLEET_KERNELS = (PVFieldScaleKernel(),)

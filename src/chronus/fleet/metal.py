@@ -51,6 +51,16 @@ kernel void m15_pairs(device const uchar *in_pairs [[buffer(0)]],
     out_pairs[2 * gid] = (uchar)((m[0] * a + m[1] * b) & 0xFFu);
     out_pairs[2 * gid + 1] = (uchar)((m[2] * a + m[3] * b) & 0xFFu);
 }
+
+kernel void pv_field_scale(device const ushort2 *inputs [[buffer(0)]],
+                           device ushort2 *outputs [[buffer(1)]],
+                           constant uint *factor [[buffer(2)]],
+                           constant uint &pairs [[buffer(3)]],
+                           uint gid [[thread_position_in_grid]]) {
+    if (gid >= pairs) return;
+    uint a=inputs[gid].x, b=inputs[gid].y, c=factor[0], d=factor[1];
+    outputs[gid] = ushort2((a*c+b*d)%257u, (a*d+b*c+b*d)%257u);
+}
 """
 
 
@@ -58,7 +68,7 @@ class MLXEngine:
     """Integer kernels on the Apple GPU through MLX (unified memory)."""
 
     engine = "mlx"
-    ops = frozenset({"m15_pairs", "dual_space", "gf_matvec"})
+    ops = frozenset({"m15_pairs", "dual_space", "gf_matvec", "pv_field_scale"})
 
     def __init__(self, mx: Any, np: Any) -> None:
         self.mx = mx
@@ -103,12 +113,24 @@ class MLXEngine:
             mx.eval(y)
         return np.array(y).astype("<u4").tobytes()
 
+    def pv_field_scale(self, tile: bytes, index: int) -> bytes:
+        from chronus.core.scaling import PVScale
+        mx, np = self.mx, self.np
+        c,d = PVScale(index).field_factor()
+        with mx.stream(mx.gpu):
+            pairs = self._u32(np.frombuffer(tile, dtype='<u2').reshape(-1,2))
+            a,b = pairs[:,0], pairs[:,1]
+            out = mx.stack([mx.remainder(a*c+b*d,257),
+                            mx.remainder(a*d+b*c+b*d,257)],axis=1).astype(mx.uint16)
+            mx.eval(out)
+        return np.array(out).astype('<u2').tobytes()
+
 
 class PyObjCMetalEngine:
     """The M15 pair kernel in Metal Shading Language, dispatched through PyObjC."""
 
     engine = "metal-pyobjc"
-    ops = frozenset({"m15_pairs"})
+    ops = frozenset({"m15_pairs", "pv_field_scale"})
 
     def __init__(self, metal: Any, device: Any) -> None:
         self.Metal = metal
@@ -121,6 +143,11 @@ class PyObjCMetalEngine:
         if pipeline is None:
             raise DeviceUnavailableError(f"Metal pipeline creation failed: {error}")
         self.pipeline = pipeline
+        function = library.newFunctionWithName_("pv_field_scale")
+        field_pipeline, error = device.newComputePipelineStateWithFunction_error_(function, None)
+        if field_pipeline is None:
+            raise DeviceUnavailableError(f"Metal field pipeline creation failed: {error}")
+        self.field_pipeline = field_pipeline
         self.queue = device.newCommandQueue()
 
     def m15_pairs(self, tile: bytes, matrix: tuple[int, int, int, int]) -> bytes:
@@ -148,6 +175,38 @@ class PyObjCMetalEngine:
         if command.status() != metal.MTLCommandBufferStatusCompleted:
             raise DeviceUnavailableError(f"Metal command buffer did not complete: {command.error()}")
         return bytes(out_buffer.contents().as_buffer(len(tile)))
+
+    def pv_field_scale(self, tile: bytes, index: int) -> bytes:
+        from chronus.core.scaling import PVScale
+        factor = PVScale(index).field_factor()
+        return self._field_dispatch(tile, factor)
+
+    def _field_dispatch(self, tile, factor):
+        metal, pairs = self.Metal, len(tile)//4
+        if pairs == 0:
+            return b''
+        shared = metal.MTLResourceStorageModeShared
+        buffers = (
+            self.device.newBufferWithBytes_length_options_(tile, len(tile), shared),
+            self.device.newBufferWithLength_options_(len(tile), shared),
+            self.device.newBufferWithBytes_length_options_(struct.pack('<2I',*factor),8,shared),
+            self.device.newBufferWithBytes_length_options_(struct.pack('<I',pairs),4,shared),
+        )
+        if any(buffer is None for buffer in buffers):
+            raise DeviceUnavailableError('Metal field buffer allocation failed')
+        command = self.queue.commandBuffer()
+        encoder = command.computeCommandEncoder()
+        encoder.setComputePipelineState_(self.field_pipeline)
+        for index, buffer in enumerate(buffers):
+            encoder.setBuffer_offset_atIndex_(buffer,0,index)
+        width = max(1,min(int(self.field_pipeline.maxTotalThreadsPerThreadgroup()),pairs))
+        encoder.dispatchThreads_threadsPerThreadgroup_(metal.MTLSizeMake(pairs,1,1),metal.MTLSizeMake(width,1,1))
+        encoder.endEncoding()
+        command.commit()
+        command.waitUntilCompleted()
+        if command.status() != metal.MTLCommandBufferStatusCompleted:
+            raise DeviceUnavailableError(f'Metal field dispatch failed: {command.error()}')
+        return bytes(buffers[1].contents().as_buffer(len(tile)))
 
 
 def _detect_mlx() -> tuple[bool, dict[str, Any], str | None, Any]:

@@ -38,7 +38,8 @@ jobs:
           tests/test_sharding.py tests/test_endian_engine.py tests/test_rate_limiter.py
           tests/test_geometric_galois_miner.py tests/test_extension_search.py tests/test_hendrix_galois.py
           tests/test_hendrix_oracles.py tests/test_hendrix_structured.py
-          tests/test_turing.py packages/turing/tests
+          tests/test_turing.py packages/turing/tests tests/test_scaling_paths.py
+          tests/test_pv_scale_fleet.py tests/test_fleet_adapters.py tests/test_lattice.py
       - name: Exact Galois parity and measured scale arithmetic
         run: python tools/verify_galois_invariant.py --output "$RUNNER_TEMP/mining-galois-invariant.json"
       - run: python deploy/hyba-mine/bist.py

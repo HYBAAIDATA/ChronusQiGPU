@@ -1,0 +1,170 @@
+{
+  "_provenance": {
+    "authored_by": "CodeRabbit Coding Agent",
+    "generator": "tools/verify_galois_invariant.py",
+    "task_id": "f77d97e8-279f-4ff4-ba2d-b4ad6de3ebe2"
+  },
+  "architecture": "x86_64",
+  "function_sha256": "35a31829167dd621dd2e5374b613dd2980ee896a6685b616f16bc863699e56a2",
+  "module_sha256": "1346191c35463bdf27d61329ef5f0f1f45caeb0823ea8df59e10f7b78c4fd999",
+  "period": 516,
+  "python": "3.14.4",
+  "repetitions": 15,
+  "residue_storage_bits": 16,
+  "schema_version": 1,
+  "status": "PASS",
+  "table_payload_bytes": 2064,
+  "timing_scope": "PV arithmetic kernel, one complete call per sample; 100 warm-up calls per vector",
+  "vectors": [
+    {
+      "median_ns": 431,
+      "result": [
+        170,
+        73
+      ],
+      "samples_ns": [
+        807,
+        1134,
+        694,
+        595,
+        781,
+        439,
+        431,
+        435,
+        413,
+        418,
+        398,
+        430,
+        394,
+        379,
+        408
+      ],
+      "scale_index": "10000"
+    },
+    {
+      "median_ns": 469,
+      "result": [
+        186,
+        210
+      ],
+      "samples_ns": [
+        531,
+        558,
+        529,
+        480,
+        508,
+        532,
+        469,
+        419,
+        437,
+        514,
+        434,
+        469,
+        399,
+        413,
+        461
+      ],
+      "scale_index": "100000"
+    },
+    {
+      "median_ns": 463,
+      "result": [
+        87,
+        160
+      ],
+      "samples_ns": [
+        976,
+        570,
+        537,
+        498,
+        452,
+        448,
+        429,
+        490,
+        489,
+        463,
+        433,
+        498,
+        411,
+        401,
+        450
+      ],
+      "scale_index": "1000000000000"
+    },
+    {
+      "median_ns": 455,
+      "result": [
+        96,
+        216
+      ],
+      "samples_ns": [
+        488,
+        505,
+        445,
+        432,
+        428,
+        456,
+        502,
+        434,
+        465,
+        542,
+        450,
+        480,
+        455,
+        448,
+        441
+      ],
+      "scale_index": "1000000000000000"
+    },
+    {
+      "median_ns": 470,
+      "result": [
+        2,
+        3
+      ],
+      "samples_ns": [
+        603,
+        485,
+        445,
+        480,
+        470,
+        661,
+        459,
+        486,
+        498,
+        466,
+        507,
+        465,
+        459,
+        320,
+        459
+      ],
+      "scale_index": "1000000000000000000"
+    },
+    {
+      "median_ns": 517,
+      "result": [
+        248,
+        130
+      ],
+      "samples_ns": [
+        566,
+        521,
+        563,
+        517,
+        501,
+        587,
+        779,
+        462,
+        613,
+        476,
+        461,
+        505,
+        526,
+        492,
+        485
+      ],
+      "scale_index": "100000000000000000000"
+    }
+  ]
+}
