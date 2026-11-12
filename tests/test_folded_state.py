@@ -272,3 +272,8 @@ def test_large_jump_uses_one_launch_and_retains_exact_epoch():
     adapter._dispatch_once = Mock(return_value=bytearray(expected))
     assert adapter.step_batch(source, 10**20)==expected
     adapter._dispatch_once.assert_called_once_with(source, 10**20)
+
+
+def test_batch_rejects_loss_of_high_quotient_limbs():
+    with pytest.raises(OverflowError):pack_folded_batch([516*(1<<64)])
+    assert unfold_scale_record(pack_folded_batch([MAX_FOLDABLE_SCALE]))[0]==MAX_FOLDABLE_SCALE

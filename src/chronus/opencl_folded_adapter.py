@@ -58,7 +58,7 @@ assert FOLDED_STATE_SIZE == 16
 
 #: SHA-256 of the packaged OpenCL kernel source (src/chronus/kernels/pv_folded.cl).
 FOLDED_KERNEL_SHA256 = (
-    "a25c7150dfc6b42d3ad00e73537d2c9b9272d96e74782b55c717ce3467828a57"
+    "d0cb785ca6f8632e908886ffc53c062e453695597834601fd88828482d0e338e"
 )
 
 
@@ -155,10 +155,12 @@ def unfold_scale_record(
 
 
 def pack_folded_batch(scales: Sequence[int], flags: int = 0) -> bytearray:
-    """Pack N scale indices into a contiguous 16*N byte buffer for cl.Buffer."""
+    """Pack N scale indices that fit the device epoch lane without truncation."""
     buf = bytearray(len(scales) * FOLDED_STATE_SIZE)
     for i, s in enumerate(scales):
         q, r, coeff_a, coeff_b = _fold_parts(s)
+        if q > MAX_EPOCH_Q:
+            raise OverflowError("batch scale exceeds the device epoch lane; retain high limbs host-side")
         FOLDED_STATE_STRUCT.pack_into(
             buf, i * FOLDED_STATE_SIZE, q & MAX_EPOCH_Q, r, coeff_a, coeff_b, flags
         )
@@ -249,6 +251,8 @@ class ChronusOpenCLFoldedAdapter:
             if not devices:
                 raise HardwareUnavailableError("No OpenCL GPU device is available")
             self.device = devices[0]
+            if not self.device.endian_little:
+                raise HardwareUnavailableError("folded-state records require a little-endian OpenCL device")
             self.context = cl.Context([self.device])
             self.queue = cl.CommandQueue(self.context)
             self.program = cl.Program(self.context, source.decode("utf-8")).build()
