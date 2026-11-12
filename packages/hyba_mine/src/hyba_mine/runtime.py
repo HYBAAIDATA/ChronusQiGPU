@@ -343,7 +343,8 @@ class MinerRuntime:
             "host_recheck": "passed",
         }
         try:
-            submission = await session.submit(job, unit.en2, hit.nonce)
+            submission = await session.submit(job, unit.en2, hit.nonce,
+                                              reply_expiry=max(120.0, 2 * self.options.submit_timeout))
         except ConnectionLost as exc:
             self.record("share_stale_dropped", {**base, "reason": f"not sent: {exc}"})
             return

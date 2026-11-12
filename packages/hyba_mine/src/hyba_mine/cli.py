@@ -35,6 +35,7 @@ from hyba_mine.control import (
     PREFERENCES,
     ROUTES,
     clear_block,
+    block_for,
     grant_approval,
     load_state,
     request_pool_switch,
@@ -159,9 +160,13 @@ def cmd_pool(args) -> int:
     except CredentialMissing as exc:
         _print(str(exc))
         return EXIT_CONFIG
-    update_state(layout, active_pool=profile.pool_id)
+    blocked = block_for(layout, profile.pool_id)
+    if blocked is not None:
+        _print(f"{profile.name} is blocked; update its login before switching.")
+        return EXIT_CONFIG
     pid = _miner_pid(layout)
     if pid is None:
+        update_state(layout, active_pool=profile.pool_id)
         _print(f"Active pool set to {profile.name}; it is used the next time HYBA Mine starts.")
         return 0
     request = request_pool_switch(layout, profile.pool_id)

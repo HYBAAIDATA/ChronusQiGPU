@@ -39,7 +39,7 @@ class SecretRegistry:
         self._passwords: set[str] = set()
 
     def register(self, *values: Optional[str]) -> None:
-        """Register login strings; short or hex-like placeholders are ignored."""
+        """Register distinctive text; short placeholders use register_password."""
         with self._lock:
             for value in values:
                 if isinstance(value, str) and _distinctive(value):
@@ -80,19 +80,30 @@ SECRETS = SecretRegistry()
 def register_login(username: str, password: str) -> None:
     """Register a pool login for redaction."""
     SECRETS.register(username)
+    SECRETS.register_password(username)
     SECRETS.register_password(password)
 
 
 def redact_payload(value):
-    """Redact string values before JSON encoding, preserving numeric types and keys."""
+    """Redact secrets in values and keys while preserving numeric types."""
     if isinstance(value, str):
         return SECRETS.redact(value)
     if isinstance(value, list):
         return [redact_payload(item) for item in value]
     if isinstance(value, dict):
-        return {key: REDACTED if isinstance(key, str) and key.lower() in
-                {"password", "passwd", "authorization", "username", "login"}
-                else redact_payload(item) for key, item in value.items()}
+        out = {}
+        for key, item in value.items():
+            target = key
+            if isinstance(key, str) and SECRETS.contains(key):
+                suffix = 0
+                target = "_redacted_key_0"
+                while target in value or target in out:
+                    suffix += 1
+                    target = f"_redacted_key_{suffix}"
+            out[target] = (REDACTED if isinstance(key, str) and key.lower() in
+                           {"password", "passwd", "authorization", "username", "login"}
+                           else redact_payload(item))
+        return out
     return value
 
 

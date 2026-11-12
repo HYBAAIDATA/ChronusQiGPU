@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Protocol
 
+from hyba_mine.control import _locked
 from hyba_mine.logsafe import login_fingerprint, register_login, worker_label
 from hyba_mine.paths import Layout, is_macos, refuse_inside_repository, write_private_file
 from hyba_mine.pools import get_pool, validate_password, validate_username
@@ -181,9 +182,10 @@ class FileStore:
 
     def put(self, pool_id: str, login: PoolLogin) -> None:
         register_login(login.username, login.password)
-        data = self._load()
-        data[get_pool(pool_id).pool_id] = json.loads(_encode(login))
-        self._write(data)
+        with _locked(self.path):
+            data = self._load()
+            data[get_pool(pool_id).pool_id] = json.loads(_encode(login))
+            self._write(data)
 
     def _write(self, data: dict) -> None:
         write_private_file(self.path, (json.dumps(data, indent=2, sort_keys=True) + "\n").encode("utf-8"))
@@ -195,11 +197,12 @@ class FileStore:
             )
 
     def delete(self, pool_id: str) -> bool:
-        data = self._load()
-        removed = data.pop(get_pool(pool_id).pool_id, None) is not None
-        if removed:
-            self._write(data)
-        return removed
+        with _locked(self.path):
+            data = self._load()
+            removed = data.pop(get_pool(pool_id).pool_id, None) is not None
+            if removed:
+                self._write(data)
+            return removed
 
 
 def default_backend() -> str:

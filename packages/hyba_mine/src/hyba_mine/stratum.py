@@ -234,7 +234,7 @@ class StratumConnection:
         if future is not None and not future.done():
             future.set_exception(asyncio.TimeoutError("pool response deadline expired"))
 
-    async def request(self, method: str, params: list) -> tuple[int, asyncio.Future]:
+    async def request(self, method: str, params: list, *, expiry: float = REQUEST_TIMEOUT_SECONDS) -> tuple[int, asyncio.Future]:
         if len(self._pending) >= MAX_PENDING_REQUESTS:
             raise ConnectionLost("too many unanswered pool requests")
         request_id = self._next_id
@@ -242,7 +242,7 @@ class StratumConnection:
         future = asyncio.get_running_loop().create_future()
         self._pending[request_id] = future
         self._expiry_handles[request_id] = asyncio.get_running_loop().call_later(
-            REQUEST_TIMEOUT_SECONDS, self._expire_request, request_id
+            expiry, self._expire_request, request_id
         )
         try:
             await self._send({"id": request_id, "method": method, "params": params})
@@ -542,11 +542,12 @@ class PoolSession:
         return None
 
     # ---------------------------------------------------------------- submit
-    async def submit(self, job: MiningJob, en2: bytes, nonce: int) -> Submission:
+    async def submit(self, job: MiningJob, en2: bytes, nonce: int, *,
+                     reply_expiry: float = 2 * REQUEST_TIMEOUT_SECONDS) -> Submission:
         if self._conn is None or not self.is_valid(job):
             raise ConnectionLost("the job is no longer valid on this connection")
         params = [self.login.username, job.job_id, en2.hex(), job.job.ntime, f"{nonce:08x}"]
-        request_id, future = await self._conn.request("mining.submit", params)
+        request_id, future = await self._conn.request("mining.submit", params, expiry=reply_expiry)
         return Submission(request_id, future, self._conn.endpoint, self.generation)
 
     async def wait_for_job(self, timeout: Optional[float] = None) -> Optional[MiningJob]:
