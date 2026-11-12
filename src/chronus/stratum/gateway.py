@@ -316,6 +316,20 @@ class StratumGateway:
             "difficulty": self.current_difficulty,
         }
 
+        previous = self.jobs.get(job_id)
+        header_fields = (
+            "prevhash_hex", "coinb1_hex", "coinb2_hex",
+            "version_hex", "nbits_hex", "ntime_hex",
+        )
+        if previous is not None and (
+            any(previous[field].lower() != job_data[field].lower() for field in header_fields)
+            or [branch.lower() for branch in previous["merkle_branches"]]
+            != [branch.lower() for branch in merkle_branches]
+        ):
+            # This ID now names a different header. Identical notifications
+            # still retain their duplicate protection, as do other active jobs.
+            self.dedup_ledger.discard_job(job_id)
+
         self.jobs[job_id] = job_data
         if job_id in self.job_history:
             self.job_history.remove(job_id)
@@ -323,6 +337,7 @@ class StratumGateway:
         if len(self.job_history) > 16:
             oldest = self.job_history.pop(0)
             self.jobs.pop(oldest, None)
+            self.dedup_ledger.discard_job(oldest)
 
         logger.info(f"[PUSH] Registered Job ID: {job_id} (Clean={clean_jobs}, Active Jobs={len(self.jobs)})")
 

@@ -14,7 +14,9 @@ import pytest
 
 from chronus.execution.mining_entrypoint import ChronusRealMiningEngine
 from chronus.stratum.gateway import StratumGateway
-from chronus.stratum.gatekeeper import compute_share_target_exact, decode_nbits_target
+from chronus.stratum.gatekeeper import (
+    DropReason, LocalPreSubmitGatekeeper, compute_share_target_exact, decode_nbits_target,
+)
 from chronus.stratum.sharding import NonceRange
 
 
@@ -383,3 +385,45 @@ class TestRetainedWork(unittest.IsolatedAsyncioTestCase):
         assert gateway.work_revision == revision
         assert gateway.jobs["job"]["revision"] != original["revision"]
         assert "other" in gateway.jobs
+
+
+def test_replacement_job_reuses_tuple_without_forgetting_other_job_duplicates():
+    gateway=StratumGateway("localhost",3333,"test")
+    gateway.current_difficulty=Fraction(1,10**100)
+    gateway._process_notify(notify("retained"))
+    gateway._process_notify(notify(clean=False))
+    gatekeeper=LocalPreSubmitGatekeeper()
+
+    def verify(job_id):
+        return gatekeeper.verify_candidate(
+            job_data=gateway.jobs[job_id], extranonce1_hex="ab",
+            extranonce2_hex="00000001", extranonce2_size=4,
+            ntime_hex="60000000", nonce_int=7, version_bits_hex="00000000",
+            pool_mask_hex="00000000", current_difficulty=gateway.current_difficulty,
+            dedup_ledger=gateway.dedup_ledger, active_job_ids=gateway.jobs,
+        )
+
+    original=verify("job")
+    assert original[0] and verify("retained")[0]
+    assert verify("job")[1] is DropReason.DUP
+    old_revision=gateway.jobs["job"]["revision"]
+    replacement=notify(clean=False)
+    replacement[2]+="ab"  # New coinbase, same job ID and submission tuple.
+    gateway._process_notify(replacement)
+    assert gateway.jobs["job"]["revision"]>old_revision
+    replaced=verify("job")
+    assert replaced[0] and replaced[2]!=original[2]
+    assert verify("job")[1] is DropReason.DUP
+    assert verify("retained")[1] is DropReason.DUP
+    # A repeated notification with identical header inputs is still duplicate work.
+    gateway._process_notify(replacement)
+    assert verify("job")[1] is DropReason.DUP
+    equivalent=list(replacement)
+    equivalent[2]=equivalent[2].upper()
+    gateway._process_notify(equivalent)
+    assert verify("job")[1] is DropReason.DUP
+    for index in range(17):
+        gateway._process_notify(notify(f"next-{index}",clean=False))
+    assert "job" not in gateway.jobs
+    gateway._process_notify(replacement)
+    assert verify("job")[0]  # No stale entry survives retirement of an inactive job ID.
