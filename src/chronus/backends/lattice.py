@@ -68,14 +68,14 @@ class PhiElement:
 def phi_power(order: int) -> PhiElement:
     if not isinstance(order, int) or isinstance(order, bool) or order < 0:
         raise ValueError("order must be a non-negative integer")
-    result, base = PhiElement(1, 0), PhiElement(0, 1)
-    while order:
-        if order & 1:
-            result = result.multiply(base)
-        order >>= 1
-        if order:
-            base = base.multiply(base)
-    return result
+    # Fibonacci fast doubling: phi**n = F_(n-1) + F_n*phi.
+    # The Lucas trace 2*F_(n-1)+F_n is retained exactly in Z[phi].
+    a, b = 0, 1  # F_k, F_(k+1)
+    for bit in bin(order)[2:]:
+        even = a * (2 * b - a)
+        odd = a * a + b * b
+        a, b = (even, odd) if bit == "0" else (odd, even + odd)
+    return PhiElement(b - a, a)
 
 
 def verify_fold(

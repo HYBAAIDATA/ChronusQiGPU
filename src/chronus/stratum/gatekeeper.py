@@ -4,8 +4,8 @@ Chronus Zero-Ban Pre-Submission Local Gatekeeper Engine.
 Safety Contract:
 ----------------
 Evaluates every candidate share locally BEFORE wire transmission.
-Invalid or non-target nonces are dropped internally, guaranteeing a 0.00% local
-pool IP ban rate across ViaBTC, Braiins Pool, NiceHash, and CKPool.
+Invalid or non-target nonces are dropped internally. Pool rejection and ban
+policies remain outside this local verifier's control.
 
 Drop Reasons Enum:
 ------------------
@@ -50,6 +50,10 @@ def decode_nbits_target(nbits_hex_or_int: str | int) -> int:
     else:
         nbits = nbits_hex_or_int
 
+    if type(nbits) is not int or not 0 <= nbits <= 0xffffffff:
+        raise ValueError("nBits must be an unsigned 32-bit integer")
+    if nbits & 0x00800000:
+        raise ValueError("Negative compact target")
     exponent = nbits >> 24
     mantissa = nbits & 0x007FFFFF
 
@@ -58,6 +62,8 @@ def decode_nbits_target(nbits_hex_or_int: str | int) -> int:
     else:
         target = mantissa << (8 * (exponent - 3))
 
+    if not 0 < target < (1 << 256):
+        raise ValueError("Compact target must be positive and fit uint256")
     return target
 
 
@@ -71,7 +77,7 @@ def compute_share_target_exact(difficulty: Fraction | int | str) -> int:
     frac_diff = Fraction(difficulty) if isinstance(difficulty, (int, str, Fraction)) else Fraction(str(difficulty))
     if frac_diff <= 0:
         raise ValueError(f"Share difficulty must be positive, got {difficulty}")
-    return (TRUEDIFF1_TARGET * frac_diff.denominator) // frac_diff.numerator
+    return min((1 << 256) - 1, (TRUEDIFF1_TARGET * frac_diff.denominator) // frac_diff.numerator)
 
 
 class LocalPreSubmitGatekeeper:

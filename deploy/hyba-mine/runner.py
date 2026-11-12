@@ -22,6 +22,7 @@ import os
 import sys
 import time
 
+import bist
 from chronus.execution import mining_entrypoint as engine_module
 
 logger = logging.getLogger("HybaMineRunner")
@@ -37,6 +38,7 @@ class HostMiner(engine_module.ChronusRealMiningEngine):
             await super().run(max_seconds=max_seconds)
         finally:
             stats_task.cancel()
+            await asyncio.gather(stats_task, return_exceptions=True)
 
     async def _listen_pool_events(self):
         try:
@@ -62,6 +64,15 @@ class HostMiner(engine_module.ChronusRealMiningEngine):
 
 
 async def main() -> int:
+    report = bist.run()
+    if report.get("bist") != "PASS":
+        logger.error("Mining self-test failed; refusing pool connection")
+        for check in report.get("checks", []):
+            if not check.get("passed"):
+                logger.error("Failed self-test check=%s error_type=%s",
+                             check.get("check", "unknown"), check.get("error", "none"))
+        return 1
+    logger.info("Mining self-test passed")
     pool, host, port, user, password = engine_module.load_env_config()
     logger.info("HYBA Mine: pool %s at %s:%d", pool, host, port)
     miner = HostMiner(host, port, user, password)
