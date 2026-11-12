@@ -73,8 +73,21 @@ Physical GPU and native Metal execution were unavailable in the task sandbox;
 run the same known answers and workload measurements on each fleet device
 before selecting it for production work.
 
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:a7d03571707d23c110b2f2dcd02be2cfe559b49c9decf113ab4619c6e2048747 -->
+
+The field-scaling kernel is a separate reusable workload. The Mac mining
+plugin keeps its canonical PYTHIA/Hendrix/golden nonce plan and its device
+SHA-256d path; it does not dispatch this field-scaling job per nonce. The root
+mining runner uses the authored geometric/TURING path and computes its exact
+PV factors locally. These entry points must be measured with their complete
+workload before attributing a mining throughput gain to PV arithmetic.
+
 This implementation accelerates exact scale arithmetic and exposes it to
-workload consumers. Mining throughput must be measured end to end, including
+workload consumers.
+
+<!-- /coderabbit-ai-generated:v1 --> Mining throughput must be measured end to end, including
 search, hashing, transfers, verification and pool replies. Arithmetic timing
 alone does not establish a mining speedup or a competitor ranking.
 
