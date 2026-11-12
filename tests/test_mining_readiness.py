@@ -394,11 +394,11 @@ def test_replacement_job_reuses_tuple_without_forgetting_other_job_duplicates():
     gateway._process_notify(notify(clean=False))
     gatekeeper=LocalPreSubmitGatekeeper()
 
-    def verify(job_id):
+    def verify(job_id, ntime_hex="60000000"):
         return gatekeeper.verify_candidate(
             job_data=gateway.jobs[job_id], extranonce1_hex="ab",
             extranonce2_hex="00000001", extranonce2_size=4,
-            ntime_hex="60000000", nonce_int=7, version_bits_hex="00000000",
+            ntime_hex=ntime_hex, nonce_int=7, version_bits_hex="00000000",
             pool_mask_hex="00000000", current_difficulty=gateway.current_difficulty,
             dedup_ledger=gateway.dedup_ledger, active_job_ids=gateway.jobs,
         )
@@ -418,6 +418,12 @@ def test_replacement_job_reuses_tuple_without_forgetting_other_job_duplicates():
     # A repeated notification with identical header inputs is still duplicate work.
     gateway._process_notify(replacement)
     assert verify("job")[1] is DropReason.DUP
+    timestamp_only=list(replacement)
+    timestamp_only[7]="60000001"
+    gateway._process_notify(timestamp_only)
+    assert verify("job")[1] is DropReason.DUP
+    assert verify("job","60000001")[0]
+    assert verify("job","60000001")[1] is DropReason.DUP
     equivalent=list(replacement)
     equivalent[2]=equivalent[2].upper()
     gateway._process_notify(equivalent)
