@@ -9,8 +9,8 @@
 
 // 16-byte coalesced folded state record. The unbounded scale trajectory
 // s = 516 * q + r is separated into its exact 64-bit winding quotient and
-// its canonical phase residual, so folding is bijective and lossless:
-// unfold(fold(s)) == s bit-for-bit.
+// its canonical phase residual. The record stores the low 64-bit quotient;
+// larger quotients require a caller-owned host sidecar for lossless unfolding.
 typedef struct __attribute__((packed, aligned(16))) {
     ulong  epoch_q;        // exact quotient q = s / 516 (zero truncation)
     ushort r_mod_516;      // canonical residual r = s % 516 in [0, 515]
@@ -42,13 +42,14 @@ inline ushort2 f257_phi_mul(ushort2 x, ushort2 y) {
     return (ushort2)(res_a, res_b);
 }
 
-// Advances each folded state by an arbitrary scale jump delta_s with zero
-// loops: one integer div/mod updates (q, r), one constant-cache read
+// Advances each folded state by a host-reduced exact scale jump with zero
+// loops: integer addition updates (q, r), one constant-cache read
 // refreshes (a, b). Host-side parity verification is fail-closed.
 __kernel void step_folded_states(
     __constant const ushort2* restrict phi_lut_516, // 2,064-byte LUT buffer
     __global FoldedState16* restrict states,        // coalesced 16B records
-    const ulong delta_s,                            // arbitrary scale jump
+    const ulong delta_q,                            // exact jump / 516
+    const ushort delta_r,                           // exact jump % 516
     const uint count
 ) {
     const uint gid = get_global_id(0);
@@ -56,9 +57,9 @@ __kernel void step_folded_states(
 
     FoldedState16 st = states[gid];
 
-    // Fold delta_s into quotient and residual without losing high-order bits.
-    ulong dq = delta_s / PISANO_PERIOD;
-    uint  dr = (uint)(delta_s % PISANO_PERIOD);
+    // Host has reduced and checked the exact jump before dispatch.
+    ulong dq = delta_q;
+    uint  dr = (uint)delta_r;
 
     uint next_r = (uint)st.r_mod_516 + dr;
     if (next_r >= PISANO_PERIOD) {
@@ -69,7 +70,7 @@ __kernel void step_folded_states(
     st.epoch_q   += dq;
     st.r_mod_516  = (ushort)next_r;
 
-    // 1-cycle L1 constant-cache fetch for exact [a, b] in F_257[phi].
+    // Constant-memory fetch for exact [a, b] in F_257[phi].
     ushort2 ab = pv_lut_lookup(phi_lut_516, next_r);
     st.coeff_a = ab.s0;
     st.coeff_b = ab.s1;

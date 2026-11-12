@@ -241,3 +241,28 @@ def test_opencl_device_dispatch_roundtrip():
         exact_s, (a, b), _ = unfold_scale_record(out)
         assert exact_s == s + delta
         assert (a, b) == LUT_TUPLE[(s + delta) % PISANO_PERIOD]
+
+
+def test_batch_preflight_rejects_corruption_and_overflow_before_launch():
+    from unittest.mock import Mock
+    adapter = object.__new__(ChronusOpenCLFoldedAdapter)
+    adapter._dispatch_once = Mock(side_effect=AssertionError('must not launch'))
+    corrupt = bytearray(fold_scale_index(10**20));corrupt[10] ^= 255
+    with pytest.raises(ValueError, match='corruption'):
+        adapter.step_batch(corrupt, 1)
+    with pytest.raises(OverflowError):
+        adapter.step_batch(fold_scale_index(MAX_FOLDABLE_SCALE), 1)
+    with pytest.raises(OverflowError):
+        adapter.step_batch(fold_scale_index(0), 10**100)
+    assert adapter.step_batch(b'', 10**100)==bytearray()
+    adapter._dispatch_once.assert_not_called()
+
+
+def test_large_jump_uses_one_launch_and_retains_exact_epoch():
+    from unittest.mock import Mock
+    adapter = object.__new__(ChronusOpenCLFoldedAdapter)
+    source = fold_scale_index(10**12)
+    expected = step_folded_record(source, 10**20)
+    adapter._dispatch_once = Mock(return_value=bytearray(expected))
+    assert adapter.step_batch(source, 10**20)==expected
+    adapter._dispatch_once.assert_called_once_with(source, 10**20)

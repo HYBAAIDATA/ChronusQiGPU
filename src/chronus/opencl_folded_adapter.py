@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import hashlib
 import struct
+import sys
 from array import array
 from typing import Iterator, Sequence
 
@@ -57,7 +58,7 @@ assert FOLDED_STATE_SIZE == 16
 
 #: SHA-256 of the packaged OpenCL kernel source (src/chronus/kernels/pv_folded.cl).
 FOLDED_KERNEL_SHA256 = (
-    "b5be79c2784bc98dfa46e4dafba9392de26b3f7a3c1a22e0fef1f352c41ba5d0"
+    "a25c7150dfc6b42d3ad00e73537d2c9b9272d96e74782b55c717ce3467828a57"
 )
 
 
@@ -82,6 +83,8 @@ def build_canonical_2064b_lut() -> tuple[bytes, tuple[tuple[int, int], ...]]:
         raise RuntimeError("F_257[phi] does not close at period 516")
     if pairs[HALF_PERIOD] != (MOD - 1, 0) or pairs[HALF_PERIOD - 1] != (1, MOD - 1):
         raise RuntimeError("F_257[phi] residue-256 boundary check failed")
+    if sys.byteorder != "little":
+        flat_u16.byteswap()
     payload = flat_u16.tobytes()
     if len(payload) != 2064:
         raise RuntimeError(f"LUT payload is {len(payload)} bytes, expected 2064")
@@ -179,6 +182,8 @@ def step_folded_record(record_16b: bytes | memoryview, delta_s: int) -> bytes:
     """
     if not isinstance(delta_s, int) or isinstance(delta_s, bool) or delta_s < 0:
         raise ValueError("delta_s must be a non-negative integer")
+    # Reject corrupted source coefficients before refreshing them from the LUT.
+    unfold_scale_record(record_16b)
     epoch_q, r, _a, _b, flags = FOLDED_STATE_STRUCT.unpack(record_16b)
     if r >= PISANO_PERIOD:
         raise ValueError(f"Folded residual r={r} is outside [0, {PISANO_PERIOD - 1}]")
@@ -272,7 +277,7 @@ class ChronusOpenCLFoldedAdapter:
             raise ParityVerificationError("OpenCL folded-state known-answer test failed")
 
     def _dispatch_once(self, packed_states: bytes | bytearray, delta_s: int) -> bytearray:
-        """Single kernel launch; delta_s must already fit in a ulong lane."""
+        """Single launch with the host-reduced exact quotient and residual."""
         cl, np = self._cl, self._np
         count = len(packed_states) // FOLDED_STATE_SIZE
         flags = cl.mem_flags
@@ -288,7 +293,8 @@ class ChronusOpenCLFoldedAdapter:
             None,
             self._lut_buffer,
             state_buffer,
-            np.uint64(delta_s),
+            np.uint64(delta_s // PISANO_PERIOD),
+            np.uint16(delta_s % PISANO_PERIOD),
             np.uint32(count),
         )
         out = bytearray(len(packed_states))
@@ -296,30 +302,25 @@ class ChronusOpenCLFoldedAdapter:
         return out
 
     def step_batch(self, packed_states: bytes | bytearray, delta_s: int) -> bytearray:
-        """Advance every folded state by delta_s with full host parity.
+        """Advance canonical records with one launch and full host parity.
 
-        Jumps at or beyond 2**64 are chunked into ulong-sized launches; each
-        chunk is verified against the exact host reference before the next.
+        Divide the exact integer jump on the host into quotient and residual.
+        Validate corruption and epoch overflow before allocating device buffers.
+        Records carry only the low epoch limb; higher limbs remain host-owned.
         """
-        if not isinstance(delta_s, int) or isinstance(delta_s, bool) or delta_s < 0:
+        if type(delta_s) is not int or delta_s < 0:
             raise ValueError("delta_s must be a non-negative integer")
         if len(packed_states) % FOLDED_STATE_SIZE:
             raise ValueError("packed_states length is not a multiple of 16 bytes")
-        current = bytearray(packed_states)
-        remaining = delta_s
-        while True:
-            chunk = min(remaining, self._UINT64_MAX_PLUS_1 - 1)
-            stepped = self._dispatch_once(current, chunk)
-            records_in = [
-                bytes(current[i:i + FOLDED_STATE_SIZE])
-                for i in range(0, len(current), FOLDED_STATE_SIZE)
-            ]
-            records_out = [
-                bytes(stepped[i:i + FOLDED_STATE_SIZE])
-                for i in range(0, len(stepped), FOLDED_STATE_SIZE)
-            ]
-            verify_step_parity(records_in, records_out, chunk)
-            current = stepped
-            remaining -= chunk
-            if remaining == 0:
-                return current
+        if len(packed_states) // FOLDED_STATE_SIZE >= 1 << 32:
+            raise ValueError("batch count exceeds the uint32 kernel lane")
+        if not packed_states:
+            return bytearray()
+        records_in = [bytes(packed_states[i:i + FOLDED_STATE_SIZE])
+                      for i in range(0, len(packed_states), FOLDED_STATE_SIZE)]
+        # Preflight before dispatch; the kernel cannot safely report an epoch carry.
+        expected = b"".join(step_folded_record(record, delta_s) for record in records_in)
+        stepped = self._dispatch_once(packed_states, delta_s)
+        if bytes(stepped) != expected:
+            raise ParityVerificationError("folded-state batch parity failed")
+        return stepped

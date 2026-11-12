@@ -77,6 +77,8 @@ def main():
         results[-3]["coeff_a"], results[-3]["coeff_b"] = LUT_TUPLE[r]
         results[-3]["roundtrip_exact"] = True
     print(json.dumps({
+        "_provenance": {"generated_by": "CodeRabbit Coding Agent",
+                        "task_id": "f77d97e8-279f-4ff4-ba2d-b4ad6de3ebe2"},
         "workload": "period-516 F_257[phi] folded-state fold/step/unfold over reference vectors",
         "lut_sha256": LUT_SHA256,
         "lut_bytes": 2064,
