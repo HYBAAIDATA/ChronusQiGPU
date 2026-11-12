@@ -42,6 +42,12 @@ jobs:
           tests/test_pv_scale_fleet.py tests/test_fleet_adapters.py tests/test_lattice.py
       - name: Exact Galois parity and measured scale arithmetic
         run: python tools/verify_galois_invariant.py --output "$RUNNER_TEMP/mining-galois-invariant.json"
+      - name: Retain measured Galois parity evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: mining-galois-python-${{ matrix.python }}
+          path: ${{ runner.temp }}/mining-galois-invariant.json
+          if-no-files-found: error
       - run: python deploy/hyba-mine/bist.py
   image-selftest:
     runs-on: ubuntu-latest

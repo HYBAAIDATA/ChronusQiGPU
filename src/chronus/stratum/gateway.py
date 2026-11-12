@@ -199,7 +199,7 @@ class StratumGateway:
                 srv_mask = config_res["result"].get("version-rolling.mask", "00000000")
                 self.pool_mask_hex = parse_and_intersect_version_mask(srv_mask, DEFAULT_CLIENT_MASK_HEX)
                 logger.info(f"[HANDSHAKE] Agreed ASICBoost version mask: {self.pool_mask_hex}")
-        except ValueError as e:
+        except (ValueError, asyncio.TimeoutError) as e:
             logger.warning(f"[HANDSHAKE] mining.configure fallback (legacy pool): {e}")
             self.pool_mask_hex = "00000000"
 
