@@ -51,9 +51,9 @@ form{{margin-top:1rem}} label{{margin-right:.5rem}} select,button{{font-size:1re
 let lastStatus = document.getElementById('status').textContent;
 setInterval(async () => {{
   try {{
-    const response = await fetch('/status.json');
+    const response = await fetch('/status.txt');
     if (!response.ok) throw new Error('Status unavailable');
-    lastStatus = JSON.stringify(await response.json(), null, 2);
+    lastStatus = await response.text();
     document.getElementById('status').textContent = lastStatus;
   }} catch (_) {{
     document.getElementById('status').textContent = 'Status unavailable. Last values are stale:\\n' + lastStatus;
@@ -90,6 +90,9 @@ class _Handler(BaseHTTPRequestHandler):
             return
         console = self.server.console
         summary = summarize(console.ledger.records())
+        if self.path == "/status.txt":
+            self._send(HTTPStatus.OK, render_text(summary).encode("utf-8"), "text/plain; charset=utf-8")
+            return
         if self.path == "/status.json":
             self._send(HTTPStatus.OK, json.dumps(summary, indent=2).encode("utf-8"), "application/json")
             return

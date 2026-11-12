@@ -27,6 +27,7 @@ from typing import Iterator, Optional
 
 from hyba_mine.control import utc_now
 from hyba_mine.logsafe import redact_payload
+from hyba_mine.paths import write_private_file
 
 GENESIS_HASH = "0" * 64
 _TAIL_CHUNK = 64 * 1024
@@ -116,6 +117,50 @@ class Ledger:
                     return -1, GENESIS_HASH, ends_clean
                 chunk *= 4
 
+    @property
+    def _recovery_path(self) -> Path:
+        return self.path.with_suffix(self.path.suffix + ".recovery")
+
+    def _prefix_digest(self, length: int) -> str:
+        digest = hashlib.sha256()
+        with open(self.path, "rb") as handle:
+            remaining = length
+            while remaining:
+                chunk = handle.read(min(_TAIL_CHUNK, remaining))
+                if not chunk:
+                    raise ValueError("ledger recovery prefix is truncated")
+                digest.update(chunk)
+                remaining -= len(chunk)
+        return digest.hexdigest()
+
+    def _complete_recovery(self) -> None:
+        """Finish a persisted recovery append; never replace existing bytes."""
+        if not self._recovery_path.exists():
+            return
+        intent = json.loads(self._recovery_path.read_bytes())
+        offset = intent["offset"]
+        payload = bytes.fromhex(intent["payload_hex"])
+        if type(offset) is not int or offset < 0 or self._prefix_digest(offset) != intent["prefix_sha256"]:
+            raise ValueError("ledger recovery prefix differs from its intent")
+        with open(self.path, "rb") as handle:
+            handle.seek(offset)
+            written = handle.read(len(payload) + 1)
+        if not payload.startswith(written):
+            raise ValueError("ledger recovery suffix differs from its intent")
+        fd = os.open(self.path, os.O_WRONLY | os.O_APPEND)
+        try:
+            self._cache = None
+            remaining = memoryview(payload)[len(written):]
+            while remaining:
+                count = os.write(fd, remaining)
+                if count <= 0:
+                    raise OSError("ledger recovery made no progress")
+                remaining = remaining[count:]
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+        self._recovery_path.unlink()
+
     def append(self, kind: str, data: Optional[dict] = None) -> dict:
         if not isinstance(kind, str) or not kind:
             raise ValueError("ledger record kind must be a non-empty string")
@@ -129,6 +174,7 @@ class Ledger:
         lock_fd = os.open(self.lock_path, os.O_RDWR | os.O_CREAT, 0o600)
         try:
             fcntl.flock(lock_fd, fcntl.LOCK_EX)
+            self._complete_recovery()
             seq, prev, ends_clean = self._tail()
             record = {"seq": seq + 1, "ts": utc_now(), "kind": kind, "data": data, "prev": prev}
             record["hash"] = record_hash(record)
@@ -148,6 +194,20 @@ class Ledger:
                     record["hash"] = record_hash(record)
                     line = _canonical(recovery) + b"\n" + _canonical(record) + b"\n"
                 line = b"\n" + line
+                # Persist intent before completing a torn line. A second crash
+                # resumes exactly this append rather than creating nested fragments.
+                offset = self.path.stat().st_size
+                intent = {"offset": offset, "prefix_sha256": self._prefix_digest(offset),
+                          "payload_hex": line.hex()}
+                write_private_file(self._recovery_path, _canonical(intent))
+                directory_fd = os.open(self.path.parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+                try:
+                    os.fsync(directory_fd)
+                finally:
+                    os.close(directory_fd)
+                self._complete_recovery()
+                self._cache = (self.path.stat().st_size, record["seq"], record["hash"])
+                return record
             fd = os.open(self.path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
             try:
                 self._cache = None

@@ -169,3 +169,107 @@ class NetworkBoundsTests(unittest.IsolatedAsyncioTestCase):
             endpoints = get_pool(pool_id).ordered_endpoints('prefer')
             self.assertTrue(endpoints)
             self.assertTrue(all(e.tls for e in endpoints))
+
+
+class FollowupRepairTests(unittest.TestCase):
+    def tearDown(self):
+        SECRETS.clear()
+
+    def test_recovery_resumes_after_two_interrupted_writes_and_detects_tampering(self):
+        with TempHome() as home:
+            ledger=Ledger(home.layout.ledger);ledger.append('first')
+            with ledger.path.open('ab') as out:out.write(b'garbage')
+            before=ledger.path.read_bytes();write=os.write
+            def interrupted():
+                calls=0
+                def partial(fd,data):
+                    nonlocal calls
+                    calls+=1
+                    if calls>1:raise OSError('interrupted recovery')
+                    return write(fd,data[:7])
+                return partial
+            for _ in range(2):
+                with patch('hyba_mine.ledger.os.write',side_effect=interrupted()):
+                    with self.assertRaises(OSError):ledger.append('recovering')
+            ledger.append('finished')
+            self.assertTrue(ledger.path.read_bytes().startswith(before))
+            self.assertTrue(ledger.verify().ok,ledger.verify().error)
+            self.assertEqual([r['kind'] for r in ledger.records()],['first','tail_recovery','recovering','finished'])
+            # A different pending recovery cannot overwrite a modified prefix.
+            with ledger.path.open('ab') as out:out.write(b'partial')
+            with patch('hyba_mine.ledger.os.write',side_effect=interrupted()):
+                with self.assertRaises(OSError):ledger.append('another')
+            data=bytearray(ledger.path.read_bytes());data[10]^=1;ledger.path.write_bytes(data)
+            with self.assertRaisesRegex(ValueError,'prefix'):ledger.append('refused')
+            self.assertFalse(ledger.verify().ok)
+
+    def test_concurrent_credential_updates_keep_all_pool_logins(self):
+        import threading
+        import time
+        from hyba_mine.credentials import FileStore
+        with TempHome() as home:
+            store=FileStore(home.layout.credentials);original=store._load
+            def slow_load():
+                data=original();time.sleep(0.01);return data
+            barrier=threading.Barrier(4)
+            def put(pool):
+                barrier.wait();store.put(pool,PoolLogin(f'account.{pool}','synthetic'))
+            with patch.object(store,'_load',side_effect=slow_load):
+                with ThreadPoolExecutor(4) as executor:list(executor.map(put,['viabtc','braiins','ckpool','nicehash']))
+            self.assertEqual(len(store._load()),4)
+
+    def test_blocked_cli_switch_preserves_saved_healthy_pool(self):
+        from argparse import Namespace
+        from hyba_mine.cli import cmd_pool, EXIT_CONFIG
+        with TempHome() as home:
+            home.put_login('viabtc');update_state(home.layout,active_pool='braiins')
+            block_pool(home.layout,'viabtc','rejected')
+            with patch('hyba_mine.cli._miner_pid',return_value=123):
+                self.assertEqual(cmd_pool(Namespace(action='use',pool='viabtc',wait=0)),EXIT_CONFIG)
+            self.assertEqual(load_state(home.layout)['active_pool'],'braiins')
+
+    def test_running_switch_waits_for_ack_before_persisting_default(self):
+        from argparse import Namespace
+        from hyba_mine.cli import cmd_pool
+        with TempHome() as home:
+            home.put_login('viabtc');update_state(home.layout,active_pool='braiins')
+            with patch('hyba_mine.cli._miner_pid',return_value=123):
+                cmd_pool(Namespace(action='use',pool='viabtc',wait=0))
+            self.assertEqual(load_state(home.layout)['active_pool'],'braiins')
+            self.assertEqual(read_control_request(home.layout)['pool_id'],'viabtc')
+
+    def test_short_username_and_sensitive_json_keys_are_redacted_without_collisions(self):
+        from hyba_mine.logsafe import redact_payload
+        register_login('a.b','very-secret-password')
+        clean=redact_payload({'very-secret-password':1,'a.b':2,'_redacted_key_0':3,'nested':{'a.b':'echo a.b'}})
+        self.assertNotIn('a.b',json.dumps(clean));self.assertNotIn('very-secret-password',json.dumps(clean))
+        self.assertEqual(len(clean),4)
+        self.assertEqual(sorted(v for v in clean.values() if isinstance(v,int)),[1,2,3])
+
+
+class LateResponseTests(unittest.IsolatedAsyncioTestCase):
+    async def test_reply_after_ack_deadline_is_recorded_from_socket(self):
+        from _support import VerifyingPool, GENESIS_EN2, GENESIS_NONCE
+        from test_stratum import _session, _connected
+        from test_runtime import Harness
+        with TempHome() as home:
+            home.put_login('viabtc')
+            pool=VerifyingPool(reply_to_submits=False);await pool.start()
+            session=_session(pool,[]);task=asyncio.create_task(session.run())
+            h=Harness(home,{'viabtc':pool},submit_timeout=0.01)
+            try:
+                job=await _connected(session)
+                submission=await session.submit(job,GENESIS_EN2,GENESIS_NONCE,reply_expiry=0.5)
+                await h.runtime._await_reply('late-test',submission)
+                self.assertFalse(submission.future.done())
+                params=[session.login.username,job.job_id,GENESIS_EN2.hex(),job.job.ntime,f'{GENESIS_NONCE:08x}']
+                accepted,_=pool.verify(params);self.assertTrue(accepted)
+                for writer in pool.writers:
+                    writer.write((json.dumps({'id':submission.request_id,'result':accepted,'error':None})+'\n').encode())
+                    await writer.drain()
+                await asyncio.wait_for(asyncio.shield(submission.future),0.5)
+                await asyncio.sleep(0)
+                replies=[r['data'] for r in h.ledger.records() if r['kind']=='pool_response']
+                self.assertEqual(len(replies),1);self.assertTrue(replies[0]['late']);self.assertTrue(replies[0]['accepted'])
+            finally:
+                session.stop();await session.disconnect();await asyncio.wait_for(task,1);await pool.stop();h.runtime.dispatcher.close()
