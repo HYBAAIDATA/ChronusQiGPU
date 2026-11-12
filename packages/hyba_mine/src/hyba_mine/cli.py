@@ -409,7 +409,7 @@ def cmd_autostart(args) -> int:
 
     layout = _layout()
     if args.action == "enable":
-        path = autostart.enable(Path(args.run_script).expanduser(), layout)
+        path = autostart.enable(Path(args.run_script).expanduser(), layout, start=not args.no_start)
         _print(f"Auto-start enabled: {path} (logs in {layout.logs}).")
     elif args.action == "disable":
         autostart.disable()
@@ -504,6 +504,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("autostart", help="launchd auto-start at login (macOS)")
     p.add_argument("action", choices=("enable", "disable", "status"))
     p.add_argument("--run-script", default=str(REPO_RUN_SCRIPT))
+    p.add_argument("--no-start", action="store_true", help="install for next login without loading the agent now")
     p.set_defaults(func=cmd_autostart)
     return parser
 

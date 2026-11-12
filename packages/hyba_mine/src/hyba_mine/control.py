@@ -14,13 +14,15 @@
 from __future__ import annotations
 
 import json
+import fcntl
+from contextlib import contextmanager
 import os
 import socket
 import uuid
 from datetime import datetime, timezone
 from typing import Optional, Tuple
 
-from hyba_mine.paths import Layout, write_private_file
+from hyba_mine.paths import Layout, ensure_private_dir, write_private_file
 from hyba_mine.pools import TLS_POLICIES, get_pool
 
 #: --backend choices. igpu is the Chronus iGPU (Mode A); metal, opencl and cuda are the host GPU.
@@ -75,30 +77,55 @@ def save_state(layout: Layout, state: dict) -> dict:
     return state
 
 
+@contextmanager
+def _locked(path):
+    ensure_private_dir(path.parent)
+    fd = os.open(path.with_suffix(path.suffix + ".lock"), os.O_RDWR | os.O_CREAT, 0o600)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        yield
+    finally:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
+
+
 def update_state(layout: Layout, **changes) -> dict:
-    state = load_state(layout)
-    state.update(changes)
-    return save_state(layout, state)
+    with _locked(layout.state):
+        state = load_state(layout)
+        state.update(changes)
+        return save_state(layout, state)
+
+
+def _blocks(state: dict) -> dict:
+    blocked = state.get("blocked") or {}
+    # Migrate the previous one-pool representation on the next write.
+    return {blocked["pool"]: blocked} if "pool" in blocked else dict(blocked)
 
 
 def block_pool(layout: Layout, pool_id: str, reason: str) -> dict:
-    return update_state(layout, blocked={"pool": get_pool(pool_id).pool_id, "reason": reason, "at": utc_now()})
+    pool_id = get_pool(pool_id).pool_id
+    with _locked(layout.state):
+        state = load_state(layout)
+        blocks = _blocks(state)
+        blocks[pool_id] = {"pool": pool_id, "reason": reason, "at": utc_now()}
+        state["blocked"] = blocks
+        return save_state(layout, state)
 
 
 def clear_block(layout: Layout, pool_id: Optional[str] = None) -> dict:
-    state = load_state(layout)
-    blocked = state.get("blocked")
-    if blocked and (pool_id is None or blocked.get("pool") == get_pool(pool_id).pool_id):
-        state["blocked"] = None
-        save_state(layout, state)
-    return state
+    with _locked(layout.state):
+        state = load_state(layout)
+        blocks = _blocks(state)
+        if pool_id is None:
+            blocks.clear()
+        else:
+            blocks.pop(get_pool(pool_id).pool_id, None)
+        state["blocked"] = blocks
+        return save_state(layout, state)
 
 
 def block_for(layout: Layout, pool_id: str) -> Optional[dict]:
-    blocked = load_state(layout).get("blocked")
-    if blocked and blocked.get("pool") == get_pool(pool_id).pool_id:
-        return blocked
-    return None
+    return _blocks(load_state(layout)).get(get_pool(pool_id).pool_id)
 
 
 def _identity() -> Tuple[str, int]:
@@ -138,7 +165,8 @@ def request_pool_switch(layout: Layout, pool_id: str) -> dict:
         "pool_id": get_pool(pool_id).pool_id,
         "requested_at": utc_now(),
     }
-    _write_json(layout.control, request)
+    with _locked(layout.control):
+        _write_json(layout.control, request)
     return request
 
 
@@ -150,6 +178,7 @@ def read_control_request(layout: Layout) -> Optional[dict]:
 
 
 def clear_control_request(layout: Layout, request_id: str) -> None:
-    current = _read_json(layout.control)
-    if current and current.get("request_id") == request_id:
-        layout.control.unlink()
+    with _locked(layout.control):
+        current = _read_json(layout.control)
+        if current and current.get("request_id") == request_id:
+            layout.control.unlink()

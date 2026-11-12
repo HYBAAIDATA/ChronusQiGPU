@@ -37,7 +37,7 @@ from chronus.execution.stratum import StratumJob
 from hyba_mine import __version__
 from hyba_mine.control import utc_now
 from hyba_mine.credentials import PoolLogin
-from hyba_mine.logsafe import SECRETS
+from hyba_mine.logsafe import SECRETS, redact_payload
 from hyba_mine.pools import PoolEndpoint, PoolProfile
 from hyba_mine.work import MiningJob
 
@@ -46,6 +46,9 @@ log = logging.getLogger("hyba_mine.stratum")
 USER_AGENT = f"hyba-mine/{__version__}"
 MAX_LINE_BYTES = 1 << 20
 MAX_JOBS = 16
+MAX_PENDING_REQUESTS = 1024
+MAX_PUSH_BACKLOG = 64
+REQUEST_TIMEOUT_SECONDS = 60.0
 BACKOFF_SECONDS = (1, 2, 4, 8, 16, 32, 60)
 IDLE_TIMEOUT_SECONDS = 300.0
 DISCONNECTED = "_hyba.disconnected"
@@ -78,12 +81,9 @@ def literal(message: Optional[dict]) -> Optional[dict]:
     """A pool reply as received, with any registered login text removed."""
     if message is None:
         return None
-    text = json.dumps(message, sort_keys=True)
-    redacted = SECRETS.redact(text)
-    if redacted == text:
-        return message
-    data = json.loads(redacted)
-    data["_redacted"] = True
+    data = redact_payload(message)
+    if data != message:
+        data["_redacted"] = True
     return data
 
 
@@ -120,12 +120,13 @@ class StratumConnection:
         self.ssl_context = ssl_context
         self.connect_timeout = connect_timeout
         self.user_agent = user_agent
-        self.pushes: asyncio.Queue = asyncio.Queue()
+        self.pushes: asyncio.Queue = asyncio.Queue(maxsize=MAX_PUSH_BACKLOG)
         self.closed = asyncio.Event()
         self.close_reason: Optional[str] = None
         self._reader: Optional[asyncio.StreamReader] = None
         self._writer: Optional[asyncio.StreamWriter] = None
         self._pending: dict[int, asyncio.Future] = {}
+        self._expiry_handles: dict[int, asyncio.TimerHandle] = {}
         self._next_id = 1
         self._task: Optional[asyncio.Task] = None
         self.last_received = 0.0
@@ -173,12 +174,15 @@ class StratumConnection:
                 if isinstance(request_id, str) and request_id.isdigit():
                     request_id = int(request_id)
                 future = self._pending.pop(request_id, None) if isinstance(request_id, int) and not isinstance(request_id, bool) else None
+                handle = self._expiry_handles.pop(request_id, None) if future is not None else None
+                if handle is not None:
+                    handle.cancel()
                 if future is not None and not future.done():
                     future.set_result(message)
         except asyncio.CancelledError:
             reason = "HYBA Mine closed the connection"
             raise
-        except (OSError, ssl.SSLError, ValueError, asyncio.IncompleteReadError) as exc:
+        except (OSError, ssl.SSLError, ValueError, asyncio.IncompleteReadError, ConnectionLost) as exc:
             reason = f"connection error: {type(exc).__name__}"
         finally:
             self._mark_closed(reason)
@@ -193,7 +197,10 @@ class StratumConnection:
             except ConnectionLost:
                 pass
             return
-        await self.pushes.put(message)
+        try:
+            self.pushes.put_nowait(message)
+        except asyncio.QueueFull:
+            raise ConnectionLost("pool push backlog exceeded") from None
 
     def _mark_closed(self, reason: str) -> None:
         if self.closed.is_set():
@@ -204,6 +211,11 @@ class StratumConnection:
             if not future.done():
                 future.set_exception(ConnectionLost(reason))
         self._pending.clear()
+        for handle in self._expiry_handles.values():
+            handle.cancel()
+        self._expiry_handles.clear()
+        if self.pushes.full():
+            self.pushes.get_nowait()
         self.pushes.put_nowait({"method": DISCONNECTED, "params": [reason]})
 
     async def _send(self, message: dict) -> None:
@@ -216,21 +228,44 @@ class StratumConnection:
             self._mark_closed(f"connection error: {type(exc).__name__}")
             raise ConnectionLost(self.close_reason) from exc
 
+    def _expire_request(self, request_id: int) -> None:
+        self._expiry_handles.pop(request_id, None)
+        future = self._pending.pop(request_id, None)
+        if future is not None and not future.done():
+            future.set_exception(asyncio.TimeoutError("pool response deadline expired"))
+
     async def request(self, method: str, params: list) -> tuple[int, asyncio.Future]:
+        if len(self._pending) >= MAX_PENDING_REQUESTS:
+            raise ConnectionLost("too many unanswered pool requests")
         request_id = self._next_id
         self._next_id += 1
         future = asyncio.get_running_loop().create_future()
         self._pending[request_id] = future
+        self._expiry_handles[request_id] = asyncio.get_running_loop().call_later(
+            REQUEST_TIMEOUT_SECONDS, self._expire_request, request_id
+        )
         try:
             await self._send({"id": request_id, "method": method, "params": params})
-        except ConnectionLost:
+        except BaseException:
             self._pending.pop(request_id, None)
+            handle = self._expiry_handles.pop(request_id, None)
+            if handle is not None:
+                handle.cancel()
+            future.cancel()
             raise
         return request_id, future
 
     async def call(self, method: str, params: list, timeout: float) -> dict:
-        _, future = await self.request(method, params)
-        return await asyncio.wait_for(asyncio.shield(future), timeout)
+        request_id, future = await self.request(method, params)
+        try:
+            return await asyncio.wait_for(future, timeout)
+        finally:
+            self._pending.pop(request_id, None)
+            handle = self._expiry_handles.pop(request_id, None)
+            if handle is not None:
+                handle.cancel()
+            if not future.done():
+                future.cancel()
 
     async def close(self) -> None:
         if self._writer is not None:
@@ -350,6 +385,9 @@ class PoolSession:
                      "error": SECRETS.redact(f"{type(exc).__name__}: {exc}")[:300]},
                 )
                 index += 1
+            else:
+                if not self._productive:
+                    index += 1
             if self._stopping.is_set():
                 break
             # The back-off resets only after a connection that delivered a job,
@@ -376,6 +414,7 @@ class PoolSession:
             await self._handshake(conn)
             self.generation += 1
             self.epoch = 0
+            self.difficulty = None
             self.endpoint = endpoint
             self.jobs.clear()
             self.current = None
@@ -440,6 +479,9 @@ class PoolSession:
     def _apply(self, message: dict, conn: StratumConnection) -> Optional[str]:
         method = message.get("method")
         params = message.get("params") or []
+        if not isinstance(params, (list, tuple)):
+            self.record("pool_protocol_warning", {"method": method, "reason": "params must be an array"})
+            return None
         if method == "mining.set_difficulty":
             value = params[0] if params else None
             try:
@@ -484,7 +526,7 @@ class PoolSession:
             self.record("job", view)
             self.changed.set()
         elif method == "mining.set_extranonce":
-            if len(params) < 2 or not _is_hex(params[0]) or not isinstance(params[1], int) or not 1 <= params[1] <= 32:
+            if len(params) < 2 or not _is_hex(params[0]) or not isinstance(params[1], int) or isinstance(params[1], bool) or not 1 <= params[1] <= 32:
                 self.record("pool_protocol_warning", {"method": method, "reason": "unusable extranonce"})
                 return None
             self.extranonce1 = bytes.fromhex(params[0])

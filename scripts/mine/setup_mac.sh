@@ -129,9 +129,17 @@ if [ "$AUTOSTART" = "ask" ]; then
   fi
 fi
 if [ "$AUTOSTART" = "yes" ]; then
-  "$HM" autostart enable --run-script "$REPO/scripts/mine/run.sh"
+  if [ "$START" = "yes" ]; then
+    "$HM" autostart enable --run-script "$REPO/scripts/mine/run.sh"
+  else
+    "$HM" autostart enable --no-start --run-script "$REPO/scripts/mine/run.sh"
+  fi
   echo
-  echo "HYBA Mine is running in the background (launchd agent ae.hybadata.mine)."
+  if [ "$START" = "yes" ]; then
+    echo "HYBA Mine is running in the background (launchd agent ae.hybadata.mine)."
+  else
+    echo "HYBA Mine is installed for next login. This run did not start mining; an agent loaded earlier may still be running. Check: $BIN/hyba-mine status"
+  fi
   echo "  Status:       $BIN/hyba-mine status      or open http://127.0.0.1:8765/"
   echo "  Switch pool:  $BIN/hyba-mine pool use <viabtc|braiins|nicehash|ckpool>"
   echo "  Stop:         $BIN/hyba-mine stop        (add --disable-autostart to remove the agent)"

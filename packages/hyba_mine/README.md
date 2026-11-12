@@ -1,3 +1,7 @@
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:9d78dcdfe62f28d1181094f003ac6ab36b6b12b3ec58ae0037c8f83f353980f9 -->
+
 # HYBA Mine
 
 HYBA Mine is HYBA's internal, private treasury mining runtime. It is not a product, not a service and never customer-facing. It consumes the Chronus platform; Chronus and the HYBA products never import it, and nothing in this package is wired into a customer surface.
@@ -45,3 +49,28 @@ PYTHONPATH=src:packages/hyba_mine/src python -m unittest discover -s packages/hy
 The suite runs a share-verifying in-process pool built on `chronus.execution.master_e2e_engine.LocalStratumTestServer` (the real block 0 coinbase fixture), plain and TLS.
 
 Copyright (c) 2026 HYBA Software Ltd. All rights reserved.
+
+## Reliability and recovery
+
+TLS policy `prefer` uses only the published TLS endpoints when the pool has any.
+A TLS failure does not silently downgrade the session. TCP-only profiles still
+use their published TCP endpoints; `require` refuses those profiles and `off`
+explicitly selects TCP.
+
+Unanswered requests expire after 60 seconds and pending requests and pool pushes
+are bounded. Each connection resets its difficulty; a rejection block belongs
+to its pool and survives switching to another pool. State and control changes
+use process locks and atomic private file replacement.
+
+Ledger writers handle short writes. An unterminated fragment is preserved and
+followed by a hash-bound `tail_recovery` record on the next append. A malformed
+complete record fails verification. Recovery never truncates history.
+
+Keychain writes send an encoded command through `security -i` standard input,
+keeping login values out of process arguments. This interface has regression
+coverage with a synthetic tool; native Keychain and launchd still require a Mac.
+`hyba-mine autostart enable --no-start` writes the agent for the next login without
+starting it immediately, and preserves `HYBA_MINE_VENV` in its environment.
+
+
+<!-- /coderabbit-ai-generated:v1 -->

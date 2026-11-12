@@ -40,10 +40,14 @@ from hyba_mine.runtime import MinerRuntime, RuntimeOptions
 from hyba_mine.status import render_text, summarize
 
 FAKE_SECURITY = r'''
-import json, os, sys
+import json, os, sys, shlex
 path = os.environ["FAKE_KEYCHAIN"]
 items = json.load(open(path)) if os.path.exists(path) else {}
 args = sys.argv[1:]
+if args == ["-i"]:
+    args = shlex.split(sys.stdin.readline())
+elif args and args[0] == "add-generic-password":
+    raise AssertionError("credential write used process arguments")
 def opt(flag):
     return args[args.index(flag) + 1]
 key = opt("-s") + "/" + opt("-a")
@@ -157,7 +161,7 @@ class TestNothingLeaks(unittest.TestCase):
             ledger = Ledger(home.layout.ledger, home.layout.ledger_lock)
             options = RuntimeOptions(endpoints={"viabtc": (pool.endpoint(),)}, backoff=(0.05,), stats_interval=0.2,
                                      control_interval=0.1, itinerary=PythiaItinerary(override=(UnitSpec(0, 0, 4096),)),
-                                     stop_when_itinerary_ends=True)
+                                     stop_when_itinerary_ends=False)
             dispatcher = LocalIGPUDispatcher(ModeALane(workers=1), Route("auto", ROUTE_MODE_A, "METAL_UNAVAILABLE: test"))
             runtime = MinerRuntime(home.layout, ledger, home.store(), dispatcher, "viabtc", options)
             task = asyncio.create_task(runtime.run())
@@ -167,6 +171,15 @@ class TestNothingLeaks(unittest.TestCase):
                 await asyncio.sleep(0.02)
             await pool.broadcast({"id": None, "method": "client.show_message",
                                   "params": [f"Welcome {SENTINEL_USER}, password {SENTINEL_PASSWORD}"]})
+            # Keep the session alive until the echoed message is processed;
+            # finishing one fast work unit must not race the redaction assertion.
+            try:
+                async def observed():
+                    while not (pool.accepted and any(r["kind"] == "pool_message" for r in ledger.records())):
+                        await asyncio.sleep(0.01)
+                await asyncio.wait_for(observed(), timeout=10)
+            finally:
+                runtime.request_stop("redaction observed")
             code = await task
             dispatcher.close()
             await pool.stop()

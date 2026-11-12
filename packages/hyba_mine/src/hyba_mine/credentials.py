@@ -8,16 +8,16 @@ HYBA Mine home, and read only when a pool connection is opened. Nothing here
 logs a value or puts one in an exception message; ``PoolLogin`` hides both
 fields from ``repr``.
 
-The keychain is driven through ``/usr/bin/security``. The value is passed as a
-process argument for the few milliseconds the tool runs; on macOS another
-user's process arguments are not readable without root, and the same user and
-root can read the login keychain anyway.
+The keychain is driven through ``/usr/bin/security -i``. Writes pass an
+encoded command on standard input, keeping credentials out of process arguments.
+See Apple's SecurityTool/macOS/security.1 and security.c (interactive mode).
 """
 
 from __future__ import annotations
 
 import json
 import subprocess
+import shlex
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Protocol
@@ -102,10 +102,17 @@ class KeychainStore:
     def _account(pool_id: str) -> str:
         return f"pool:{get_pool(pool_id).pool_id}"
 
-    def _run(self, args: list[str]) -> subprocess.CompletedProcess:
-        return subprocess.run(
-            [*self.command, *args], capture_output=True, text=True, timeout=30, check=False
-        )
+    def _run(self, args: list[str], *, private_input: bool = False) -> subprocess.CompletedProcess:
+        command = [*self.command, "-i"] if private_input else [*self.command, *args]
+        # Hex encoding keeps the value a single unquoted word in Apple's parser.
+        input_text = shlex.join(args) + "\n" if private_input else None
+        if input_text is not None and len(input_text.encode("utf-8")) >= 4096:
+            raise CredentialStoreError("encoded login exceeds the keychain command limit")
+        try:
+            return subprocess.run(command, input=input_text, capture_output=True,
+                                  text=True, timeout=30, check=False)
+        except subprocess.TimeoutExpired:
+            raise CredentialStoreError("keychain command timed out") from None
 
     def get(self, pool_id: str) -> Optional[PoolLogin]:
         done = self._run(["find-generic-password", "-s", KEYCHAIN_SERVICE, "-a", self._account(pool_id), "-w"])
@@ -125,8 +132,8 @@ class KeychainStore:
                 "-a", self._account(pool_id),
                 "-l", f"HYBA Mine pool login ({profile.name})",
                 "-j", "HYBA Mine treasury mining; local only",
-                "-w", _encode(login),
-            ]
+                "-w", _encode(login).encode("utf-8").hex(),
+            ], private_input=True
         )
         if done.returncode != 0:
             raise CredentialStoreError(f"keychain refused the login (security exit {done.returncode})")

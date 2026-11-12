@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Iterator, Optional
 
 from hyba_mine.control import utc_now
-from hyba_mine.logsafe import SECRETS
+from hyba_mine.logsafe import redact_payload
 
 GENESIS_HASH = "0" * 64
 _TAIL_CHUNK = 64 * 1024
@@ -58,6 +58,23 @@ class VerifyResult:
             "last_hash": self.last_hash,
             "error": self.error,
         }
+
+
+def _final_fragment(handle) -> bytes:
+    """Read back from EOF in fixed chunks, retaining only the final fragment."""
+    handle.seek(0, os.SEEK_END)
+    position, parts = handle.tell(), []
+    while position:
+        size = min(_TAIL_CHUNK, position)
+        position -= size
+        handle.seek(position)
+        chunk = handle.read(size)
+        boundary = chunk.rfind(b"\n")
+        if boundary >= 0:
+            parts.append(chunk[boundary+1:])
+            break
+        parts.append(chunk)
+    return b"".join(reversed(parts))
 
 
 class Ledger:
@@ -105,10 +122,9 @@ class Ledger:
         data = {} if data is None else data
         if not isinstance(data, dict):
             raise ValueError("ledger record data must be a JSON object")
-        encoded = json.dumps(data, sort_keys=True, ensure_ascii=False)
-        if SECRETS.contains(encoded):
-            data = json.loads(SECRETS.redact(encoded))
-            data["_redacted"] = True
+        clean = redact_payload(data)
+        if clean != data:
+            data = {**clean, "_redacted": True}
         self.path.parent.mkdir(parents=True, exist_ok=True)
         lock_fd = os.open(self.lock_path, os.O_RDWR | os.O_CREAT, 0o600)
         try:
@@ -118,10 +134,29 @@ class Ledger:
             record["hash"] = record_hash(record)
             line = _canonical(record) + b"\n"
             if not ends_clean:
+                with open(self.path, "rb") as tail_handle:
+                    fragment = _final_fragment(tail_handle)
+                try:
+                    json.loads(fragment)
+                except (json.JSONDecodeError, UnicodeDecodeError):
+                    recovery = {"seq": seq + 1, "ts": utc_now(), "kind": "tail_recovery",
+                                "data": {"fragment_sha256": hashlib.sha256(fragment).hexdigest(),
+                                         "fragment_bytes": len(fragment)}, "prev": prev}
+                    recovery["hash"] = record_hash(recovery)
+                    record["seq"] += 1
+                    record["prev"] = recovery["hash"]
+                    record["hash"] = record_hash(record)
+                    line = _canonical(recovery) + b"\n" + _canonical(record) + b"\n"
                 line = b"\n" + line
             fd = os.open(self.path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
             try:
-                os.write(fd, line)
+                self._cache = None
+                remaining = memoryview(line)
+                while remaining:
+                    count = os.write(fd, remaining)
+                    if count <= 0:
+                        raise OSError("ledger append made no progress")
+                    remaining = remaining[count:]
                 if kind not in _NO_FSYNC_KINDS:
                     os.fsync(fd)
             finally:
@@ -154,16 +189,30 @@ class Ledger:
         expected_seq = 0
         if not self.path.exists():
             return VerifyResult(True, 0, 0, prev, None)
+        pending_fragment = None
         with open(self.path, "rb") as handle:
             for number, raw in enumerate(handle, start=1):
+                terminated = raw.endswith(b"\n")
+                original = raw.rstrip(b"\n")
                 raw = raw.strip()
                 if not raw:
                     continue
                 try:
                     record = json.loads(raw)
-                except json.JSONDecodeError:
-                    torn += 1
+                except (json.JSONDecodeError, UnicodeDecodeError):
+                    if pending_fragment is not None:
+                        return VerifyResult(False, count, torn, prev, f"line {number}: malformed complete record")
+                    if not terminated:
+                        return VerifyResult(True, count, torn + 1, prev, None)
+                    pending_fragment = original
                     continue
+                if pending_fragment is not None:
+                    expected_recovery = {"fragment_sha256": hashlib.sha256(pending_fragment).hexdigest(),
+                                         "fragment_bytes": len(pending_fragment)}
+                    if not isinstance(record, dict) or record.get("kind") != "tail_recovery" or record.get("data") != expected_recovery:
+                        return VerifyResult(False, count, torn, prev, f"line {number}: missing valid tail recovery")
+                    pending_fragment = None
+                    torn += 1
                 if not isinstance(record, dict) or not {"seq", "ts", "kind", "data", "prev", "hash"} <= set(record):
                     return VerifyResult(False, count, torn, prev, f"line {number}: not a ledger record")
                 if record["seq"] != expected_seq:
@@ -175,4 +224,6 @@ class Ledger:
                 prev = record["hash"]
                 expected_seq += 1
                 count += 1
+        if pending_fragment is not None:
+            return VerifyResult(False, count, torn, prev, "malformed complete final record")
         return VerifyResult(True, count, torn, prev, None)

@@ -16,6 +16,7 @@ work tree are refused for anything that can hold a credential.
 from __future__ import annotations
 
 import os
+import tempfile
 import sys
 from pathlib import Path
 from typing import Optional
@@ -80,8 +81,8 @@ def refuse_inside_repository(path: Path, what: str) -> None:
 def write_private_file(path: Path, data: bytes) -> None:
     """Atomically replace ``path`` with ``data``; the file is created 0600."""
     ensure_private_dir(path.parent)
-    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
-    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    tmp = Path(temporary)
     try:
         with os.fdopen(fd, "wb") as handle:
             handle.write(data)

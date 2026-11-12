@@ -51,7 +51,7 @@ class TestLedger(unittest.TestCase):
             fresh.append("work", {"executed": 1})
             result = fresh.verify()
             self.assertTrue(result.ok, result.error)
-            self.assertEqual((result.records, result.torn_lines), (2, 1))
+            self.assertEqual((result.records, result.torn_lines), (3, 1))
 
     def test_concurrent_writers_keep_one_valid_chain(self):
         with TempHome() as home:

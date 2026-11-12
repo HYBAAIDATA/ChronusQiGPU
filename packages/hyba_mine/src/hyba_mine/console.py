@@ -30,7 +30,7 @@ from hyba_mine.status import render_text, summarize
 DEFAULT_PORT = 8765
 
 _PAGE = """<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta http-equiv="refresh" content="5">
+<html lang="en"><head><meta charset="utf-8">
 <title>HYBA Mine - local status</title>
 <style>
 body{{font-family:-apple-system,"IBM Plex Sans",Helvetica,Arial,sans-serif;background:#f8f6f1;color:#002147;margin:2rem;max-width:72rem}}
@@ -40,13 +40,26 @@ form{{margin-top:1rem}} label{{margin-right:.5rem}} select,button{{font-size:1re
 </style></head><body>
 <h1>HYBA Mine (internal treasury mining; not a product)</h1>
 <p class="note">Every value below is read from the local ledger. Shares count as accepted or rejected only when the pool replied.</p>
-<pre>{status}</pre>
+<pre id="status">{status}</pre>
 <form method="post" action="/pool">
 <input type="hidden" name="token" value="{token}">
 <label for="pool">Switch pool</label>
 <select id="pool" name="pool">{options}</select>
 <button type="submit">Switch</button>
 </form>
+<script>
+let lastStatus = document.getElementById('status').textContent;
+setInterval(async () => {{
+  try {{
+    const response = await fetch('/status.json');
+    if (!response.ok) throw new Error('Status unavailable');
+    lastStatus = JSON.stringify(await response.json(), null, 2);
+    document.getElementById('status').textContent = lastStatus;
+  }} catch (_) {{
+    document.getElementById('status').textContent = 'Status unavailable. Last values are stale:\\n' + lastStatus;
+  }}
+}}, 5000);
+</script>
 </body></html>
 """
 

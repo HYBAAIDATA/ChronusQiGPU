@@ -36,6 +36,7 @@ class SecretRegistry:
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._secrets: set[str] = set()
+        self._passwords: set[str] = set()
 
     def register(self, *values: Optional[str]) -> None:
         """Register login strings; short or hex-like placeholders are ignored."""
@@ -44,22 +45,33 @@ class SecretRegistry:
                 if isinstance(value, str) and _distinctive(value):
                     self._secrets.add(value)
 
+    def register_password(self, password: str) -> None:
+        with self._lock:
+            if password:
+                self._passwords.add(password)
+
     def clear(self) -> None:
         with self._lock:
             self._secrets.clear()
+            self._passwords.clear()
 
     def _ordered(self) -> list[str]:
         with self._lock:
-            return sorted(self._secrets, key=len, reverse=True)
+            return sorted(self._secrets | self._passwords, key=len, reverse=True)
 
     def redact(self, text: str) -> str:
         for secret in self._ordered():
-            if secret in text:
+            if _distinctive(secret):
                 text = text.replace(secret, REDACTED)
+            else:
+                # Common short/hex passwords must not rewrite pool identifiers,
+                # nonces or hashes. Redact standalone echoed values instead.
+                pattern = r"(?<![A-Za-z0-9_])" + re.escape(secret) + r"(?![A-Za-z0-9_])"
+                text = re.sub(pattern, lambda _: REDACTED, text)
         return text
 
     def contains(self, text: str) -> bool:
-        return any(secret in text for secret in self._ordered())
+        return self.redact(text) != text
 
 
 SECRETS = SecretRegistry()
@@ -67,7 +79,21 @@ SECRETS = SecretRegistry()
 
 def register_login(username: str, password: str) -> None:
     """Register a pool login for redaction."""
-    SECRETS.register(username, password)
+    SECRETS.register(username)
+    SECRETS.register_password(password)
+
+
+def redact_payload(value):
+    """Redact string values before JSON encoding, preserving numeric types and keys."""
+    if isinstance(value, str):
+        return SECRETS.redact(value)
+    if isinstance(value, list):
+        return [redact_payload(item) for item in value]
+    if isinstance(value, dict):
+        return {key: REDACTED if isinstance(key, str) and key.lower() in
+                {"password", "passwd", "authorization", "username", "login"}
+                else redact_payload(item) for key, item in value.items()}
+    return value
 
 
 def login_fingerprint(username: str) -> str:

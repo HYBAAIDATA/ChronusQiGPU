@@ -36,6 +36,7 @@ def plist_payload(run_script: Path, layout: Layout) -> dict:
             "PATH": DEFAULT_PATH,
             "HYBA_MINE_HOME": str(layout.home),
             "HYBA_MINE_LOG_DIR": str(layout.logs),
+            "HYBA_MINE_VENV": os.environ.get("HYBA_MINE_VENV", str(Path.home() / ".hyba-mine" / "venv")),
         },
     }
 
@@ -48,7 +49,7 @@ def _launchctl(*args: str) -> subprocess.CompletedProcess:
     return subprocess.run([LAUNCHCTL, *args], capture_output=True, text=True, timeout=30, check=False)
 
 
-def enable(run_script: Path, layout: Layout) -> Path:
+def enable(run_script: Path, layout: Layout, *, start: bool = True) -> Path:
     if not is_macos():
         raise RuntimeError("launchd auto-start is available on macOS only")
     if not run_script.exists():
@@ -58,6 +59,8 @@ def enable(run_script: Path, layout: Layout) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(plistlib.dumps(plist_payload(run_script, layout)))
     os.chmod(path, 0o644)
+    if not start:
+        return path
     _launchctl("bootout", f"{_domain()}/{LAUNCH_AGENT_LABEL}")
     done = _launchctl("bootstrap", _domain(), str(path))
     if done.returncode != 0:

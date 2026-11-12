@@ -32,6 +32,7 @@ from typing import Iterator, Optional
 from hyba_mine import __version__
 from hyba_mine.control import (
     block_pool,
+    block_for,
     clear_control_request,
     read_control_request,
     update_state,
@@ -195,6 +196,10 @@ class MinerRuntime:
 
     async def _apply_switch(self, request_id: str, pool_id: str) -> None:
         previous = self.profile.pool_id
+        if block_for(self.layout, pool_id) is not None:
+            self.record("pool_switch_refused", {"request_id": request_id, "pool": pool_id,
+                                               "reason": "pool is blocked by an earlier login rejection"})
+            return
         try:
             require_login(self.store, pool_id)
         except CredentialMissing as exc:
@@ -350,7 +355,10 @@ class MinerRuntime:
     async def _await_reply(self, share_id: str, submission: Submission) -> None:
         started = time.monotonic_ns()
         try:
-            reply = await asyncio.wait_for(asyncio.shield(submission.future), timeout=self.options.submit_timeout)
+            completed, _ = await asyncio.wait({submission.future}, timeout=self.options.submit_timeout)
+            if not completed:
+                raise asyncio.TimeoutError
+            reply = submission.future.result()
         except asyncio.TimeoutError:
             self.record("share_unacknowledged", {"share_id": share_id, "reason": f"no pool reply within {self.options.submit_timeout:g} s"})
 

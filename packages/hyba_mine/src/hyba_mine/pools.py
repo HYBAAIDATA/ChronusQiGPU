@@ -59,9 +59,10 @@ class PoolProfile:
         elif tls_policy == "off":
             chosen = tuple(e for e in self.endpoints if not e.tls)
         else:
-            chosen = tuple(e for e in self.endpoints if e.tls) + tuple(
-                e for e in self.endpoints if not e.tls
-            )
+            # Prefer TLS without an implicit downgrade after a TLS failure.
+            chosen = tuple(e for e in self.endpoints if e.tls)
+            if not chosen:
+                chosen = tuple(e for e in self.endpoints if not e.tls)
         if not chosen:
             raise ValueError(f"{self.name} publishes no endpoint for TLS policy '{tls_policy}'")
         return chosen

@@ -38,7 +38,7 @@ def sha256d(data: bytes) -> bytes:
 def share_target(difficulty: Fraction) -> int:
     if not isinstance(difficulty, Fraction):
         raise TypeError("share difficulty must be an exact Fraction")
-    return compute_share_target_exact(difficulty)
+    return min((1 << 256) - 1, compute_share_target_exact(difficulty))
 
 
 def le_words(value: int) -> Tuple[int, ...]:
