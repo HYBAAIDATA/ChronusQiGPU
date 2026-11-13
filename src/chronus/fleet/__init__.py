@@ -50,9 +50,42 @@ _EXPORTS = {
     "DeviceUnavailableError": "chronus.fleet.errors",
     "TierGateRejected": "chronus.fleet.errors",
     "ScaleGrantRejected": "chronus.fleet.errors",
+    "CapacityLedger": "chronus.fleet.capacity",
+    "HostCapacity": "chronus.fleet.capacity",
+    "discover_host": "chronus.fleet.capacity",
 }
 
-__all__ = sorted(_EXPORTS)
+__all__ = [
+    "RESIDENT_RUNGS",
+    "TIERS",
+    "TIER_GATE",
+    "AdapterRegistry",
+    "BackendSelection",
+    "CapacityLedger",
+    "CoordinatorConfig",
+    "DeviceAdapter",
+    "DeviceUnavailableError",
+    "FleetCoordinator",
+    "FleetExecutor",
+    "FleetResult",
+    "FleetWorker",
+    "HostCapacity",
+    "Kernel",
+    "KernelRegistry",
+    "KnownAnswer",
+    "ScaleGrant",
+    "SchedulingLattice",
+    "Tier",
+    "TierGateRejected",
+    "WorkUnit",
+    "WorkerConfig",
+    "default_registry",
+    "discover_host",
+    "issue_grant",
+    "scale_tier",
+    "select_backend",
+    "verify_receipt",
+]
 
 
 def __getattr__(name: str) -> Any:

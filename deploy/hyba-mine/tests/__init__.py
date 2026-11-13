@@ -1,0 +1,1 @@
+"""HYBA Mine tests."""
