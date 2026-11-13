@@ -13,8 +13,7 @@ from typing import Any
 from . import (
     CNOT, HADAMARD, IDENTITY_2, PAULI_X, PAULI_Y, PAULI_Z,
     PHASE_S, PHASE_T, LinearOperator, QuantumState,
-    born_probabilities, computational_basis_measurement,
-    tensor_operators, tensor_states,
+    born_probabilities, tensor_operators, tensor_states,
 )
 
 MAX_DIMENSION = 64
@@ -162,7 +161,16 @@ def turing_measure(amplitudes: list[Any], outcome: int = -1) -> dict[str, Any]:
     if type(outcome) is not int:
         raise ValueError("outcome must be an integer")
     if outcome != -1:
-        collapsed = computational_basis_measurement(state.dimension).collapse(state, outcome)
+        if not 0 <= outcome < state.dimension:
+            raise ValueError("outcome index is out of range")
+        amplitude = state.amplitudes[outcome]
+        magnitude = abs(amplitude)
+        if magnitude == 0.0:
+            raise ValueError("cannot condition on a zero-probability outcome")
+        # Computational-basis collapse: keep the selected amplitude's phase, zero the rest.
+        collapsed = QuantumState(tuple(
+            amplitude / magnitude if i == outcome else 0j for i in range(state.dimension)
+        ))
         result["collapsed_state"] = _state_result(collapsed)
     return result
 
