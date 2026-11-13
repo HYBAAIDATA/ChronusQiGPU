@@ -51,11 +51,14 @@ async def main() -> int:
     from chronus.execution import mining_entrypoint as engine_module
 
     try:
-        await run_campaign(engine_module, pools, lanes, ledger, max_run_seconds=max_run_seconds,
-                           state_path=state_path, campaign_id=campaign_id)
+        state = await run_campaign(engine_module, pools, lanes, ledger, max_run_seconds=max_run_seconds,
+                                   state_path=state_path, campaign_id=campaign_id)
     finally:
         lanes.close()
         logger.info("[CAPACITY] final %s", json.dumps(ledger.report(), sort_keys=True))
+    if not state.get("complete"):
+        logger.error("[CAMPAIGN] %s failed; see the stage result above", campaign_id)
+        return 1
     return 0
 
 

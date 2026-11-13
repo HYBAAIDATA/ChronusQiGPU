@@ -30,6 +30,7 @@ NS_PER_S = 1_000_000_000
 ACK_GRACE_NS = 15 * NS_PER_S
 STATS_INTERVAL_SECONDS = 60
 POOLS = ("viabtc", "braiins")
+STAGE_END_REASONS = frozenset({"share_accepted", "block_ended", "max_run_time"})
 EXPECTED_PUSH_METHODS = frozenset(
     {"mining.notify", "mining.set_difficulty", "mining.set_version_mask", "mining.set_extranonce"}
 )
@@ -159,9 +160,24 @@ def make_stage_miner(engine_module):
             return self._lane_search(job, merkle_root_bytes, pool_mask_hex, share_target)
 
         async def _listen_pool_events(self):
+            # The engine listener retries socket-read errors forever; here a read error
+            # ends the stage instead, so the campaign can reconnect.
+            read_line = self.gateway.read_line
+
+            async def read_line_or_close():
+                try:
+                    return await read_line()
+                except asyncio.CancelledError:
+                    raise
+                except Exception as exc:
+                    logger.warning("[CAMPAIGN] pool read failed: %s", type(exc).__name__)
+                    return b""
+
+            self.gateway.read_line = read_line_or_close
             try:
                 await super()._listen_pool_events()
             finally:
+                self.gateway.read_line = read_line
                 if self.running:
                     self._end_stage("pool_session_ended")
 
@@ -263,19 +279,36 @@ async def run_campaign(engine_module, pools: List[str], lanes, ledger, *, max_ru
         host, port, user, password = pool_config(pool)
         min_height = None if state["last_height"] is None else state["last_height"] + 2
         result = None
+        stage_done = False
         for attempt in range(1, connect_attempts + 1):
             miner = stage_miner(host, port, user, password)
             miner._init_lane_search(lanes, ledger)
             miner._init_stage(pool, min_height, deadline)
             try:
-                await miner.run()
+                # The campaign deadline also bounds connection and handshake.
+                timeout = None if deadline is None else max(0.0, (deadline - time.perf_counter_ns()) / NS_PER_S)
+                await asyncio.wait_for(miner.run(), timeout)
+            except asyncio.TimeoutError:
+                miner._end_stage("max_run_time")
             except Exception as exc:  # connection and session errors end this attempt
                 miner._end_stage(f"session_error:{type(exc).__name__}")
             result = stage_result(index, pool, miner, attempt)
-            out_of_time = deadline is not None and time.perf_counter_ns() >= deadline
-            if miner.stage_height is not None or out_of_time:
+            if miner.stage_height is not None and miner.end_reason in STAGE_END_REASONS:
+                stage_done = True
                 break
+            if deadline is not None and time.perf_counter_ns() >= deadline:
+                break
+            if miner.stage_height is not None:
+                min_height = miner.stage_height  # the next attempt mines the same block
             await asyncio.sleep(10)
+        if not stage_done:
+            state["failure"] = result
+            state["complete"] = False
+            save_state(state_path, state)
+            logger.error("[CAMPAIGN] stage %d on %s did not finish; the campaign failed: %s",
+                         index + 1, pool, json.dumps(result, sort_keys=True))
+            return state
+        state["failure"] = None
         state["stages"].append(result)
         if result["block_height"] is not None:
             state["last_height"] = result["block_height"]
