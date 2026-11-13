@@ -2,9 +2,10 @@
 # Real-World Failure Mode Reproduction - Japan (AP) emergency cybersecurity report (Nov 2026)
 # Run: python -m pytest tests/test_al_haras_scenarios.py -v
 
-import os, sys
+import os
+import sys
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
-import pytest
 from chronus.security.al_haras import (
     ALHarasSecurityFabric,
     CellularSheafCohomology,
@@ -12,7 +13,6 @@ from chronus.security.al_haras import (
     CyclotomicZ5,
     DSW4DInstantonMonopoleHealer,
     HeckeModularChecksum,
-    RamanujanExpanderSpectralGapGuard,
     SovereignGovernanceEngine,
     ALHarasTopologicalKernel,
 )
