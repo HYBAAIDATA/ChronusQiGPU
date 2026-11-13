@@ -21,8 +21,8 @@ These statements are based on a static review of source at commit `a2768d11847de
 Requires Python 3.10 or later. To install and run the tests locally:
 
 ```bash
-git clone https://github.com/hybadatadevops1/Chronusv2.git
-cd Chronusv2
+git clone https://HYBADATA@dev.azure.com/HYBADATA/Chronus_Redux/_git/Chronus_Redux
+cd Chronus_Redux
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -e '.[dev]'
@@ -30,6 +30,14 @@ python -m pytest -q
 ```
 
 Running this command is a local test action, not a release qualification or certification. Record the commit, environment, command, result, and CI run when publishing test evidence.
+
+## CI and deployment (Azure DevOps)
+
+The code, CI and deployment live in Azure DevOps (organisation HYBADATA, project and repository Chronus_Redux) since 8 November 2026; the GitHub workflows under `.github/workflows/` are kept for history and do not run.
+
+- `azure-pipelines.yml` runs on every push to any branch: tests on Python 3.10–3.13 with coverage, lint, compile, package build and metadata check, dependency audit, static security scan, Bicep validation, purity gate, OpenCL kernel on the CPU runtime, RTL testbenches and Yosys synthesis, the container restart smoke test and the frontend build. The wheel and sdist are published as the `python-distribution` pipeline artifact.
+- Deployment is manual: run the pipeline on `main` with **deploy** ticked. After every check has passed it pushes both `docker-compose.yml` images (api and web) to the private registry and runs them on App Service with `infra/azure/app.bicep` and `infra/azure/deploy_app.sh`, closed to the internet except the ranges in the pipeline's `allowedIp` variable. It needs the Azure Resource Manager service connection shared with this project.
+- Set `CHRONUS_JWT_SECRET` wherever the API runs. Without it each process signs tokens with its own random key, so issued tokens stop working after a restart; there is no built-in key.
 
 ## Documentation
 
