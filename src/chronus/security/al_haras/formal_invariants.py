@@ -1,170 +1,334 @@
-r"""
-AL HARAS — FORMAL MATHEMATICAL SPECIFICATION & PROOF INVARIANTS
-================================================================================
-Axiomatic Mathematical Invariant Verifier for Common Criteria EAL7 Certification.
-"Speak friend and enter or you shall not pass."
+"""
+AL HARAS — executable exact checks behind the formal notes
+==========================================================
+"Speak friend and enter or you shall not pass." (motto from the product notes)
 
-Machine-checked verification of core topological theorems:
-  Theorem 1 (Sheaf Cohomological Obstruction):
-    Let F be a cellular sheaf over complex X. A section s in C^0(X; F) is globally
-    coherent (harmonic) if and only if delta_0(s) = 0, i.e., [s] in H^0(X; F).
-    Any adversarial perturbation delta in C^0(X; F) \ ker(delta_0) yields ||H^1|| > 0.
+Earlier versions of this module labelled hand-written float arithmetic as
+"formally verified (Lean 4)" with a Common Criteria tier. Neither was true: no
+Lean is executed in CI and no evaluation exists. The module now runs executable
+checks, with exact integer and rational arithmetic, against the AL HARAS engines:
 
-  Theorem 2 (Donaldson-Seiberg-Witten 1-Cycle Monopole Cobordism):
-    For any perturbed trace tau_perturbed in Omega^1, there exists a 4-manifold
-    cobordism W with boundary dW = tau_clean U -tau_perturbed such that the
-    instanton number k = 1 monopole solution repairs the trace in exactly 1 cycle.
+1. sheaf_coboundary_zero_iff_consistent (sheaf.GraphSheaf): delta^0 s = 0
+   exactly for the consistent states, enumerated on a finite family for the
+   constant sheaf; for a sheaf with Householder restriction maps, dim ker delta^0
+   of an explicitly built coboundary matrix equals the engine's h^0, the
+   harmonic projection lands in ker delta^0, and a perturbation of one node is
+   located at that node.
+2. cycle_sum_obstruction (sheaf.GraphSheaf): an edge cochain of the constant
+   sheaf is a coboundary exactly when its signed sum around every cycle is zero
+   (all cochains with entries in {-1, 0, 1} on two graphs, compared with
+   GraphSheaf.is_coboundary); coboundaries telescope to zero around closed
+   walks; h^1 equals the cycle rank.
+3. braid_relations (braids): the Fibonacci braid relations over Z[zeta_5], with
+   a mutated F-move as a negative control that must fail.
+4. reed_solomon_repair (reed_solomon): every pattern of up to t symbol errors in
+   a block is located and repaired exactly; t + 1 errors are never reported as
+   a verified repair.
 
-  Theorem 3 (Cyclotomic Anyon Pentagon Coherence):
-    The braid generators sigma_1, sigma_2 in Z[zeta_5] satisfy the Artin braid
-    relation sigma_1 sigma_2 sigma_1 = sigma_2 sigma_1 sigma_2 and the Mac Lane
-    pentagon axiom with zero floating-point approximation error.
-================================================================================
+A check that holds on the finite family it enumerates is evidence, not a proof.
+The Lean source formal/lean4/ChronusAlHaras.lean states the coboundary lemmas
+behind checks 1 and 2 (edge consistency and the closed-walk telescoping sum);
+it is not compiled or machine-checked in CI.
 """
 
-from dataclasses import dataclass
-from typing import Any, Dict, List
+import hashlib
+import time
+from dataclasses import dataclass, field
+from fractions import Fraction
+from itertools import combinations, product
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from chronus.security.al_haras.engine import CyclotomicZ5
+from chronus.security.al_haras import braids, reed_solomon
+from chronus.security.al_haras.cyclotomic import ONE, PHI_INVERSE, mat2_identity, mat2_mul
+from chronus.security.al_haras.exact import householder, rank_and_nullspace
+from chronus.security.al_haras.sheaf import GraphSheaf
+
+LEAN_SOURCE_PATH = "formal/lean4/ChronusAlHaras.lean"
+LEAN_THEOREMS = (
+    "Chronus.AlHaras.coboundary_eq_zero_iff",
+    "Chronus.AlHaras.coboundary_sum_walk",
+    "Chronus.AlHaras.coboundary_sum_closed_walk",
+    "Chronus.AlHaras.not_coboundary_of_closed_walk_sum_ne_zero",
+)
+VERIFICATION_METHOD = "EXECUTABLE_EXACT_CHECKS"
+
+CheckResult = Tuple[bool, int, List[str]]
 
 
 @dataclass
 class FormalProofVerdict:
-    theorem_id: str
-    theorem_name: str
-    formal_status: str
-    axioms_satisfied: bool
-    proof_steps: List[str]
+    """Outcome of one executable check (class name kept for API compatibility)."""
+
+    check_id: str
+    statement: str
+    holds: bool
+    cases_checked: int
+    evidence: List[str] = field(default_factory=list)
+    lean_counterpart: Optional[str] = None
+
+    @property
+    def status(self) -> str:
+        return "HOLDS" if self.holds else "FAILS"
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            "check_id": self.check_id,
+            "statement": self.statement,
+            "status": self.status,
+            "holds": self.holds,
+            "cases_checked": self.cases_checked,
+            "evidence": list(self.evidence),
+            "lean_counterpart": self.lean_counterpart,
+        }
+
+
+def _is_zero_cochain(cochain: List[List[Fraction]]) -> bool:
+    return all(x == 0 for vec in cochain for x in vec)
+
+
+def _coboundary_matrix(sheaf: GraphSheaf) -> List[List[Fraction]]:
+    """delta^0 as an explicit (|E| d) x (|V| d) matrix, built from the restriction maps."""
+    d = sheaf.dim
+    index = {n: i for i, n in enumerate(sheaf.nodes)}
+    maps = sheaf.maps
+    rows = [[Fraction(0)] * (len(sheaf.nodes) * d) for _ in range(len(sheaf.edges) * d)]
+    for e, (a, b) in enumerate(sheaf.edges):
+        for i in range(d):
+            row = rows[e * d + i]
+            for j in range(d):
+                row[index[b] * d + j] += maps[(e, b)][i][j]
+                row[index[a] * d + j] -= maps[(e, a)][i][j]
+    return rows
+
+
+def _sheaf_coboundary_criterion() -> CheckResult:
+    evidence: List[str] = []
+    cases = 0
+
+    # (a) constant sheaf with stalk Q on a triangle: every state with entries in {-1, 0, 1}.
+    tri = GraphSheaf(["a", "b", "c"], [("a", "b"), ("b", "c"), ("c", "a")], 1)
+    agree = zero_states = 0
+    for values in product((-1, 0, 1), repeat=3):
+        section = tri.section({n: [v] for n, v in zip(tri.nodes, values)})
+        is_zero = _is_zero_cochain(tri.coboundary(section))
+        zero_states += is_zero
+        agree += is_zero == (values[0] == values[1] == values[2])
+        cases += 1
+    ok_constant = agree == cases
+    evidence.append(
+        f"constant sheaf on a triangle: {zero_states} of {cases} states have delta0 s = 0; "
+        f"'delta0 s = 0 iff all states equal' holds for {agree} of {cases}"
+    )
+
+    # (b) Householder restriction maps on a 4-cycle with a chord, stalk Q^3.
+    nodes = ["a", "b", "c", "d"]
+    edges = [("a", "b"), ("b", "c"), ("c", "d"), ("d", "a"), ("a", "c")]
+    maps = {
+        (0, "b"): householder([Fraction(1), Fraction(2), Fraction(2)]),
+        (2, "d"): householder([Fraction(2), Fraction(-1), Fraction(2)]),
+    }
+    sheaf = GraphSheaf(nodes, edges, 3, maps)
+    h0 = sheaf.cohomology_dimensions()["h0"]
+    matrix = _coboundary_matrix(sheaf)
+    rank, kernel = rank_and_nullspace(matrix, len(nodes) * 3)
+    nullity = len(nodes) * 3 - rank
+    ok_dim = nullity == h0
+    cases += 1
+    ok_kernel = True
+    for vec in kernel:
+        section = {n: vec[i * 3:(i + 1) * 3] for i, n in enumerate(nodes)}
+        ok_kernel = ok_kernel and _is_zero_cochain(sheaf.coboundary(section))
+        cases += 1
+    evidence.append(
+        f"Householder-twisted sheaf: engine h0 = {h0}, nullity of the explicit coboundary matrix = {nullity}; "
+        f"{len(kernel)} kernel basis vectors give delta0 = 0: {ok_kernel}"
+    )
+
+    state = sheaf.section({"a": [1, 2, 3], "b": [-1, 0, 4], "c": [2, 2, -3], "d": [0, 5, 1]})
+    projected = sheaf.harmonic_projection(state)
+    ok_projection = _is_zero_cochain(sheaf.coboundary(projected)) and sheaf.harmonic_projection(projected) == projected
+    cases += 1
+    evidence.append(f"harmonic projection of a non-section lands in ker delta0 and is idempotent: {ok_projection}")
+
+    located = 0
+    for node in nodes:
+        perturbed = {n: list(v) for n, v in projected.items()}
+        perturbed[node] = [x + y for x, y in zip(perturbed[node], [Fraction(1), Fraction(0), Fraction(-1)])]
+        cob = sheaf.coboundary(perturbed)
+        nonzero = {e for e, vec in enumerate(cob) if any(x != 0 for x in vec)}
+        incident = {e for e, (a, b) in enumerate(edges) if node in (a, b)}
+        located += nonzero == incident and sheaf.isolate(perturbed) == [node]
+        cases += 1
+    ok_located = located == len(nodes)
+    evidence.append(
+        f"perturbing one node of a global section: residual edges equal that node's edges and isolate() "
+        f"returns it for {located} of {len(nodes)} nodes"
+    )
+    return ok_constant and ok_dim and ok_kernel and ok_projection and ok_located, cases, evidence
+
+
+def _cycle_sum_obstruction() -> CheckResult:
+    evidence: List[str] = []
+    cases = 0
+    ok = True
+    graphs = [
+        (
+            "triangle",
+            GraphSheaf(["a", "b", "c"], [("a", "b"), ("b", "c"), ("a", "c")], 1),
+            [[(0, 1), (1, 1), (2, -1)]],
+        ),
+        (
+            "4-cycle with chord",
+            GraphSheaf(["a", "b", "c", "d"], [("a", "b"), ("b", "c"), ("c", "d"), ("d", "a"), ("a", "c")], 1),
+            [[(0, 1), (1, 1), (4, -1)], [(4, 1), (2, 1), (3, 1)]],
+        ),
+    ]
+    for name, sheaf, cycles in graphs:
+        n_edges = len(sheaf.edges)
+        agree = exact = total = 0
+        for values in product((-1, 0, 1), repeat=n_edges):
+            sums = [sum(sign * values[e] for e, sign in cycle) for cycle in cycles]
+            is_cob = sheaf.is_coboundary([[v] for v in values])["is_coboundary"]
+            exact += is_cob
+            agree += is_cob == all(s == 0 for s in sums)
+            total += 1
+        telescoped = sections = 0
+        for values in product((-1, 0, 1), repeat=len(sheaf.nodes)):
+            cob = sheaf.coboundary(sheaf.section({n: [v] for n, v in zip(sheaf.nodes, values)}))
+            telescoped += all(sum(sign * cob[e][0] for e, sign in cycle) == 0 for cycle in cycles)
+            sections += 1
+        h1 = sheaf.cohomology_dimensions()["h1"]
+        cycle_rank = n_edges - len(sheaf.nodes) + 1
+        ok = ok and agree == total and telescoped == sections and h1 == cycle_rank
+        cases += total + sections + 1
+        evidence.append(
+            f"{name}: {exact} of {total} cochains are coboundaries; is_coboundary agrees with the cycle-sum "
+            f"test on {agree} of {total}; coboundaries sum to zero around every cycle for {telescoped} of "
+            f"{sections} sections; h1 = {h1}, cycle rank = {cycle_rank}"
+        )
+    return ok, cases, evidence
+
+
+def _braid_relations() -> CheckResult:
+    relations = braids.verify_relations()
+    f_bad = [[PHI_INVERSE, ONE], [PHI_INVERSE, PHI_INVERSE]]
+    sigma_1 = braids.generators()["sigma_1"]
+    sigma_2_bad = mat2_mul(mat2_mul(f_bad, braids.R_MATRIX), f_bad)
+    bad_involution = mat2_mul(f_bad, f_bad) == mat2_identity()
+    bad_artin = mat2_mul(mat2_mul(sigma_1, sigma_2_bad), sigma_1) == mat2_mul(mat2_mul(sigma_2_bad, sigma_1), sigma_2_bad)
+    evidence = [f"{name}: {value}" for name, value in sorted(relations.items())]
+    evidence.append(
+        f"negative control (F with one sign flipped): involution {bad_involution}, Artin relation {bad_artin}"
+    )
+    holds = all(relations.values()) and not bad_involution and not bad_artin
+    return holds, len(relations) + 2, evidence
+
+
+def _reed_solomon_repair() -> CheckResult:
+    n, k = 12, 6
+    t = (n - k) // 2
+    data = hashlib.sha256(b"al-haras reed-solomon check").digest()[: 3 * k]
+    envelope = reed_solomon.protect(data, n=n, k=k)
+    block = range(k, 2 * k)  # byte positions of the second block
+    repaired = rejected = cases = 0
+    within = beyond = 0
+    for errors in range(t + 2):
+        for positions in combinations(block, errors):
+            res = reed_solomon.heal(reed_solomon.inject_faults(data, positions), envelope)
+            if errors <= t:
+                within += 1
+                repaired += (
+                    res["integrity_verified"]
+                    and res["repaired"] == data
+                    and res["corrected_data_positions"] == list(positions)
+                )
+            else:
+                beyond += 1
+                rejected += not res["integrity_verified"]
+            cases += 1
+    parity = [list(p) for p in envelope["parity"]]
+    parity[1][0] = (parity[1][0] + 1) % reed_solomon.P
+    parity[1][1] = (parity[1][1] + 1) % reed_solomon.P
+    mixed = reed_solomon.heal(reed_solomon.inject_faults(data, [k]), envelope, received_parity=parity)
+    mixed_ok = mixed["integrity_verified"] and mixed["repaired"] == data
+    cases += 1
+    evidence = [
+        f"RS({n}, {k}) over GF(257), t = {t}: {repaired} of {within} patterns with at most {t} byte errors in one "
+        f"block repaired exactly at the injected positions",
+        f"{rejected} of {beyond} patterns with {t + 1} errors not reported as a verified repair",
+        f"1 data error plus 2 parity errors in one block repaired: {mixed_ok}",
+    ]
+    return repaired == within and rejected == beyond and mixed_ok, cases, evidence
 
 
 class FormalTopologicalProofVerifier:
-    """Executable verification engine for the Lean 4 AL HARAS mathematical axioms."""
+    """Runs the executable exact checks (class name kept for API compatibility)."""
+
+    CHECKS: Tuple[Tuple[str, str, Optional[str], Callable[[], CheckResult]], ...] = (
+        (
+            "sheaf_coboundary_zero_iff_consistent",
+            "For a sheaf on a graph with orthogonal restriction maps, delta0 s = 0 exactly when the states "
+            "are consistent across every edge.",
+            "Chronus.AlHaras.coboundary_eq_zero_iff",
+            _sheaf_coboundary_criterion,
+        ),
+        (
+            "cycle_sum_obstruction",
+            "An edge cochain of the constant sheaf is a coboundary exactly when its signed sum around every "
+            "cycle is zero; a non-zero cycle sum is an obstruction no node states can explain.",
+            "Chronus.AlHaras.not_coboundary_of_closed_walk_sum_ne_zero",
+            _cycle_sum_obstruction,
+        ),
+        (
+            "braid_relations",
+            "The Fibonacci braid generators over Z[zeta_5] satisfy F^2 = I, R^10 = I and the Artin relation.",
+            None,
+            _braid_relations,
+        ),
+        (
+            "reed_solomon_repair",
+            "RS(n, k) over GF(257) repairs every pattern of up to (n - k) / 2 symbol errors per block.",
+            None,
+            _reed_solomon_repair,
+        ),
+    )
 
     @classmethod
-    def verify_theorem_1_sheaf_obstruction(cls) -> FormalProofVerdict:
-        """
-        Verifies Theorem 1: H^1(X; F) == 0 <=> Global harmonic section (No adversary).
-        """
-        steps = []
-        # Step 1: Base zero-cochain evaluation
-        x_clean = [1.0, 2.0, 3.0, 4.0]
-        # delta_0 (x) = x - x = 0
-        diff_clean = [x_clean[i] - x_clean[i] for i in range(4)]
-        norm_clean = (sum(d * d for d in diff_clean)) ** 0.5
-        steps.append(f"Step 1: Clean cochain delta_0(x) norm = {norm_clean} == 0.0")
-
-        # Step 2: Perturbed cochain evaluation
-        x_perturbed = [1.0, 2.0, 3.0, 4.0]
-        y_perturbed = [1.0, 100.0, 3.0, 4.0]  # Adversarial injection
-        diff_perturbed = [x_perturbed[i] - y_perturbed[i] for i in range(4)]
-        norm_perturbed = (sum(d * d for d in diff_perturbed)) ** 0.5
-        steps.append(
-            f"Step 2: Perturbed cochain delta_0(x, y) norm = {norm_perturbed} > 0.0"
-        )
-
-        # Invariant: Clean norm is exactly 0.0, perturbed norm is strictly positive
-        is_valid = (norm_clean == 0.0) and (norm_perturbed > 0.0)
-        steps.append(
-            "Step 3: Q.E.D. Obstruction class H^1 != 0 isolates adversarial section."
-        )
-
-        return FormalProofVerdict(
-            theorem_id="THM_1_SHEAF_OBSTRUCTION",
-            theorem_name="Cellular Sheaf Cohomological Obstruction Theorem",
-            formal_status="FORMALLY_VERIFIED_LEAN4_COMPLIANT" if is_valid else "FAILED",
-            axioms_satisfied=is_valid,
-            proof_steps=steps,
-        )
+    def _run(cls, check_id: str, statement: str, lean: Optional[str], fn: Callable[[], CheckResult]) -> FormalProofVerdict:
+        try:
+            holds, cases, evidence = fn()
+        except Exception as exc:  # a check that crashes is reported as not holding
+            return FormalProofVerdict(check_id, statement, False, 0, [f"check raised {type(exc).__name__}: {exc}"], lean)
+        return FormalProofVerdict(check_id, statement, bool(holds), cases, evidence, lean)
 
     @classmethod
-    def verify_theorem_2_dsw_monopole_cobordism(cls) -> FormalProofVerdict:
-        """
-        Verifies Theorem 2: DSW 4D instanton cobordism repairs fault in 1 cycle.
-        """
-        steps = []
-        steps.append("Step 1: Let X be a 4-manifold with boundary dX.")
-        steps.append(
-            "Step 2: Trace perturbation delta has non-trivial second Chern class c_2(E) = k = 1."
-        )
-        steps.append(
-            "Step 3: Seiberg-Witten monopole equation D_A psi = 0 yields unique smooth cobordism."
-        )
-        steps.append("Step 4: Microcode cobordism transitions k -> 0 in dt = 1 cycle.")
-
-        # Invariant: 1-cycle latency bound
-        cycles = 1
-        is_valid = cycles == 1
-
-        return FormalProofVerdict(
-            theorem_id="THM_2_DSW_COBORDISM",
-            theorem_name="Donaldson-Seiberg-Witten 1-Cycle Monopole Repair",
-            formal_status="FORMALLY_VERIFIED_LEAN4_COMPLIANT" if is_valid else "FAILED",
-            axioms_satisfied=is_valid,
-            proof_steps=steps,
-        )
-
-    @classmethod
-    def verify_theorem_3_cyclotomic_pentagon_coherence(cls) -> FormalProofVerdict:
-        """
-        Verifies Theorem 3: Mac Lane pentagon coherence in Z[zeta_5] with zero float approximation.
-        """
-        steps = []
-        # Artin braid relation in Z[zeta_5]: sigma_1 * sigma_2 * sigma_1 == sigma_2 * sigma_1 * sigma_2
-        sigma_1 = CyclotomicZ5(0, 1, 0, 0)
-        sigma_2 = CyclotomicZ5(1, 0, 1, 0)
-
-        lhs = sigma_1 * sigma_2 * sigma_1
-        rhs = sigma_2 * sigma_1 * sigma_2
-
-        # In cyclotomic ring, check equality or commutator coherence
-        steps.append(f"Step 1: Computed Artin braid LHS in Z[zeta_5]: {lhs}")
-        steps.append(f"Step 2: Computed Artin braid RHS in Z[zeta_5]: {rhs}")
-
-        # Check cyclotomic quotient nilpotence: x^4 + x^3 + x^2 + x + 1 == 0
-        zeta = CyclotomicZ5(0, 1, 0, 0)
-        identity = CyclotomicZ5(1, 0, 0, 0)
-        quotient = (
-            zeta * zeta * zeta * zeta
-            + zeta * zeta * zeta
-            + zeta * zeta
-            + zeta
-            + identity
-        )
-        is_nilpotent = quotient == CyclotomicZ5(0, 0, 0, 0)
-        steps.append(
-            f"Step 3: Ring reduction modulo Phi_5(x) = {quotient} == 0 (Exact)"
-        )
-
-        return FormalProofVerdict(
-            theorem_id="THM_3_CYCLOTOMIC_PENTAGON",
-            theorem_name="Cyclotomic Z[zeta_5] Anyon Pentagon Coherence",
-            formal_status="FORMALLY_VERIFIED_LEAN4_COMPLIANT"
-            if is_nilpotent
-            else "FAILED",
-            axioms_satisfied=is_nilpotent,
-            proof_steps=steps,
-        )
+    def run_check(cls, check_id: str) -> FormalProofVerdict:
+        for cid, statement, lean, fn in cls.CHECKS:
+            if cid == check_id:
+                return cls._run(cid, statement, lean, fn)
+        raise KeyError(f"unknown check {check_id!r}")
 
     @classmethod
     def verify_all_theorems(cls) -> Dict[str, Any]:
-        """Runs the complete formal invariant verification suite."""
-        t1 = cls.verify_theorem_1_sheaf_obstruction()
-        t2 = cls.verify_theorem_2_dsw_monopole_cobordism()
-        t3 = cls.verify_theorem_3_cyclotomic_pentagon_coherence()
-
-        all_ok = t1.axioms_satisfied and t2.axioms_satisfied and t3.axioms_satisfied
+        """Run every check now (legacy method name: these are executable checks, not theorems)."""
+        t0 = time.perf_counter_ns()
+        verdicts = [cls._run(cid, statement, lean, fn) for cid, statement, lean, fn in cls.CHECKS]
+        holding = sum(v.holds for v in verdicts)
         return {
-            "specification": "LEAN4_CHRONUS_AL_HARAS_FORMAL_SPEC_v1",
-            "certification_tier": "COMMON_CRITERIA_EAL7_MATHEMATICAL_CERTAINTY",
-            "theorems": [
-                {
-                    "id": t.theorem_id,
-                    "name": t.theorem_name,
-                    "status": t.formal_status,
-                    "steps": t.proof_steps,
-                }
-                for t in (t1, t2, t3)
-            ],
-            "all_axioms_satisfied": all_ok,
-            "formal_guarantee": "ZERO_DOOR_TOPOLOGICAL_INVARIANCE_MATHEMATICALLY_PROVED",
+            "verification_method": VERIFICATION_METHOD,
+            "summary": (
+                "Executable checks run at request time with exact arithmetic against the AL HARAS engines "
+                "on finite instances; they are evidence, not proofs."
+            ),
+            "checks": [v.as_dict() for v in verdicts],
+            "checks_run": len(verdicts),
+            "checks_holding": holding,
+            "all_checks_hold": holding == len(verdicts),
+            "lean_specification": {
+                "path": LEAN_SOURCE_PATH,
+                "theorems": list(LEAN_THEOREMS),
+                "machine_checked_in_ci": False,
+                "note": "Specification source only; it is not compiled or machine-checked in CI.",
+            },
+            "elapsed_ns": time.perf_counter_ns() - t0,
         }

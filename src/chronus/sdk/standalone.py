@@ -5,7 +5,7 @@ Provides typed, zero-copy, post-quantum verified interfaces for:
 - Tenant Onboarding & OAuth2/JWT Authentication
 - Polyglot Workload Dispatch (Lucas PV, Metallic, 32-Lane Zeckendorf)
 - Zero-Copy Native Connectors (S3, Snowflake, Databricks, BigQuery)
-- AL HARAS Topological Sheaf Inspection & FRI zk-STARK Verification
+- AL HARAS (HYBA Security) state-consistency inspection and receipt verification
 - FinOps Hermiten 25% Value-Share Settlement
 """
 
@@ -147,7 +147,7 @@ class ChronusClient:
         return self._request("POST", f"/v1/connectors/pointers/{pointer_id}/execute", payload)
 
     def verify_receipt(self, receipt_hash: str) -> Dict[str, Any]:
-        """Evaluates FRI zk-STARK polynomial proofs and NIST FIPS 204 ML-DSA lattice signatures."""
+        """Looks up a receipt and returns the verifier's result as reported by the API."""
         return self._request("GET", f"/v1/verify/{receipt_hash}")
 
     def calculate_hermiten_settlement(self, tenant_id: str, counterfactual: float, actual: float, incremental: float = 0.0) -> Dict[str, Any]:

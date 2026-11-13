@@ -14,7 +14,6 @@ Testing 100% across:
 - End-to-End Tests
 """
 
-import math
 import pytest
 from fastapi.testclient import TestClient
 
@@ -71,16 +70,16 @@ class TestPropertyInvariants:
     """Mathematical invariants, algebraic ring axioms, and topological properties."""
 
     def test_app1_stiefel_orthonormality_and_cohomology_zero(self):
-        """Invariant: Stiefel map is an isometry (A^T A = I) and clean states yield H^1 = 0."""
+        """Invariant: the exact Householder frame is an isometry (H^T H = I) and equal states have zero coboundary."""
         stiefel = StiefelRestrictionMap(dim=8, seed_id="test_invar")
+        assert stiefel.verify() is True
         x = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
         mapped = stiefel(x)
-        # Isometry: norm is strictly preserved
-        assert pytest.approx(norm_sq(x), rel=1e-5) == norm_sq(mapped)
-        # Involution: H * H = I
+        # Isometry: the norm is preserved exactly (rational arithmetic, no tolerance)
+        assert norm_sq(mapped) == norm_sq(x) == 204
+        # Involution: H * H = I, exactly
         unmapped = stiefel.invert(mapped)
-        for a, b in zip(x, unmapped):
-            assert pytest.approx(a, rel=1e-5) == b
+        assert unmapped == x
 
         # When all nodes share harmonic state, coboundary is identically 0
         dag = AgentDAG.create_canonical_pipeline()
@@ -92,18 +91,19 @@ class TestPropertyInvariants:
         assert res.status == "PASSED_HARMONIC_CONSENSUS"
 
     def test_app2_mac_lane_coherence_and_ramanujan_spectral_gap(self):
-        """Invariant: Artin braid relations in Z[zeta_5] and LPS expander spectral gap Delta >= k - 2*sqrt(p)."""
-        # Braid knot coherence
+        """Invariant: braid packets decode exactly and the Paley expander P(257) is exactly Ramanujan."""
+        # Braid packet: exact relations, decode and SHA-256 checks
         braid = encode_cyclotomic_braid(b"SATELLITE_TELEMETRY_INVARIANT_SEED")
         assert verify_mac_lane_coherence(braid) is True
+        assert len(braid.braid_word) == 4 * len(b"SATELLITE_TELEMETRY_INVARIANT_SEED")
 
-        # LPS expander spectral gap bound over F_257
+        # Expander: the certified Paley graph P(257) (no LPS Cayley graph is built)
         p = 257
-        degree = p + 1  # 258
-        bound = degree - 2.0 * math.sqrt(p)  # 258 - 2*16.031 = 225.937
-        graph = construct_lps_cayley_graph(p=257)
-        assert graph.spectral_gap >= bound
-        assert graph.degree == 258
+        graph = construct_lps_cayley_graph(p=p)
+        assert graph.degree == (p - 1) // 2
+        assert graph.certificate["is_ramanujan"] is True
+        gap = graph.spectral_gap_lower_bound  # exact rational lower bound of (p - sqrt(p)) / 2
+        assert (p - 2 * gap) ** 2 >= p and 120 < gap < 121
 
     def test_app3_finite_field_polynomial_interpolation_and_vanishing(self):
         """Invariant: P(omega^i) == trace_T[i] and Z_H(omega^i) == 0 mod 257."""
@@ -124,7 +124,7 @@ class TestPropertyInvariants:
 
     def test_app4_homological_conservation_and_weil_bound(self):
         """Invariant: partial_1(gamma) == 0 for closed cycle and |a_p| <= 2*sqrt(p)."""
-        chain = create_ledger_transition_chain("FED", "ECB", 5_000_000)
+        chain = create_ledger_transition_chain("CENTRAL_BANK_A", "CENTRAL_BANK_C", 5_000_000)
         defect = evaluate_boundary_operator_1(chain)
         assert defect == 0
 
@@ -182,7 +182,8 @@ class TestEdgeCases:
         engine = LineRateVerifiableNeuralCompute("com_weights_test_edge")
         y_zero, proof_zero = engine.execute_and_prove_inference([0, 0, 0, 0])
         assert isinstance(y_zero, int)
-        assert proof_zero["proof_type"] == "FRI_ZK_STARK_F257"
+        assert proof_zero["proof_type"] == "AIR_TRACE_RECEIPT_F257" and proof_zero["verified"] is True
+        assert proof_zero["trace"][0] == 0 and proof_zero["claimed_output"] == y_zero
 
         # Field boundary values
         y_max, proof_max = engine.execute_and_prove_inference([256, 256, 256, 256])
@@ -190,12 +191,12 @@ class TestEdgeCases:
 
     def test_app4_edge_zero_tokens_and_huge_trillion_settlement(self):
         """Edge: 0 token settlement and multi-trillion token clearing."""
-        engine = SovereignCBDCSettlementEngine(["FED", "BOE"])
-        rcpt0 = engine.process_cross_border_settlement("FED", "BOE", 0)
+        engine = SovereignCBDCSettlementEngine(["CENTRAL_BANK_A", "CENTRAL_BANK_B"])
+        rcpt0 = engine.process_cross_border_settlement("CENTRAL_BANK_A", "CENTRAL_BANK_B", 0)
         assert rcpt0.boundary_defect == 0
         assert rcpt0.amount_tokens == 0
 
-        rcpt_huge = engine.process_cross_border_settlement("FED", "BOE", 10_000_000_000_000)
+        rcpt_huge = engine.process_cross_border_settlement("CENTRAL_BANK_A", "CENTRAL_BANK_B", 10_000_000_000_000)
         assert rcpt_huge.boundary_defect == 0
         assert rcpt_huge.amount_tokens == 10_000_000_000_000
 
@@ -241,18 +242,20 @@ class TestAdversarialCases:
 
         res = sys.verify_and_execute_turn(states)
         assert res.status == "BLOCKED_AND_HEALED"
-        assert res.error == "H1_OBSTRUCTION"
-        assert res.h1_norm > 1.0
+        assert res.error == "COBOUNDARY_DISAGREEMENT"
+        # two disagreeing edges, each |(99, -88, 77, 66) - (1, 0, 0, 1)|^2 = 27502
+        assert res.coboundary_norm_sq == 2 * 27502 and res.h1_norm == 55004
         assert res.vortex_node == "Coder"
-        # Verify 1-cycle instanton healed state restored baseline
+        # The located node is restored from its registered baseline, then re-checked exactly
+        assert res.repair["method"] == "baseline_restore" and res.repair["verified_consistent"] is True
         assert res.state["Coder"] == [1.0, 0.0, 0.0, 1.0]
 
-    def test_app2_adversarial_30_percent_link_jamming_zero_stall(self):
-        """Adversarial: 30% of laser cross-links jammed; Hecke backup routes packets without stall."""
+    def test_app2_adversarial_30_percent_link_jamming_is_computed(self):
+        """Adversarial: 30% of directed laser hops jammed; delivery is computed from the surviving hops."""
         sat_ids = [f"SAT_{i:02d}" for i in range(16)]
         mesh = OrbitalSatelliteDefenseMesh(constellation_nodes=sat_ids)
 
-        # Manually jam 30% of laser links
+        # Jam the first 30% of hops (36 of 120); they include all 7 outgoing hops of SAT_00
         total_hops = len(mesh.expander_graph.hops)
         jam_count = int(total_hops * 0.30)
         for i, hop in enumerate(mesh.expander_graph.hops.values()):
@@ -260,11 +263,18 @@ class TestAdversarialCases:
                 hop.jammed = True
 
         status = mesh.transmit_telemetry_packet(
-            b"TOP_SECRET_ORBITAL_DEFENSE_TELEMETRY",
+            b"ORBITAL_TELEMETRY",
             source_sat="SAT_00",
             target_sat="SAT_08",
         )
-        assert status == OrbitalMeshStatus.ZERO_STALL_DELIVERED
+        assert status == OrbitalMeshStatus.UNREACHABLE
+
+        # SAT_15 -> SAT_03: the planned route via SAT_02 is jammed, so a surviving route is used
+        status = mesh.transmit_telemetry_packet(b"ORBITAL_TELEMETRY", source_sat="SAT_15", target_sat="SAT_03")
+        assert status == OrbitalMeshStatus.JAMMED_RE_ROUTED
+        route = mesh.last_transmission["route_taken"]
+        assert all(not mesh.expander_graph.hops[(a, b)].jammed for a, b in zip(route, route[1:]))
+        assert mesh.last_transmission["receiver_sha256_verified"] is True
 
     def test_app3_adversarial_tampered_neural_weights_detected(self):
         """Adversarial: Tampering with model weights commitment or trace fails STARK division/verification."""
@@ -282,11 +292,11 @@ class TestAdversarialCases:
 
     def test_app4_adversarial_double_spend_and_unbacked_inflation_rejected(self):
         """Adversarial: Unbacked credit inflation / double-spend raises SovereignSettlementRejection."""
-        engine = SovereignCBDCSettlementEngine(["FED", "BOE", "ECB"])
+        engine = SovereignCBDCSettlementEngine(["CENTRAL_BANK_A", "CENTRAL_BANK_B", "CENTRAL_BANK_C"])
 
         with pytest.raises(SovereignSettlementRejection) as exc_info:
             engine.process_cross_border_settlement(
-                "FED", "BOE", 10_000_000, simulate_double_spend=True
+                "CENTRAL_BANK_A", "CENTRAL_BANK_B", 10_000_000, simulate_double_spend=True
             )
         assert "HOMOLOGICAL_BOUNDARY_DEFECT_DETECTED" in str(exc_info.value)
 
@@ -302,7 +312,8 @@ class TestAdversarialCases:
 
         with pytest.raises(TopologicalSheafFault) as exc_info:
             execute_t_isa_instruction(inst, regs, bus)
-        assert "HARDWARE_TRAP_NON_ZERO_COHOMOLOGY" in str(exc_info.value)
+        assert "SHEAF_NONZERO_COBOUNDARY" in str(exc_info.value)
+        assert exc_info.value.details["coboundary"] == [-10, 10, 0, 0]
 
         # Invariant: Memory bus egress must now be blocked
         assert bus.is_egress_blocked() is True
@@ -341,10 +352,12 @@ class TestUnitFunctions:
         assert quot == [1, 1]
 
     def test_unit_dsw_repair_alu(self):
-        """Unit: 1-cycle instanton ALU repair returns ground truth."""
-        corrupted = (99, -55, 33, 11)
-        repaired = dsw_instanton_repair_alu(corrupted)
-        assert repaired == (1, 0, 0, 0)
+        """Unit: Reed-Solomon repair restores the protected register value from its parity."""
+        regs = CoprocessorRegisters(32)
+        regs.write_128bit(5, (99, -55, 33, 11))
+        corrupted = regs.inject_upset(5, [0, 7])
+        assert corrupted != (99, -55, 33, 11)
+        assert dsw_instanton_repair_alu(corrupted, regs.ecc[5]) == (99, -55, 33, 11)
 
 
 # ==============================================================================
@@ -391,8 +404,8 @@ class TestIntegrationPipelines:
         assert st == OrbitalMeshStatus.ZERO_STALL_DELIVERED
 
         # Trigger CBDC rail
-        cbdc = SovereignCBDCSettlementEngine(["BANK_OF_ENGLAND", "FEDERAL_RESERVE"])
-        receipt = cbdc.process_cross_border_settlement("FEDERAL_RESERVE", "BANK_OF_ENGLAND", 1_000_000)
+        cbdc = SovereignCBDCSettlementEngine(["CENTRAL_BANK_A", "CENTRAL_BANK_B"])
+        receipt = cbdc.process_cross_border_settlement("CENTRAL_BANK_A", "CENTRAL_BANK_B", 1_000_000)
         assert receipt.status == "SETTLED_HOMOLOGICALLY_CONSERVED"
         assert receipt.boundary_defect == 0
 
@@ -406,9 +419,14 @@ class TestEndToEndAPIsAndSDK:
     """Full HTTP endpoints and SDK method execution against live app."""
 
     def test_e2e_api_sheaf_turn_clean_and_injection(self, api_client):
+        from chronus.service.dependencies import auth_service
+
+        auth_service.register_tenant("agentic-orbital-e2e", "agentic-orbital-e2e-token")
+        auth = {"Authorization": "Bearer agentic-orbital-e2e-token"}
         # 1. Clean turn
         resp_clean = api_client.post(
             "/v1/al-haras/applications/agentic-sheaf/verify-turn",
+            headers=auth,
             json={
                 "agent_states": {
                     "Planner": [1.0, 0.0, 0.0, 1.0],
@@ -427,6 +445,7 @@ class TestEndToEndAPIsAndSDK:
         # 2. Injected turn
         resp_inj = api_client.post(
             "/v1/al-haras/applications/agentic-sheaf/verify-turn",
+            headers=auth,
             json={
                 "agent_states": {
                     "Planner": [1.0, 0.0, 0.0, 1.0],
@@ -441,13 +460,19 @@ class TestEndToEndAPIsAndSDK:
         data_inj = resp_inj.json()
         assert data_inj["status"] == "BLOCKED_AND_HEALED"
         assert data_inj["vortex_node"] == "Coder"
-        assert data_inj["error"] == "H1_OBSTRUCTION"
+        assert data_inj["error"] == "COBOUNDARY_DISAGREEMENT"
+        assert data_inj["healed_state"]["Coder"] == [1, 0, 0, 1]
+        assert api_client.post("/v1/al-haras/applications/agentic-sheaf/verify-turn", json={}).status_code == 401
 
     def test_e2e_api_orbital_mesh_transmit(self, api_client):
+        from chronus.service.dependencies import auth_service
+
+        auth_service.register_tenant("agentic-orbital-e2e", "agentic-orbital-e2e-token")
         resp = api_client.post(
             "/v1/al-haras/applications/orbital-mesh/transmit",
+            headers={"Authorization": "Bearer agentic-orbital-e2e-token"},
             json={
-                "packet_payload": "SDA_PWSA_TOPOLOGICAL_TELEMETRY_STREAM",
+                "packet_payload": "REFERENCE_TELEMETRY_STREAM",
                 "source_sat": "SAT_00",
                 "target_sat": "SAT_05",
                 "constellation_size": 16,
@@ -455,56 +480,62 @@ class TestEndToEndAPIsAndSDK:
         )
         assert resp.status_code == 200
         data = resp.json()
-        assert data["status"] == "ZERO_STALL_DELIVERED"
-        assert data["spectral_gap"] >= 225.0
+        assert data["status"] == "DELIVERED"
+        assert data["transmission"]["receiver_sha256_verified"] is True
+        # host graph P(17): degree 8, exact gap (17 - sqrt(17))/2 = 6.4384...
+        assert data["degree"] == 8 and data["mesh"]["host_graph"]["is_ramanujan"] is True
+        assert 6.43 < data["spectral_gap"] < 6.44
 
     def test_e2e_api_zk_neural_prove_and_verify(self, api_client):
-        resp = api_client.post(
-            "/v1/al-haras/applications/zk-neural/prove-and-verify",
-            json={
-                "sensor_input": [15, 30, 45, 60],
-                "weights_commitment": "sovereign_weights_merkle_root_v4_7f9c2b",
-            },
-        )
+        from chronus.service.dependencies import auth_service
+
+        auth_service.register_tenant("five-frontier-zk", "five-frontier-zk-token")
+        body = {"sensor_input": [15, 30, 45, 60], "weights_commitment": "sovereign_weights_merkle_root_v4_7f9c2b"}
+        path = "/v1/al-haras/applications/zk-neural/prove-and-verify"
+        assert api_client.post(path, json=body).status_code == 401
+        resp = api_client.post(path, json=body, headers={"Authorization": "Bearer five-frontier-zk-token"})
         assert resp.status_code == 200
         data = resp.json()
-        assert data["verified"] is True
-        assert data["proof_type"] == "FRI_ZK_STARK_F257"
+        assert data["verified"] is True and all(data["proof_receipt"]["verification"]["checks"].values())
+        assert data["proof_type"] == "AIR_TRACE_RECEIPT_F257"
+        assert data["proof_receipt"]["properties"]["zero_knowledge"] is False
 
     def test_e2e_api_cbdc_settlement_process(self, api_client):
+        from chronus.service.dependencies import auth_service
+
+        auth_service.register_tenant("five-frontier-cbdc", "five-frontier-cbdc-token")
+        auth = {"Authorization": "Bearer five-frontier-cbdc-token"}
+        path = "/v1/al-haras/applications/cbdc-settlement/process"
+        body = {
+            "sender_bank": "CENTRAL_BANK_A",
+            "receiver_bank": "CENTRAL_BANK_B",
+            "amount_tokens": 25_000_000,
+            "simulate_double_spend": False,
+        }
+        assert api_client.post(path, json=body).status_code == 401
+
         # 1. Valid settlement
-        resp = api_client.post(
-            "/v1/al-haras/applications/cbdc-settlement/process",
-            json={
-                "sender_bank": "FEDERAL_RESERVE",
-                "receiver_bank": "BANK_OF_ENGLAND",
-                "amount_tokens": 25_000_000,
-                "simulate_double_spend": False,
-            },
-        )
+        resp = api_client.post(path, headers=auth, json=body)
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "SETTLED_HOMOLOGICALLY_CONSERVED"
         assert data["boundary_defect"] == 0
 
-        # 2. Double-spend rejection
-        resp_bad = api_client.post(
-            "/v1/al-haras/applications/cbdc-settlement/process",
-            json={
-                "sender_bank": "FEDERAL_RESERVE",
-                "receiver_bank": "BANK_OF_ENGLAND",
-                "amount_tokens": 25_000_000,
-                "simulate_double_spend": True,
-            },
-        )
+        # 2. Double-spend rejection, with the computed defect
+        resp_bad = api_client.post(path, headers=auth, json={**body, "simulate_double_spend": True})
         assert resp_bad.status_code == 200
         data_bad = resp_bad.json()
         assert data_bad["status"] == "SETTLEMENT_REJECTED"
         assert data_bad["boundary_defect"] > 0
 
     def test_e2e_api_t_isa_execute(self, api_client):
+        from chronus.service.dependencies import auth_service
+
+        auth_service.register_tenant("five-frontier-tisa", "five-frontier-tisa-token")
+        auth = {"Authorization": "Bearer five-frontier-tisa-token"}
         resp = api_client.post(
             "/v1/al-haras/applications/t-isa/execute",
+            headers=auth,
             json={
                 "funct7": 0x02,  # T_CYCLO_MUL
                 "rs1": 1,
@@ -518,16 +549,28 @@ class TestEndToEndAPIsAndSDK:
         data = resp.json()
         assert data["execution"]["status"] == "OK"
         assert data["execution"]["opcode"] == "T_CYCLO_MUL"
-        assert len(data["rd_val"]) == 4
+        assert data["rd_val"] == [3, 7, 2, 0]  # (1 + 2z)(3 + z) = 3 + 7z + 2z^2
+        # Reed-Solomon scrub drill: corrupt two bytes of T2 without touching its parity, then heal T2
+        heal = api_client.post(
+            "/v1/al-haras/applications/t-isa/execute",
+            headers=auth,
+            json={"funct7": 0x04, "rd": 2, "rs2_val": [3, 1, 0, 0], "upset_register": 2, "upset_byte_positions": [1, 6]},
+        ).json()
+        assert heal["execution"]["ecc_result"] == "CORRECTED" and heal["rd_val"] == [3, 1, 0, 0]
 
     def test_e2e_sdk_methods(self, monkeypatch):
         app = create_app()
         test_client = TestClient(app)
 
-        # Mock SDK client transport to test_client
+        # Mock SDK client transport to test_client. httpx.Client.request adds the client's
+        # default headers (the SDK's bearer token); forward them so authenticated POSTs work.
         def custom_request(method, url, **kwargs):
-            return test_client.request(method, url, **kwargs)
+            headers = {**dict(sdk._client.headers), **(kwargs.pop("headers", None) or {})}
+            return test_client.request(method, url, headers=headers, **kwargs)
 
+        from chronus.service.dependencies import auth_service
+
+        auth_service.register_tenant("tenant_apex_defense", "test_token_sovereign_al_haras")
         sdk = ChronusAPISDK(
             tenant_id="tenant_apex_defense",
             access_token="test_token_sovereign_al_haras",
@@ -541,16 +584,16 @@ class TestEndToEndAPIsAndSDK:
 
         # Test SDK method 2: Orbital telemetry
         res2 = sdk.transmit_orbital_telemetry()
-        assert res2["status"] == "ZERO_STALL_DELIVERED"
+        assert res2["status"] == "DELIVERED"
 
         # Test SDK method 3: zk-ML prove and verify
         res3 = sdk.prove_and_verify_zk_neural()
         assert res3["verified"] is True
 
         # Test SDK method 4: CBDC settlement
-        res4 = sdk.process_cbdc_cross_border_settlement("FEDERAL_RESERVE", "BANK_OF_ENGLAND", 5_000_000)
+        res4 = sdk.process_cbdc_cross_border_settlement("CENTRAL_BANK_A", "CENTRAL_BANK_B", 5_000_000)
         assert res4["status"] == "SETTLED_HOMOLOGICALLY_CONSERVED"
 
         # Test SDK method 5: T-ISA execute
         res5 = sdk.execute_t_isa_microcode(funct7=0x02)
-        assert res5["execution"]["status"] == "OK"
+        assert res5["execution"]["status"] == "OK" and res5["rd_val"] == [3, 7, 2, 0]

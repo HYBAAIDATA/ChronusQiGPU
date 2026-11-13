@@ -513,7 +513,7 @@ class ChronusAPISDK:
         agent_states: Optional[Dict[str, List[float]]] = None,
         stalk_dim: int = 4,
     ) -> Dict[str, Any]:
-        """Verify and execute turn with Cellular Sheaf cohomology and 1-cycle DSW healing."""
+        """Check one agent turn with the exact sheaf coboundary; returns the located node and the verified repair, if any."""
         states = agent_states or {
             "Planner": [1.0, 0.0, 0.0, 1.0],
             "Coder": [1.0, 0.0, 0.0, 1.0],
@@ -528,7 +528,7 @@ class ChronusAPISDK:
 
     def transmit_orbital_telemetry(
         self,
-        packet_payload: str = "SDA_PWSA_TELEMETRY_STREAM_PACKET_001",
+        packet_payload: str = "REFERENCE_TELEMETRY_PACKET_001",
         source_sat: str = "SAT_00",
         target_sat: str = "SAT_07",
         constellation_size: int = 16,
@@ -550,7 +550,7 @@ class ChronusAPISDK:
         sensor_input: Optional[List[int]] = None,
         weights_commitment: str = "sovereign_weights_merkle_root_v4_7f9c2b",
     ) -> Dict[str, Any]:
-        """Generate and verify line-rate FRI zk-STARK neural inference proof."""
+        """Build and check an F_257 trace receipt for the demo layer (not zero-knowledge, not succinct)."""
         return self._request(
             "POST",
             "/v1/al-haras/applications/zk-neural/prove-and-verify",
@@ -562,12 +562,12 @@ class ChronusAPISDK:
 
     def process_cbdc_cross_border_settlement(
         self,
-        sender_bank: str = "FEDERAL_RESERVE",
-        receiver_bank: str = "BANK_OF_ENGLAND",
+        sender_bank: str = "CENTRAL_BANK_A",
+        receiver_bank: str = "CENTRAL_BANK_B",
         amount_tokens: int = 10_000_000,
         simulate_double_spend: bool = False,
     ) -> Dict[str, Any]:
-        """Process wholesale CBDC cross-border transfer under homological conservation partial_1=0."""
+        """Submit one settlement instruction to the AL HARAS boundary-operator check (in-memory model)."""
         return self._request(
             "POST",
             "/v1/al-haras/applications/cbdc-settlement/process",
@@ -588,7 +588,7 @@ class ChronusAPISDK:
         rs2: int = 2,
         rd: int = 3,
     ) -> Dict[str, Any]:
-        """Execute T-ISA instruction on RISC-V RoCC silicon ALU."""
+        """Execute one instruction on the T-ISA software model (no hardware is involved)."""
         return self._request(
             "POST",
             "/v1/al-haras/applications/t-isa/execute",

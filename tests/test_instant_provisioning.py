@@ -68,7 +68,8 @@ class TestInstantProvisioningEngine(unittest.TestCase):
         self.assertEqual(data["status"], "TENANT_PROVISIONED_INSTANTLY")
         self.assertEqual(data["tenant_id"], "tenant_apex_9921a")
         self.assertTrue(data["assigned_cce_id"].startswith("cce_apex_"))
-        self.assertEqual(data["al_haras_kms_status"], "KMS_BOUND_CUSTOMER_CUSTODY")
+        # Keys are in process memory today, so the computed status must say so.
+        self.assertEqual(data["al_haras_kms_status"], "LOCAL_KEY_NOT_CUSTOMER_HELD")
         self.assertTrue(data["tenant_admin_token"].startswith("eyJ"))
         self.assertIn("tenant_apex_9921a/workloads", data["console_access_url"])
         self.assertEqual(data["zero_copy_prefix"], "ptr_sdk_apex_")
@@ -186,7 +187,7 @@ class TestInstantProvisioningEngine(unittest.TestCase):
             )
             self.assertEqual(res.status_code, 201, res.text)
             self.assertEqual(
-                res.json()["al_haras_kms_status"], "KMS_BOUND_CUSTOMER_CUSTODY"
+                res.json()["al_haras_kms_status"], "LOCAL_KEY_NOT_CUSTOMER_HELD"
             )
 
             # Tampered signature is rejected with 401
