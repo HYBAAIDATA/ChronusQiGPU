@@ -34,7 +34,7 @@ class TeamSessionResult:
     contributions: Dict[str, Any]
     verdict: str
     total_latency_ms: float
-    total_cost_usd: float
+    total_cost_usd: float | None
 
 
 class CommercialTeamOrchestrator:
@@ -49,6 +49,17 @@ class CommercialTeamOrchestrator:
             TeamMember(agent_id="salamander_healer", role=TeamRole.RESILIENCE_ENGINEER, priority=2),
             TeamMember(agent_id="pythia_oracle", role=TeamRole.KNOWLEDGE_RETRIEVER, priority=2),
         ]
+
+    def run_qualified_swarm(self, activator, mission, *, dispatch, verify):
+        """Production-boundary path: only signed, exact-scope qualified leaders.
+
+        No implicit authority is inherited from this commercial orchestrator.
+        Every dispatched worker must pass SwarmActivator's skill and evidence gates.
+        """
+        from euclid.swarm_evolution import SwarmActivator, SwarmMission
+        if not isinstance(activator, SwarmActivator) or not isinstance(mission, SwarmMission):
+            raise TypeError("qualified EUCLID swarm activator and mission required")
+        return activator.activate(mission, dispatch=dispatch, verify=verify)
 
     def run_collaborative_task(
         self,
@@ -77,11 +88,13 @@ class CommercialTeamOrchestrator:
             contributions["resilience_attestation"] = execution_hooks["SALAMANDER"](objective)
 
         elapsed_ms = (time.perf_counter() - start_time) * 1000.0
+        # Legacy hooks supply no independent consensus evidence or measured cost.
+        # Never mark their outputs approved or invent a monetary observation.
         return TeamSessionResult(
             session_id=session_id,
             objective=objective,
             contributions=contributions,
-            verdict="APPROVED_BY_CONSENSUS",
+            verdict="UNVERIFIED_LEGACY",
             total_latency_ms=elapsed_ms,
-            total_cost_usd=0.015,
+            total_cost_usd=None,
         )
