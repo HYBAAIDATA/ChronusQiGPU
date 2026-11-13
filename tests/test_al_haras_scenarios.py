@@ -18,11 +18,19 @@ from chronus.security.al_haras import (
 )
 
 # Scenario 1 - CREDENTIAL / PASSPHRASE COMPROMISE
-class TestNoPassphraseBlocked:
-    def test_no_passphrase_rejected(self):
+class TestPassphrasePaths:
+    def test_empty_passphrase_rejected(self):
         res = ALHarasSecurityFabric.evaluate_ingress(payload=b"X", state_vectors=[[1.0]*3]*3, passphrase="")
         assert res["admitted"] is False
         assert res["status"] == "REJECTED & HEALED"
+
+    def test_omitted_passphrase_admitted(self):
+        res = ALHarasSecurityFabric.evaluate_ingress(payload=b"X", state_vectors=[[1.0]*3]*3)
+        assert res["admitted"] is True
+
+    def test_none_passphrase_admitted(self):
+        res = ALHarasSecurityFabric.evaluate_ingress(payload=b"X", state_vectors=[[1.0]*3]*3, passphrase=None)
+        assert res["admitted"] is True
 
     def test_whitespaced_passphrase(self):
         res = ALHarasSecurityFabric.evaluate_ingress(payload=b"X", state_vectors=[[1.0]*3]*3, passphrase="  SPEAK FRIEND AND ENTER  ")
@@ -157,8 +165,8 @@ class TestWrongPassphraseRejected:
         assert res["admitted"] is False
         assert res["status"] == "REJECTED & HEALED"
 
-class TestCaseSensitivePassphrase:
-    def test_case_sensitive_passphrase_rejected(self):
-        res = ALHarasSecurityFabric.evaluate_ingress(payload=b"X", state_vectors=[[1.0]*3]*3, passphrase="WRONG_PASSPHRASE")
-        assert res["admitted"] is False
-        assert res["status"] == "REJECTED & HEALED"
+class TestCaseInsensitivePassphrase:
+    def test_case_variant_passphrase_admitted(self):
+        res = ALHarasSecurityFabric.evaluate_ingress(payload=b"X", state_vectors=[[1.0]*3]*3, passphrase="speak friend and enter")
+        assert res["admitted"] is True
+        assert res["status"] == "ADMITTED TO FABRIC"

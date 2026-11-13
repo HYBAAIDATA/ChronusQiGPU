@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
-AL HARAS Demo: How the Topological Quantum Immunity Swarm Prevents the Japan Breaches
+AL HARAS Demo: Illustrative ingress and simulation scenarios
 
 Scenario: A Japanese government agency is targeted by attackers using stolen
 credentials and AI-generated prompt injection (mirroring the Nov 2026 AP report).
 
-The demo runs the attack against AL HARAS and shows each defense layer blocking
-the ingress. Run:  python demo/AL_HARAS_DEMO.py
+The demo reports admission decisions, a bounded fingerprint, and simulated healing. Run:  python demo/AL_HARAS_DEMO.py
 """
 
 import sys
@@ -30,15 +29,16 @@ def banner(text: str) -> None:
     print("=" * 70)
 
 
-def show_result(layer: str, attack: str, blocked: bool, detail: str = "") -> None:
-    status = "BLOCKED" if blocked else "*** BREACHED ***"
+def show_result(layer: str, attack: str, blocked: bool, detail: str = "", *, admission: bool = False) -> None:
+    status = ("ADMITTED" if blocked else "NOT ADMITTED") if admission else ("BLOCKED" if blocked else "NOT BLOCKED")
     color = "\033[92m" if blocked else "\033[91m"
     reset = "\033[0m"
     print(f"  [{layer:28s}] {attack:45s} -> {color}{status}{reset}  {detail}")
 
 
 def main() -> None:
-    banner("AL HARAS DEMO — Japan Breach Prevention (Nov 2026 AP Report)")
+    banner("AL HARAS DEMO — Illustrative admission scenarios")
+    rejected_requests = []
     print()
     print("Attacker profile: stolen VPN credentials + AI-generated prompt injection")
     print("Target: Japanese government agency client database")
@@ -53,6 +53,7 @@ def main() -> None:
         state_vectors=[[1.0, 2.0, 3.0]] * 3,
         passphrase="stolen_vpn_password_123",  # attacker's credential
     )
+    rejected_requests.append(not res["admitted"])
     show_result(
         "Credential Gate",
         "stolen VPN password",
@@ -70,7 +71,11 @@ def main() -> None:
         [1.0, 2.0, 3.0],
     ]
     sheaf_res = CellularSheafCohomology.compute_cohomology(perturbed_vectors)
-    blocked = not sheaf_res["h0_consensus"]
+    injection_res = ALHarasSecurityFabric.evaluate_ingress(
+        payload=b"PROMPT_INJECTION", state_vectors=perturbed_vectors, passphrase=PASSPHRASE_FRIEND
+    )
+    blocked = not injection_res["admitted"]
+    rejected_requests.append(blocked)
     show_result(
         "Sheaf Cohomology H¹",
         "prompt injection state vector",
@@ -85,21 +90,24 @@ def main() -> None:
     exfil_payload = b"EXFILTRATE_CLIENT_RECORDS_TO_EXTERNAL_SERVER"
     hecke_res = HeckeModularChecksum.verify_payload_eigenform(exfil_payload)
     print(f"  [{'Hecke/Weil Checksum':28s}] {'exfiltration payload':45s} -> FINGERPRINT  a_p={hecke_res['frobenius_eigenvalue_ap']}, weil_bound={hecke_res['weil_bound']:.4f}")
-    print(f"  {'':31s} {'':45s} ->  Unique Frobenius eigenvalue per payload enables anomaly detection on exfiltration attempts")
+    print(f"  {'':31s} {'':45s} ->  Bounded demonstration value; no anomaly detector or rejection is established by this fingerprint")
 
     # ------------------------------------------------------------------
+    exfil_res = ALHarasSecurityFabric.evaluate_ingress(
+        payload=exfil_payload, state_vectors=[[1.0, 2.0, 3.0]] * 3,
+        passphrase=PASSPHRASE_FRIEND,
+    )
+    rejected_requests.append(not exfil_res["admitted"])
+    show_result("Fabric Gate", "exfiltration with clean vectors", not exfil_res["admitted"])
+
     # Attack 4: Memory corruption / bitflip during attack
     # ------------------------------------------------------------------
     banner("ATTACK 4 — Memory corruption / bitflip micro-injection")
     dsw_res = DSW4DInstantonMonopoleHealer.inspect_and_heal(
         b"CORRUPTED_MEMORY_TRACE_DURING_BREACH", is_perturbed=True
     )
-    show_result(
-        "DSW Instanton Healer",
-        "bitflip memory corruption",
-        dsw_res["healed"],
-        f"instanton_charge={dsw_res['instanton_charge_k']}, healed={dsw_res['healed']}",
-    )
+    healing_label = "SIMULATED HEALING RECORD" if dsw_res["healed"] else "NO SIMULATED HEALING RECORD"
+    print(f"  DSW Instanton Healer -> {healing_label}; hash={dsw_res['healed_trace_hash']}")
 
     # ------------------------------------------------------------------
     # Attack 5: Full unified fabric — clean ingress vs adversarial ingress
@@ -116,6 +124,7 @@ def main() -> None:
         "clean authorized ingress",
         clean_res["admitted"],
         f"admitted={clean_res['admitted']}, status={clean_res['status']}",
+        admission=True,
     )
 
     print("  Adversarial ingress (attacker with stolen creds + perturbed state):")
@@ -124,6 +133,7 @@ def main() -> None:
         state_vectors=[[1.0, 2.0, 3.0], [10.0, -15.0, 22.0], [1.0, 2.0, 3.0]],
         passphrase="stolen_vpn_password_123",
     )
+    rejected_requests.append(not adv_res["admitted"])
     show_result(
         "Fabric Gate",
         "adversarial ingress",
@@ -134,15 +144,14 @@ def main() -> None:
     # ------------------------------------------------------------------
     # Summary
     # ------------------------------------------------------------------
-    banner("RESULT — ALL ATTACKS BLOCKED BY AL HARAS TOPOLOGICAL FABRIC")
-    print()
-    print("AL HARAS did not build a bigger lock. It changed the topology.")
-    print("Every ingress path — credential, state vector, payload, memory —")
-    print("is evaluated topologically. Unauthorized workloads are rejected")
-    print("and healed before they can execute or exfiltrate data.")
-    print()
-    print("Run the full test suite:  python -m pytest tests/test_al_haras_scenarios.py -v")
-    print("  (20/20 tests pass)")
+    result = "ALL ATTACKS BLOCKED" if all(rejected_requests) else "SOME ATTACK REQUESTS ADMITTED"
+    banner(f"RESULT — {result}")
+    print(f"Rejected requests: {sum(rejected_requests)}/{len(rejected_requests)}")
+    print("Fingerprint demonstrations: 1")
+    print(f"Simulated healing records: {int(dsw_res['healed'])}")
+    print("These scenarios do not establish breach prevention or memory repair.")
+    print("Run: python -m pytest tests/test_al_haras_scenarios.py -v")
+
 
 
 if __name__ == "__main__":

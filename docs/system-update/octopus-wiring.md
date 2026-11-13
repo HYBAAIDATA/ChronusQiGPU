@@ -1,3 +1,7 @@
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:7dc6cf3e7515e70a14a0256cfb47b08430f82fa5d0b1b82dec1e2a1fbf95bd4e -->
+
 # The Octopus — head, 600 solvers, and the LPV sweep
 
 Deliverable package **A (wiring diagram) + B (interface contracts) + component ledger**.
@@ -78,7 +82,6 @@ A component is `EXISTS` only if a live `.py` module(s) is present and importable
 
 **Legend (every arrow labelled with the interface it uses):**
 
-| Arrow | Interface / contract |
 
 
 ## B. Interface contracts per solver class
@@ -93,10 +96,19 @@ input = {
   "payload":       object,              # class-specific
   "lucas_order":   int | None,          # LPV sweep coordinate
   "pv_degree":     int | None,          # LPV sweep coordinate
-  "input_digest":  str,                 # sha256 of the canonical serialized input bytes
+  "input_digest":  str,                 # sha256 of B.1 envelope fields except input_digest
   "solver_id":     str,                 # chosen by the head / client
 }
 ```
+
+For this proposed interface, `input_digest` is the lowercase hexadecimal SHA-256
+of the UTF-8 bytes of RFC 8785 (JCS) canonical JSON for exactly
+`job_type`, `payload`, `lucas_order`, `pv_degree`, and `solver_id`.
+`input_digest` itself is excluded. Include both sweep coordinates, using JSON
+`null` when absent. Payloads must be representable as I-JSON/JCS values;
+non-JSON objects and non-finite numbers require a separately specified adapter.
+This specifies the interface encoding; it does not assert that current solver
+implementations already construct or verify this envelope.
 
 ```
 receipt = {
@@ -124,19 +136,19 @@ refusal = {
   "refused": True,
   "solver_id": str,
   "job_type": str,
-  "reason": "not implemented",
+  "reason": "not implemented" | "bound exceeded",
   "message": "<explicit refusal text, e.g. 'RIEMANN not implemented; refusing jobs of type riemann'>",
 }
 ```
 
+`not implemented` identifies an unavailable implementation. `bound exceeded`
+identifies a field or domain outside the responding solver's declared bounds.
+
 ### B.2 HENDRIX — class `structured-search`
 
 ```
-input  = {
-  "job_type": "structured_search",
-  "payload": { "query": ..., "field": ..., "domain_size": int, "lucas_order": int, "pv_degree": int },
-  "input_digest": str,
-}
+input = B.1 common envelope with job_type="structured_search" and
+  payload={"query": ..., "field": ..., "domain_size": int}
 output = {
   "solver_id": str,
   "job_type": "structured_search",
@@ -148,17 +160,14 @@ output = {
   "status": "AGREED" | "DISAGREEMENT",
   "receipt": receipt,
 }
-refusal = refusal schema (B.1). Able to refuse if field/domain exceeds a declared bound (Hendrix refuses fields above 2^20).
+refusal = refusal schema (B.1), reason="bound exceeded" for bound violations. Able to refuse if field/domain exceeds a declared bound (Hendrix refuses fields above 2^20).
 ```
 
 ### B.3 O(1) GALOIS — class `exact-search`
 
 ```
-input  = {
-  "job_type": "exact_search",
-  "payload": { "table_key": ..., "lucas_order": int, "pv_degree": int },
-  "input_digest": str,
-}
+input = B.1 common envelope with job_type="exact_search" and
+  payload={"table_key": ...}
 output = {
   "solver_id": str,
   "job_type": "exact_search",
@@ -176,13 +185,13 @@ output = {
   "receipt": receipt,
 }
 refusal = refusal schema. This class is a STUB today; it must answer:
-  {"refused": true, "reason": "not implemented", "message": "O(1) GALOIS exact-search not implemented; refusing"}
+  {"refused": true, "solver_id": "<responding solver_id from input>", "job_type": "exact_search", "reason": "not implemented", "message": "O(1) GALOIS exact-search not implemented; refusing"}
 ```
 
 ### B.4 RIEMANN — class `riemann`
 
 ```
-input  = {"job_type": "riemann", "payload": {...}, "input_digest": str, "lucas_order": int, "pv_degree": int}
+input = B.1 common envelope with job_type="riemann" and payload={...}
 output = {}                      # only if it were implemented
 refusal = {
   "refused": True,
@@ -196,7 +205,8 @@ refusal = {
 ### B.5 Millennium — seven solver classes
 
 ```
-input  = {"job_type": "<one of the seven Millennium problems>", "payload": {...}, "input_digest": str, "lucas_order": int, "pv_degree": int}
+input = B.1 common envelope with job_type="<one of the seven Millennium problems>"
+  and payload={...}
 output = {
   "solver_id": str,
   "job_type": "<problem_name>",
@@ -211,12 +221,19 @@ output = {
 refusal = refusal schema; each of the seven classes must self-test on a known case before admission.
 ```
 
+All class inputs extend B.1: `solver_id` and `input_digest` are required,
+and `lucas_order` and `pv_degree` remain at the top level. Only the
+class-specific payload fields and job type differ.
+
+## Arrow contracts
+
+| Arrow | Interface / contract |
 |-------|----------------------|
 | HEAD → HENDRIX | `run(job, lpv)`: classifies by `workload_type="structured_search"`; HENDRIX returns `(result, receipt)` |
 | HEAD → O(1) GALOIS | `run(job, lpv)`: `workload_type="exact_search"`; if not implemented → `REFUSED — not implemented (O(1) GALOIS)` |
 | HEAD → RIEMANN | `run(job, lpv)`: `workload_type="riemann"` → `REFUSED — not implemented (RIEMANN)` |
 | HEAD → Millennium×7 | `run(job, lpv)`: `workload_type` = one of the seven Millennium problems; each returns `(result, receipt)` or refusal |
-| HENDRIX → O(1) GALOIS | exact-lookup backend interface: HENDRIX's oracle table is built by O(1) GALOIS; output is a digest-verified lookup result |
+| HENDRIX → O(1) GALOIS | exact-lookup backend interface: O(1) GALOIS is currently a refusing STUB; HENDRIX's oracle table is built locally by `PrimeField` in `chronus.hendrix.galois`; the interface output is a digest-verified lookup result |
 | Storage → ALL | `fold(payload) -> folded_sha256` ; `store(object_id, folded) -> receipt` ; `retrieve(object_id) -> folded bytes` (THESEUS + OVID) |
 | Head → Storage | `store(result, lpv, capacity)` before returning any final output |
 | Storage → Substrate | data persists folded in THESEUS/OVID; the substrate does not read another solver's state |
@@ -224,3 +241,6 @@ refusal = refusal schema; each of the seven classes must self-test on a known ca
 | HEAD → iGPU | job is fan-out eligible only after the head's classification and the substrate's self-validation |
 
 **Class authority rule** (per job type): no single solver word is final unless that solver class declares itself authoritative for that job type. Unimplemented classes are refusing stubs and have no authority.
+
+
+<!-- /coderabbit-ai-generated:v1 -->

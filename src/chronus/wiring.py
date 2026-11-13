@@ -88,27 +88,23 @@ def _is_within(path: Path, root: Path) -> bool:
         return False
 
 
-def _prune_excluded(dirnames: List[str], dirpath: Path) -> None:
-    keep: List[str] = []
-    for d in dirnames:
-        if d in EXCLUDE_DIRS or d in OUTPUT_DIR_NAMES:
-            continue
-        if not _is_within(Path(dirpath) / d, None):
-            continue
-        keep.append(d)
-    dirnames[:] = keep
+def _prune_excluded(dirnames: List[str], dirpath: Path, repo_root: Path,
+                    excluded: Iterable[Path] = ()) -> None:
+    dirnames[:] = [d for d in dirnames
+                   if d not in EXCLUDE_DIRS and d not in OUTPUT_DIR_NAMES
+                   and _is_within((dirpath / d).resolve(), repo_root)
+                   and not any(_is_within((dirpath / d).resolve(), x) for x in excluded)]
 
 
-def _candidate_files(repo_root: Path) -> List[Path]:
+def _candidate_files(repo_root: Path, excluded: Iterable[Path] = ()) -> List[Path]:
     found: List[Path] = []
-    for base in [repo_root, repo_root / "src"]:
-        if not base.is_dir():
-            continue
-        for dirpath, dirnames, filenames in os.walk(base, followlinks=False):
-            dirpath_path = Path(dirpath)
-            _prune_excluded(dirnames, dirpath_path)
-            for fn in filenames:
-                found.append(dirpath_path / fn)
+    for dirpath, dirnames, filenames in os.walk(repo_root, followlinks=False):
+        directory = Path(dirpath)
+        _prune_excluded(dirnames, directory, repo_root, excluded)
+        for fn in filenames:
+            candidate = directory / fn
+            if not candidate.is_symlink():
+                found.append(candidate)
     return found
 
 
@@ -127,11 +123,12 @@ def _classify(abs_path: Path, repo_root: Path) -> Optional[Tuple[str, str]]:
     return kind, source_root
 
 
-def discover_files(repo_root: str = ".") -> List[FileEntry]:
+def discover_files(repo_root: str = ".", excluded_dirs: Iterable[Path] = ()) -> List[FileEntry]:
     """Discover all `.py` and other support files under ``repo_root``."""
     repo_root = Path(repo_root).resolve()
     all_entries: List[FileEntry] = []
-    for abs_path in _candidate_files(repo_root):
+    excluded = [(repo_root / p).resolve() for p in excluded_dirs]
+    for abs_path in _candidate_files(repo_root, excluded):
         classified = _classify(abs_path, repo_root)
         if classified is None:
             continue
@@ -190,7 +187,10 @@ def _strip_comments(source: str) -> str:
                 i += 3
                 continue
         elif ch == "#" and not in_s and not in_d and not in_ts and not in_td:
-            break
+            i = source.find("\n", i)
+            if i == -1:
+                break
+            continue
         else:
             if ch == "'":
                 if i + 2 < n and source[i + 1] == "'" and source[i + 2] == "'":
@@ -214,9 +214,9 @@ def parse_imports(source: str) -> List[str]:
     clean = _strip_comments(source)
     targets: Set[str] = set()
     for m in _IMPORT_RE.finditer(clean):
-        target = m.group(1).replace(".", "_").replace("-", "_")
+        target = m.group(1).replace("-", "_")
         if target and (target[0].isalpha() or target[0] == "_"):
-            targets.add(target.split(".")[0])
+            targets.add(target)
     return sorted(targets)
 
 
@@ -232,9 +232,10 @@ def _rebuild_module_index(file_entries: Iterable[FileEntry]) -> None:
             continue
         parts = e.rel_path.parts
         if parts[0] == "src" and len(parts) >= 2:
-            module = parts[1] + "." + ".".join(parts[2:-1])
+            components = list(parts[1:-1])
             if parts[-1] != "__init__.py":
-                module += "." + parts[-1].removesuffix(".py")
+                components.append(parts[-1].removesuffix(".py"))
+            module = ".".join(p for p in components if p)
         else:
             module = e.rel_path.stem
         _MODULE_TO_FILE[module] = e.rel_path
@@ -261,31 +262,46 @@ def build_dependency_graph(file_entries: Iterable[FileEntry]) -> Dict[Path, List
 
 
 def toposort_wired(graph: Dict[Path, List[Path]]) -> List[Path]:
-    """Topologically order python files in ``graph`` (Kahn's algorithm)."""
-    nodes = set(graph.keys())
-    for deps in graph.values():
-        nodes.update(deps)
-    adj: Dict[Path, Set[Path]] = {n: set() for n in nodes}
-    indegree: Dict[Path, int] = {n: 0 for n in nodes}
-    for n, deps in graph.items():
-        for d in deps:
-            if d in nodes and d != n:
-                adj[d].add(n)
-                indegree[n] += 1
-    import bisect
-    ready = sorted([n for n in nodes if indegree[n] == 0])
-    order: List[Path] = []
-    while ready:
-        node = ready.pop(0)
-        order.append(node)
-        for other in sorted(adj[node]):
-            indegree[other] -= 1
-            if indegree[other] == 0 and other not in ready:
-                bisect.insort(ready, other)
-    if len(order) != len(nodes):
-        cycle = sorted(nodes - set(order))
-        logger.warning("chronus.wiring: dependency cycle among %d file(s); ordered alphabetically", len(cycle))
-        order.extend(sorted(cycle))
+    """Order dependencies first, sorting only within strongly connected components."""
+    from graphlib import TopologicalSorter
+
+    nodes = set(graph).union(*(set(deps) for deps in graph.values()))
+    indices, low, stack, active, components = {}, {}, [], set(), []
+
+    def visit(node):
+        indices[node] = low[node] = len(indices)
+        stack.append(node)
+        active.add(node)
+        for dep in sorted(set(graph.get(node, []))):
+            if dep not in indices:
+                visit(dep)
+                low[node] = min(low[node], low[dep])
+            elif dep in active:
+                low[node] = min(low[node], indices[dep])
+        if low[node] == indices[node]:
+            component = []
+            while True:
+                member = stack.pop()
+                active.remove(member)
+                component.append(member)
+                if member == node:
+                    break
+            components.append(sorted(component))
+
+    for node in sorted(nodes):
+        if node not in indices:
+            visit(node)
+    owner = {n: i for i, c in enumerate(components) for n in c}
+    condensed = {i: {owner[d] for n in c for d in graph.get(n, [])
+                     if owner[d] != i} for i, c in enumerate(components)}
+    order = []
+    sorter = TopologicalSorter(condensed)
+    sorter.prepare()
+    while sorter.is_active():
+        ready = sorted(sorter.get_ready(), key=lambda i: components[i])
+        for i in ready:
+            order.extend(components[i])
+            sorter.done(i)
     return order
 
 
@@ -324,6 +340,7 @@ def build_wiring_plan(file_entries: Iterable[FileEntry], output_dir: Path) -> Wi
     entries = list(file_entries)
     # Resolve already-wired entries properly (recompute full list, not subset).
     already_set = set()
+    current = {e.rel_path: e for e in entries}
     if output_dir.is_dir():
         for mf in output_dir.glob("__wiring_manifest.json"):
             try:
@@ -333,8 +350,11 @@ def build_wiring_plan(file_entries: Iterable[FileEntry], output_dir: Path) -> Wi
             for rel, rec in (data.get("files") or {}).items():
                 target = output_dir / rel
                 try:
-                    if target.is_file() and target.stat().st_size == int(rec.get("size", -1)) \
-                            and _hash_file(target) == rec.get("sha256"):
+                    entry = current.get(Path(rel))
+                    if entry and entry.size == rec.get("size") and entry.sha256 == rec.get("sha256") \
+                            and _is_within(target.resolve(), output_dir.resolve()) \
+                            and target.is_file() and target.stat().st_size == entry.size \
+                            and _hash_file(target) == entry.sha256:
                         already_set.add(Path(rel))
                 except Exception:
                     pass
@@ -347,8 +367,11 @@ def build_wiring_plan(file_entries: Iterable[FileEntry], output_dir: Path) -> Wi
         by_hash.setdefault(e.sha256, []).append(e)
     canonical: List[FileEntry] = []
     duplicates: List[FileEntry] = []
+    existing_hashes = {e.sha256 for e in already}
     for sha, group in by_hash.items():
-        if len(group) == 1:
+        if sha in existing_hashes:
+            duplicates.extend(group)
+        elif len(group) == 1:
             canonical.append(group[0])
         else:
             group.sort(key=lambda e: e.rel_path.as_posix())
@@ -365,22 +388,69 @@ def build_wiring_plan(file_entries: Iterable[FileEntry], output_dir: Path) -> Wi
     )
 
 
+def _destination_parent(root: Path, rel: Path) -> int:
+    """Open contained directories without following descendant symlinks."""
+    if rel.is_absolute() or not rel.parts or ".." in rel.parts:
+        raise ValueError(f"Invalid destination: {rel}")
+    fd = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        for part in rel.parts[:-1]:
+            try:
+                os.mkdir(part, dir_fd=fd)
+            except FileExistsError:
+                pass
+            child = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=fd)
+            os.close(fd)
+            fd = child
+        return fd
+    except BaseException:
+        os.close(fd)
+        raise
+
+
+def _copy_entry(e: FileEntry, root: Path) -> None:
+    import uuid
+
+    fd = _destination_parent(root, e.rel_path)
+    temporary = None
+    try:
+        try:
+            target_fd = os.open(e.rel_path.name, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=fd)
+        except OSError:
+            target_fd = None
+        if target_fd is not None:
+            with os.fdopen(target_fd, "rb") as target:
+                digest = hashlib.sha256()
+                for chunk in iter(lambda: target.read(1024 * 1024), b""):
+                    digest.update(chunk)
+                if digest.hexdigest() == e.sha256:
+                    return
+        temporary = f".wiring-{uuid.uuid4().hex}"
+        temp_fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                          0o600, dir_fd=fd)
+        with os.fdopen(temp_fd, "wb") as target, e.abs_path.open("rb") as source:
+            shutil.copyfileobj(source, target)
+            metadata = os.fstat(source.fileno())
+            os.fchmod(target.fileno(), metadata.st_mode & 0o777)
+            target.flush()
+            os.utime(target.fileno(), ns=(metadata.st_atime_ns, metadata.st_mtime_ns))
+        os.replace(temporary, e.rel_path.name, src_dir_fd=fd, dst_dir_fd=fd)
+        temporary = None
+    finally:
+        if temporary is not None:
+            os.unlink(temporary, dir_fd=fd)
+        os.close(fd)
+
+
 def _copy_canonical(plan: WiringPlan) -> None:
     for e in plan.canonical:
-        dest = plan.output_dir / e.rel_path
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        if dest.exists():
-            continue
-        shutil.copy2(e.abs_path, dest)
+        _copy_entry(e, plan.output_dir)
 
 
 def _move_duplicates(plan: WiringPlan) -> None:
     for e in plan.duplicates:
-        dest = plan.duplicates_dir / e.rel_path
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        if dest.exists() or dest.is_symlink():
-            dest.unlink()
-        shutil.move(str(e.abs_path), str(dest))
+        _copy_entry(e, plan.duplicates_dir)
+        e.abs_path.unlink()
 
 
 def write_wiring_bundle(plan: WiringPlan) -> None:
@@ -411,6 +481,18 @@ def _build_manifest(plan: WiringPlan, dependency_graph: Dict[Path, List[Path]],
             "sha256": e.sha256,
             "wired_path": str(wired_path),
         }
+    if plan.manifest_path.is_file():
+        try:
+            previous = json.loads(plan.manifest_path.read_text(encoding="utf-8"))
+        except (ValueError, OSError):
+            previous = {}
+        for rel, rec in previous.get("files", {}).items():
+            candidate = plan.duplicates_dir / rel
+            if rel not in files and Path(rec.get("wired_path", "")) == candidate \
+                    and _is_within(candidate.resolve(), plan.duplicates_dir.resolve()) \
+                    and candidate.is_file() and candidate.stat().st_size == rec.get("size") \
+                    and _hash_file(candidate) == rec.get("sha256"):
+                files[rel] = {**rec, "wired_path": str(candidate)}
     order = list(wired_order)
     others = sorted({
         e.rel_path for e in plan.canonical + plan.duplicates + plan.already_wired
@@ -428,7 +510,7 @@ def _build_manifest(plan: WiringPlan, dependency_graph: Dict[Path, List[Path]],
             "other": sum(1 for e in plan.canonical if e.kind != "py"),
             "duplicates": plan.duplicate_count,
             "already_wired": plan.already_wired_count,
-            "total_unique_wired": len(plan.canonical),
+            "total_unique_wired": len(plan.canonical) + len(plan.already_wired),
         },
         "files": files,
         "dependency_graph": {str(k): [str(d) for d in v] for k, v in dependency_graph.items()},
@@ -441,9 +523,9 @@ def run_wiring(repo_root: str = ".",
                duplicates_dir: str = "wire_duplicates") -> "WiringResult":
     """Discover, plan, bundle and move duplicates. Returns a :class:`WiringResult`."""
     repo_root = Path(repo_root).resolve()
-    output_dir = Path(output_dir).resolve()
-    duplicates_dir = Path(duplicates_dir).resolve()
-    entries = discover_files(repo_root)
+    output_dir = (repo_root / output_dir).resolve()
+    duplicates_dir = (repo_root / duplicates_dir).resolve()
+    entries = discover_files(repo_root, (output_dir, duplicates_dir))
     plan = build_wiring_plan(entries, output_dir)
     plan.manifest_path = output_dir / "__wiring_manifest.json"
     plan.duplicates_dir = duplicates_dir
