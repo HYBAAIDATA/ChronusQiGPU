@@ -1,12 +1,28 @@
-# Docker
-# Build and push an image to Azure Container Registry
-# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
+# Chronusv2 on Azure Pipelines, built from this Azure Repos repository
+# (HYBADATA/Chronusv2), the home of the code, CI and deployment since 8 November 2026.
+#
+# Every push to any branch runs the checks of the former GitHub "CI" workflow
+# (.github/workflows/ci.yml) with the same commands, as steps of ONE job: the
+# organisation has one hosted agent, shared with CronusQiGPU, so one job per run
+# keeps the queue short. Each check runs even when an earlier one failed, so a
+# single run reports every failure; the run fails if any check fails.
+#
+# On main, once every check has passed, the Python package (wheel and sdist) is
+# published as the "python-distribution" artifact and the container image is
+# pushed to the registry. Deployment runs only when the pipeline is started by
+# hand on main with "deploy" ticked (see docs/system-update/azure-deployment.md).
+# https://docs.microsoft.com/azure/devops/pipelines/languages/python
 
 trigger:
-- main
+  branches:
+    include:
+    - '*'
 
-resources:
-- repo: self
+parameters:
+- name: deploy
+  displayName: Deploy the image to the Azure demo App Service (main only; needs the Azure connection)
+  type: boolean
+  default: false
 
 variables:
   # Container registry service connection established during pipeline creation
@@ -16,20 +32,230 @@ variables:
   dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
   tag: '$(Build.BuildId)'
 
+  # Deployment (deploy=true only). The Azure Resource Manager connection is the
+  # CronusQiGPU one; it must be shared with this project before a deploy run.
+  azureServiceConnection: '1271238c-f010-4c8c-b17a-48ec0eef51fa'
+  resourceGroup: 'rg-cronusqigpu-demo'
+  appServicePlan: 'asp-cronusqigpu-demo-hybadata'
+  webAppName: 'chronusv2-demo-hybadata'
+  registryName: 'crcronusqigpudemohybadata'
+  keyVaultName: 'kv-cronusqigpu-demo-hyba'
+  # The app is closed to the internet except these ranges, comma-separated
+  # (e.g. '203.0.113.10/32'). The pipeline opens it to its own agent only while it checks it.
+  allowedIp: ''
+
   # Agent VM image name
   vmImageName: 'ubuntu-latest'
+  PIP_DISABLE_PIP_VERSION_CHECK: '1'
 
 stages:
-- stage: Build
-  displayName: Build and push stage
+- stage: CI
+  displayName: 'CI: tests, lint, package, audit, security, Bicep, OpenCL, purity, RTL, container'
   jobs:
-  - job: Build
-    displayName: Build
+  - job: Checks
+    displayName: 'All CI checks'
+    timeoutInMinutes: 60
     pool:
       vmImage: $(vmImageName)
     steps:
+    - checkout: self
+      fetchDepth: 1
+
+    # --- Python 3.10, 3.11 and 3.12 tests and coverage (GitHub job "tests") ---
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.10'
+      displayName: 'Use Python 3.10'
+    - script: python -m pip install -e '.[dev]'
+      displayName: 'Python 3.10: install'
+    - script: >-
+        python -m pytest -q -rs -p no:cacheprovider
+        --cov=chronus.execution --cov=chronus.backends --cov=chronus.service --cov=chronus.sdk --cov=chronus.security
+        --cov-report=term-missing --cov-report=xml:$(Agent.TempDirectory)/coverage-py310.xml
+        --junitxml=$(Common.TestResultsDirectory)/junit-py310.xml
+      env:
+        CHRONUS_WORKLOAD_DB_PATH: $(Agent.TempDirectory)/chronus-tests-py310.sqlite3
+      displayName: 'Python 3.10: tests and coverage'
+      condition: succeededOrFailed()
+
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.11'
+      displayName: 'Use Python 3.11'
+      condition: succeededOrFailed()
+    - script: python -m pip install -e '.[dev]'
+      displayName: 'Python 3.11: install'
+      condition: succeededOrFailed()
+    - script: >-
+        python -m pytest -q -rs -p no:cacheprovider
+        --cov=chronus.execution --cov=chronus.backends --cov=chronus.service --cov=chronus.sdk --cov=chronus.security
+        --cov-report=term-missing --cov-report=xml:$(Agent.TempDirectory)/coverage-py311.xml
+        --junitxml=$(Common.TestResultsDirectory)/junit-py311.xml
+      env:
+        CHRONUS_WORKLOAD_DB_PATH: $(Agent.TempDirectory)/chronus-tests-py311.sqlite3
+      displayName: 'Python 3.11: tests and coverage'
+      condition: succeededOrFailed()
+
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.12'
+      displayName: 'Use Python 3.12'
+      condition: succeededOrFailed()
+    - script: python -m pip install -e '.[dev]'
+      displayName: 'Python 3.12: install'
+      condition: succeededOrFailed()
+    - script: >-
+        python -m pytest -q -rs -p no:cacheprovider
+        --cov=chronus.execution --cov=chronus.backends --cov=chronus.service --cov=chronus.sdk --cov=chronus.security
+        --cov-report=term-missing --cov-report=xml:$(Agent.TempDirectory)/coverage-py312.xml
+        --junitxml=$(Common.TestResultsDirectory)/junit-py312.xml
+      env:
+        CHRONUS_WORKLOAD_DB_PATH: $(Agent.TempDirectory)/chronus-tests-py312.sqlite3
+      displayName: 'Python 3.12: tests and coverage'
+      condition: succeededOrFailed()
+
+    - task: PublishTestResults@2
+      condition: succeededOrFailed()
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: '$(Common.TestResultsDirectory)/junit-py3*.xml'
+        mergeTestResults: false
+        testRunTitle: 'Chronusv2 tests (Python 3.10, 3.11, 3.12)'
+      displayName: 'Publish test results'
+    - task: PublishCodeCoverageResults@2
+      condition: succeededOrFailed()
+      inputs:
+        summaryFileLocation: '$(Agent.TempDirectory)/coverage-py312.xml'
+      displayName: 'Publish coverage (Python 3.12)'
+
+    # --- Lint, compile and package (GitHub job "quality-and-package") ---
+    - script: python -m pip install -e '.[dev]' ruff build twine
+      displayName: 'Install lint and packaging tools'
+      condition: succeededOrFailed()
+    - script: ruff check --select F src/chronus/execution src/chronus/backends src/chronus/service src/chronus/sdk src/chronus/security tests
+      displayName: 'Lint active implementation'
+      condition: succeededOrFailed()
+    - script: python -m compileall -q src/chronus/config.py src/chronus/execution src/chronus/backends src/chronus/service src/chronus/sdk src/chronus/security
+      displayName: 'Compile active implementation'
+      condition: succeededOrFailed()
+    - script: python -m build
+      displayName: 'Build the Python package (wheel and sdist)'
+      condition: succeededOrFailed()
+    - script: twine check dist/*
+      displayName: 'Check the package metadata'
+      condition: succeededOrFailed()
+    - publish: dist
+      artifact: python-distribution
+      displayName: 'Upload the Python package'
+      condition: succeededOrFailed()
+
+    # --- Dependency vulnerability audit (GitHub job "dependency-audit"), in a clean environment ---
+    - script: |
+        set -euo pipefail
+        python -m venv "$(Agent.TempDirectory)/audit-venv"
+        . "$(Agent.TempDirectory)/audit-venv/bin/activate"
+        python -m pip install -e . pip-audit
+        pip-audit
+      displayName: 'Dependency vulnerability audit'
+      condition: succeededOrFailed()
+
+    # --- Static security scan (GitHub job "static-security") ---
+    - script: |
+        set -euo pipefail
+        python -m pip install bandit
+        bandit -q -r src/chronus/execution src/chronus/backends src/chronus/service src/chronus/sdk src/chronus/security -ll -ii
+      displayName: 'Static security scan'
+      condition: succeededOrFailed()
+
+    # --- Azure Bicep validation (GitHub job "infrastructure") ---
+    - script: |
+        set -euo pipefail
+        az bicep build --file infra/azure/main.bicep --stdout > "$(Agent.TempDirectory)/azure-template.json"
+        az bicep build --file infra/azure/app.bicep --stdout > "$(Agent.TempDirectory)/azure-app-template.json"
+      displayName: 'Azure Bicep validation'
+      condition: succeededOrFailed()
+
+    # --- Mathematical purity gate (GitHub job "purity-gate") ---
+    - script: python scripts/ci/purity_gate.py
+      displayName: 'Mathematical purity gate'
+      condition: succeededOrFailed()
+
+    # --- OpenCL kernel on the CPU reference runtime (GitHub job "opencl-reference") ---
+    # After the main test runs, so the accelerator extras do not change what they test.
+    - script: sudo apt-get update -qq && sudo apt-get install -y -qq pocl-opencl-icd yosys iverilog
+      displayName: 'Install OpenCL CPU runtime, Yosys and Icarus Verilog'
+      condition: succeededOrFailed()
+    - script: python -m pip install -e '.[dev,accelerator]'
+      displayName: 'OpenCL: install accelerator extras'
+      condition: succeededOrFailed()
+    - script: python -c "import pyopencl as cl; assert any(d.type & cl.device_type.CPU for p in cl.get_platforms() for d in p.get_devices())"
+      displayName: 'OpenCL: require a CPU device'
+      condition: succeededOrFailed()
+    - script: python -m pytest -q -rs -p no:cacheprovider tests/test_opencl_kernel.py --junitxml=$(Common.TestResultsDirectory)/junit-opencl.xml
+      displayName: 'OpenCL: kernel tests'
+      condition: succeededOrFailed()
+    - task: PublishTestResults@2
+      condition: succeededOrFailed()
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: '$(Common.TestResultsDirectory)/junit-opencl.xml'
+        testRunTitle: 'OpenCL kernel on the CPU reference runtime'
+      displayName: 'Publish OpenCL test results'
+
+    # --- Phi-ALU RTL simulation and Yosys synthesis (GitHub job "rtl-synthesis") ---
+    - script: |
+        set -euo pipefail
+        iverilog -g2012 -o tb_phi hw/tb_qigpu_phi_alu.sv hw/zeckendorf_norm_alu.sv
+        ./tb_phi | tee rtl-testbench.log
+        iverilog -g2012 -o tb_32lane hw/tb_zeckendorf_alu_32lane.sv hw/zeckendorf_alu_32lane.sv
+        ./tb_32lane | tee -a rtl-testbench.log
+        test "$(grep -c 'TB PASS' rtl-testbench.log)" -eq 2
+      displayName: 'RTL: known-answer testbenches'
+      condition: succeededOrFailed()
+    - script: |
+        set -euo pipefail
+        yosys -Q -T -p 'read_verilog -sv hw/zeckendorf_norm_alu.sv; hierarchy -check -top qigpu_phi_alu; synth -top qigpu_phi_alu; stat' | tee yosys-report.txt
+        yosys -Q -T -p 'read_verilog -sv hw/zeckendorf_alu_32lane.sv; hierarchy -check -top qigpu_zeckendorf_alu_32lane; synth -top qigpu_zeckendorf_alu_32lane; stat' | tee -a yosys-report.txt
+        mkdir -p "$(Build.ArtifactStagingDirectory)/rtl"
+        cp rtl-testbench.log yosys-report.txt "$(Build.ArtifactStagingDirectory)/rtl/"
+      displayName: 'RTL: Yosys synthesis'
+      condition: succeededOrFailed()
+    - publish: $(Build.ArtifactStagingDirectory)/rtl
+      artifact: rtl-synthesis-report
+      displayName: 'Upload the RTL report'
+      condition: succeededOrFailed()
+
+    # --- Container build and restart smoke test (GitHub job "container") ---
+    - bash: |
+        set -euo pipefail
+        docker build -t "chronus-ci:$(Build.SourceVersion)" .
+        container_id=$(docker run -d -p 127.0.0.1::8000 -e 'CHRONUS_TENANT_TOKENS={"ci":"ci-example-token"}' "chronus-ci:$(Build.SourceVersion)")
+        trap 'docker logs "$container_id" 2>&1 | tail -n 50 || true; docker rm -f "$container_id" >/dev/null' EXIT
+        port=$(docker port "$container_id" 8000/tcp | head -n 1 | sed 's/.*://')
+        export CHRONUS_SMOKE_URL="http://127.0.0.1:$port"
+        for attempt in {1..30}; do
+          if curl -fsS "$CHRONUS_SMOKE_URL/health/ready" >/dev/null; then break; fi
+          sleep 1
+        done
+        curl -fsS "$CHRONUS_SMOKE_URL/health/ready" >/dev/null
+        workload_id=$(python tests/container_smoke.py submit)
+        docker restart "$container_id" >/dev/null
+        port=$(docker port "$container_id" 8000/tcp | head -n 1 | sed 's/.*://')
+        export CHRONUS_SMOKE_URL="http://127.0.0.1:$port"
+        for attempt in {1..30}; do
+          if curl -fsS "$CHRONUS_SMOKE_URL/health/ready" >/dev/null; then break; fi
+          sleep 1
+        done
+        python tests/container_smoke.py verify "$workload_id"
+      env:
+        CHRONUS_SMOKE_TOKEN: ci-example-token
+      displayName: 'Container: build, authenticated workload, restart, verify'
+      condition: succeededOrFailed()
+
+    # --- main only, after every check passed: push the image ---
     - task: Docker@2
-      displayName: Build and push an image to container registry
+      displayName: 'Build and push the image to the container registry (main)'
+      condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
       inputs:
         command: buildAndPush
         repository: $(imageRepository)
@@ -37,3 +263,34 @@ stages:
         containerRegistry: $(dockerRegistryServiceConnection)
         tags: |
           $(tag)
+          $(Build.SourceVersion)
+
+- ${{ if eq(parameters.deploy, true) }}:
+  - stage: Deploy
+    displayName: 'Deploy to the Azure demo App Service'
+    dependsOn: CI
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+    - job: DeployApp
+      displayName: 'Run the image on App Service and check it'
+      pool:
+        vmImage: $(vmImageName)
+      steps:
+      - checkout: self
+        fetchDepth: 1
+      - task: AzureCLI@2
+        displayName: 'Deploy infra/azure/app.bicep, then check /health/ready and the token gate'
+        inputs:
+          azureSubscription: $(azureServiceConnection)
+          scriptType: 'bash'
+          scriptLocation: 'inlineScript'
+          inlineScript: >-
+            bash infra/azure/deploy_app.sh
+            --resource-group "$(resourceGroup)"
+            --plan "$(appServicePlan)"
+            --web-app "$(webAppName)"
+            --registry "$(registryName)"
+            --key-vault "$(keyVaultName)"
+            --image-repository "$(imageRepository)"
+            --image-tag "$(tag)"
+            --allowed-ip "$(allowedIp)"
