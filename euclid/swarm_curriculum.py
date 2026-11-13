@@ -166,3 +166,40 @@ def train_leadership(
     }
     report["report_sha256"] = hashlib.sha256(_canonical(report)).hexdigest()
     return report
+
+
+def train_qualify_and_activate(
+    curriculum: LeaderCurriculum,
+    mission: "SwarmMission",
+    *,
+    activator: "SwarmActivator",
+    train: Callable[[tuple[SkillCase, ...]], Mapping[str, Any]],
+    evaluate: Callable[[str, SkillCase], Mapping[str, Any]],
+    accept: Callable[[SkillCase, Mapping[str, Any]], bool],
+    certify: Callable[[Mapping[str, Any]], None],
+    dispatch: Callable[["SwarmTask"], Mapping[str, Any]],
+    verify: Callable[["SwarmTask", Mapping[str, Any]], bool],
+) -> dict[str, Any]:
+    """One ordered training→independent attestation→leadership activation path.
+
+    The certifier must independently inspect checkpoint, cases and test
+    artefacts, sign evidence and promote scoped claims in the REAL registry.
+    It is not a privileged bypass. Even if certify returns success without
+    promotions, activator refuses every unqualified leadership skill.
+    """
+    from .swarm_evolution import SwarmActivator, SwarmMission
+    if not isinstance(activator, SwarmActivator) or not isinstance(mission, SwarmMission):
+        raise SwarmRefused("governed swarm activator and typed mission required")
+    if mission.leader_id != curriculum.agent_id or mission.scope != curriculum.scope:
+        raise SwarmRefused("curriculum leader or scope does not match mission")
+    registered = activator.agents.get(mission.leader_id)
+    if registered is None or registered.source_revision != curriculum.revision:
+        raise SwarmRefused("curriculum revision is not the registered leader revision")
+    if not callable(certify):
+        raise SwarmRefused("independent attestation callback required")
+    report = train_leadership(curriculum, train=train, evaluate=evaluate, accept=accept)
+    if report["outcome"] != "READY_FOR_INDEPENDENT_ATTESTATION":
+        raise SwarmRefused("leadership training acceptance not satisfied")
+    certify(report)  # Cannot bypass exact-scope signed registry authorization.
+    result = activator.activate(mission, dispatch=dispatch, verify=verify)
+    return {"training": report, "swarm": result}
