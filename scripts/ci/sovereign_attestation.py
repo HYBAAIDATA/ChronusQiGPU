@@ -6,10 +6,10 @@ Sovereign Wealth Funds, and Institutional Due Diligence.
 
 Produces a cryptographically signed, zero-knowledge capability dossier:
 - Validates the 6 Core Sovereign Architectural Pillars:
-  1. AL HARAS (Sheaf Cohomology, DSW Instanton, Ramanujan Expander, Hecke Modular Checksums)
+  1. AL HARAS (exact sheaf coboundary, Reed-Solomon repair, Paley/Ramanujan spectrum, braid relations, Hasse-bound fingerprint)
   2. THESEUS (Phyllotaxis Zero-Collision Address Space) & OVID (Verifiable Storage Custody)
   3. CHRONUS (F_257 Galois Search, Zeckendorf ALU, Binet/Lucas Exact Field, 0% Rejection Wire)
-  4. MILLENNIUM (Discrete-Dual Sovereign Implementations of Millennium Prize Mathematics)
+  4. LEGACY "MILLENNIUM" MODULES (exact Ollivier-Ricci curvature, Hodge split, p-adic address sets, zeroisation)
   5. TOE / TUQC (Substrate-Agnostic Universal Quantum Substrate & F_257 StateEvolution)
   6. PACKAGE INVENTORY (Distribution Packages for AL HARAS, Theseus, Ovid, Chronus, Millennium, TOE)
 - Generates SOVEREIGN_CAPABILITY_ATTESTATION.json with HMAC-SHA256 and SHA-256 state anchors.
@@ -35,7 +35,16 @@ ATTESTATION_SECRET_KEY = b"DIFC_SOVEREIGN_CHRONUS_ATTESTATION_AUTHORITY_KEY_v36"
 
 
 def verify_al_haras_pillar() -> Dict[str, Any]:
-    """Pillar 1: AL HARAS Topological Security & Cohomological Invariants."""
+    """Pillar 1: AL HARAS (HYBA Security) exact checks, each computed on this run.
+
+    Every invariant below is the result of a computation, not a stored flag:
+    the sheaf coboundary is evaluated in exact rational arithmetic on a
+    consistent and on a contradictory pair of states, a Reed-Solomon fault drill
+    must restore the trace byte for byte, the Paley graph P(257) spectrum must
+    meet the Ramanujan bound, the Fibonacci braid relations must hold in
+    Z[zeta_5], and the elliptic-curve fingerprint must satisfy the Hasse bound
+    with two independent point counts agreeing.
+    """
     from chronus.security.al_haras.engine import (
         CellularSheafCohomology,
         DSW4DInstantonMonopoleHealer,
@@ -46,39 +55,66 @@ def verify_al_haras_pillar() -> Dict[str, Any]:
 
     t0 = time.perf_counter_ns()
 
-    # Sheaf Cohomology
-    sheaf_res = CellularSheafCohomology.compute_cohomology(node_vectors=[[1.0, 0.0], [1.0, 0.0]])
-    h1_clean = sheaf_res["h0_consensus"] is True and sheaf_res["cohomology_state"] == "H^1(X; F) = 0"
+    # Exact sheaf coboundary: agreeing states form a global section ...
+    sheaf_res = CellularSheafCohomology.compute_cohomology(node_vectors=[[1, 0], [1, 0]])
+    consistent_ok = (
+        sheaf_res["h0_consensus"] is True
+        and sheaf_res["cohomology_class"] == "GLOBAL_SECTION"
+        and Fraction(sheaf_res["coboundary_total_norm_sq"]) == 0
+    )
+    # ... and contradictory states (1,0) vs (0,1) give ||delta0 s||^2 = 2 exactly.
+    conflict_res = CellularSheafCohomology.compute_cohomology(node_vectors=[[1, 0], [0, 1]])
+    disagreement_ok = (
+        conflict_res["h0_consensus"] is False
+        and Fraction(conflict_res["coboundary_max_edge_norm_sq"]) == 2
+    )
 
-    # DSW Instanton Monopole Healer
+    # Reed-Solomon fault drill: corrupted bytes must be corrected and the trace restored exactly.
     healer_res = DSW4DInstantonMonopoleHealer.inspect_and_heal(trace_payload=b"test_trace", is_perturbed=True)
-    healed_ok = healer_res["healed"] is True and healer_res["instanton_charge_k"] == 1
+    repair_ok = (
+        healer_res["healed"] is True
+        and healer_res["integrity_verified"] is True
+        and healer_res["symbol_errors_corrected"] >= 1
+        and healer_res["repaired_trace_sha256"] == healer_res["trace_sha256"]
+    )
 
-    # Ramanujan Expander Spectral Gap
+    # Ramanujan certificate for the Paley graph P(257), from its exact spectrum.
     ramanujan_res = RamanujanExpanderSpectralGapGuard.verify_mass_gap()
-    gap_ok = ramanujan_res["satisfies_bound"] is True
+    gap_ok = ramanujan_res["satisfies_bound"] is True and ramanujan_res["is_ramanujan"] is True
 
-    # Cyclotomic Anyon Braid
+    # Fibonacci braid relations in Z[zeta_5].
     braid_res = CyclotomicAnyonBraidEngine.compile_braid()
-    braid_ok = braid_res["status"] == "VERIFIED_COHERENT"
+    braid_ok = (
+        braid_res["status"] == "VERIFIED_COHERENT"
+        and braid_res["artin_braid_satisfied"] is True
+        and all(braid_res["relations_verified"].values())
+    )
 
-    # Hecke Modular Checksum
+    # Elliptic-curve fingerprint: two independent point counts must agree and meet the Hasse bound.
     hecke_res = HeckeModularChecksum.verify_payload_eigenform(payload=b"sovereign_difc_attestation")
-    hecke_ok = hecke_res["status"] == "HECKE_EIGENFORM_SATISFIED"
+    hasse_ok = hecke_res["hasse_bound_satisfied"] is True and hecke_res["independent_trace_check"] is True
 
     latency_us = (time.perf_counter_ns() - t0) / 1000.0
 
-    all_invariants_pass = h1_clean and healed_ok and gap_ok and braid_ok and hecke_ok
+    all_invariants_pass = consistent_ok and disagreement_ok and repair_ok and gap_ok and braid_ok and hasse_ok
 
     return {
         "status": "QUALIFIED" if all_invariants_pass else "INVARIANT_FAILED",
         "latency_us": round(latency_us, 2),
         "invariants": {
-            "sheaf_h1_exactness": h1_clean,
-            "dsw_instanton_conservation": healed_ok,
+            "sheaf_global_section_exact": consistent_ok,
+            "sheaf_disagreement_detected_exact": disagreement_ok,
+            "reed_solomon_repair_verified": repair_ok,
             "ramanujan_spectral_gap": gap_ok,
             "anyon_cyclotomic_braid": braid_ok,
-            "hecke_modular_checksum": hecke_ok,
+            "hasse_bound_fingerprint": hasse_ok,
+        },
+        "measured": {
+            "conflict_coboundary_norm_sq": conflict_res["coboundary_max_edge_norm_sq"],
+            "symbol_errors_corrected": healer_res["symbol_errors_corrected"],
+            "paley_lambda_2": ramanujan_res["lambda_2_decimal"],
+            "ramanujan_bound": ramanujan_res["ramanujan_bound_decimal"],
+            "frobenius_trace_ap": hecke_res["frobenius_trace_ap"],
         },
     }
 
@@ -162,7 +198,11 @@ def verify_chronus_stratum_pillar() -> Dict[str, Any]:
 
 
 def verify_millennium_pillar() -> Dict[str, Any]:
-    """Pillar 4: Millennium Problems Discrete Mathematical Duality."""
+    """Pillar 4: exact graph, Hodge, p-adic and zeroisation checks (legacy "Millennium" modules).
+
+    The module names come from the earlier notes; no Millennium Prize Problem is
+    addressed. Each check below is computed on this run.
+    """
     from chronus.security.al_haras.millennium_security import (
         RicciCurvatureDeCloaker,
         HodgeCovertChannelFilter,
@@ -178,41 +218,40 @@ def verify_millennium_pillar() -> Dict[str, Any]:
     ricci.add_edge("C2_HOST", "BOT_001", traffic_weight=100.0)
     ricci.add_edge("BOT_001", "BOT_002", traffic_weight=1.0)
     surgery_res = ricci.execute_perelman_surgery()
-    poincare_ok = surgery_res["surgery_status"] == "TOPOLOGICAL_SURGERY_COMPLETED"
+    poincare_ok = surgery_res["transport_optimality_certified"] is True
 
     # 2. Hodge de Rham Orthogonal Projection
     hodge_res = HodgeCovertChannelFilter.sanitize_side_channels([10.0, 10.2, 55.0, 10.1])
-    hodge_ok = hodge_res["side_channel_nullified"] is True
+    hodge_ok = hodge_res["status"] == "DECOMPOSITION_VERIFIED"
 
     # 3. Ultrametric Memory Sandbox
     sandbox = UltrametricMemorySandbox(prime_p=257)
     sandbox.register_enclave("proc_alpha", base_address=0x1000)
     sandbox.register_enclave("proc_beta", base_address=0x2000)
     iso_res = sandbox.verify_non_overlapping_isolation("proc_alpha", "proc_beta")
-    ultrametric_ok = iso_res["speculative_cross_bleed_possible"] is False
+    ultrametric_ok = iso_res["balls_disjoint"] is True
 
     # 4. Anosov Ergodic Memory Purge
-    anosov_res = AnosovColdBootScrambler.emergency_ram_purge(b"SOVEREIGN_KEY_MATERIAL_2026_TEST")
-    anosov_ok = anosov_res["cold_boot_recovery_possible"] is False
+    anosov_res = AnosovColdBootScrambler.emergency_ram_purge(bytearray(b"SOVEREIGN_KEY_MATERIAL_2026_TEST"))
+    anosov_ok = anosov_res["status"] == "ZEROISED_AND_VERIFIED"
 
     # 5. Picard-Lefschetz Anti-Jamming Filter
     pl_res = PicardLefschetzAntiJammingFilter.filter_jammed_waveform([(1.0, 0.5), (0.0, 2.0)])
-    pl_ok = pl_res["anti_jamming_recovery_status"] == "SIGNAL_RESTORED_BELOW_NOISE_FLOOR"
 
     latency_us = (time.perf_counter_ns() - t0) / 1000.0
 
-    all_ok = poincare_ok and hodge_ok and ultrametric_ok and anosov_ok and pl_ok
+    all_ok = poincare_ok and hodge_ok and ultrametric_ok and anosov_ok
 
     return {
         "status": "QUALIFIED" if all_ok else "MILLENNIUM_FAILED",
         "latency_us": round(latency_us, 2),
-        "millennium_problems_verified": {
-            "poincare_ricci_flow": poincare_ok,
-            "hodge_decomposition": hodge_ok,
-            "p_adic_ultrametric_sandbox": ultrametric_ok,
-            "anosov_toral_scrambler": anosov_ok,
-            "picard_lefschetz_anti_jamming": pl_ok,
+        "exact_checks_passed": {
+            "ollivier_ricci_curvature_certified": poincare_ok,
+            "hodge_decomposition_identities": hodge_ok,
+            "p_adic_address_sets_disjoint": ultrametric_ok,
+            "buffer_zeroised_and_read_back": anosov_ok,
         },
+        "not_implemented": {"picard_lefschetz_anti_jamming": pl_res["status"]},
     }
 
 
@@ -285,7 +324,7 @@ def main():
     print("========================================================================")
     t0 = time.time()
 
-    print("[1/6] Auditing AL HARAS Sheaf & Instanton Invariants...")
+    print("[1/6] Auditing AL HARAS exact checks (sheaf coboundary, Reed-Solomon repair, spectrum)...")
     al_haras_proof = verify_al_haras_pillar()
     print(f"      -> Status: {al_haras_proof['status']} ({al_haras_proof['latency_us']} µs)")
 
@@ -297,7 +336,7 @@ def main():
     chronus_proof = verify_chronus_stratum_pillar()
     print(f"      -> Status: {chronus_proof['status']} ({chronus_proof['latency_us']} µs)")
 
-    print("[4/6] Auditing 7 Millennium Prize Security Dualities...")
+    print("[4/6] Auditing exact graph, Hodge, p-adic and zeroisation checks...")
     millennium_proof = verify_millennium_pillar()
     print(f"      -> Status: {millennium_proof['status']} ({millennium_proof['latency_us']} µs)")
 
@@ -327,7 +366,7 @@ def main():
             "al_haras": al_haras_proof,
             "theseus_ovid": theseus_proof,
             "chronus_stratum": chronus_proof,
-            "millennium_problems": millennium_proof,
+            "legacy_millennium_modules": millennium_proof,
             "toe_quantum": toe_proof,
             "distribution_packages": package_proof,
         },

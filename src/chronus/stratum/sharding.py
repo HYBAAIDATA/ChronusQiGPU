@@ -67,6 +67,11 @@ class DedupLedger:
         self._order.append(key)
         return True
 
+    def discard_job(self, job_id: str) -> None:
+        """Retire one replaced job without forgetting other active work."""
+        self._order = [key for key in self._order if key[0] != job_id]
+        self._entries = set(self._order)
+
     def clear(self):
         self._entries.clear()
         self._order.clear()

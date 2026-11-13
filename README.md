@@ -39,6 +39,7 @@ Running this command is a local test action, not a release qualification or cert
 - [Product packaging and market framing](docs/directives/PACKAGING.md)
 - [HYBA funding pitch — positioning draft](funding/FUNDING_PITCH.md)
 - [iGPU Manifesto: Chronus ONE & The Virtual GPIU](docs/IGPU_MANIFESTO.md)
+- [iGPU fleet: many machines as one Chronus iGPU, in tiers with the option to scale](docs/fleet/FLEET.md) ([Mac setup](docs/fleet/MAC_SETUP.md), [spec decisions](docs/fleet/DECISIONS.md))
 - [Claim audit and disposition](docs/claim-audit.md)
 - [Current implementation assessment](docs/system-update/current-state-assessment.md)
 - [Architecture and market assumptions](docs/system-update/architecture-and-market.md)

@@ -15,9 +15,9 @@ also checks the block-height reader the two-block campaign relies on.
 """
 
 import json
-import sys
 from fractions import Fraction
 
+from chronus.execution.mining_selftest import run as run_engine_selftest
 from chronus.stratum.bip310 import apply_version_rolling
 from chronus.stratum.endian_engine import (
     build_header80,
@@ -49,7 +49,9 @@ GENESIS_NONCE = 2083236893
 # Block 1, with its previous-block hash in Stratum V1 word order.
 BLOCK1_MERKLE = "0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098"
 BLOCK1_HASH = "00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048"
-BLOCK1_PREVHASH_STRATUM = "0a8ce26f72b3f1b646a2a6c14ff763ae65831e939c085ae10019d66800000000"
+BLOCK1_PREVHASH_STRATUM = (
+    "0a8ce26f72b3f1b646a2a6c14ff763ae65831e939c085ae10019d66800000000"
+)
 BLOCK1_TIME = 1231469665
 BLOCK1_NONCE = 2573394689
 
@@ -60,24 +62,41 @@ def run() -> dict:
     def check(name: str, passed: bool) -> None:
         checks.append({"check": name, "passed": bool(passed)})
 
-    coinbase = bytes.fromhex(GENESIS_COINBASE)
+    coinbase_bytes = bytes.fromhex(GENESIS_COINBASE)
     # A pool sends the coinbase as coinb1 | extranonce1 | extranonce2 | coinb2; the
     # miner joins the four parts, so any interior split must give the same root.
     cut = 42
-    coinb1 = coinbase[:cut].hex()
-    extranonce1 = coinbase[cut:cut + 4].hex()
-    extranonce2 = coinbase[cut + 4:cut + 8].hex()
-    coinb2 = coinbase[cut + 8:].hex()
+    coinb1 = coinbase_bytes[:cut].hex()
+    extranonce1 = coinbase_bytes[cut : cut + 4].hex()
+    extranonce2 = coinbase_bytes[cut + 4 : cut + 8].hex()
+    coinb2 = coinbase_bytes[cut + 8 :].hex()
     merkle = compute_merkle_root_stratum(coinb1, extranonce1, extranonce2, coinb2, [])
     check("merkle_root_from_stratum_coinbase", merkle[::-1].hex() == GENESIS_MERKLE)
 
-    header0 = build_header80(1, swap_prevhash_words("00" * 32), merkle, GENESIS_TIME, NBITS_DIFF1, GENESIS_NONCE)
+    header0 = build_header80(
+        1,
+        swap_prevhash_words("00" * 32),
+        merkle,
+        GENESIS_TIME,
+        NBITS_DIFF1,
+        GENESIS_NONCE,
+    )
     digest0 = sha256d(header0)
-    check("sha256d_block0_header", len(header0) == 80 and digest0[::-1].hex() == GENESIS_HASH)
+    check(
+        "sha256d_block0_header",
+        len(header0) == 80 and digest0[::-1].hex() == GENESIS_HASH,
+    )
 
     prev1 = swap_prevhash_words(BLOCK1_PREVHASH_STRATUM)
     check("stratum_prevhash_word_order", prev1 == bytes.fromhex(GENESIS_HASH)[::-1])
-    header1 = build_header80(1, prev1, bytes.fromhex(BLOCK1_MERKLE)[::-1], BLOCK1_TIME, NBITS_DIFF1, BLOCK1_NONCE)
+    header1 = build_header80(
+        1,
+        prev1,
+        bytes.fromhex(BLOCK1_MERKLE)[::-1],
+        BLOCK1_TIME,
+        NBITS_DIFF1,
+        BLOCK1_NONCE,
+    )
     digest1 = sha256d(header1)
     check("sha256d_block1_header", digest1[::-1].hex() == BLOCK1_HASH)
 
@@ -91,7 +110,8 @@ def run() -> dict:
     )
     check(
         "block_hashes_meet_target",
-        int.from_bytes(digest0, "little") <= diff1 and int.from_bytes(digest1, "little") <= diff1,
+        int.from_bytes(digest0, "little") <= diff1
+        and int.from_bytes(digest1, "little") <= diff1,
     )
 
     rolled, bits = apply_version_rolling("20000000", "1fffe000", 0xFFFFFFFF)
@@ -116,20 +136,51 @@ def run() -> dict:
     }
     gatekeeper = LocalPreSubmitGatekeeper()
     accepted = gatekeeper.verify_candidate(
-        job, extranonce1, extranonce2, 4, job["ntime_hex"], GENESIS_NONCE, "00000000", "00000000", Fraction(1)
+        job,
+        extranonce1,
+        extranonce2,
+        4,
+        job["ntime_hex"],
+        GENESIS_NONCE,
+        "00000000",
+        "00000000",
+        Fraction(1),
     )
     check(
         "gatekeeper_accepts_block0",
-        accepted[0] is True and accepted[1] is None and accepted[2] == GENESIS_HASH and accepted[5] is True,
+        accepted[0] is True
+        and accepted[1] is None
+        and accepted[2] == GENESIS_HASH
+        and accepted[5] is True,
     )
     refused = gatekeeper.verify_candidate(
-        job, extranonce1, extranonce2, 4, job["ntime_hex"], GENESIS_NONCE + 1, "00000000", "00000000", Fraction(1)
+        job,
+        extranonce1,
+        extranonce2,
+        4,
+        job["ntime_hex"],
+        GENESIS_NONCE + 1,
+        "00000000",
+        "00000000",
+        Fraction(1),
     )
     check(
         "gatekeeper_refuses_wrong_nonce",
-        refused[0] is False and refused[1] is not None and refused[1].value == "ABOVE_TARGET",
+        refused[0] is False
+        and refused[1] is not None
+        and refused[1].value == "ABOVE_TARGET",
     )
 
+    from hyba_mine.campaign import coinbase_height
+
+    check(
+        "bip34_height_reader",
+        coinbase_height(coinbase("036f460d")) == 869999
+        and coinbase_height(coinbase("60")) == 16
+        and coinbase_height("01000000" + "01" + "11" * 32 + "ffffffff" + "0403a00d00")
+        is None,
+    )
+    checks.extend(run_engine_selftest().get("checks", []))
     passed = all(item["passed"] for item in checks)
     return {"bist": "PASS" if passed else "FAIL", "checks": checks}
 
@@ -139,17 +190,23 @@ def coinbase(push_hex: str) -> str:
 
 
 def run_lanes() -> dict:
-    from chronus.fleet.capacity import discover_host
     from hyba_mine.campaign import coinbase_height
     from hyba_mine.lanes import LaneUnavailable, OpenCLLanes, ProcessLanes, qualify
 
+    from chronus.fleet.capacity import discover_host
+
     checks = []
-    checks.append({
-        "check": "bip34_height_reader",
-        "passed": coinbase_height(coinbase("036f460d")) == 869999
-        and coinbase_height(coinbase("60")) == 16
-        and coinbase_height("01000000" + "01" + "11" * 32 + "ffffffff" + "0403a00d00") is None,
-    })
+    checks.append(
+        {
+            "check": "bip34_height_reader",
+            "passed": coinbase_height(coinbase("036f460d")) == 869999
+            and coinbase_height(coinbase("60")) == 16
+            and coinbase_height(
+                "01000000" + "01" + "11" * 32 + "ffffffff" + "0403a00d00"
+            )
+            is None,
+        }
+    )
     lanes_reports = []
     processes = ProcessLanes(min(2, discover_host().available_cpus))
     try:
@@ -161,12 +218,16 @@ def run_lanes() -> dict:
     try:
         opencl = OpenCLLanes()
     except LaneUnavailable as exc:
-        lanes_reports.append({"backend": OpenCLLanes.name, "available": False, "reason": str(exc)})
+        lanes_reports.append(
+            {"backend": OpenCLLanes.name, "available": False, "reason": str(exc)}
+        )
     else:
         report = qualify(opencl)
         report["device"] = opencl.device
         lanes_reports.append(report)
-        checks.append({"check": "opencl_igpu_lanes_qualify", "passed": report["passed"]})
+        checks.append(
+            {"check": "opencl_igpu_lanes_qualify", "passed": report["passed"]}
+        )
     return {"checks": checks, "lanes": lanes_reports}
 
 
@@ -175,10 +236,14 @@ def main() -> int:
     lanes = run_lanes()
     report["checks"].extend(lanes["checks"])
     report["lanes"] = lanes["lanes"]
-    report["bist"] = "PASS" if all(item["passed"] for item in report["checks"]) else "FAIL"
+    report["bist"] = (
+        "PASS" if all(item["passed"] for item in report["checks"]) else "FAIL"
+    )
     print(json.dumps(report, indent=1))
     return 0 if report["bist"] == "PASS" else 1
 
 
+__all__ = ["main", "run"]
+
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())

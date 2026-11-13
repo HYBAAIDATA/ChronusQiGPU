@@ -29,7 +29,6 @@ import hashlib
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
-from chronus.execution.asic_sha256 import _H0, sha256_block
 from chronus.execution.stratum import (
     StratumJob,
     StratumSession,
@@ -43,7 +42,9 @@ from chronus.execution.structural import (
 )
 from chronus.quantum.geometric_polychoron import (
     Polychoron600Cell,
+    PisotLucasStateCompression,
 )
+from chronus.hendrix.structured import exact_extension_search
 
 P = 257
 N_STATES_MOD = 256  # 2^1000 = 256 = -1 mod 257
@@ -244,8 +245,8 @@ class HodgeSheafLaplacianConsensus:
 
     def is_harmonic_consensus(self, stalk_values: List[int]) -> bool:
         """Returns True iff stalk_values is in the harmonic kernel ker(L_F)."""
-        _, h1_norm = self.evaluate_laplacian(stalk_values)
-        return h1_norm == 0
+        laplacian, _ = self.evaluate_laplacian(stalk_values)
+        return all(value == 0 for value in laplacian)
 
 
 # ---------------------------------------------------------------------------
@@ -313,6 +314,8 @@ class GeometricMiningResult:
     bit_diffusion_pct: float = 0.0
     polychoron_vertex_idx: int = 0
     zeckendorf_indices: Tuple[int, ...] = field(default_factory=tuple)
+    pv_scale_index: int = 0
+    pv_marked_amplitude: Tuple[int, int] = (0, 0)
 
 
 class GeometricGaloisMiner:
@@ -329,6 +332,8 @@ class GeometricGaloisMiner:
         self.expander = LiePoissonRamanujanExpander()
         self.consensus = HodgeSheafLaplacianConsensus(node_count=4)
         self.dsw_healer = DSW1CycleInstantonCobordism()
+        self.pv_scale_ladder = (10**12, 10**15, 10**18, 10**20)
+        self._pv_scale_step = 0
 
     def solve_job(
         self,
@@ -339,96 +344,75 @@ class GeometricGaloisMiner:
         max_scan_window: int = 5000,
     ) -> GeometricMiningResult:
         """Solves a Stratum mining job using geometric collapse."""
-        target = session.target
-        header_prefix = build_header_prefix(job, extranonce2, session)
-
-        # 1. Evaluate target difficulty and prepare search space
-        _midstate = sha256_block(_H0, header_prefix[:64])
-        _suffix = header_prefix[64:76]
-
-        # 2. Seed 600-cell polychoron vertex coordinate from header prefix
-        seed_hash = hashlib.sha256(header_prefix).digest()
-        vertex_idx = int.from_bytes(seed_hash[:2], "big") % len(self.vertices_f257)
-        v = self.vertices_f257[vertex_idx]
-
-        # 3. Geometric nonce candidate generation over Zeckendorf base-phi
-        candidate_nonces = []
-        curr_nonce = nonce_start
-        z_repr = ZeckendorfBasePhiIndexer.encode(curr_nonce)
-
-        for _ in range(max_scan_window):
-            candidate_nonces.append(curr_nonce)
-            z_repr = ZeckendorfBasePhiIndexer.step_next(z_repr)
-            curr_nonce = ZeckendorfBasePhiIndexer.decode(z_repr)
-            if curr_nonce >= (1 << 32):
-                break
-
-        # 4. Identify marked nonces satisfying pool target
-        marked = set()
-        matched_nonce = None
-        matched_hash = None
-
-        for n in candidate_nonces:
-            h = sha256d(header_prefix + n.to_bytes(4, "little"))
-            h_int = int.from_bytes(h, "little")
-            if h_int <= target:
-                marked.add(n)
-                matched_nonce = n
-                matched_hash = h
-                break  # Target found
-
-        # 5. One-shot Galois field collapse over F_257
-        amplitudes = ExactGaloisOracleF257.execute_one_shot_collapse(
-            candidate_nonces[: min(len(candidate_nonces), 100)],
-            marked,
+        return self.solve_header_range(
+            build_header_prefix(job, extranonce2, session), session.target,
+            nonce_start, max_scan_window,
         )
 
-        # 6. Verify Harmonic Consensus via Hodge Sheaf Laplacian
-        # Stalk vector formed by (a_0, a_1, a_2, a_3)
-        if matched_nonce is not None:
-            stalk = [
-                (v[0].a + matched_nonce) % P,
-                (v[1].a + matched_nonce) % P,
-                (v[2].a + matched_nonce) % P,
-                (v[3].a + matched_nonce) % P,
-            ]
-            # Normalise to harmonic kernel if needed via DSW instanton
-            is_harmonic = self.consensus.is_harmonic_consensus(stalk)
-            if not is_harmonic:
-                stalk = self.dsw_healer.heal_trace(stalk)
-                is_harmonic = self.consensus.is_harmonic_consensus(stalk)
+    def solve_header_range(
+        self, header_prefix: bytes, target: int, nonce_start: int,
+        max_scan_window: int,
+    ) -> GeometricMiningResult:
+        """Search bounded work using the authored Zeckendorf/Galois pipeline.
 
-            # Bit diffusion across payload
-            diffusion_pct = self.expander.compute_bit_diffusion(
-                matched_nonce & 0xFF, (matched_nonce + 1) & 0xFF
-            )
+        The caller owns disjoint nonce ranges. Target membership is evaluated
+        by SHA-256d; the field collapse and geometric trace are checked on each
+        hit before it is returned. No dense state vector is allocated.
+        """
+        if not isinstance(header_prefix, bytes) or len(header_prefix) != 76:
+            raise ValueError("header_prefix must contain exactly 76 bytes")
+        if type(target) is not int or not 0 <= target < (1 << 256):
+            raise ValueError("target must be an unsigned 256-bit integer")
+        if type(nonce_start) is not int or not 0 <= nonce_start < (1 << 32):
+            raise ValueError("nonce_start must be an unsigned 32-bit integer")
+        if type(max_scan_window) is not int or not 1 <= max_scan_window <= (1 << 20):
+            raise ValueError("max_scan_window must be between 1 and 2**20")
 
-            return GeometricMiningResult(
-                found=True,
-                nonce=matched_nonce,
-                header_hash=matched_hash,
-                iterations_evaluated=candidate_nonces.index(matched_nonce) + 1,
-                harmonic_consensus=is_harmonic,
-                galois_amplitude=amplitudes.get(matched_nonce, 1),
-                spectral_mass_gap=LiePoissonRamanujanExpander.SPECTRAL_GAP,
-                bit_diffusion_pct=diffusion_pct,
-                polychoron_vertex_idx=vertex_idx,
-                zeckendorf_indices=ZeckendorfBasePhiIndexer.encode(matched_nonce),
-            )
+        scale_index = self.pv_scale_ladder[self._pv_scale_step % len(self.pv_scale_ladder)]
+        self._pv_scale_step += 1
+        # Hendrix's rank-2 extension search carries PV scale in a pair of field
+        # elements. Fast doubling avoids expanding phi**scale_index or walking
+        # through scale_index successive states. Membership still uses the hash oracle.
+        scaled_state = exact_extension_search(32, 1, scale_index)
+        a, b = scaled_state.marked_amplitude
+        if (not scaled_state.norm_parity_verified
+                or (2 * a + b) % P != PisotLucasStateCompression.lucas_mod(scale_index)):
+            raise ArithmeticError("Lucas/PV scale trace or parity mismatch")
 
-        # No target found in scan window
-        diffusion_pct = self.expander.compute_bit_diffusion(0, 1)
+        seed_hash = hashlib.sha256(header_prefix).digest()
+        vertex_idx = int.from_bytes(seed_hash[:2], "big") % len(self.vertices_f257)
+        vertex = self.vertices_f257[vertex_idx]
+        z_repr = ZeckendorfBasePhiIndexer.encode(nonce_start)
+        count = min(max_scan_window, (1 << 32) - nonce_start)
+        for evaluated in range(1, count + 1):
+            nonce = ZeckendorfBasePhiIndexer.decode(z_repr)
+            digest = sha256d(header_prefix + nonce.to_bytes(4, "little"))
+            if int.from_bytes(digest, "little") <= target:
+                amplitudes = ExactGaloisOracleF257.execute_one_shot_collapse([nonce], {nonce})
+                amplitude = amplitudes[nonce]
+                if amplitude != 1:
+                    raise ArithmeticError("Galois target-hit collapse failed")
+                stalk = [(vertex[i].a + nonce) % P for i in range(4)]
+                if not self.consensus.is_harmonic_consensus(stalk):
+                    stalk = self.dsw_healer.heal_trace(stalk)
+                harmonic = self.consensus.is_harmonic_consensus(stalk)
+                if not harmonic:
+                    raise ArithmeticError("Geometric trace failed harmonic consensus")
+                return GeometricMiningResult(
+                    found=True, nonce=nonce, header_hash=digest,
+                    iterations_evaluated=evaluated, harmonic_consensus=harmonic,
+                    galois_amplitude=amplitude, polychoron_vertex_idx=vertex_idx,
+                    bit_diffusion_pct=self.expander.compute_bit_diffusion(nonce & 0xff, (nonce + 1) & 0xff),
+                    zeckendorf_indices=z_repr,
+                    pv_scale_index=scale_index,
+                    pv_marked_amplitude=scaled_state.marked_amplitude,
+                )
+            if evaluated < count:
+                z_repr = ZeckendorfBasePhiIndexer.step_next(z_repr)
         return GeometricMiningResult(
-            found=False,
-            nonce=None,
-            header_hash=None,
-            iterations_evaluated=len(candidate_nonces),
-            harmonic_consensus=False,
-            galois_amplitude=0,
-            spectral_mass_gap=LiePoissonRamanujanExpander.SPECTRAL_GAP,
-            bit_diffusion_pct=diffusion_pct,
-            polychoron_vertex_idx=vertex_idx,
-            zeckendorf_indices=(),
+            found=False, iterations_evaluated=count, polychoron_vertex_idx=vertex_idx,
+            pv_scale_index=scale_index,
+            pv_marked_amplitude=scaled_state.marked_amplitude,
         )
 
 

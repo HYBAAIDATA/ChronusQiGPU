@@ -31,6 +31,9 @@ in Actions, on GitHub-hosted and self-hosted runners alike.
 - `bist.py`: known-answer checks of the miner's own hash path against blocks 0 and
   1, the lane qualification and the block-height reader. No BIST pass, no stratum
   connect.
+- The canonical engine runs its self-test before connecting. See
+  [search integration and readiness](READINESS.md) for the documented integration
+  and remaining release gates.
 - A share counts only when the pool accepts it (`[POOL SUCCESS]` lines). Hashing
   counts are local measurements.
 
@@ -44,25 +47,18 @@ in Actions, on GitHub-hosted and self-hosted runners alike.
 3. Hashing stops, the pool session closes and the container exits; it is not
    restarted, so the host is offline for mining. `HYBA_MINE_MAX_RUN_SECONDS` bounds
    the whole campaign.
-4. The workflow then examines the host for any attempt to look inside the miner:
-   exec, attach, copy, export or top on the container, files changed in it, pool
-   methods outside Stratum V1 mining (`[POOL PUSH] UNEXPECTED`), SSH attempts,
-   logins, listening services and run-command executions, plus the Azure activity
-   on the resource group in the same window.
+4. The former deployment workflow examined the host for any attempt to look inside
+   the miner: exec, attach, copy, export or top on the container, files changed in
+   it, unexpected pool methods, SSH attempts, logins, listening services and
+   run-command executions, plus the Azure activity on the resource group. That
+   workflow has been removed, so this examination no longer runs automatically.
 
-## How to operate it
+## Deployment workflow status
 
-Edit `control.env` on branch `hyba-mine/control` and push:
-
-    HYBA_MINE_ACTION=campaign        # campaign | status | stop | examine
-    HYBA_MINE_POOLS=viabtc,braiins   # stage order, one block each
-    HYBA_MINE_MAX_RUN_SECONDS=14400  # upper bound for the whole campaign
-
-The push runs `.github/workflows/hyba-mine.yml`, which builds the image, runs the
-self-test and the miner's tests with networking disabled, pushes the image to the
-private registry, starts the campaign through Azure run-command
-(`vm-hyba-mine.sh`), follows it until it ends, runs the examination and writes the
-report to `hyba-mine/runs/` on the private results branch.
+The `.github/workflows/hyba-mine.yml` deployment workflow has been removed.
+Editing `control.env` or pushing it does not trigger a deployment, and no
+GitHub Actions job builds or runs this campaign. The remaining files are not an
+active deployment workflow.
 
 ## Credentials
 

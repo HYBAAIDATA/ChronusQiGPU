@@ -1,0 +1,109 @@
+# Copyright (c) 2026 HYBA Software Ltd. All rights reserved.
+#
+# HYBA Mine (Mac runtime): unit, integration and end-to-end tests against a
+# share-verifying in-process Stratum pool. Backend-agnostic: every run detects
+# what the runner offers and runs with the chosen option.
+#   backend: auto | igpu | metal | opencl | cuda | simd | reference (default auto)
+#   prefer:  ours (the Chronus iGPU, even where the host has a GPU) | host
+# The runner follows the choice: macOS for metal, Ubuntu otherwise. A named
+# backend the runner does not offer fails closed (the job goes red).
+# PR #33 owns .github/workflows/hyba-mine.yml (the Azure deploy); this file is separate.
+name: "HYBA Mine (Mac runtime)"
+
+on:
+  pull_request:
+    paths:
+      - 'packages/hyba_mine/**'
+      - 'scripts/mine/**'
+      - 'docs/mine/**'
+      - 'src/chronus/execution/**'
+      - 'src/chronus/stratum/**'
+      - 'src/chronus/hendrix/**'
+      - 'src/chronus/kernels/**'
+      - '.github/workflows/hyba-mine-mac.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'packages/hyba_mine/**'
+      - 'scripts/mine/**'
+      - 'src/chronus/execution/**'
+      - 'src/chronus/stratum/**'
+      - 'src/chronus/hendrix/**'
+      - 'src/chronus/kernels/**'
+      - '.github/workflows/hyba-mine-mac.yml'
+  workflow_dispatch:
+    inputs:
+      backend:
+        description: "auto detects and chooses by prefer; a named backend runs exactly there or fails closed"
+        type: choice
+        options: [auto, igpu, metal, opencl, cuda, simd, reference]
+        default: auto
+      prefer:
+        description: "ours = the Chronus iGPU even where the host has a GPU; host = the host GPU when it passes its tests"
+        type: choice
+        options: [ours, host]
+        default: ours
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hyba-mine-mac-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  HYBA_MINE_BACKEND: ${{ inputs.backend || 'auto' }}
+  HYBA_MINE_PREFER: ${{ inputs.prefer || 'ours' }}
+
+jobs:
+  tests:
+    name: HYBA Mine tests (Python ${{ matrix.python }}, ${{ matrix.runner }}, backend ${{ inputs.backend || 'auto' }}, prefer ${{ inputs.prefer || 'ours' }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.12', '3.13']
+        runner: ["${{ inputs.backend == 'metal' && 'macos-14' || 'ubuntu-latest' }}"]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install Chronus and HYBA Mine
+        run: |
+          python -m pip install -e .
+          python -m pip install --no-deps -e packages/hyba_mine
+      - name: Metal bindings (macOS runners only)
+        if: runner.os == 'macOS'
+        run: python -m pip install 'pyobjc-framework-Metal>=10.3'
+      - name: Shell scripts parse
+        run: |
+          bash -n scripts/mine/setup_mac.sh
+          bash -n scripts/mine/run.sh
+      - name: Detect backends on this runner and select one
+        run: python -m hyba_mine backends --backend "$HYBA_MINE_BACKEND" --prefer "$HYBA_MINE_PREFER"
+      - name: Tests (with the chosen backend and preference)
+        run: python -m unittest discover -s packages/hyba_mine/tests -t packages/hyba_mine/tests -v
+
+  backend-lane:
+    name: HYBA Mine backend lane (${{ inputs.backend }}, prefer ${{ inputs.prefer }}) known-answer tests
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ${{ inputs.backend == 'metal' && 'macos-14' || 'ubuntu-latest' }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install Chronus and HYBA Mine
+        run: |
+          python -m pip install -e .
+          python -m pip install --no-deps -e packages/hyba_mine
+      - name: Metal bindings (macOS runners only)
+        if: runner.os == 'macOS'
+        run: python -m pip install 'pyobjc-framework-Metal>=10.3'
+      - name: Detect backends, select by the inputs, full-window known-answer tests on real Bitcoin headers
+        run: python -m hyba_mine backends --backend "$HYBA_MINE_BACKEND" --prefer "$HYBA_MINE_PREFER" --full-window
+      - name: Backend lane test with the chosen option
+        env:
+          HYBA_MINE_FULL_WINDOW: "1"
+        run: python -m unittest discover -s packages/hyba_mine/tests -t packages/hyba_mine/tests -p 'test_backend_lane.py' -v

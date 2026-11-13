@@ -1,0 +1,92 @@
+{
+  "_provenance": {
+    "generated_by": "CodeRabbit Coding Agent",
+    "task_id": "f77d97e8-279f-4ff4-ba2d-b4ad6de3ebe2"
+  },
+  "scope": "Local PV scale arithmetic microbenchmark; these are not SHA-256d hashes per second or network market share.",
+  "base_revision": "ac03bead42bb9a9ee57c80c6056d435511e178cd",
+  "function_sha256": "35a31829167dd621dd2e5374b613dd2980ee896a6685b616f16bc863699e56a2",
+  "python": "3.14.4",
+  "architecture": "x86_64",
+  "comparison": [
+    {
+      "scale_index": "10000",
+      "linear": {
+        "result": [
+          170,
+          73
+        ],
+        "median_ns": 607596,
+        "repetitions": 15
+      },
+      "observed_median_ratio": 2169.9857142857145,
+      "period_reduced_lookup": {
+        "result": [
+          170,
+          73
+        ],
+        "median_ns": 280,
+        "repetitions": 15
+      }
+    },
+    {
+      "scale_index": "100000",
+      "linear": {
+        "result": [
+          186,
+          210
+        ],
+        "median_ns": 3724753,
+        "repetitions": 15
+      },
+      "observed_median_ratio": 13398.392086330936,
+      "period_reduced_lookup": {
+        "result": [
+          186,
+          210
+        ],
+        "median_ns": 278,
+        "repetitions": 15
+      }
+    }
+  ],
+  "large_scale_evaluation": [
+    {
+      "scale_index": "1000000000000",
+      "result": [
+        87,
+        160
+      ],
+      "median_ns": 267,
+      "repetitions": 15
+    },
+    {
+      "scale_index": "1000000000000000",
+      "result": [
+        96,
+        216
+      ],
+      "median_ns": 277,
+      "repetitions": 15
+    },
+    {
+      "scale_index": "1000000000000000000",
+      "result": [
+        2,
+        3
+      ],
+      "median_ns": 245,
+      "repetitions": 15
+    },
+    {
+      "scale_index": "100000000000000000000",
+      "result": [
+        248,
+        130
+      ],
+      "median_ns": 286,
+      "repetitions": 15
+    }
+  ],
+  "algorithm": "Exact period-516 reduction and readonly packed uint16 lookup; 2064-byte table payload"
+}

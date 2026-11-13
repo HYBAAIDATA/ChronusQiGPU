@@ -1,0 +1,103 @@
+# TEMPORARY: posts failing-check output to the pull request so it can be
+# diagnosed without Actions log access. Removed before merge.
+name: PR diagnostics (temporary)
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: pr-diagnostics-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnostics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13'
+      - name: Collect Python diagnostics
+        shell: bash
+        env:
+          CHRONUS_WORKLOAD_DB_PATH: ${{ runner.temp }}/chronus-tests.sqlite3
+        run: |
+          set +e
+          python -m pip install -q -e '.[dev]' ruff bandit coverage==7.17.2 > install.log 2>&1
+          python -m pytest -q -rfE --tb=short -p no:cacheprovider > pytest.log 2>&1; echo "pytest exit=$?" >> pytest.log
+          ruff check --select F --output-format concise src/chronus/execution src/chronus/backends src/chronus/service src/chronus/sdk src/chronus/security src/chronus/stratum src/chronus/math src/chronus/hw tests > ruff.log 2>&1; echo "ruff exit=$?" >> ruff.log
+          bandit -q -r src/chronus/execution src/chronus/backends src/chronus/service src/chronus/sdk src/chronus/security -ll -ii -f custom --msg-template '{relpath}:{line} {test_id} [{severity}/{confidence}] {msg}' > bandit.log 2>&1; echo "bandit exit=$?" >> bandit.log
+          {
+            python scripts/ci/purity_gate.py; echo "purity exit=$?"
+            python scripts/ci/test_the_tests.py | tail -n 3; echo "test_the_tests exit=${PIPESTATUS[0]}"
+            python scripts/ci/sovereign_attestation.py | tail -n 12; echo "attestation exit=${PIPESTATUS[0]}"
+            python scripts/ci/manifest.py 2>&1 | tail -n 14; echo "manifest exit=${PIPESTATUS[0]}"
+            git checkout -- SOVEREIGN_CAPABILITY_ATTESTATION.json PRODUCTION_QUALIFIED.json 2>/dev/null
+          } > purity.log 2>&1
+          python scripts/ci/check_forbidden_claims.py > claims.log 2>&1; echo "claims exit=$?" >> claims.log
+          python -m unittest discover -s tests -p 'test_forbidden_claims.py' >> claims.log 2>&1; echo "claims unittest exit=$?" >> claims.log
+      - name: QiGPU audit step (run with python, as CI intends)
+        shell: bash
+        run: |
+          set +e
+          python - > qigpu.log 2>&1 <<'PY'
+          import importlib.util, sys, unittest
+          from importlib.machinery import SourceFileLoader
+          from pathlib import Path
+          source = Path('docs/qigpu/pasted-text.txt')
+          spec = importlib.util.spec_from_loader('qigpu_audit', SourceFileLoader('qigpu_audit', str(source)))
+          mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+          classes = ['TestInvariant','TestProperty','TestAdversarial','TestEdge','TestUnit','TestIntegration','TestEndToEnd']
+          suite = unittest.TestSuite(unittest.defaultTestLoader.loadTestsFromTestCase(getattr(mod, c)) for c in classes)
+          result = unittest.TextTestRunner(stream=sys.stdout, verbosity=0).run(suite)
+          print('wasSuccessful', result.wasSuccessful())
+          PY
+          echo "qigpu audit exit=$?" >> qigpu.log
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10.12.4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Frontend build
+        shell: bash
+        working-directory: frontend
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: |
+          set +e
+          (pnpm install --frozen-lockfile && pnpm build) > ../frontend.log 2>&1; echo "frontend exit=$?" >> ../frontend.log
+      - name: Post diagnostics to the pull request
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set +e
+          {
+            echo "## Temporary CI diagnostics for ${GITHUB_SHA}"
+            echo "### pytest failures"
+            echo '```'
+            grep -E "^(FAILED|ERROR) " pytest.log | head -n 150
+            tail -n 3 pytest.log
+            echo '```'
+            for name in ruff bandit purity claims qigpu; do
+              echo "### ${name}"; echo '```'; tail -n 60 "${name}.log"; echo '```'
+            done
+            echo "### frontend"; echo '```'; grep -v "Progress: resolved" frontend.log | tail -n 60; echo '```'
+          } > body.md
+          head -c 60000 body.md > body1.md
+          gh pr comment "$PR_NUMBER" --body-file body1.md
+          {
+            echo "## pytest tracebacks for ${GITHUB_SHA}"
+            echo '```'
+            awk '/^=+ FAILURES =+$/{f=1} /^=+ short test summary/{f=0} f' pytest.log | head -c 58000
+            echo '```'
+          } > body2.md
+          gh pr comment "$PR_NUMBER" --body-file body2.md
+          exit 0

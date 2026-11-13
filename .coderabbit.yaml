@@ -1,0 +1,13 @@
+reviews:
+  tools:
+    ast-grep:
+      enabled: true
+      rule_dirs:
+        - "rules/ast-grep"
+  path_instructions:
+    - path: "**/*.{cl,c,cpp,sv,py}"
+      instructions: |
+        Enforce exact F_257[phi] arithmetic invariants:
+        1. Reject any 8-bit unsigned storage (uint8_t, uchar, 'B') for mod-257 residues (residue 256 overflows 8 bits).
+        2. Verify period-516 index arithmetic uses exact integer modulo before table indexing.
+        3. Reject floating-point approximations in PV scale or manifold traversal paths.

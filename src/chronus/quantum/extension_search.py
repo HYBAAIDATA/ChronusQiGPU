@@ -16,11 +16,33 @@ subfield, whose norm is still the parity anchor.
 """
 
 from dataclasses import dataclass
+from array import array
 
 from chronus.quantum.metallic_search import one_shot_phases_multi
 from chronus.quantum.statevector import INV_SQRT2, P
 
 _EXTENSION_ORDER = P * P - 1  # 66048
+PHI_PERIOD = 516
+
+
+def _build_phi_power_table() -> memoryview:
+    """Readonly uint16 pairs: coefficient 256 requires more than one byte."""
+    values = array("H")
+    a, b = 1, 0
+    for _ in range(PHI_PERIOD):
+        values.extend((a, b))
+        a, b = b, (a + b) % P
+    if (a, b) != (1, 0):
+        raise ArithmeticError("Invalid phi period")
+    # Checking the maximal proper divisors proves minimality of the period.
+    for prime in (2, 3, 43):
+        index = 2 * (PHI_PERIOD // prime)
+        if tuple(values[index:index + 2]) == (1, 0):
+            raise ArithmeticError("Phi period is not minimal")
+    return memoryview(values.tobytes()).cast("H")
+
+
+_PHI_POWER_TABLE = _build_phi_power_table()
 
 
 def _add(x: tuple[int, int], y: tuple[int, int]) -> tuple[int, int]:
@@ -53,10 +75,10 @@ def phi_element_power(s: int) -> tuple[int, int]:
     """phi^s in F_257[phi]: the pair (F_{s-1}, F_s) with F_{-1} = 1."""
     if not isinstance(s, int) or isinstance(s, bool) or s < 0:
         raise ValueError("scale index must be a non-negative integer")
-    a, b = 1, 0
-    for _ in range(s):
-        a, b = b, (a + b) % P
-    return (a, b)
+    # The fixed-field subgroup has exact order 516. Integer reduction cost
+    # grows with the input's bit length; the field work is two table reads.
+    index = 2 * (s % PHI_PERIOD)
+    return (_PHI_POWER_TABLE[index], _PHI_POWER_TABLE[index + 1])
 
 
 def extension_one_shot_phases(

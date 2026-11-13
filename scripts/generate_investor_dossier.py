@@ -137,7 +137,7 @@ def bench_companion_matrix() -> dict:
 
 
 def bench_threshold_mpc() -> dict:
-    """AL HARAS (3,5) topological anyon threshold MPC with Byzantine isolation."""
+    """AL HARAS (3,5) Shamir threshold sharing: quorum signature, deficit refusal, tamper detection."""
     from chronus.security.al_haras.threshold_mpc import TopologicalThresholdMPC
 
     seed = "CHRONUS_V36_DILIGENCE_DETERMINISTIC_SEED"
@@ -173,21 +173,36 @@ def bench_threshold_mpc() -> dict:
     deficit, t_deficit = _timed(_quorum_deficit)
     byzantine, t_byz = _timed(_byzantine_isolation)
 
-    quorum_ok = quorum["authorized"] is True and quorum["valid_shares_verified"] == 3
-    deficit_ok = deficit["authorized"] is False and "QUORUM_DEFICIT" in deficit["reason"]
+    def _signature_verifies(result, payload):
+        return result["joint_authorization_token"] is not None and TopologicalThresholdMPC.verify_joint_authorization(
+            payload, result["joint_authorization_token"], result["verification_public_key_hex"]
+        )
+
+    quorum_ok = (
+        quorum["authorized"] is True
+        and quorum["valid_shares_verified"] == 3
+        and _signature_verifies(quorum, b"SOVEREIGN_RELEASE_GATE_V36")
+    )
+    deficit_ok = (
+        deficit["authorized"] is False
+        and "QUORUM_DEFICIT" in deficit["reason"]
+        and deficit["joint_authorization_token"] is None
+    )
     byz_ok = (
         byzantine["authorized"] is True
-        and "BUNKER_02" in byzantine["isolated_compromised_bunkers"]
+        and byzantine["isolated_compromised_bunkers"] == ["BUNKER_02"]
         and byzantine["valid_shares_verified"] == 3
+        and _signature_verifies(byzantine, b"DEFENSE_COMMAND_CRITICAL")
     )
     passed = quorum_ok and deficit_ok and byz_ok
     return {
-        "pillar": "Sovereign Threshold MPC (Z[zeta_5] Anyon Braid, t=3/n=5)",
-        "target": "Quorum authorization, deficit rejection, Byzantine isolation",
-        "classical_baseline": "Single-facility key custody / seizure risk",
+        "pillar": "AL HARAS Threshold Secret Sharing (Shamir 3-of-5, SHA-256 share commitments)",
+        "target": "Quorum signature verifies; 2-of-5 refused; tampered share rejected by its commitment",
+        "classical_baseline": "Not measured (in-process model; no HSM or physical key custody)",
         "measured": (
-            f"3-of-5 quorum authorized; 2-of-5 rejected (QUORUM_DEFICIT); "
-            f"compromised bunker isolated, 3 valid shares still authorize "
+            f"3-of-5 quorum signature {'verified' if quorum_ok else 'NOT verified'}; "
+            f"2-of-5 {'refused (QUORUM_DEFICIT)' if deficit_ok else 'NOT refused'}; "
+            f"tampered share {'rejected by its commitment, 3 shares still signed' if byz_ok else 'NOT rejected'} "
             f"({t_quorum + t_deficit + t_byz:.0f} us total)"
         ),
         "detail": {
@@ -205,28 +220,25 @@ def bench_threshold_mpc() -> dict:
 
 
 def bench_formal_invariants() -> dict:
-    """Lean4-aligned formal theorem suite incl. Z[zeta_5] nilpotence."""
+    """Executable exact checks: sheaf coboundary, cycle-sum obstruction, braid relations, Reed-Solomon repair."""
     from chronus.security.al_haras.formal_invariants import (
         FormalTopologicalProofVerifier,
     )
 
     audit, elapsed = _timed(FormalTopologicalProofVerifier.verify_all_theorems)
-    passed = audit["all_axioms_satisfied"] is True and all(
-        t["status"] == "FORMALLY_VERIFIED_LEAN4_COMPLIANT"
-        for t in audit["theorems"]
-    )
-    names = "; ".join(t["name"] for t in audit["theorems"])
+    passed = audit["all_checks_hold"] is True
+    names = "; ".join(c["check_id"] for c in audit["checks"])
     return {
-        "pillar": "Formal Invariants (Sheaf / DSW Cobordism / Z[zeta_5] Nilpotence)",
-        "target": "3/3 theorems FORMALLY_VERIFIED incl. Phi_5 quotient nilpotence",
+        "pillar": "Executable Exact Checks (Sheaf Coboundary / Cycle-Sum Obstruction / Braids / Reed-Solomon)",
+        "target": f"{audit['checks_run']}/{audit['checks_run']} executable checks hold on their finite instances",
         "classical_baseline": "Unverified informal claims",
         "measured": (
-            f"3/3 theorems verified in {elapsed:.0f} us "
-            f"({audit['certification_tier']})"
+            f"{audit['checks_holding']}/{audit['checks_run']} checks hold, run in {elapsed:.0f} us; "
+            f"Lean source {audit['lean_specification']['path']} is not machine-checked in CI"
         ),
         "detail": {
-            "theorems": names,
-            "certification_tier": audit["certification_tier"],
+            "checks": names,
+            "verification_method": audit["verification_method"],
             "total_us": round(elapsed, 1),
         },
         "status": "VERIFIED" if passed else "FAILED",
@@ -306,7 +318,7 @@ def bench_planck_ladder() -> dict:
 
 
 def bench_homological_settlement() -> dict:
-    """AL HARAS homological settlement: closed cycle settles, forgery rejected."""
+    """AL HARAS transfer-batch boundary check (in-memory): closed cycle accepted, replay rejected."""
     from chronus.security.al_haras.sovereign_settlement import (
         HomologicalSettlementEngine,
         SovereignCentralBank,
@@ -316,16 +328,16 @@ def bench_homological_settlement() -> dict:
     engine = HomologicalSettlementEngine()
     cycle = [
         SovereignTransferSimplex(
-            "tx-a", SovereignCentralBank.BANK_OF_ENGLAND,
-            SovereignCentralBank.FEDERAL_RESERVE, 10,
+            "tx-a", SovereignCentralBank.CENTRAL_BANK_A,
+            SovereignCentralBank.CENTRAL_BANK_B, 10,
         ),
         SovereignTransferSimplex(
-            "tx-b", SovereignCentralBank.FEDERAL_RESERVE,
-            SovereignCentralBank.EUROPEAN_CENTRAL_BANK, 10,
+            "tx-b", SovereignCentralBank.CENTRAL_BANK_B,
+            SovereignCentralBank.CENTRAL_BANK_C, 10,
         ),
         SovereignTransferSimplex(
-            "tx-c", SovereignCentralBank.EUROPEAN_CENTRAL_BANK,
-            SovereignCentralBank.BANK_OF_ENGLAND, 10,
+            "tx-c", SovereignCentralBank.CENTRAL_BANK_C,
+            SovereignCentralBank.CENTRAL_BANK_A, 10,
         ),
     ]
     settled, t_settle = _timed(lambda: engine.settle_transfer_batch(cycle))
@@ -333,20 +345,27 @@ def bench_homological_settlement() -> dict:
         lambda: engine.settle_transfer_batch(cycle, simulate_double_spend=True)
     )
 
-    settle_ok = settled["is_homologically_closed"] and settled["rtgs_receipt_id"]
+    settle_ok = (
+        settled["settlement_status"] == "SETTLED_CLOSED_1_CYCLE"
+        and settled["boundary_norm"] == 0
+        and settled["rtgs_receipt_id"] is not None
+    )
     reject_ok = (
         not forged["is_homologically_closed"]
         and forged["settlement_status"] == "REJECTED_BOUNDARY_MISMATCH"
+        and forged["boundary_norm"] == 2 * cycle[0].amount_units
+        and forged["duplicate_transfer_ids"] == ["tx-a"]
     )
     passed = bool(settle_ok and reject_ok)
     return {
-        "pillar": "Sovereign Governance (AL HARAS Homological Settlement)",
-        "target": "Closed 1-cycle settlement; algebraic double-spend rejection",
-        "classical_baseline": "Single-tenant RBAC / post-hoc reconciliation",
+        "pillar": "AL HARAS Transfer-Batch Boundary Check (in-memory model)",
+        "target": "Closed 1-cycle accepted (d1 = 0); replayed transfer rejected by the exact boundary check",
+        "classical_baseline": "Not measured (no payment system or ledger baseline)",
         "measured": (
-            f"3-bank RTGS cycle settled in {settled['settlement_latency_us']:.1f} us "
-            f"(receipt {settled['rtgs_receipt_id'][:20]}...); "
-            f"injected double-spend rejected with boundary norm "
+            f"3-account clearing cycle {'accepted' if settle_ok else 'NOT accepted'} by the in-memory "
+            f"boundary check in {settled['settlement_latency_us']:.1f} us "
+            f"(batch receipt {(settled['rtgs_receipt_id'] or 'none')[:20]}...); "
+            f"replayed transfer {'rejected' if reject_ok else 'NOT rejected'} with boundary l1 norm "
             f"{forged['boundary_norm']}"
         ),
         "detail": {
@@ -355,10 +374,11 @@ def bench_homological_settlement() -> dict:
             "double_spend_rejected": reject_ok,
             "rejection_check_us": round(t_forgery, 1),
             "note": (
-                "Evidence covers homological boundary closure (d_1 of a "
-                "closed 1-cycle = 0) and algebraic forgery rejection. "
-                "Threshold-MPC key-compromise injection is covered by the "
-                "dedicated Threshold MPC pillar."
+                "Evidence covers the exact boundary operator on an in-memory "
+                "batch (d_1 of a closed 1-cycle = 0) and rejection of a replayed "
+                "transfer. No payment system, balance ledger or settlement "
+                "finality is exercised. Tampered-share detection is covered by "
+                "the threshold secret-sharing pillar."
             ),
         },
         "status": "VERIFIED" if passed else "FAILED",

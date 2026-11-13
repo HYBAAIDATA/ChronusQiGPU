@@ -18,14 +18,31 @@ import logging
 import os
 import sys
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+import bist
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
 logger = logging.getLogger("HybaMine.runner")
 
 
 async def main() -> int:
-    from chronus.fleet.capacity import CapacityLedger, discover_host
     from hyba_mine.campaign import parse_pools, run_campaign
     from hyba_mine.lanes import open_lanes
+
+    from chronus.fleet.capacity import CapacityLedger, discover_host
+
+    report = bist.run()
+    if report.get("bist") != "PASS":
+        logger.error("Mining self-test failed; refusing pool connection")
+        for check in report.get("checks", []):
+            if not check.get("passed"):
+                logger.error(
+                    "Failed self-test check=%s error_type=%s",
+                    check.get("check", "unknown"),
+                    check.get("error", "none"),
+                )
+        return 1
 
     pools = parse_pools(os.getenv("HYBA_MINE_POOLS", "viabtc,braiins"))
     max_run_seconds = int(os.getenv("HYBA_MINE_MAX_RUN_SECONDS", "14400"))
@@ -35,24 +52,44 @@ async def main() -> int:
     host = discover_host()
     logger.info("[CAPACITY] discovered %s", json.dumps(host.as_dict(), sort_keys=True))
     process_lanes = int(os.getenv("HYBA_MINE_PROCESS_LANES", "0")) or None
-    lanes, reports = await asyncio.to_thread(open_lanes, os.getenv("HYBA_MINE_LANES", "auto"), process_lanes)
+    lanes, reports = await asyncio.to_thread(
+        open_lanes, os.getenv("HYBA_MINE_LANES", "auto"), process_lanes
+    )
     for report in reports:
         logger.info("[LANES] qualification %s", json.dumps(report, sort_keys=True))
     selected = next(report for report in reports if report.get("selected"))
     available = host.available_cpus if lanes.name == "process-lanes" else lanes.lanes
     ledger = CapacityLedger(
-        "SHA256D_NONCE_SEARCH", host, lanes.name, available_lanes=available,
-        allocated_lanes=lanes.lanes, device=lanes.describe().get("device"),
+        "SHA256D_NONCE_SEARCH",
+        host,
+        lanes.name,
+        available_lanes=available,
+        allocated_lanes=lanes.lanes,
+        device=lanes.describe().get("device"),
     )
-    ledger.record_calibration(selected["calibration"]["work"], selected["calibration"]["elapsed_ns"])
+    ledger.record_calibration(
+        selected["calibration"]["work"], selected["calibration"]["elapsed_ns"]
+    )
     logger.info("[CAPACITY] %s", json.dumps(ledger.report(), sort_keys=True))
-    logger.info("[CAMPAIGN] %s: pools %s, at most %d s", campaign_id, ",".join(pools), max_run_seconds)
+    logger.info(
+        "[CAMPAIGN] %s: pools %s, at most %d s",
+        campaign_id,
+        ",".join(pools),
+        max_run_seconds,
+    )
 
     from chronus.execution import mining_entrypoint as engine_module
 
     try:
-        await run_campaign(engine_module, pools, lanes, ledger, max_run_seconds=max_run_seconds,
-                           state_path=state_path, campaign_id=campaign_id)
+        await run_campaign(
+            engine_module,
+            pools,
+            lanes,
+            ledger,
+            max_run_seconds=max_run_seconds,
+            state_path=state_path,
+            campaign_id=campaign_id,
+        )
     finally:
         lanes.close()
         logger.info("[CAPACITY] final %s", json.dumps(ledger.report(), sort_keys=True))
