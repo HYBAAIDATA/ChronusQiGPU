@@ -20,6 +20,8 @@ import sys
 
 import bist
 
+from chronus.execution import mining_entrypoint as engine_module
+
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
 )
@@ -27,11 +29,6 @@ logger = logging.getLogger("HybaMine.runner")
 
 
 async def main() -> int:
-    from hyba_mine.campaign import parse_pools, run_campaign
-    from hyba_mine.lanes import open_lanes
-
-    from chronus.fleet.capacity import CapacityLedger, discover_host
-
     report = bist.run()
     if report.get("bist") != "PASS":
         logger.error("Mining self-test failed; refusing pool connection")
@@ -43,6 +40,11 @@ async def main() -> int:
                     check.get("error", "none"),
                 )
         return 1
+
+    from hyba_mine.campaign import parse_pools, run_campaign
+    from hyba_mine.lanes import open_lanes
+
+    from chronus.fleet.capacity import CapacityLedger, discover_host
 
     pools = parse_pools(os.getenv("HYBA_MINE_POOLS", "viabtc,braiins"))
     max_run_seconds = int(os.getenv("HYBA_MINE_MAX_RUN_SECONDS", "14400"))
@@ -77,8 +79,6 @@ async def main() -> int:
         ",".join(pools),
         max_run_seconds,
     )
-
-    from chronus.execution import mining_entrypoint as engine_module
 
     try:
         await run_campaign(
