@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "euclid/swarm_evolution.py"
+      - "euclid/commercial/team_orchestrator.py"
       - "euclid/swarm_curriculum.py"
       - "tests/test_euclid_swarm_*.py"
       - ".github/workflows/euclid-swarm-qualification.yml"
@@ -30,6 +31,6 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install numpy scipy sympy PyYAML "cryptography>=46,<51" pytest hypothesis
       - name: Compile EUCLID swarm and qualification tests
-        run: python -m compileall -q euclid/swarm_evolution.py euclid/swarm_curriculum.py tests/test_euclid_swarm_evolution.py tests/test_euclid_swarm_curriculum.py
+        run: python -m compileall -q euclid/swarm_evolution.py euclid/swarm_curriculum.py tests/test_euclid_swarm_*.py
       - name: Unit, adversarial, property, restart, integration and end-to-end tests
         run: python -m pytest -q tests/test_euclid_swarm_evolution.py tests/test_euclid_swarm_curriculum.py
