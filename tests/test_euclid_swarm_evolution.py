@@ -11,6 +11,7 @@ from pathlib import Path
 import sqlite3
 import tempfile
 import unittest
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from euclid.capability_qualification import CapabilityQualificationRegistry
 from euclid.swarm_evolution import (
@@ -105,7 +106,9 @@ class SwarmTests(unittest.TestCase):
         self.assertEqual(self.dispatched, [])
 
     def test_real_registry_refuses_untrained_and_unsigned_leader(self):
-        real = CapabilityQualificationRegistry()
+        real = CapabilityQualificationRegistry(
+            trusted_verifiers={"test-verifier": Ed25519PrivateKey.generate().public_key()}
+        )
         candidate = SwarmActivator(qualification=real, journal=self.journal,
                                    agents=[self.leader, self.worker], clock_ns=lambda: NOW)
         with self.assertRaises(SwarmRefused):
