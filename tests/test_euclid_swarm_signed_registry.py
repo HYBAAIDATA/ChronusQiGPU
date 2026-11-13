@@ -11,6 +11,7 @@ from euclid.capability_qualification import (
     EvidenceKind, EvidenceOutcome, EvidenceRecord, EvidenceStatus,
     QualificationStatus,
 )
+from euclid.swarm_curriculum import LeaderCurriculum, SkillCase, train_qualify_and_activate
 from euclid.swarm_evolution import (
     LEADER_SKILLS, QualifiedAgent, SwarmActivator, SwarmJournal, SwarmMission,
     SwarmRefused, SwarmTask,
@@ -112,6 +113,75 @@ class SignedQualificationIntegration(unittest.TestCase):
                 dispatch=lambda task: {"task": task.task_id},
                 verify=lambda *_: True,
             )
+
+    def _test_curriculum(self):
+        def partition(name):
+            return tuple(SkillCase(
+                f"{name}-{i}", f"lineage-{name}-{i}", skill,
+                {"case": f"{name}-{i}", "skill": skill}, {"passed": True}
+            ) for i, skill in enumerate(sorted(LEADER_SKILLS)))
+        return LeaderCurriculum(
+            "lead", "mission", REVISION, partition("train"),
+            partition("validation"), partition("adversarial"),
+            partition("final"),
+        )
+
+    def test_training_and_all_skill_acquisition_precede_swarm_activation(self):
+        fresh = CapabilityQualificationRegistry(
+            trusted_verifiers={"test-signer": self.signer.public_key()}
+        )
+        runtime = SwarmActivator(
+            qualification=fresh, journal=self.journal,
+            agents=(self.leader, self.worker), clock_ns=lambda: 100,
+        )
+        events = []
+        def certify(report):
+            self.assertEqual(report["outcome"], "READY_FOR_INDEPENDENT_ATTESTATION")
+            events.append("attestation")
+            for claim in self.claims.values():
+                fresh.promote(claim)
+        result = train_qualify_and_activate(
+            self._test_curriculum(),
+            SwarmMission("trained", "lead", "mission", 2, 200,
+                         (SwarmTask("one", "worker", "task.run", 2),)),
+            activator=runtime,
+            train=lambda cases: {
+                "checkpoint_id": "test-only",
+                "sha256": hashlib.sha256(b"test-only-fixture").hexdigest(),
+            },
+            evaluate=lambda checkpoint, case: {"passed": True},
+            accept=lambda case, output: output["passed"] is True,
+            certify=certify,
+            dispatch=lambda task: events.append("dispatch") or {"task": task.task_id},
+            verify=lambda task, output: output["task"] == task.task_id,
+        )
+        self.assertEqual(events, ["attestation", "dispatch"])
+        self.assertEqual(result["swarm"]["status"], "completed")
+        self.assertFalse(result["training"]["authority_granted"])
+
+    def test_training_report_cannot_self_grant_swarm_authority(self):
+        fresh = CapabilityQualificationRegistry(
+            trusted_verifiers={"test-signer": self.signer.public_key()}
+        )
+        runtime = SwarmActivator(
+            qualification=fresh, journal=self.journal,
+            agents=(self.leader, self.worker), clock_ns=lambda: 100,
+        )
+        dispatched = []
+        with self.assertRaises(SwarmRefused):
+            train_qualify_and_activate(
+                self._test_curriculum(),
+                SwarmMission("unqualified", "lead", "mission", 2, 200,
+                             (SwarmTask("one", "worker", "task.run", 2),)),
+                activator=runtime,
+                train=lambda cases: {"checkpoint_id": "test-only", "sha256": "f" * 64},
+                evaluate=lambda checkpoint, case: {"passed": True},
+                accept=lambda *_: True,
+                certify=lambda report: None,
+                dispatch=lambda task: dispatched.append(task.task_id) or {},
+                verify=lambda *_: True,
+            )
+        self.assertEqual(dispatched, [])
 
     def test_evidence_signature_tampering_cannot_promote(self):
         fresh = CapabilityQualificationRegistry(
