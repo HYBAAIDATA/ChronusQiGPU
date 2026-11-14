@@ -126,7 +126,7 @@ def turing_apply(operator: Any, amplitudes: list[Any]) -> dict[str, Any]:
     """Apply any linear map, retaining unnormalised mathematical results."""
     op, state = _operator(operator), _state(amplitudes)
     output = op.apply_amplitudes(state.amplitudes)
-    norm_squared = sum(abs(x) ** 2 for x in output)
+    norm_squared = _number(sum(abs(x) ** 2 for x in output))
     return {
         "dimension": len(output), "amplitudes": [_encode(x) for x in output],
         "norm_squared": norm_squared, "unitary": op.is_unitary(),
