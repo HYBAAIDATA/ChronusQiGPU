@@ -9,9 +9,22 @@ rolling). It prints one JSON report and exits 0 only if every check passes.
 It makes no network connection.
 """
 
+import asyncio
 import json
 import sys
+import traceback
 from fractions import Fraction
+
+from chronus.stratum.endian_engine import (
+    StratumJob,
+    StratumSession,
+    build_header80,
+    build_header_prefix,
+    compute_merkle_root_stratum,
+    sha256d,
+    swap_prevhash_words,
+)
+from chronus.stratum.gateway import StratumGateway
 
 from chronus.execution.geometric_galois_miner import GeometricGaloisMiner
 from chronus.execution.mining_scheduler import TuringMiningScheduler
@@ -19,12 +32,6 @@ from chronus.quantum.geometric_polychoron import PisotLucasStateCompression
 from chronus.stratum.sharding import WorkPartitioner
 from chronus.quantum.extension_search import phi_element_power
 from chronus.stratum.bip310 import apply_version_rolling
-from chronus.stratum.endian_engine import (
-    build_header80,
-    compute_merkle_root_stratum,
-    sha256d,
-    swap_prevhash_words,
-)
 from chronus.stratum.gatekeeper import (
     TRUEDIFF1_TARGET,
     LocalPreSubmitGatekeeper,
@@ -54,6 +61,102 @@ BLOCK1_TIME = 1231469665
 BLOCK1_NONCE = 2573394689
 
 
+def _check_nonce_encoding_roundtrip() -> None:
+    """Header nonce is little-endian bytes; submit displays big-endian hex.
+
+    Documents the wire convention so a rebuild cannot silently flip one side
+    and produce shares the pool rejects.
+    """
+    nonce = 0x01020304
+    job = StratumJob.from_notify([
+        "job1", "aa" * 32, "bb" * 32, "cc" * 32, [],
+        "20000000", "1d00ffff", "5f5e1000", True])
+    session = StratumSession(extranonce1=b"\x01\x02\x03\x04", extranonce2_size=4)
+    en2_hex = "00000000"
+    header = build_header80(
+        int(job.version, 16),
+        swap_prevhash_words(bytes.fromhex(job.prevhash)),
+        compute_merkle_root_stratum(
+            job.coinb1, session.extranonce1.hex(), en2_hex,
+            job.coinb2, list(job.merkle_branch)),
+        int(job.ntime, 16), int(job.nbits, 16), nonce)
+    assert header[-4:] == b"\x04\x03\x02\x01"  # header appends LE bytes
+    assert f"{nonce:08x}" == "01020304"  # submit sends BE hex string
+
+
+def _check_header_prefix_matches_engine() -> None:
+    """build_header_prefix (legacy path used by geometric_galois_miner) must
+    produce identical 76 bytes as build_header80[:76] (package engine path).
+
+    If they diverge, the deletion of execution/stratum.py is a behaviour
+    change, not a cleanup.
+    """
+    job = StratumJob.from_notify([
+        "job1", "aa" * 32, "cc" * 32, "dd" * 32, [],
+        "20000000", "1d00ffff", "5f5e1000", True])
+    session = StratumSession(extranonce1=b"\x01\x02\x03\x04", extranonce2_size=4)
+    prefix = build_header_prefix(job, b"\x00" * 4, session)
+    engine = build_header80(
+        int(job.version, 16),
+        swap_prevhash_words(bytes.fromhex(job.prevhash)),
+        compute_merkle_root_stratum(
+            job.coinb1, session.extranonce1.hex(), "00000000",
+            job.coinb2, list(job.merkle_branch)),
+        int(job.ntime, 16), int(job.nbits, 16), 0)[:76]
+    assert len(prefix) == 76
+    assert prefix == engine
+    assert isinstance(session.target, int)
+
+
+def _check_stratum_notify_parse() -> None:
+    """A mining.notify parameter list round-trips through StratumJob.from_notify without losing header fields."""
+    params = [
+        "job1",
+        "aa" * 32,
+        "bb" * 32,
+        "cc" * 32,
+        [],
+        "20000000",
+        "1d00ffff",
+        "5f5e1000",
+        True,
+    ]
+    job = StratumJob.from_notify(params)
+    assert job.job_id == "job1"
+    assert len(bytes.fromhex(job.prevhash)) == 32
+
+
+def _check_gateway_registers_valid_notify() -> None:
+    """The runtime parser must register a good notify and drop a bad one.
+
+    Exercises gateway.handle_server_push, not the dataclass: this is the code
+    that runs on every pool line, and a regression here stops all work.
+    """
+    gateway = StratumGateway("example.invalid", 3333, "worker")
+    valid = ["job1", "aa" * 32, "cc" * 32, "dd" * 32, [],
+             "20000000", "1d00ffff", "5f5e1000", True]
+    asyncio.run(gateway.handle_server_push(
+        {"method": "mining.notify", "params": valid}))
+    assert "job1" in gateway.jobs
+    assert gateway.jobs["job1"]["prevhash_hex"] == "aa" * 32
+    assert gateway.jobs["job1"]["nbits_hex"] == "1d00ffff"
+
+    # Too few params: dropped, good job retained, no exception.
+    asyncio.run(gateway.handle_server_push(
+        {"method": "mining.notify", "params": ["short"]}))
+    assert "job1" in gateway.jobs
+
+    # Non-list params: dropped, no exception.
+    asyncio.run(gateway.handle_server_push(
+        {"method": "mining.notify", "params": "nope"}))
+    assert "job1" in gateway.jobs
+
+    # An invalid difficulty is logged and ignored, not fatal to the session.
+    asyncio.run(gateway.handle_server_push(
+        {"method": "mining.set_difficulty", "params": [10 ** 200]}))
+    assert gateway.current_difficulty == Fraction(1)
+
+
 def _run_checks() -> dict:
     checks = []
 
@@ -61,6 +164,26 @@ def _run_checks() -> dict:
         checks.append({"check": name, "passed": bool(passed)})
 
     scheduler = TuringMiningScheduler(bytes(32))
+    try:
+        _check_nonce_encoding_roundtrip()
+        check("nonce_encoding_roundtrip", True)
+    except AssertionError:
+        check("nonce_encoding_roundtrip", False)
+    try:
+        _check_header_prefix_matches_engine()
+        check("header_prefix_matches_engine", True)
+    except AssertionError:
+        check("header_prefix_matches_engine", False)
+    try:
+        _check_stratum_notify_parse()
+        check("stratum_notify_parse_roundtrip", True)
+    except AssertionError:
+        check("stratum_notify_parse_roundtrip", False)
+    try:
+        _check_gateway_registers_valid_notify()
+        check("gateway_registers_valid_notify", True)
+    except AssertionError:
+        check("gateway_registers_valid_notify", False)
     lanes = WorkPartitioner(shard_count=32).ranges
     check(
         "lucas_pv_l90_and_lane_coverage",
@@ -168,12 +291,18 @@ def _run_checks() -> dict:
 
 def run() -> dict:
     try:
-        return _run_checks()
-    except Exception as exc:
-        return {"bist": "FAIL", "checks": [{
-            "check": "selftest_exception", "passed": False,
+        result = _run_checks()
+        checks = result["checks"]
+    except Exception as exc:  # noqa: BLE001 — top-level selftest boundary
+        checks = [{
+            "check": "selftest_exception",
+            "passed": False,
             "error": type(exc).__name__,
-        }]}
+            "detail": str(exc),
+            "traceback": traceback.format_exc(),
+        }]
+    bist = "PASS" if checks and all(c["passed"] for c in checks) else "FAIL"
+    return {"bist": bist, "checks": checks}
 
 
 def main() -> int:

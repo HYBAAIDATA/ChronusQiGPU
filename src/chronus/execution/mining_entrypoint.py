@@ -6,6 +6,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 from fractions import Fraction
+import json
 import logging
 import os
 import sys
@@ -20,6 +21,7 @@ from chronus.stratum.bip310 import (
     build_mining_submit_params,
     format_extranonce2,
 )
+from chronus.stratum.endpoint import PoolEndpoint, parse_endpoint
 from chronus.stratum.sharding import ShareCandidate, WorkPartitioner
 from chronus.stratum.gateway import StratumGateway
 from chronus.stratum.gatekeeper import (
@@ -29,64 +31,129 @@ from chronus.stratum.gatekeeper import (
 )
 from chronus.stratum.rate_limiter import IntegerNanosecondTokenBucket, PriorityShareQueue
 
+from chronus.service.metrics import SHARES_SUBMITTED, SHARES_ACCEPTED, SHARES_REJECTED, SHARE_LATENCY, HASHRATE_BATCHES
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("ChronusMiningEntrypoint")
 
+DEFAULT_POOL_PORT = 3333
+_KNOWN_POOLS = {"BRAIINS", "VIABTC"}
 
-def load_env_config() -> Tuple[str, str, int, str, str]:
-    """Reads pool configuration from environment variables or .env file."""
-    # Look for .env in current working dir or parents
-    for base in [os.getcwd(), os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))]:
+
+def _load_dotenv() -> None:
+    """Populate os.environ from the nearest .env. Real env vars win."""
+    for base in (os.getcwd(), os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))):
         env_file = os.path.join(base, ".env")
-        if os.path.exists(env_file):
-            with open(env_file, "r", encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
-                    if line and not line.startswith("#") and "=" in line:
-                        k, v = line.split("=", 1)
-                        os.environ.setdefault(k.strip(), v.strip().strip("'").strip('"'))
-            break
+        if not os.path.exists(env_file):
+            continue
+        with open(env_file, "r", encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                os.environ.setdefault(key.strip(), value.strip().strip("'").strip('"'))
+        return
 
-    active_pool = os.getenv("MINING_ACTIVE_POOL", "VIABTC").strip().upper()
-    if not active_pool:
-        active_pool = "VIABTC"
-    if active_pool not in {"VIABTC", "BRAIINS"}:
-        raise ValueError("Set MINING_ACTIVE_POOL explicitly to VIABTC or BRAIINS")
 
-    host = os.getenv(f"MINING_{active_pool}_HOST", "").strip()
-    port_text = os.getenv(f"MINING_{active_pool}_PORT", "").strip()
+def _endpoint_from_specs() -> Optional[Tuple[str, PoolEndpoint, str, str]]:
+    """Highest-priority entry from PYTHIA_POOL_SPECS, if that is configured."""
+    raw = os.getenv("PYTHIA_POOL_SPECS", "").strip().strip("'").strip('"')
+    if not raw:
+        return None
+    try:
+        specs = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"PYTHIA_POOL_SPECS is not valid JSON: {exc}") from exc
+    if not isinstance(specs, list) or not specs:
+        raise ValueError("PYTHIA_POOL_SPECS must be a non-empty JSON array")
+
+    def priority(spec: dict) -> int:
+        try:
+            return int(spec.get("priority", 999))
+        except (TypeError, ValueError):
+            return 999
+
+    spec = sorted((s for s in specs if isinstance(s, dict)), key=priority)[0]
+    try:
+        endpoint = parse_endpoint(str(spec["endpoint"]), DEFAULT_POOL_PORT)
+        user = str(spec["user"])
+    except KeyError as exc:
+        raise ValueError(f"pool spec missing key {exc}") from exc
+    password = str(spec.get("pass") or spec.get("password") or "x")
+    return "SPECS", endpoint, user, password
+
+
+def load_env_config() -> Tuple[str, PoolEndpoint, str, str]:
+    """Return (pool_label, endpoint, user, password). Raises on incomplete config."""
+    _load_dotenv()
+
+    from_specs = _endpoint_from_specs()
+    if from_specs is not None:
+        return from_specs
+
+    active_pool = os.getenv("MINING_ACTIVE_POOL", "BRAIINS").strip().upper() or "BRAIINS"
+    if active_pool not in _KNOWN_POOLS:
+        raise ValueError(f"MINING_ACTIVE_POOL must be one of {sorted(_KNOWN_POOLS)}")
+
+    host_raw = os.getenv(f"MINING_{active_pool}_HOST", "").strip()
+    port_raw = os.getenv(f"MINING_{active_pool}_PORT", "").strip()
     user = os.getenv(f"MINING_{active_pool}_USER", "").strip()
     password = (
         os.getenv(f"MINING_{active_pool}_PASSWORD")
         or os.getenv(f"MINING_{active_pool}_PASS")
-        or ""
+        or "x"
     )
-    if not host or not user or not password or not port_text:
+    if not host_raw or not user:
         raise ValueError(
-            f"Configure MINING_{active_pool}_HOST, _PORT, _USER, and _PASSWORD before starting"
+            f"Set PYTHIA_POOL_SPECS, or MINING_{active_pool}_HOST and "
+            f"MINING_{active_pool}_USER, before starting"
         )
-    port = int(port_text)
-    if not 1 <= port <= 65535:
-        raise ValueError(f"MINING_{active_pool}_PORT must be between 1 and 65535")
 
-    return active_pool, host, port, user, password
+    scheme, separator, bare_host = host_raw.partition("://")
+    if not separator:
+        scheme = "stratum+tcp"
+    # Only bolt the port on when the host does not already carry one.
+    if port_raw and ":" not in bare_host.rsplit("]", 1)[-1]:
+        bare_host = f"{bare_host}:{port_raw}"
+    endpoint = parse_endpoint(f"{scheme}://{bare_host}", DEFAULT_POOL_PORT)
+    return active_pool, endpoint, user, password
 
 
 class ChronusRealMiningEngine:
     """Geometric/Galois mining runner with verified submissions and bounded work."""
 
-    def __init__(self, host: str, port: int, user: str, password: str):
-        self.host = host
-        self.port = port
-        self.user = user
-        self.password = password
+    def __init__(
+        self,
+        endpoint: PoolEndpoint | str,
+        user: str | int,
+        password: str,
+        legacy_password: str | None = None,
+    ):
+        """Accept a PoolEndpoint, or the legacy (host, port, user, password) form."""
+        if isinstance(endpoint, PoolEndpoint):
+            if legacy_password is not None:
+                raise TypeError("legacy_password is only valid with a host string")
+            pool_endpoint = endpoint
+            worker_name = str(user)
+            pool_password = password
+        else:
+            if legacy_password is None:
+                raise TypeError("legacy construction requires host, port, user, and password")
+            pool_endpoint = PoolEndpoint(str(endpoint), int(user), False)
+            worker_name = password
+            pool_password = legacy_password
 
+        self.endpoint = pool_endpoint
+        self.user = worker_name
+        self.password = pool_password
         self.gateway = StratumGateway(
-            host=self.host,
-            port=self.port,
-            worker_name=self.user,
-            password=self.password,
+            host=pool_endpoint.host,
+            port=pool_endpoint.port,
+            worker_name=worker_name,
+            password=pool_password,
             shard_count=32,
+            tls=pool_endpoint.tls,
         )
         self.gatekeeper = LocalPreSubmitGatekeeper()
         self.token_bucket = IntegerNanosecondTokenBucket(rate_per_sec=15)
@@ -124,7 +191,9 @@ class ChronusRealMiningEngine:
             raise ValueError("max_seconds must be a positive integer")
         from chronus.execution.mining_selftest import run as run_selftest
 
-        if run_selftest().get("bist") != "PASS":
+        # The self-test contains asyncio.run checks; execute it off the caller's loop.
+        selftest_report = await asyncio.to_thread(run_selftest)
+        if selftest_report.get("bist") != "PASS":
             raise RuntimeError("Mining self-test failed; refusing pool connection")
         tasks = []
         self.running = True
@@ -162,16 +231,21 @@ class ChronusRealMiningEngine:
                 continue
             rpc_id = msg.get("id")
             if type(rpc_id) is not int or rpc_id not in self._pending_submits:
+                if msg.get("error"):
+                    logger.warning("[POOL] Uncorrelated error response: %s", msg["error"])
                 continue
             if msg.get("result") is not True and msg.get("result") is not False and not msg.get("error"):
                 continue
-            self._pending_submits.pop(rpc_id)
+            submitted_ns = self._pending_submits.pop(rpc_id)
+            SHARE_LATENCY.observe((time.perf_counter_ns() - submitted_ns) / 1_000_000_000)
             self._submission_changed.set()
             if msg.get("result") is True and not msg.get("error"):
                 self.shares_accepted += 1
+                SHARES_ACCEPTED.inc()
                 logger.info("[POOL SUCCESS] Share ACCEPTED (Total accepted: %d)", self.shares_accepted)
             else:
                 self.shares_rejected += 1
+                SHARES_REJECTED.inc()
                 logger.warning("[POOL REJECT] Share rejected by pool")
 
     async def _monitor_submissions(self):
@@ -251,6 +325,7 @@ class ChronusRealMiningEngine:
                 rolled_version, prevhash_bytes, merkle_root_bytes, ntime, nbits, 0
             )[:76]
             result = self.search_engine.solve_header_range(header_prefix, share_target, cursor, count)
+            HASHRATE_BATCHES.inc()
             self.last_search_result = result
             self.hashes_computed += result.iterations_evaluated
             budget -= result.iterations_evaluated
@@ -414,12 +489,13 @@ class ChronusRealMiningEngine:
                     )
                     if len(self._pending_submits) >= 1024:
                         raise ConnectionError("Too many unacknowledged submissions")
-                    # Register before drain yields, so a fast acknowledgement cannot race us.
-                    rpc_id = self.gateway.msg_id + 1
+                    # Reserve and register before the request can reach the wire.
+                    rpc_id = self.gateway.reserve_id()
                     self._pending_submits[rpc_id] = time.perf_counter_ns()
                     self._submission_changed.set()
-                    await self.gateway.write_rpc("mining.submit", submit_params)
+                    await self.gateway.write_rpc("mining.submit", submit_params, rpc_id)
                     self.shares_submitted += 1
+                    SHARES_SUBMITTED.inc()
                     self.gatekeeper.record_submitted_share()
                 else:
                     logger.info("[RATE LIMITER] Share acquisition throttled locally.")
@@ -431,15 +507,11 @@ class ChronusRealMiningEngine:
 
 
 async def async_main():
-    active_pool, host, port, user, password = load_env_config()
-    logger.info("========================================================================")
-    logger.info("       HYBA INTERNAL GEOMETRIC/GALOIS MINER   ")
-    logger.info("========================================================================")
+    active_pool, endpoint, user, password = load_env_config()
     logger.info(f"[CONFIG] Active Pool Target: {active_pool}")
-    logger.info(f"[CONFIG] Socket Endpoint:    {host}:{port}")
+    logger.info(f"[CONFIG] Socket Endpoint:    {endpoint}")
     logger.info(f"[CONFIG] Worker Identity:    {user}")
-
-    engine = ChronusRealMiningEngine(host, port, user, password)
+    engine = ChronusRealMiningEngine(endpoint, user, password)  # CHANGED
     max_sec_env = os.getenv("MINING_MAX_SECONDS")
     max_seconds = int(max_sec_env) if max_sec_env else None
     await engine.run(max_seconds=max_seconds)

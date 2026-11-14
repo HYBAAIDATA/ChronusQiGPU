@@ -29,7 +29,7 @@ import hashlib
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
-from chronus.execution.stratum import (
+from chronus.stratum.endian_engine import (
     StratumJob,
     StratumSession,
     build_header_prefix,
