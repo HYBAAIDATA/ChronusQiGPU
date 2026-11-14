@@ -13,7 +13,7 @@ from typing import Any
 from . import (
     CNOT, HADAMARD, IDENTITY_2, PAULI_X, PAULI_Y, PAULI_Z,
     PHASE_S, PHASE_T, LinearOperator, QuantumState,
-    born_probabilities, computational_basis_measurement,
+    born_probabilities,
     tensor_operators, tensor_states,
 )
 
@@ -162,7 +162,15 @@ def turing_measure(amplitudes: list[Any], outcome: int = -1) -> dict[str, Any]:
     if type(outcome) is not int:
         raise ValueError("outcome must be an integer")
     if outcome != -1:
-        collapsed = computational_basis_measurement(state.dimension).collapse(state, outcome)
+        if not 0 <= outcome < state.dimension:
+            raise ValueError("outcome index is out of range")
+        probability = result["probabilities"][outcome]
+        if probability == 0.0:
+            raise ValueError("cannot condition on a zero-probability outcome")
+        amplitude = state.amplitudes[outcome] / math.sqrt(probability)
+        collapsed = QuantumState(tuple(
+            amplitude if i == outcome else 0.0j for i in range(state.dimension)
+        ))
         result["collapsed_state"] = _state_result(collapsed)
     return result
 
@@ -176,8 +184,11 @@ def turing_decompose_pauli(operator: Any) -> dict[str, Any]:
     for name in ("I", "X", "Y", "Z"):
         basis = _NAMED[name]
         coefficient = sum(
-            basis.matrix[i][j] * op.matrix[j][i] for i in range(2) for j in range(2)
-        ) / 2
+            basis.matrix[i][j] * op.matrix[j][i] / 2
+            for i in range(2) for j in range(2)
+        )
+        if not math.isfinite(coefficient.real) or not math.isfinite(coefficient.imag):
+            raise ValueError("Pauli coefficients must be finite complex numbers")
         terms[name] = _encode(coefficient)
     return {"basis": "I,X,Y,Z", "coefficients": terms}
 
