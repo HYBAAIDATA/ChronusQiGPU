@@ -31,7 +31,13 @@ class PVScale:
             raise ValueError("m must be a positive integer")
 
     def advance(self, increment: int) -> "PVScale":
-        """Scale further by index addition; no coefficients are materialized."""
+        """Compose by a signed index delta without materializing coefficients.
+
+        Negative deltas are retained for compatibility, but the resulting index
+        must remain nonnegative and both values must be genuine integers.
+        """
+        if not isinstance(increment, int) or isinstance(increment, bool):
+            raise ValueError("increment must be an integer")
         return PVScale(self.index + increment, self.m)
 
     def trace(self) -> int:

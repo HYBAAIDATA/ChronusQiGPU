@@ -49,8 +49,8 @@ def verify_golden_stride() -> bool:
     """Verifies that GOLDEN_STRIDE is coprime to 2^32, generating a complete permutation.
 
     Because GOLDEN_STRIDE is odd, gcd(GOLDEN_STRIDE, 2^32) == 1 identically.
-    This guarantees complete permutation of the 32-bit search space without gaps or bias.
-    It shapes the traversal ordering only; it does not alter hash probability laws.
+    This guarantees a complete permutation without repeats within one full cycle.
+    It shapes traversal order only; it does not improve SHA-256d preimage probability.
     """
     is_odd = (GOLDEN_STRIDE & 1) == 1
     coprime = math.gcd(GOLDEN_STRIDE, 1 << 32) == 1
@@ -118,13 +118,15 @@ def run_mode_a(seeds: List[int] = SEEDS) -> Dict[int, Dict[str, Any]]:
             "device_run": "NOT_RUN",
             "hashrate": "NOT_RUN",
             "t_ms": round(elapsed_ms, 3),
+            "timing_basis": "single_run_perf_counter_wall_time_not_a_percentile",
+            "evidence_class": "local_cpu_reference_execution",
             "mode": "native_chronus_gpu",
             "mathematical_substrate": "exact_integer_z_phi",
         }
 
         # Write evidence file
         evidence_file = EVIDENCE_DIR / f"modeA_{s}.json"
-        with open(evidence_file, "w", encoding="utf-8") as f:
+        with open(evidence_file, "w", encoding="utf-8", newline="\n") as f:
             json.dump(record, f, indent=2)
 
         results[s] = record
@@ -138,9 +140,13 @@ def is_opencl_hardware_present() -> bool:
         return False
     try:
         import pyopencl as cl  # type: ignore
-        platforms = cl.get_platforms()
-        return len(platforms) > 0 and len(platforms[0].get_devices()) > 0
-    except (ImportError, Exception):
+
+        return any(
+            device.type & cl.device_type.GPU
+            for platform in cl.get_platforms()
+            for device in platform.get_devices()
+        )
+    except Exception:
         return False
 
 
@@ -148,12 +154,12 @@ def run_mode_b(
     seeds: List[int] = SEEDS,
     mode_a_results: Optional[Dict[int, Dict[str, Any]]] = None,
 ) -> Dict[int, Dict[str, Any]]:
-    """Mode B: Host GPU augmentation.
+    """Mode B probe with an honest CPU-reference execution record.
 
-    Binds to certified host accelerator when present, executing the same workload contract
-    and guaranteeing same-hash output. Missing GPU gates Mode B gracefully: falls back
-    to cpu_reference with explicit fallback_reason='OPENCL_UNAVAILABLE', device_run='NOT_RUN',
-    and hashrate='NOT_RUN' (no mislabelling CPU as device).
+    This legacy evidence path has no OpenCL kernel for the deterministic
+    workload. A device probe is therefore never recorded as device execution,
+    even when an OpenCL GPU is present. Use chronus.fleet's self-tested OpenCL
+    adapter for workloads it actually implements.
     """
     if mode_a_results is None:
         mode_a_results = run_mode_a(seeds)
@@ -162,58 +168,35 @@ def run_mode_b(
     results: Dict[int, Dict[str, Any]] = {}
 
     for s in seeds:
-        expected_hash = mode_a_results[s]["hash"]
-        t0 = time.perf_counter()
-
-        if has_opencl:
-            # Physical OpenCL device execution
-            workload_hash = expected_hash
-            elapsed_ms = (time.perf_counter() - t0) * 1000.0
-            route = Route(
-                requested="opencl",
-                executed="opencl_accelerator",
-                fallback_reason=None,
-            )
-            record: Dict[str, Any] = {
-                "seed": s,
-                "hash": workload_hash,
-                "route": route.to_dict(),
-                "device_found": True,
-                "device_run": "PASS",
-                "hashrate": "MEASURED",
-                "t_ms": round(elapsed_ms, 3),
-                "mode": "host_gpu_augmentation",
-            }
-        else:
-            # Graceful gate: CPU reference substrate
-            workload_hash = expected_hash
-            elapsed_ms = (time.perf_counter() - t0) * 1000.0
-            route = Route(
-                requested="opencl",
-                executed="cpu_reference",
-                fallback_reason="OPENCL_UNAVAILABLE",
-            )
-            record = {
-                "seed": s,
-                "hash": workload_hash,
-                "route": route.to_dict(),
-                "device_found": False,
-                "device_run": "NOT_RUN",
-                "hashrate": "NOT_RUN",
-                "t_ms": round(elapsed_ms, 3),
-                "mode": "host_gpu_augmentation",
-            }
-
-        results[s] = record
-
+        started = time.perf_counter_ns()
+        workload_hash = compute_deterministic_workload_hash(s)
+        elapsed_ms = (time.perf_counter_ns() - started) / 1_000_000
+        route = Route(
+            requested="opencl",
+            executed="cpu_reference",
+            fallback_reason="OPENCL_EXECUTION_NOT_IMPLEMENTED" if has_opencl else "OPENCL_UNAVAILABLE",
+        )
+        results[s] = {
+            "seed": s,
+            "hash": workload_hash,
+            "reference_match": workload_hash == mode_a_results[s]["hash"],
+            "route": route.to_dict(),
+            "device_found": has_opencl,
+            "device_run": "NOT_RUN",
+            "hashrate": "NOT_RUN",
+            "t_ms": round(elapsed_ms, 3),
+            "timing_basis": "single_run_perf_counter_wall_time_not_a_percentile",
+            "evidence_class": "local_cpu_reference_execution_after_probe",
+            "mode": "host_gpu_augmentation_requested_not_executed",
+        }
     return results
 
 
 def run_quantum_walk_same_hash(seed: int = 1337, steps: int = 8) -> Dict[str, Any]:
-    """Evaluates Hadamard coin + permutation shift quantum walk on CPU and software emulator.
+    """Compare two executions of a classical deterministic walk.
 
-    Asserts bit-exact same-hash across CPU reference and emulator.
-    Marks speedup as UNPROVEN when physical accelerator is not present.
+    The legacy function name is retained for API compatibility. This is not a
+    complex-Hilbert-space quantum model and does not execute on an accelerator.
     """
     # CPU reference execution
     cpu_hasher = hashlib.sha256()
@@ -236,85 +219,54 @@ def run_quantum_walk_same_hash(seed: int = 1337, steps: int = 8) -> Dict[str, An
     emu_hash = emu_hasher.hexdigest()
 
     has_igpu = is_opencl_hardware_present()
-    speedup = "MEASURED" if has_igpu else "UNPROVEN (no hardware device present)"
-
     return {
         "cpu_emu_match": (cpu_hash == emu_hash),
         "cpu_hash": cpu_hash,
         "emu_hash": emu_hash,
+        "model": "classical_deterministic_walk",
+        "quantum_semantics": False,
         "igpu_available": has_igpu,
-        "speedup_claim": speedup,
+        "accelerator_executed": False,
+        "speedup_claim": "UNPROVEN (no accelerator execution or comparative benchmark)",
     }
 
 
 def generate_backend_matrix() -> Path:
-    """Generates the verified backend_matrix.csv artifact in evidence/chronus/."""
+    """Write only executions performed by this process, with honest timing scope."""
     ensure_evidence_dir()
     matrix_path = EVIDENCE_DIR / "backend_matrix.csv"
-
     mode_a = run_mode_a(SEEDS)
     mode_b = run_mode_b(SEEDS, mode_a)
-
-    rows: List[List[str]] = [
-        [
-            "local-native-1337",
-            "cpu",
-            "cpu_reference",
-            "NONE",
-            mode_a[1337]["hash"],
-            f"{mode_a[1337]['t_ms']:.2f}/{mode_a[1337]['t_ms']*1.5:.2f}",
-            mode_a[1337]["device_run"],
-        ],
-        [
-            "local-native-42",
-            "cpu",
-            "cpu_reference",
-            "NONE",
-            mode_a[42]["hash"],
-            f"{mode_a[42]['t_ms']:.2f}/{mode_a[42]['t_ms']*1.5:.2f}",
-            mode_a[42]["device_run"],
-        ],
-        [
-            "local-native-2026",
-            "cpu",
-            "cpu_reference",
-            "NONE",
-            mode_a[2026]["hash"],
-            f"{mode_a[2026]['t_ms']:.2f}/{mode_a[2026]['t_ms']*1.5:.2f}",
-            mode_a[2026]["device_run"],
-        ],
-        [
-            "local-augmented-1337",
-            "opencl",
-            mode_b[1337]["route"]["executed"],
-            mode_b[1337]["route"]["fallback_reason"] or "NONE",
-            mode_b[1337]["hash"],
-            f"{mode_b[1337]['t_ms']:.2f}/{mode_b[1337]['t_ms']*1.5:.2f}",
-            mode_b[1337]["device_run"],
-        ],
-        [
-            "docker-local-control",
-            "cpu",
-            "cpu_reference",
-            "NONE",
-            mode_a[1337]["hash"],
-            "0.48/0.95",
-            "NOT_RUN",
-        ],
-        [
-            "azure-container-control",
-            "cpu",
-            "cpu_reference",
-            "NONE",
-            mode_a[1337]["hash"],
-            "0.52/1.05",
-            "NOT_RUN",
-        ],
-    ]
-
+    rows: List[List[str]] = []
+    for prefix, records in (("local-native", mode_a), ("local-augmented", mode_b)):
+        for seed in SEEDS:
+            record = records[seed]
+            route = record["route"]
+            rows.append([
+                f"{prefix}-{seed}",
+                route["requested"],
+                route["executed"],
+                route["fallback_reason"] or "NONE",
+                record["hash"],
+                "NOT_MEASURED",
+                record["device_run"],
+                f"{record['t_ms']:.3f}",
+                record["timing_basis"],
+                str(record.get("device_found", False)).upper(),
+            ])
+    for environment, requested, reason in (
+        ("docker-local-control", "cpu", "DOCKER_ENVIRONMENT_NOT_EXECUTED"),
+        ("azure-container-control", "azure", "AZURE_ADAPTER_NOT_IMPLEMENTED"),
+    ):
+        rows.append([
+            environment, requested, "NOT_RUN", reason, "NOT_RUN", "NOT_MEASURED", "NOT_RUN",
+            "NOT_RUN", "NOT_MEASURED", "UNKNOWN",
+        ])
     with open(matrix_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(["env", "requested", "executed", "fallback", "hash", "t_p50/p95", "device_run"])
+        writer = csv.writer(f, lineterminator="\n")
+        writer.writerow([
+            "env", "requested", "executed", "fallback", "hash", "t_p50/p95", "device_run",
+            "elapsed_ms", "timing_basis", "device_found",
+        ])
         writer.writerows(rows)
-
     return matrix_path
