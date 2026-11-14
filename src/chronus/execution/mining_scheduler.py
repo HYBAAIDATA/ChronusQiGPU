@@ -9,20 +9,20 @@ from fractions import Fraction
 from math import gcd
 
 from chronus.hendrix import GF257
+from turing.exact.core.state import StateZetaP, superpose
+from turing.exact.core.unitary import ProjectiveUnitaryZetaP, UnitaryZetaP
+from turing.exact.measurement.born import project, projective_born_probability
+from turing.exact.physics.cayley import cayley_evolution
+from turing.exact.physics.swarm import SwarmZetaP
+from turing.exact.physics.tunneling import DiscreteBarrier, transmission_coefficient_exact
+from turing.exact.ring.matrix import MatrixZetaP
+from turing.exact.ring.zeta import ZetaP
+
 
 class TuringMiningScheduler:
     """Two-amplitude exact register; fixed-size evolution and bounded coefficients."""
 
     def __init__(self, seed: bytes):
-        from turing.exact.core.state import StateZetaP, superpose
-        from turing.exact.core.unitary import ProjectiveUnitaryZetaP, UnitaryZetaP
-        from turing.exact.measurement.born import project, projective_born_probability
-        from turing.exact.physics.cayley import cayley_evolution
-        from turing.exact.physics.swarm import SwarmZetaP
-        from turing.exact.physics.tunneling import DiscreteBarrier, transmission_coefficient_exact
-        from turing.exact.ring.matrix import MatrixZetaP
-        from turing.exact.ring.zeta import ZetaP
-
         if not isinstance(seed, bytes) or len(seed) != 32:
             raise ValueError("Scheduler seed must contain exactly 32 bytes")
         self._state_type = StateZetaP

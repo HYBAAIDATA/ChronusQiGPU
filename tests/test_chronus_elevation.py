@@ -1,18 +1,14 @@
-"""Test Suite for Chronus / iGPU Execution Modes & Elevation Substrate.
+"""Regression tests for execution-route and evidence honesty.
 
-Verifies:
-1. Mode A: native_chronus_gpu (standalone software on CPU reference, zero host GPU required,
-   never labelled as device, emits evidence/chronus/modeA_{seed}.json).
-2. Mode B: host_gpu_augmentation (preferred accelerator when present with same-hash guarantee;
-   graceful gate to cpu_reference with OPENCL_UNAVAILABLE when missing).
-3. Quantum walk same-hash verification between CPU reference and software emulator.
-4. Backend matrix evidence artifact structure in evidence/chronus/backend_matrix.csv.
-5. Golden stride permutation invariant (coprime to 2^32, FIFO depth == 8).
-6. Non-conflation and boundary checks: core modules do not import backend-specific SDKs.
+The legacy Mode B path has no kernel for its deterministic workload. Tests
+therefore require CPU-reference execution and NOT_RUN device evidence whether
+or not an OpenCL probe finds hardware. The similarly legacy quantum-walk API is
+a classical deterministic walk, not a TURING quantum-semantics test.
 """
 
 import csv
 import json
+from unittest.mock import patch
 
 
 from chronus.execution.elevation import (
@@ -46,43 +42,65 @@ class TestChronusExecutionModes:
             assert loaded["hash"] == rec["hash"]
             assert loaded["route"]["executed"] == "cpu_reference"
 
-    def test_mode_b_augmented_or_graceful_fallback(self):
-        """Mode B executes on accelerator if present (with same hash) or falls back with OPENCL_UNAVAILABLE."""
+    def test_mode_b_never_promotes_a_probe_to_device_execution(self):
         mode_a_res = run_mode_a(SEEDS)
-        results = run_mode_b(SEEDS, mode_a_res)
-        assert len(results) == len(SEEDS)
-        for s in SEEDS:
-            rec = results[s]
-            if rec["device_found"]:
-                assert rec["hash"] == mode_a_res[s]["hash"]
-                assert rec["device_run"] == "PASS"
-            else:
+        for present, reason in (
+            (False, "OPENCL_UNAVAILABLE"),
+            (True, "OPENCL_EXECUTION_NOT_IMPLEMENTED"),
+        ):
+            with patch("chronus.execution.elevation.is_opencl_hardware_present", return_value=present):
+                results = run_mode_b(SEEDS, mode_a_res)
+            assert len(results) == len(SEEDS)
+            for seed in SEEDS:
+                rec = results[seed]
+                assert rec["device_found"] is present
                 assert rec["route"]["executed"] == "cpu_reference"
-                assert "OPENCL_UNAVAILABLE" in rec["route"]["fallback_reason"]
+                assert rec["route"]["fallback_reason"] == reason
                 assert rec["device_run"] == "NOT_RUN"
                 assert rec["hashrate"] == "NOT_RUN"
+                assert rec["reference_match"] is True
+                assert rec["hash"] == mode_a_res[seed]["hash"]
+                assert rec["t_ms"] >= 0
 
-    def test_quantum_walk_same_hash_cpu_and_emulator(self):
-        """Asserts bit-exact hash equivalence between CPU reference and emulator."""
-        qw = run_quantum_walk_same_hash(1337, steps=8)
-        assert qw["cpu_emu_match"] is True
-        assert qw["cpu_hash"] == qw["emu_hash"]
-        if not qw["igpu_available"]:
-            assert "UNPROVEN" in qw["speedup_claim"]
+    def test_classical_walk_cannot_claim_quantum_semantics_or_speedup(self):
+        with patch("chronus.execution.elevation.is_opencl_hardware_present", return_value=True):
+            walk = run_quantum_walk_same_hash(1337, steps=8)
+        assert walk["cpu_emu_match"] is True
+        assert walk["cpu_hash"] == walk["emu_hash"]
+        assert walk["model"] == "classical_deterministic_walk"
+        assert walk["quantum_semantics"] is False
+        assert walk["igpu_available"] is True
+        assert walk["accelerator_executed"] is False
+        assert "UNPROVEN" in walk["speedup_claim"]
 
-    def test_backend_matrix_artifact_structure(self):
-        """Verifies evidence/chronus/backend_matrix.csv structure, headers, and rows."""
+    def test_backend_matrix_contains_only_local_single_run_evidence(self):
         generate_backend_matrix()
         matrix_path = REPO_ROOT / "evidence" / "chronus" / "backend_matrix.csv"
         assert matrix_path.exists()
         with open(matrix_path, "r", encoding="utf-8") as f:
-            reader = csv.reader(f)
-            header = next(reader)
-            assert header == ["env", "requested", "executed", "fallback", "hash", "t_p50/p95", "device_run"]
+            reader = csv.DictReader(f)
+            assert reader.fieldnames == [
+                "env", "requested", "executed", "fallback", "hash", "t_p50/p95", "device_run",
+                "elapsed_ms", "timing_basis", "device_found",
+            ]
             rows = list(reader)
-            assert len(rows) >= 5
-            for row in rows:
-                assert len(row) == 7
+        assert len(rows) == 2 * len(SEEDS) + 2
+        local = [row for row in rows if row["env"].startswith("local-")]
+        assert {row["timing_basis"] for row in local} == {
+            "single_run_perf_counter_wall_time_not_a_percentile"
+        }
+        assert all(float(row["elapsed_ms"]) >= 0 for row in local)
+        assert all(row["t_p50/p95"] == "NOT_MEASURED" for row in rows)
+        assert all(row["device_run"] == "NOT_RUN" for row in local)
+        assert all(row["executed"] == "cpu_reference" for row in local)
+        controls = {row["env"]: row for row in rows if "control" in row["env"]}
+        assert set(controls) == {"docker-local-control", "azure-container-control"}
+        for row in controls.values():
+            assert row["executed"] == "NOT_RUN"
+            assert row["hash"] == "NOT_RUN"
+            assert row["elapsed_ms"] == "NOT_RUN"
+            assert row["timing_basis"] == "NOT_MEASURED"
+            assert row["device_run"] == "NOT_RUN"
 
     def test_golden_stride_permutation_invariant(self):
         """Verifies that GOLDEN_STRIDE is odd and coprime to 2^32, generating a complete permutation."""

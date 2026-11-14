@@ -82,9 +82,31 @@ class TestMiningReadiness(unittest.IsolatedAsyncioTestCase):
         for _ in range(20):
             gw._process_notify(notify(clean=False))
         assert gw.job_history == ["job"]
+        previous = gw.current_difficulty
         for difficulty in [0, -1, "nan"]:
-            with pytest.raises(ValueError):
-                await gw.handle_server_push({"method": "mining.set_difficulty", "params": [difficulty]})
+            # Invalid pool input is logged and ignored without killing the session.
+            await gw.handle_server_push({"method": "mining.set_difficulty", "params": [difficulty]})
+            assert gw.current_difficulty == previous
+
+    async def test_malformed_session_pushes_preserve_active_work(self):
+        gw = StratumGateway("localhost", 3333, "test")
+        gw._process_notify(notify())
+        original_job = gw.jobs["job"]
+        original_revision = gw.work_revision
+        original_extranonce = (gw.extranonce1_hex, gw.extranonce2_size)
+        original_mask = gw.pool_mask_hex
+
+        for params in (["zz", 2], ["ab", 0], ["ab", "2"]):
+            await gw.handle_server_push({"method": "mining.set_extranonce", "params": params})
+            assert gw.jobs["job"] is original_job
+            assert (gw.extranonce1_hex, gw.extranonce2_size) == original_extranonce
+            assert gw.work_revision == original_revision
+
+        for mask in ("zzzzzzzz", "1", 1, "111111111"):
+            await gw.handle_server_push({"method": "mining.set_version_mask", "params": [mask]})
+            assert gw.jobs["job"] is original_job
+            assert gw.pool_mask_hex == original_mask
+            assert gw.work_revision == original_revision
 
     async def test_json_decimal_preserves_pool_difficulty(self):
         gw = StratumGateway("localhost", 3333, "test")

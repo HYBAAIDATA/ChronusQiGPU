@@ -61,7 +61,19 @@ def test_discover_host_reads_files(tmp_path):
     host = discover_host(cgroup_root=str(tmp_path), proc_root=str(tmp_path))
     assert host.cgroup_cpu_quota == (300000, 100000)
     assert host.memory_bytes == 1024 * 1024
+    assert host.memory_source == "proc_meminfo"
     assert 1 <= host.available_cpus <= host.logical_cpus
+
+
+def test_discover_host_uses_labelled_platform_memory_fallback(tmp_path):
+    host = discover_host(
+        cgroup_root=str(tmp_path),
+        proc_root=str(tmp_path),
+        memory_probe=lambda: 8 * 1024 * 1024,
+    )
+    assert host.memory_bytes == 8 * 1024 * 1024
+    assert host.memory_source == "platform"
+    assert host.as_dict()["memory_source"] == "platform"
 
 
 def test_rates_are_integers_from_executed_work():

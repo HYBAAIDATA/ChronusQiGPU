@@ -8,7 +8,9 @@
   },
   "device_run": "NOT_RUN",
   "hashrate": "NOT_RUN",
-  "t_ms": 0.038,
+  "t_ms": 0.046,
+  "timing_basis": "single_run_perf_counter_wall_time_not_a_percentile",
+  "evidence_class": "local_cpu_reference_execution",
   "mode": "native_chronus_gpu",
   "mathematical_substrate": "exact_integer_z_phi"
 }

@@ -112,6 +112,35 @@ WRONG_SILICON = "record names the wrong silicon for its route"
 RELABEL_SUFFIX = " (relabelling refused)"
 
 
+def _host_capacity_record(raw: Any) -> dict[str, Any]:
+    """Bound and label worker-reported capacity; never use it as a measurement."""
+    if raw is None:
+        return {}
+    if not isinstance(raw, Mapping):
+        raise KernelError("host_capacity must be an object")
+    positive = ("logical_cpus", "affinity_cpus", "available_cpus")
+    non_negative = ("cgroup_cpus", "memory_bytes")
+    record: dict[str, Any] = {
+        "source": "worker-reported discover_host probe; not independently verified by the coordinator",
+        "measured": False,
+        "reported_at": iso_utc(),
+    }
+    for field in positive + non_negative:
+        value = raw.get(field)
+        if value is None:
+            record[field] = None
+            continue
+        minimum = 1 if field in positive else 0
+        if type(value) is not int or value < minimum:
+            raise KernelError(f"host_capacity.{field} must be an integer >= {minimum} or null")
+        record[field] = value
+    source = raw.get("memory_source")
+    if source is not None and (not isinstance(source, str) or len(source) > 100):
+        raise KernelError("host_capacity.memory_source must be a string of at most 100 characters or null")
+    record["memory_source"] = source
+    return record
+
+
 @dataclass
 class CoordinatorConfig:
     token: str
@@ -257,6 +286,7 @@ class FleetCoordinator:
         self.recovery = RecoveryChannel()
         self.baseline = BaselineChannel(self._reference_for_tile, config.recovery_sample_ppm)
         self.nodes: dict[str, NodeInfo] = {}
+        self._join_sequence = 0
         self.jobs: dict[str, Job] = {}
         self.incidents: dict[str, Incident] = {}
         self._resolve_tier()
@@ -477,7 +507,7 @@ class FleetCoordinator:
     def _rebalance(self, cause: str) -> None:
         """After a downgrade or expiry, newest machines wait until demand is within the entitlement."""
         active = sorted((n for n in self.nodes.values() if n.alive and n.state != "waiting"),
-                        key=lambda n: n.joined_at, reverse=True)
+                        key=lambda n: (n.join_sequence, n.joined_at), reverse=True)
         for node in active:
             warps, lanes, storage = self._demand()
             if self.tier.covers(warps, lanes, 0):
@@ -491,7 +521,10 @@ class FleetCoordinator:
 
     def _admit_waiting(self) -> None:
         """Admit waiting machines (oldest first) and queued jobs that the entitlement or a grant now covers."""
-        waiting = sorted((n for n in self.nodes.values() if n.alive and n.state == "waiting"), key=lambda n: n.joined_at)
+        waiting = sorted(
+            (n for n in self.nodes.values() if n.alive and n.state == "waiting"),
+            key=lambda n: (n.join_sequence, n.joined_at),
+        )
         for node in waiting:
             admitted, _, _ = self._admit("join", node.label, node.warps, node.lanes, record_queued=False)
             if not admitted:
@@ -637,11 +670,13 @@ class FleetCoordinator:
         if not routes:
             return 400, {"error": "no self-tested route offered; nothing to join with"}
         backend = _backend_record(payload.get("backend"), routes)
+        host_capacity = _host_capacity_record(payload.get("host_capacity"))
         warps, lanes = lattice_footprint(resident)
         with self._lock:
             admitted, _, event = self._admit("join", f"{label} ({resident} virtual units)", warps, lanes)
             node_id = f"{_slug(label)}-{secrets.token_hex(3)}"
             vertex = self.crossbar.place(node_id)
+            self._join_sequence += 1
             node = NodeInfo(
                 node_id=node_id,
                 label=label,
@@ -656,6 +691,8 @@ class FleetCoordinator:
                 last_seen_ns=monotonic_ns(),
                 state="active" if admitted else "waiting",
                 backend=backend,
+                host_capacity=host_capacity,
+                join_sequence=self._join_sequence,
             )
             for measurement in payload.get("measurements") or []:
                 if (
@@ -1195,6 +1232,7 @@ class FleetCoordinator:
                     "fallback_reasons": 0,
                     "measured": True,
                     "backend": dict(node.backend) if node else {},
+                    "host_capacity": dict(node.host_capacity) if node and node.host_capacity else None,
                     "executed_backends": {},
                     "preferences": [],
                     "detected_backends": [],

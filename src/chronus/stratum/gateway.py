@@ -16,6 +16,7 @@ Architectural Guarantees:
 import asyncio
 import json
 import logging
+import ssl
 from decimal import Decimal, InvalidOperation
 from fractions import Fraction
 from typing import Dict, Any, List, Optional
@@ -41,6 +42,8 @@ class StratumGateway:
         shard_count: int = 8,
         pool_timeout_sec: int = 60,
         session_idle_timeout_sec: int = 600,
+        tls: bool = False,
+        ssl_context: Optional["ssl.SSLContext"] = None,
     ):
         self.host = host
         self.port = port
@@ -49,6 +52,9 @@ class StratumGateway:
         self.shard_count = shard_count
         self.pool_timeout_sec = pool_timeout_sec
         self.session_idle_timeout_sec = session_idle_timeout_sec
+
+        self.tls = tls
+        self.ssl_context = ssl_context
 
         self.reader: Optional[asyncio.StreamReader] = None
         self.writer: Optional[asyncio.StreamWriter] = None
@@ -73,6 +79,10 @@ class StratumGateway:
     def _next_id(self) -> int:
         self.msg_id += 1
         return self.msg_id
+
+    def reserve_id(self) -> int:
+        """Reserve an RPC id so its response can be tracked before writing."""
+        return self._next_id()
 
     async def connect(self):
         """Opens outbound TCP socket connection and increments connection generation."""
@@ -99,18 +109,35 @@ class StratumGateway:
             self.writer = None
             self.reader = None
 
+        # TLS is opt-in and verified; plaintext remains explicit for V1 pools.
+        if self.tls:
+            context = self.ssl_context or ssl.create_default_context()
+            context.check_hostname = True
+            context.verify_mode = ssl.CERT_REQUIRED
+            connection = asyncio.open_connection(
+                self.host, self.port, limit=1024 * 1024,
+                ssl=context, server_hostname=self.host,
+            )
+        else:
+            connection = asyncio.open_connection(
+                self.host, self.port, limit=1024 * 1024
+            )
         self.reader, self.writer = await asyncio.wait_for(
-            asyncio.open_connection(self.host, self.port, limit=1024 * 1024),
-            timeout=self.pool_timeout_sec,
+            connection, timeout=self.pool_timeout_sec,
         )
         self.is_connected = True
-        logger.info(f"[GEN {gen}] Connected successfully to {self.host}:{self.port}")
+        logger.info(
+            f"[GEN {gen}] Connected to {self.host}:{self.port} "
+            f"({'TLS' if self.tls else 'cleartext'})"
+        )
 
-    async def write_rpc(self, method: str, params: List[Any]) -> int:
+    async def write_rpc(self, method: str, params: List[Any],
+                        rpc_id: Optional[int] = None) -> int:
         """Writes a JSON-RPC request line directly to socket without reading."""
         if not self.writer:
             raise ConnectionError("Socket is not open.")
-        rpc_id = self._next_id()
+        rpc_id = self._next_id() if rpc_id is None else rpc_id
+        self.msg_id = max(self.msg_id, rpc_id)
         payload_str = json.dumps({"id": rpc_id, "method": method, "params": params}) + "\n"
         self.writer.write(payload_str.encode("utf-8"))
         await asyncio.wait_for(self.writer.drain(), self.pool_timeout_sec)
@@ -126,7 +153,8 @@ class StratumGateway:
         self.writer.write(payload_str.encode("utf-8"))
         await asyncio.wait_for(self.writer.drain(), self.pool_timeout_sec)
 
-        # Read lines until matching response id arrives; dispatch interleaved server pushes
+        # Read lines until matching response id arrives; dispatch interleaved server pushes.
+        # An uncorrelated response (e.g. id: null from a submit error) is logged, not dropped.
         deadline = asyncio.get_running_loop().time() + self.pool_timeout_sec
         while True:
             remaining = deadline - asyncio.get_running_loop().time()
@@ -150,17 +178,29 @@ class StratumGateway:
 
             if response.get("id") == rpc_id:
                 return response
-            elif "method" in response or response.get("id") is None:
+            if "method" in response:
                 await self.handle_server_push(response)
+                continue
+            logger.warning("uncorrelated pool response: %s", response)
 
     async def read_line(self, timeout_sec=None) -> bytes:
-        """Reads a single newline-delimited frame using readuntil(b'\\n') up to the 1 MiB limit."""
+        """Reads a single newline-delimited frame using readuntil(b'\\n') up to the 1 MiB limit.
+
+        Wraps asyncio stream exceptions (IncompleteReadError on mid-frame EOF,
+        LimitOverrunError past 1 MiB) as ConnectionError so callers only see
+        protocol-level failures.
+        """
         if not self.reader:
             raise ConnectionError("Socket is not open.")
-        return await asyncio.wait_for(
-            self.reader.readuntil(b"\n"),
-            self.pool_timeout_sec if timeout_sec is None else timeout_sec,
-        )
+        try:
+            return await asyncio.wait_for(
+                self.reader.readuntil(b"\n"),
+                self.pool_timeout_sec if timeout_sec is None else timeout_sec,
+            )
+        except asyncio.IncompleteReadError as exc:
+            raise ConnectionError("pool closed mid-frame") from exc
+        except asyncio.LimitOverrunError as exc:
+            raise ConnectionError("pool frame exceeded 1 MiB") from exc
 
     async def read_message(self) -> Optional[Dict[str, Any]]:
         """
@@ -233,30 +273,46 @@ class StratumGateway:
         method = msg.get("method")
         params = msg.get("params", [])
         if not isinstance(params, list):
-            raise ValueError("Pool push params must be an array")
+            logger.warning("Pool push params not an array, dropping message: %s", msg)
+            return
 
         if method == "mining.set_difficulty":
             if params:
-                difficulty = self._parse_difficulty(params[0])
-                self.current_difficulty = difficulty
-                logger.info(f"[PUSH] Set difficulty: {self.current_difficulty}")
+                try:
+                    difficulty = self._parse_difficulty(params[0])
+                except (ValueError, TypeError) as exc:
+                    # Invalid input must not destroy an otherwise healthy session.
+                    logger.error("[PUSH INVALID] Bad difficulty %r: %s", params[0], exc)
+                else:
+                    self.current_difficulty = difficulty
+                    logger.info(f"[PUSH] Set difficulty: {self.current_difficulty}")
 
         elif method == "mining.set_extranonce":
             if len(params) >= 2:
-                self._validate_extranonce(params[0], params[1])
-                self.extranonce1_hex = params[0]
-                self.extranonce2_size = int(params[1])
-                self.jobs.clear()
-                self.job_history.clear()
-                self.dedup_ledger.clear()
-                self.work_revision += 1
-                logger.info(f"[PUSH] Updated ExtraNonce1={self.extranonce1_hex}, Size={self.extranonce2_size}")
+                try:
+                    self._validate_extranonce(params[0], params[1])
+                except (ValueError, TypeError) as exc:
+                    logger.error("[PUSH INVALID] Bad extranonce parameters %r: %s", params[:2], exc)
+                else:
+                    self.extranonce1_hex = params[0]
+                    self.extranonce2_size = int(params[1])
+                    self.jobs.clear()
+                    self.job_history.clear()
+                    self.dedup_ledger.clear()
+                    self.work_revision += 1
+                    logger.info(f"[PUSH] Updated ExtraNonce1={self.extranonce1_hex}, Size={self.extranonce2_size}")
 
         elif method == "mining.set_version_mask":
             if params:
-                self.pool_mask_hex = parse_and_intersect_version_mask(params[0], DEFAULT_CLIENT_MASK_HEX)
-                self.work_revision += 1
-                logger.info(f"[PUSH] Updated version mask: {self.pool_mask_hex}")
+                try:
+                    self._validate_hex(params[0], 8)
+                    mask = parse_and_intersect_version_mask(params[0], DEFAULT_CLIENT_MASK_HEX)
+                except (ValueError, TypeError) as exc:
+                    logger.error("[PUSH INVALID] Bad version mask %r: %s", params[0], exc)
+                else:
+                    self.pool_mask_hex = mask
+                    self.work_revision += 1
+                    logger.info(f"[PUSH] Updated version mask: {self.pool_mask_hex}")
 
         elif method == "mining.notify":
             self._process_notify(params)

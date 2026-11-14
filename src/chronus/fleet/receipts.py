@@ -40,6 +40,7 @@ HONESTY = {
     "silicon": "each record names the physical silicon under its route: the Chronus iGPU (Mode A) on the host's "
     "general-purpose cores, host GPU routes (Mode B) on GPU silicon",
     "tier_entitlement": "the provisioned entitlement in force when the job was admitted; not a performance claim",
+    "host_capacity": "worker-reported host probe values; not independently verified by the coordinator and not measured throughput",
     "verification": "results checked against the deterministic pure-Python reference as recorded below",
 }
 

@@ -87,3 +87,43 @@ def unfold_pair(first: int, second: int) -> tuple[int, int]:
     ):
         raise ValueError("inputs must be bytes")
     return ((135 * first + 98 * second) % 256, (98 * first + 37 * second) % 256)
+
+
+def zeckendorf_encode_bytes(payload: bytes) -> tuple[tuple[int, ...], ...]:
+    """Encode every byte position independently and reversibly.
+
+    Empty tuples represent zero bytes, so leading, trailing, and repeated zero
+    bytes retain their positions. This is a representation change, not a claim
+    of compression or constant-memory storage for independent input data.
+    """
+    if not isinstance(payload, (bytes, bytearray)):
+        raise ValueError("payload must be bytes")
+    return tuple(zeckendorf_encode(value) for value in bytes(payload))
+
+
+def zeckendorf_decode_bytes(
+    encoded: object,
+    original_length: int | None = None,
+) -> bytes:
+    """Reconstruct bytes exactly; malformed values and lengths fail closed."""
+    if original_length is not None and (
+        not isinstance(original_length, int)
+        or isinstance(original_length, bool)
+        or original_length < 0
+    ):
+        raise ValueError("original_length must be a non-negative integer or None")
+    if isinstance(encoded, (str, bytes, bytearray)):
+        raise ValueError("encoded payload must be an iterable of Zeckendorf indices")
+    try:
+        items = list(encoded)  # type: ignore[arg-type]
+    except TypeError as exc:
+        raise ValueError("encoded payload must be an iterable") from exc
+    if original_length is not None and len(items) != original_length:
+        raise ValueError("encoded item count must equal original_length")
+    recovered = bytearray()
+    for position, indices in enumerate(items):
+        value = zeckendorf_decode(indices)
+        if value > 255:
+            raise ValueError(f"decoded value at byte position {position} exceeds 255")
+        recovered.append(value)
+    return bytes(recovered)

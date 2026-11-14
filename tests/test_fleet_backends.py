@@ -11,6 +11,7 @@ from chronus.fleet.adapters import MODE_B, AdapterRegistry, DeviceAdapter, IGPUA
 from chronus.fleet.auth import new_token
 from chronus.fleet.backends import select_backend
 from chronus.fleet.canonical import deterministic_bytes
+from chronus.fleet.capacity import HostCapacity
 from chronus.fleet.coordinator import CoordinatorConfig, FleetCoordinator
 from chronus.fleet.cuda import CudaAdapter
 from chronus.fleet.errors import DeviceUnavailableError
@@ -145,7 +146,8 @@ class WorkerSelectionTests(unittest.TestCase):
             ).start()
             registry, kernels = machine_with_a_host_gpu()
             worker = FleetWorker(WorkerConfig(coordinator.url, token, label="mac-with-gpu", measure=False),
-                                 kernels=kernels, adapters=registry)
+                                 kernels=kernels, adapters=registry,
+                                 host=HostCapacity(8, 6, (300000, 100000), 16 * 1024**3, "test-fixture"))
             try:
                 worker.start_thread()
                 self.assertTrue(worker.wait_joined(60))
@@ -153,6 +155,12 @@ class WorkerSelectionTests(unittest.TestCase):
                 self.assertEqual(node.backend["executed_backend"], "igpu")
                 self.assertEqual(node.backend["preference"], "ours")
                 self.assertIn("metal", node.backend["detected_backends"])
+                self.assertEqual(node.host_capacity["available_cpus"], 3)
+                self.assertEqual(node.host_capacity["memory_bytes"], 16 * 1024**3)
+                self.assertEqual(node.host_capacity["memory_source"], "test-fixture")
+                self.assertFalse(node.host_capacity["measured"])
+                self.assertIn("not independently verified", node.host_capacity["source"])
+                self.assertEqual(node.public()["host_capacity"], node.host_capacity)
                 with FleetExecutor(coordinator.url, token=token) as fleet:
                     data = deterministic_bytes("backends", 8192)
                     ours = fleet.submit(WorkUnit("m15_fold", data, virtual_units=80), timeout=120)
@@ -166,6 +174,9 @@ class WorkerSelectionTests(unittest.TestCase):
                 self.assertEqual(named.receipt["backend"]["requested_backend"], "metal")
                 self.assertEqual(set(named.receipt["backend"]["executed_backends"]), {"metal"})
                 device = ours.receipt["devices"][0]
+                self.assertEqual(device["host_capacity"]["available_cpus"], 3)
+                self.assertEqual(device["host_capacity"]["memory_bytes"], 16 * 1024**3)
+                self.assertFalse(device["host_capacity"]["measured"])
                 self.assertEqual(device["preferences"], ["ours"])
                 self.assertEqual(device["detected_backends"], ["igpu", "metal", "reference"])
                 self.assertEqual(device["backend"]["executed_backend"], "igpu")

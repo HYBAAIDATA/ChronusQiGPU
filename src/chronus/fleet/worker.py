@@ -30,6 +30,7 @@ from chronus.fleet.errors import AuthenticationError
 from chronus.fleet.auth import FleetAuth
 from chronus.fleet.backends import BACKEND_AUTO, DEFAULT_PREFERENCE, BackendSelection, check_backend, check_preference
 from chronus.fleet.canonical import b64decode, b64encode
+from chronus.fleet.capacity import HostCapacity, discover_host
 from chronus.fleet.errors import DeviceUnavailableError, FleetError, KernelError, TransportError
 from chronus.fleet.kernels import KernelRegistry, default_registry
 from chronus.fleet.lattice import DEFAULT_VIRTUAL_UNITS, require_rung
@@ -61,6 +62,7 @@ class FleetWorker:
         config: WorkerConfig,
         kernels: KernelRegistry | None = None,
         adapters: AdapterRegistry | None = None,
+        host: HostCapacity | None = None,
     ) -> None:
         require_rung(config.resident_units)
         check_backend(config.backend)
@@ -68,6 +70,7 @@ class FleetWorker:
         self.config = config
         self.kernels = kernels or default_registry()
         self.adapters = adapters or AdapterRegistry(config.routes)
+        self.host = host or discover_host()
         self.auth = FleetAuth(config.token)
         self._node_auth = None
         self.node_id: str | None = None
@@ -128,6 +131,7 @@ class FleetWorker:
             "label": self.config.label,
             "owner": self.config.owner,
             "resident_units": self.config.resident_units,
+            "host_capacity": self.host.as_dict(),
             "kernels": {k.name: k.version for k in self.kernels},
             "routes": routes,
             "unavailable_routes": unavailable,

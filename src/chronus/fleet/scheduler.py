@@ -69,6 +69,8 @@ class NodeInfo:
     quarantined: str | None = None
     state: str = "active"
     backend: dict[str, Any] = field(default_factory=dict)
+    host_capacity: dict[str, Any] = field(default_factory=dict)
+    join_sequence: int = 0
 
     def verified_routes(self, kernel: str) -> list[str]:
         return [r for r, info in self.routes.items() if kernel in info.get("verified_kernels", ())]
@@ -114,6 +116,7 @@ class NodeInfo:
             "kernels": self.kernels,
             "measured_items_per_second": {f"{k}/{r}": v for (k, r), v in sorted(self.throughput.items())},
             "backend": dict(self.backend),
+            "host_capacity": dict(self.host_capacity) or None,
         }
 
 
