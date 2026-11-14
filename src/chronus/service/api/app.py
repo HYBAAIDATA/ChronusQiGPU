@@ -30,9 +30,8 @@ def reset_rate_limit() -> None:
 
 
 def _rate_key(request: Request) -> str:
-    authorization = request.headers.get("Authorization")
-    if authorization:
-        return hashlib.sha256(authorization.encode("utf-8")).hexdigest()
+    # Keyed by client address, never by the unverified Authorization header:
+    # rotating bogus bearer values must not yield fresh buckets.
     client = request.client
     return client.host if client else "unknown"
 
