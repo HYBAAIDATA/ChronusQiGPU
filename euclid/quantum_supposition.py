@@ -66,7 +66,6 @@ def exact_supposition_interference(
     for bit in range(n):
         state = state.apply_single(bit, H)
     # D is exactly diagonal/unitary with eigenvalues +/- 1.
-    from turing_universal_quantum_computer.exact_state_vector import ExactComplex
     amplitudes = tuple(-amp if name in phase_flipped else amp
                        for name, amp in zip(names, state.amplitudes))
     state = ExactStateVector(n, amplitudes)
@@ -76,7 +75,7 @@ def exact_supposition_interference(
         raise ArithmeticError("nonunitary supposition transformation")
 
     probabilities = state.probabilities_exact()
-    if sum(probabilities, probabilities[0] - probabilities[0]) != 1:
+    if sum(probabilities, probabilities[0] - probabilities[0]) != ONE:
         raise ArithmeticError("Born probability normalization failed")
     manifest = {
         "basis": [
