@@ -14,7 +14,7 @@ from chronus.fleet.workunit import WorkUnit
 from tests.fleet_support import state_dir
 
 
-def join(coordinator, label, routes):
+def join(coordinator, label, routes, host_capacity=None):
     payload = {
         "label": label,
         "resident_units": 800,
@@ -24,6 +24,8 @@ def join(coordinator, label, routes):
             for route, silicon in routes.items()
         },
     }
+    if host_capacity is not None:
+        payload["host_capacity"] = host_capacity
     return coordinator.handle("POST", "/v1/join", f"join:{label}", payload)
 
 
@@ -67,6 +69,18 @@ class ProtocolTests(unittest.TestCase):
         status, body = join(self.coordinator, "liar", {"reference": "gpu"})
         self.assertEqual(status, 400)
         self.assertIn("silicon", body["error"])
+
+    def test_join_with_invalid_host_capacity_is_refused_before_admission(self):
+        before = len(self.coordinator.nodes)
+        status, body = join(
+            self.coordinator,
+            "bad-capacity",
+            {"reference": "cpu"},
+            {"logical_cpus": 8, "affinity_cpus": 8, "available_cpus": -1},
+        )
+        self.assertEqual(status, 400)
+        self.assertIn("available_cpus", body["error"])
+        self.assertEqual(len(self.coordinator.nodes), before)
 
     def test_a_record_claiming_gpu_for_cpu_work_quarantines_the_node(self):
         _, first = join(self.coordinator, "a", {"reference": "cpu"})

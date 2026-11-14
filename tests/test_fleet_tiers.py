@@ -206,6 +206,9 @@ class DowngradeTests(unittest.TestCase):
             fleet = TierFleet(tmp)
             fleet.coordinator.install_grant(fleet.grant(2))
             joined = [fleet.join(f"mac-{i}") for i in range(5)]
+            # Timestamp ties must not change join-order admission semantics.
+            for node in fleet.coordinator.nodes.values():
+                node.joined_at = "2026-01-01T00:00:00Z"
             self.assertEqual(fleet.coordinator.tier.label, "Tier 2")
             fleet.coordinator.select_tier(fleet.selection(1))
             self.assertEqual(fleet.coordinator.tier.label, "Tier 1")

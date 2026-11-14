@@ -21,7 +21,7 @@ import os
 import threading
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 NS_PER_S = 1_000_000_000
 
@@ -73,6 +73,46 @@ def parse_meminfo_total(text: Optional[str]) -> Optional[int]:
     return None
 
 
+def platform_memory_bytes() -> Optional[int]:
+    """Return total physical memory reported by the platform, or None when unknown.
+
+    Linux normally uses /proc/meminfo through discover_host(). Windows uses
+    GlobalMemoryStatusEx; other platforms use sysconf when they expose it.
+    This is a host-reported capacity, not an available-memory measurement.
+    """
+    if os.name == "nt":
+        try:
+            import ctypes
+            from ctypes import wintypes
+
+            class MemoryStatusEx(ctypes.Structure):
+                _fields_ = [
+                    ("length", wintypes.DWORD),
+                    ("memory_load", wintypes.DWORD),
+                    ("total_physical", ctypes.c_ulonglong),
+                    ("available_physical", ctypes.c_ulonglong),
+                    ("total_page_file", ctypes.c_ulonglong),
+                    ("available_page_file", ctypes.c_ulonglong),
+                    ("total_virtual", ctypes.c_ulonglong),
+                    ("available_virtual", ctypes.c_ulonglong),
+                    ("available_extended_virtual", ctypes.c_ulonglong),
+                ]
+
+            status = MemoryStatusEx()
+            status.length = ctypes.sizeof(MemoryStatusEx)
+            if not ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):
+                return None
+            return int(status.total_physical) or None
+        except (AttributeError, OSError, ValueError):
+            return None
+    try:
+        pages = int(os.sysconf("SC_PHYS_PAGES"))
+        page_size = int(os.sysconf("SC_PAGE_SIZE"))
+    except (AttributeError, OSError, ValueError):
+        return None
+    return pages * page_size if pages > 0 and page_size > 0 else None
+
+
 @dataclass(frozen=True)
 class HostCapacity:
     """What the host reports about itself."""
@@ -81,6 +121,7 @@ class HostCapacity:
     affinity_cpus: int
     cgroup_cpu_quota: Optional[Tuple[int, int]]
     memory_bytes: Optional[int]
+    memory_source: Optional[str] = None
 
     @property
     def cgroup_cpus(self) -> Optional[int]:
@@ -103,11 +144,17 @@ class HostCapacity:
             "cgroup_cpus": self.cgroup_cpus,
             "available_cpus": self.available_cpus,
             "memory_bytes": self.memory_bytes,
+            "memory_source": self.memory_source,
         }
 
 
-def discover_host(*, cgroup_root: str = "/sys/fs/cgroup", proc_root: str = "/proc") -> HostCapacity:
-    """Read the host's own report of its CPUs, CPU limit and memory."""
+def discover_host(
+    *,
+    cgroup_root: str = "/sys/fs/cgroup",
+    proc_root: str = "/proc",
+    memory_probe: Optional[Callable[[], Optional[int]]] = None,
+) -> HostCapacity:
+    """Read the host's CPU and total-memory reports, with explicit provenance."""
     logical = os.cpu_count() or 1
     try:
         affinity = len(os.sched_getaffinity(0))
@@ -120,7 +167,11 @@ def discover_host(*, cgroup_root: str = "/sys/fs/cgroup", proc_root: str = "/pro
             _read(os.path.join(cgroup_root, "cpu", "cpu.cfs_period_us")),
         )
     memory = parse_meminfo_total(_read(os.path.join(proc_root, "meminfo")))
-    return HostCapacity(logical, max(1, affinity), quota, memory)
+    memory_source = "proc_meminfo" if memory is not None else None
+    if memory is None:
+        memory = (memory_probe or platform_memory_bytes)()
+        memory_source = "platform" if memory is not None else "unavailable"
+    return HostCapacity(logical, max(1, affinity), quota, memory, memory_source)
 
 
 def rate_per_second(work: int, elapsed_ns: int) -> int:

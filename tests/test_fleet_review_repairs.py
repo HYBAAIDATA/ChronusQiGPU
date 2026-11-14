@@ -3,7 +3,7 @@
 import os
 from unittest.mock import patch
 import pytest
-from chronus.fleet.auth import ReplayCache, FleetAuth, new_token, write_token_file
+from chronus.fleet.auth import ReplayCache, FleetAuth, load_token, new_token, write_token_file
 from chronus.fleet.errors import AuthenticationError, KernelError, LedgerError, TransportError
 from chronus.fleet.executor import FleetExecutor
 from chronus.fleet.kernels import Kernel, KernelRegistry
@@ -21,6 +21,7 @@ def test_replay_capacity_never_forgets_unexpired_nonces():
     assert not cache.check_and_add('first', 4)
 
 
+@pytest.mark.skipif(os.name != "posix", reason="POSIX owner permission bits are not exposed by Windows st_mode")
 def test_secret_permissions_are_restricted_before_write(tmp_path):
     dest=tmp_path/'token'; dest.write_text('old');dest.chmod(0o644)
     fdopen=os.fdopen
@@ -29,6 +30,15 @@ def test_secret_permissions_are_restricted_before_write(tmp_path):
         return fdopen(fd,*args,**kwargs)
     with patch('chronus.fleet.auth.os.fdopen',side_effect=checked):
         write_token_file(dest,new_token())
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows-specific token-file compatibility check")
+def test_secret_file_round_trip_on_windows_without_posix_mode_claim(tmp_path):
+    # This checks Windows write/read compatibility only; ACL hardening is not assessed.
+    dest = tmp_path / "token"
+    token = new_token()
+    write_token_file(dest, token)
+    assert load_token(token_file=dest) == token
 
 
 def test_work_identity_copies_and_freezes_nested_parameters():

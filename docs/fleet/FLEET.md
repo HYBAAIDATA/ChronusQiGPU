@@ -8,6 +8,8 @@ Copyright (c) 2026 HYBA Software Ltd. All rights reserved. Chronus is a HYBA Dat
 
 **Status:** implemented and tested on one Linux host (Mode A routes, three worker processes, one killed mid-job). The Apple Metal and OpenCL routes are implemented but have not yet run on Apple or OpenCL GPU silicon; on each machine they must pass their known-answer self-test before they receive work. No throughput figure in this document is a measurement: real figures come from `chronus-fleet bench` and the receipts on your own machines.
 
+The audited expansion program and its current local verification record are in the [Chronus Elevation Roadmap](../CHRONUS_ELEVATION_ROADMAP.md). That record does not supersede this document's hardware boundaries or the repository release decision.
+
 ## What it is
 
 Chronus is HYBA's iGPU, a software-defined GPU. The fleet lets any set of machines act as **one Chronus iGPU**: Andre's MacBook and iMac, other laptops and servers. One machine runs the **coordinator**; every machine that lends silicon runs a **worker**. Callers submit a work unit through `FleetExecutor.submit()` or `chronus-fleet run` and receive one result and one signed receipt, as if a single device had done the work.
@@ -32,7 +34,7 @@ A job goes through these steps:
 
 ## Capacity vocabulary
 
-Four words are kept apart everywhere: in code, status output, receipts and here.
+Six terms are kept apart everywhere: in code, status output, receipts and here.
 
 | Word | Meaning | Source |
 |---|---|---|
@@ -41,6 +43,7 @@ Four words are kept apart everywhere: in code, status output, receipts and here.
 | **Discovered** | What a probe found: a route is present, with the device as the driver reports it. `measured: false`. | `DeviceAdapter.probe()` |
 | **Verified** | The route reproduced every applicable known answer, hash for hash, whole and split into tiles. | `DeviceAdapter.self_test()` |
 | **Measured** | Throughput from timed runs on that machine, with start and finish timestamps. | `DeviceAdapter.measure()`, execution records |
+| **Host capacity** | Worker-reported logical/affinity/cgroup CPU and total-memory values, including memory source. It is not free memory, physical GPU memory, measured throughput, or coordinator-independent verification. | `discover_host()`, worker join, `NodeInfo.public()`, signed device receipts |
 
 ## The honesty rules, and where they are enforced
 
@@ -49,7 +52,7 @@ Four words are kept apart everywhere: in code, status output, receipts and here.
 | Never claim physical cores for logical rungs | Virtual units are labelled "scheduling lattice: logical virtual units, not physical cores" in the lattice, the status and every receipt (`physical_cores_claimed: 0`). Warps and lanes are logical units in every tier entitlement. |
 | `measured` stays false until silicon registers | Probe records carry `measured: false`. Only timed runs (`measure()`, execution records) carry `measured: true`, and each has timestamps. Scheduling weights come only from those runs; a machine with no measurement weighs 1 and is shown as unmeasured. |
 | Never emulate silently | A requested route that is absent, or whose self-test failed, raises `DeviceUnavailableError`. The coordinator refuses a job naming a route no live node has verified ("failing closed"), and refuses any result whose `executed_route` differs from an explicitly requested route. A route's silicon is fixed (`metal` and `opencl` are GPU; `reference`, `simd` and `cpp-simd` are CPU), so CPU work cannot be reported as GPU work. MLX is refused unless Metal is available to it, and CPU OpenCL devices are never used for the OpenCL route. |
-| Receipts for everything | Every job ends with a signed, ledger-anchored receipt. Incidents, fabric snapshots, tier changes, scale events and scale grants are anchored in the ledger too. |
+| Receipts for everything | Every job ends with a signed, ledger-anchored receipt. Device entries include actual route contributions and the worker-reported host-capacity record, labeled unverified and unmeasured. Incidents, fabric snapshots, tier changes, scale events and scale grants are anchored in the ledger too. |
 
 Mode A is the Chronus iGPU, HYBA's software-defined GPU on the resident lattice (`igpu`, with its engines `cpp-simd`, `simd` and `reference`): a first-class GPU route. Mode B is the host's own GPU (`metal`, `opencl`, `cuda`). Each record names its mode, its backend and the physical silicon under it.
 
@@ -232,6 +235,8 @@ Run the tests with `python -m pytest -q tests/test_fleet_*.py`, or `python -m un
 - The ledger is a local, tamper-evident hash chain. It is not replicated, not distributed and not a blockchain.
 - The fleet does not provide KMS or HSM key custody, multi-tenant isolation, or an SLA.
 - Fleet transfers go over HTTP(S) on your network. Within one machine, MLX and Metal use unified memory; across machines, each tile's bytes are sent once.
+- Host-capacity fields are worker-reported totals and limits, not free-memory measurements, independent coordinator verification, or hardware-rooted attestation. They do not create a remote memory tier or a throughput claim.
+- POSIX owner-mode checks are platform-specific. Windows token-file write/read compatibility is tested, but Windows ACL hardening and its security effectiveness are not established by that test.
 
 ## Verified contribution counts and fault boundaries
 
