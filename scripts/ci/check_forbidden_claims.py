@@ -99,6 +99,21 @@ def scan(root):
     return violations
 
 
+def validate_claim_audit(root):
+    """Validate the API's claim audit with the same loader used at runtime."""
+    import os
+
+    os.environ['CHRONUS_CLAIM_AUDIT'] = str(root / 'docs/claim-audit.yaml')
+    from chronus.service.api import claims
+    from chronus.service.api.errors import ApiError
+
+    claims.reset_cache()
+    try:
+        return claims.load_audit()
+    except ApiError as exc:
+        raise ValueError(f'claim audit validation failed: {exc.detail}') from exc
+
+
 if __name__ == '__main__':
     try:
         problems = scan(ROOT)
@@ -106,7 +121,8 @@ if __name__ == '__main__':
             print(f'{path}: prohibited token {token!r}', file=sys.stderr)
         if problems:
             sys.exit(1)
-        print('Claim token scan passed')
+        audit = validate_claim_audit(ROOT)
+        print(f'Claim token scan passed; audit posture={audit.posture}, claims={len(audit.claims)}, blockers={len(audit.blockers)}')
     except (OSError, ValueError, subprocess.CalledProcessError) as exc:
         print(f'Claim token scan failed: {exc}', file=sys.stderr)
         sys.exit(1)
