@@ -228,6 +228,10 @@ class EuclidSkillExchange:
                     "operators": [self._mechanism(m) for m in instructions],
                     "execution_performed": False, "authority_granted": False}
 
+        # StructuralMemory items carry no mission binding, so retrieval cannot
+        # be confined to the authorized mission. Fail closed rather than expose
+        # another mission's episodes; re-enable once items are mission-scoped.
+        raise PermissionError("EUCLID memory recall is not mission-scoped and is denied")
         kinds = args.get("kinds", [])
         types = [MemoryKind(x) for x in kinds] if kinds else None
         records = knowledge.memory.retrieve(frozenset(args["features"]), kinds=types)
