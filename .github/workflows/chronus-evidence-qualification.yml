@@ -56,12 +56,15 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: chronus-test-evidence
-          path: evidence
+          # Both junit.xml and evidence/test-evidence.json are rooted at checkout.
+          path: .
       - name: Verify GitHub attestation
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh attestation verify evidence/test-evidence.json --repo "${{ github.repository }}"
       - name: Evaluate verified evidence and claims
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           python scripts/ci/evaluate_attested.py --evidence evidence/test-evidence.json --expected-commit "${{ github.sha }}" --expected-run-id "${{ github.run_id }}" --repository "${{ github.repository }}" --output manifests/ci-verdict.json
       - uses: actions/upload-artifact@v4
