@@ -297,6 +297,23 @@ def test_sqlite_rejects_unique_replacement_for_nonunique_expiry_index(
     monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
 
 
+def test_sqlite_rejects_unexpected_write_trigger(tmp_path, monkeypatch):
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "sqlite")
+    db_path = tmp_path / "api.sqlite3"
+    monkeypatch.setenv("CHRONUS_API_DB_PATH", str(db_path))
+    with state.connection():
+        pass
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            "CREATE TRIGGER deny_valid_writes BEFORE INSERT ON api_workloads "
+            "BEGIN SELECT RAISE(ABORT, 'blocked'); END"
+        )
+    with pytest.raises(RuntimeError, match="schema changed"):
+        with state.connection():
+            pass
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
+
+
 def test_same_key_different_body_is_409(client):
     _post(client, ALPHA)
     response = _post(client, ALPHA, body={**BODY, "gpu_count": 2})

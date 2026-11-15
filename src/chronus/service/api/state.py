@@ -114,6 +114,41 @@ _SCHEMA_INDEXES = {
 }
 
 
+# Compare the stored DDL to expected service-owned table and index contracts.
+# PRAGMA table_info alone cannot detect CHECK constraints or changed triggers.
+_SCHEMA_SQL = {
+    **{
+        f"api_{name}": (
+            f"CREATE TABLE api_{name} "
+            "(record_id TEXT PRIMARY KEY, tenant_id TEXT, state TEXT, "
+            "created_at TEXT, record_json TEXT NOT NULL)"
+        )
+        for name in _TABLES
+    },
+    **{
+        f"api_{name}_tenant_created": (
+            f"CREATE INDEX api_{name}_tenant_created "
+            f"ON api_{name} (tenant_id, created_at, record_id)"
+        )
+        for name in _TABLES
+    },
+    "api_idempotency": (
+        "CREATE TABLE api_idempotency ("
+        "tenant_id TEXT NOT NULL, key TEXT NOT NULL, body_hash TEXT NOT NULL, "
+        "status INTEGER NOT NULL, body_json TEXT NOT NULL, headers_json TEXT NOT NULL, "
+        "expires REAL NOT NULL, PRIMARY KEY (tenant_id, key))"
+    ),
+    "api_idempotency_expires": (
+        "CREATE INDEX api_idempotency_expires "
+        "ON api_idempotency (expires)"
+    ),
+    "api_rate_limits": (
+        "CREATE TABLE api_rate_limits ("
+        "key TEXT PRIMARY KEY, window_start INTEGER NOT NULL, count INTEGER NOT NULL)"
+    ),
+}
+
+
 def _schema_valid(conn: sqlite3.Connection) -> bool:
     """Validate the exact API schema, not just the names of its objects."""
     objects = {
@@ -122,6 +157,21 @@ def _schema_valid(conn: sqlite3.Connection) -> bool:
         )
     }
     if not _SCHEMA_OBJECTS.issubset(objects):
+        return False
+    entries = {
+        name: (table, sql)
+        for _, name, table, sql in conn.execute(
+            "SELECT type, name, tbl_name, sql FROM sqlite_master"
+        )
+    }
+    if any(entries.get(name, (None, None))[1] != sql for name, sql in _SCHEMA_SQL.items()):
+        return False
+    if any(
+        kind == "trigger" and table in _SCHEMA_SQL
+        for kind, _, table in conn.execute(
+            "SELECT type, name, tbl_name FROM sqlite_master WHERE type = 'trigger'"
+        )
+    ):
         return False
     for pragma, expected in _SCHEMA_LAYOUTS.items():
         actual = tuple(
