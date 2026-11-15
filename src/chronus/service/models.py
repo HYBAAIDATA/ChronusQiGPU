@@ -139,18 +139,18 @@ class WorkloadRequest(BaseModel):
     @field_validator("workload_type", mode="before")
     @classmethod
     def accept_workload_aliases(cls, value: Any) -> Any:
-        if isinstance(value, str):
-            internal = normalize_workload_type(value)
-            return externalize_workload_type(internal)
-        return value
+        if value is None:
+            return value
+        internal = normalize_workload_type(value)
+        return externalize_workload_type(internal)
 
     @field_validator("representation_mode", mode="before")
     @classmethod
     def accept_representation_aliases(cls, value: Any) -> Any:
-        if isinstance(value, str):
-            internal = normalize_representation_mode(value)
-            return externalize_representation_mode(internal)
-        return value
+        if value is None:
+            return value
+        internal = normalize_representation_mode(value)
+        return externalize_representation_mode(internal)
 
     @field_validator("tenant_id")
     @classmethod
@@ -159,13 +159,13 @@ class WorkloadRequest(BaseModel):
             raise ValueError("tenant_id must be a non-empty string")
         return v.strip()
 
-    model_config = ConfigDict(use_enum_values=True)
+    model_config = ConfigDict(use_enum_values=True, validate_default=True)
 
     def internal_workload_type(self) -> str:
-        return normalize_workload_type(str(self.workload_type))
+        return normalize_workload_type(self.workload_type)
 
     def internal_representation_mode(self) -> str:
-        return normalize_representation_mode(str(self.representation_mode))
+        return normalize_representation_mode(self.representation_mode)
 
 
 class WorkloadResponse(BaseModel):
@@ -213,21 +213,21 @@ class WorkloadResponse(BaseModel):
         description="True when the tier contract is suspended after envelope violation",
     )
 
-    model_config = ConfigDict(use_enum_values=True)
+    model_config = ConfigDict(use_enum_values=True, validate_default=True)
 
     @field_validator("workload_type", mode="before")
     @classmethod
     def seal_workload_type(cls, value: Any) -> Any:
-        if isinstance(value, str):
-            return externalize_workload_type(normalize_workload_type(value))
-        return value
+        if value is None:
+            return value
+        return externalize_workload_type(normalize_workload_type(value))
 
     @field_validator("representation_mode", mode="before")
     @classmethod
     def seal_representation_mode(cls, value: Any) -> Any:
-        if isinstance(value, str):
-            return externalize_representation_mode(normalize_representation_mode(value))
-        return value
+        if value is None:
+            return value
+        return externalize_representation_mode(normalize_representation_mode(value))
 
     @field_validator("error_message")
     @classmethod

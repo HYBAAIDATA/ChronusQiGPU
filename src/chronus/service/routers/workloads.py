@@ -45,9 +45,15 @@ def _sealed_error_message(message: str) -> str:
     return message
 
 
-def _attach_tier_fields(workload_type: str) -> dict:
-    """Qualify sealed scaling class; other types leave tier fields empty."""
-    internal = normalize_workload_type(str(workload_type))
+def _attach_tier_fields(workload_type: object, *, status: WorkloadStatus) -> dict:
+    """Attach class-level reference-model qualification for scaling.v1.
+
+    This is explicitly *not* a claim that the selected execution backend was
+    re-probed for this submission. Only attach on COMPLETED responses.
+    """
+    if status != WorkloadStatus.COMPLETED:
+        return {}
+    internal = normalize_workload_type(workload_type)
     if internal != INTERNAL_SCALING_WORKLOAD:
         return {}
     # Deterministic seed from class name — same class ⇒ same evidence.
@@ -61,6 +67,7 @@ def _attach_tier_fields(workload_type: str) -> dict:
         "tier_contract_version": public["tier_contract_version"],
         "tier_suspended": public["suspended"],
         "metadata_tier_economics": public["economics"],
+        "metadata_qualification_scope": public["qualification_scope"],
     }
 
 _workload_ed25519_signer = receipt_signer
@@ -240,11 +247,14 @@ async def submit_workload(
             ).model_dump(),
         ) from exc
 
-    tier_fields = _attach_tier_fields(str(request.workload_type))
+    tier_fields = _attach_tier_fields(request.workload_type, status=backend_status)
     economics = tier_fields.pop("metadata_tier_economics", None)
+    qualification_scope = tier_fields.pop("metadata_qualification_scope", None)
     metadata = dict(request.metadata or {})
     if economics is not None:
         metadata["tier_economics"] = economics
+    if qualification_scope is not None:
+        metadata["qualification_scope"] = qualification_scope
     # Apply relative price weight when a measured tier is present.
     if economics is not None and ccu_cost is None:
         ccu_cost = float(economics.get("relative_price_weight", 1.0))

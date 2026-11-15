@@ -9,13 +9,16 @@ Customer-visible surfaces (API, product console, sealed error messages) expose
 - `envelope` — max residual as a function of input size
 - `qualification_evidence_hash` — hash of the qualification transcript
 - `tier_contract_version` — envelope contract version
+- `qualification_scope` — currently `reference_model_class` (class-level harness
+  measurement; not a claim that the selected execution backend was re-probed
+  for that submission)
 
 When asked how scaling works, the external answer is:
 
 > tier class is assigned by measured convergence behavior under our qualification harness
 
-Legacy workload wire name `LUCAS_PV_SCALING` is accepted on ingress and emitted
-as `scaling.v1`.
+Legacy workload wire name for the scaling class is accepted on ingress and
+emitted as `scaling.v1`.
 
 ## Internal posture
 

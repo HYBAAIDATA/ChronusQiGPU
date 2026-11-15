@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
-from decimal import Decimal, getcontext
+from decimal import Decimal, localcontext
 from typing import Any, Callable, Sequence
 
 from chronus.core.seal import assert_sealed, external_behavior_blurb
@@ -21,7 +21,7 @@ from chronus.qualification.tiers import (
     economics_for_tier,
 )
 
-getcontext().prec = 80
+_DECIMAL_PREC = 80
 
 # Internal probe identity — never emitted on external surfaces.
 _INTERNAL_PROBE_FAMILY = "metallic_sequence_residual_v1"
@@ -45,6 +45,9 @@ class QualificationResult:
             "tier_contract_version": self.contract.tier_contract_version,
             "suspended": self.contract.suspended,
             "tier_assignment_basis": external_behavior_blurb(),
+            # Class-level reference-model measurement — not a claim that this
+            # submission's selected backend was re-probed end-to-end.
+            "qualification_scope": "reference_model_class",
             "economics": self.economics,
         }
         assert_sealed(json.dumps(payload), context="qualification public view")
@@ -165,70 +168,76 @@ class QualificationHarness:
         degrade: bool = False,
         signer: Callable[[bytes], str] | None = None,
     ) -> QualificationResult:
-        probe_sizes = tuple(sizes) if sizes is not None else _default_probe_sizes(seed)
-        residuals = [self._residual_fn(n) for n in probe_sizes]
-        if degrade:
-            # Deliberately inflate residuals so classification drops a tier.
-            residuals = [r + Decimal("10") + Decimal(i) for i, r in enumerate(residuals)]
-        fit = _fit_ratios(probe_sizes, residuals)
-        tier = _classify(fit, degraded=degrade)
+        with localcontext() as ctx:
+            ctx.prec = _DECIMAL_PREC
+            probe_sizes = tuple(sizes) if sizes is not None else _default_probe_sizes(seed)
+            residuals = [self._residual_fn(n) for n in probe_sizes]
+            if degrade:
+                # Deliberately inflate residuals so classification drops a tier.
+                residuals = [
+                    r + Decimal("10") + Decimal(i) for i, r in enumerate(residuals)
+                ]
+            fit = _fit_ratios(probe_sizes, residuals)
+            tier = _classify(fit, degraded=degrade)
 
-        bound_points = tuple(
-            (int(size), format(residual, "f")) for size, residual in zip(probe_sizes, residuals)
-        )
-        # Audit transcript — FULL provenance (mechanism names allowed here).
-        audit_body = {
-            "workload_class": workload_class,
-            "probe_family": self._probe_family,
-            "seed": seed,
-            "sizes": list(probe_sizes),
-            "residuals": [format(r, "f") for r in residuals],
-            "fit": {k: format(v, "f") for k, v in fit.items()},
-            "tier": tier.value,
-            "tier_contract_version": TIER_CONTRACT_VERSION,
-            "degraded_probe": degrade,
-            "internal_identities": {
-                "sequence": "L_n",
-                "cross_check": "L_n = F_{n-1} + F_{n+1}",
-                "float64_boundary_index": 70,
-            },
-        }
-        evidence_hash = _sha256_hex(audit_body)
-        signature = (signer or self._default_signer)(_stable_json(audit_body))
-        audit_transcript = {
-            **audit_body,
-            "evidence_hash": evidence_hash,
-            "signature": signature,
-        }
+            bound_points = tuple(
+                (int(size), format(residual, "f"))
+                for size, residual in zip(probe_sizes, residuals)
+            )
+            # Audit transcript — FULL provenance (mechanism names allowed here).
+            audit_body = {
+                "workload_class": workload_class,
+                "probe_family": self._probe_family,
+                "seed": seed,
+                "sizes": list(probe_sizes),
+                "residuals": [format(r, "f") for r in residuals],
+                "fit": {k: format(v, "f") for k, v in fit.items()},
+                "tier": tier.value,
+                "tier_contract_version": TIER_CONTRACT_VERSION,
+                "degraded_probe": degrade,
+                "qualification_scope": "reference_model_class",
+                "internal_identities": {
+                    "sequence": "L_n",
+                    "cross_check": "L_n = F_{n-1} + F_{n+1}",
+                    "float64_boundary_index": 70,
+                },
+            }
+            evidence_hash = _sha256_hex(audit_body)
+            signature = (signer or self._default_signer)(_stable_json(audit_body))
+            audit_transcript = {
+                **audit_body,
+                "evidence_hash": evidence_hash,
+                "signature": signature,
+            }
 
-        suspended = tier == Tier.SUSPENDED
-        contract = TierContract(
-            tier=tier,
-            tier_contract_version=TIER_CONTRACT_VERSION,
-            residual_bound_by_size=bound_points,
-            qualification_evidence_hash=evidence_hash,
-            suspended=suspended,
-        )
-        economics = economics_for_tier(tier).to_public_dict()
-        # Strip internal-only keys from economics public dict if any leak — currently clean.
-        public_view = {
-            "tier": tier.value,
-            "qualification_evidence_hash": evidence_hash,
-            "envelope": contract.to_public_dict()["envelope"],
-            "tier_contract_version": TIER_CONTRACT_VERSION,
-            "suspended": suspended,
-            "tier_assignment_basis": external_behavior_blurb(),
-            "economics": economics,
-        }
-        assert_sealed(json.dumps(public_view), context="qualification public_view")
-        return QualificationResult(
-            tier=tier,
-            contract=contract,
-            evidence_hash=evidence_hash,
-            audit_transcript=audit_transcript,
-            public_view=public_view,
-            economics=economics,
-        )
+            suspended = tier == Tier.SUSPENDED
+            contract = TierContract(
+                tier=tier,
+                tier_contract_version=TIER_CONTRACT_VERSION,
+                residual_bound_by_size=bound_points,
+                qualification_evidence_hash=evidence_hash,
+                suspended=suspended,
+            )
+            economics = economics_for_tier(tier).to_public_dict()
+            public_view = {
+                "tier": tier.value,
+                "qualification_evidence_hash": evidence_hash,
+                "envelope": contract.to_public_dict()["envelope"],
+                "tier_contract_version": TIER_CONTRACT_VERSION,
+                "suspended": suspended,
+                "tier_assignment_basis": external_behavior_blurb(),
+                "qualification_scope": "reference_model_class",
+                "economics": economics,
+            }
+            assert_sealed(json.dumps(public_view), context="qualification public_view")
+            return QualificationResult(
+                tier=tier,
+                contract=contract,
+                evidence_hash=evidence_hash,
+                audit_transcript=audit_transcript,
+                public_view=public_view,
+                economics=economics,
+            )
 
     def reverify_contract(self, result: QualificationResult) -> TierContract:
         """Re-run the same seed/sizes; suspend on envelope violation."""

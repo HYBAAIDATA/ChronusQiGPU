@@ -47,27 +47,53 @@ INTERNAL_TO_EXTERNAL_REPRESENTATION: dict[str, str] = {
 }
 
 
-def normalize_workload_type(value: str) -> str:
+def _as_wire_str(value: object) -> str:
+    """Coerce enum defaults / instances to their wire string value."""
+    if hasattr(value, "value") and isinstance(getattr(value, "value"), str):
+        return value.value  # type: ignore[no-any-return]
+    if isinstance(value, str):
+        return value
+    raise ValueError(f"expected string or enum, got {type(value).__name__}")
+
+
+def normalize_workload_type(value: object) -> str:
     """Map any accepted wire value to the internal provenance identifier."""
-    if not isinstance(value, str) or not value:
+    text = _as_wire_str(value)
+    if not text:
         raise ValueError("workload_type must be a non-empty string")
-    if value in EXTERNAL_TO_INTERNAL_WORKLOAD:
-        return EXTERNAL_TO_INTERNAL_WORKLOAD[value]
-    return value
+    if text in EXTERNAL_TO_INTERNAL_WORKLOAD:
+        return EXTERNAL_TO_INTERNAL_WORKLOAD[text]
+    return text
 
 
-def externalize_workload_type(internal: str) -> str:
+def externalize_workload_type(internal: object) -> str:
     """Map an internal identifier to the sealed external class name."""
-    return INTERNAL_TO_EXTERNAL_WORKLOAD.get(internal, internal)
+    text = _as_wire_str(internal)
+    return INTERNAL_TO_EXTERNAL_WORKLOAD.get(text, text)
 
 
-def normalize_representation_mode(value: str) -> str:
-    if not isinstance(value, str) or not value:
+def normalize_representation_mode(value: object) -> str:
+    text = _as_wire_str(value)
+    if not text:
         raise ValueError("representation_mode must be a non-empty string")
-    if value in EXTERNAL_TO_INTERNAL_REPRESENTATION:
-        return EXTERNAL_TO_INTERNAL_REPRESENTATION[value]
-    return value
+    if text in EXTERNAL_TO_INTERNAL_REPRESENTATION:
+        return EXTERNAL_TO_INTERNAL_REPRESENTATION[text]
+    return text
 
 
-def externalize_representation_mode(internal: str) -> str:
-    return INTERNAL_TO_EXTERNAL_REPRESENTATION.get(internal, internal)
+def externalize_representation_mode(internal: object) -> str:
+    text = _as_wire_str(internal)
+    return INTERNAL_TO_EXTERNAL_REPRESENTATION.get(text, text)
+
+
+def normalize_pointer_operation(operation: str) -> str:
+    """Map sealed pointer ops to internal uppercase dispatch keys."""
+    text = operation.strip()
+    if not text:
+        raise ValueError("operation must be a non-empty string")
+    # Sealed class names stay lowercase with dots; map before uppercasing.
+    if text in EXTERNAL_TO_INTERNAL_WORKLOAD:
+        return EXTERNAL_TO_INTERNAL_WORKLOAD[text]
+    if text.lower() in EXTERNAL_TO_INTERNAL_WORKLOAD:
+        return EXTERNAL_TO_INTERNAL_WORKLOAD[text.lower()]
+    return text.upper()

@@ -61,6 +61,23 @@ class AliasTests(unittest.TestCase):
         self.assertEqual(req.workload_type, WorkloadType.SCALING_V1.value)
         self.assertEqual(req.internal_workload_type(), "LUCAS_PV_SCALING")
 
+    def test_default_workload_type_normalizes_to_backend_value(self) -> None:
+        req = WorkloadRequest(payload_bytes=b'{"index":1}', tenant_id="tenant-test")
+        self.assertEqual(req.workload_type, WorkloadType.EXACT_Q5_ALGEBRAIC.value)
+        self.assertEqual(req.internal_workload_type(), "EXACT_Q5_ALGEBRAIC")
+        # Enum instance must not stringify as "WorkloadType.EXACT_Q5_ALGEBRAIC".
+        self.assertEqual(
+            normalize_workload_type(WorkloadType.EXACT_Q5_ALGEBRAIC),
+            "EXACT_Q5_ALGEBRAIC",
+        )
+
+    def test_pointer_operation_alias_survives_uppercasing(self) -> None:
+        from chronus.core.workload_alias import normalize_pointer_operation
+
+        self.assertEqual(normalize_pointer_operation("scaling.v1"), "LUCAS_PV_SCALING")
+        self.assertEqual(normalize_pointer_operation("SCALING.V1"), "LUCAS_PV_SCALING")
+        self.assertEqual(normalize_pointer_operation("pv_lattice_fold"), "PV_LATTICE_FOLD")
+
 
 class HarnessTests(unittest.TestCase):
     def test_same_seed_byte_identical_evidence(self) -> None:
@@ -74,6 +91,22 @@ class HarnessTests(unittest.TestCase):
             json.dumps(second.public_view, sort_keys=True),
         )
         self.assertEqual(first.tier, Tier.GEOMETRIC)
+        self.assertEqual(first.public_view["qualification_scope"], "reference_model_class")
+
+    def test_localcontext_isolates_decimal_precision(self) -> None:
+        from decimal import getcontext
+        from concurrent.futures import ThreadPoolExecutor
+
+        harness = QualificationHarness()
+        baseline = harness.qualify("LUCAS_PV_SCALING", seed=7).evidence_hash
+
+        def worker() -> str:
+            getcontext().prec = 28  # hostile caller/thread context
+            return QualificationHarness().qualify("LUCAS_PV_SCALING", seed=7).evidence_hash
+
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            other = pool.submit(worker).result()
+        self.assertEqual(baseline, other)
 
     def test_degraded_class_drops_tier(self) -> None:
         harness = QualificationHarness()
