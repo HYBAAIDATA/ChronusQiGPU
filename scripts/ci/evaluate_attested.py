@@ -89,7 +89,16 @@ def main() -> int:
     target.parent.mkdir(parents=True,exist_ok=True)
     target.write_text(json.dumps(output,indent=2,sort_keys=True)+"\n")
     print(json.dumps(output,sort_keys=True))
-    return 0 if verdict.status=="PASS" else 1
+    # Evaluation integrity and product admission are deliberately separate.
+    # A verified evidence bundle may truthfully produce UNQUALIFIED while the
+    # workflow itself succeeds. Release publication must inspect output.status
+    # and require PASS separately.
+    evaluation_integrity_ok = bool(attestation_ok and identity_ok)
+    if a.product_gates:
+        evaluation_integrity_ok = bool(
+            evaluation_integrity_ok and gate_identity_ok and gate_attestation_ok
+        )
+    return 0 if evaluation_integrity_ok else 1
 
 if __name__=="__main__":
     raise SystemExit(main())
