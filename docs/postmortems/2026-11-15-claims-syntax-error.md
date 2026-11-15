@@ -103,3 +103,8 @@ all.
 - Audit whether other `main` commits are similarly unverified. The same
   query used above applies to any commit on `main` that a claim or release
   decision relies on.
+- `frontend/lib/redis.ts` and `frontend/lib/subdomains.ts` were untracked
+  files present in no branch. `subdomains.ts` imported `redis.ts` and
+  nothing imported either of them, so they were deleted. They were not
+  committed, so they leave no trace in the history; the deletion is
+  recorded here so the decision is visible.
