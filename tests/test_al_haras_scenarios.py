@@ -172,6 +172,11 @@ class TestSovereignGovernanceEngine:
         kernel = ALHarasTopologicalKernel("UK_DEFENCE_CYBER")
         boot = kernel.boot_kernel()
         assert boot["boot_status"] == "SELF_TEST_PASSED"
+        assert set(boot["self_tests"]) >= {
+            "braid_relations_exact",
+            "reed_solomon_repair_verified",
+            "paley_257_ramanujan_certified",
+        }
         assert all(boot["self_tests"].values())
 
 
