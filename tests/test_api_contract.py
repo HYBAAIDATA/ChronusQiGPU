@@ -208,15 +208,24 @@ with state.connection() as conn:
     assert conn.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
     assert conn.execute("SELECT count(*) FROM api_workloads").fetchone()[0] == 0
 """
-    children = [
-        subprocess.Popen(
-            [sys.executable, "-c", script],
-            env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-        )
-        for _ in range(6)
-    ]
-    results = [child.communicate(timeout=60) for child in children]
-    assert all(child.returncode == 0 for child in children), results
+    children = []
+    try:
+        for _ in range(6):
+            children.append(
+                subprocess.Popen(
+                    [sys.executable, "-c", script],
+                    env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                )
+            )
+        results = [child.communicate(timeout=60) for child in children]
+        assert all(child.returncode == 0 for child in children), results
+    finally:
+        # A failed start or timeout must never leak a worker or hold a lock.
+        for child in children:
+            if child.poll() is None:
+                child.kill()
+        for child in children:
+            child.wait(timeout=15)
     assert db_path.exists()
     assert (tmp_path / "multiprocess.sqlite3.bootstrap.lock").exists()
 

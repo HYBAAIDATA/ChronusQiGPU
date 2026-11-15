@@ -255,10 +255,26 @@ def _interprocess_bootstrap_lock(path: str) -> Iterator[None]:
         if os.name == "nt":
             import msvcrt
 
-            os.lseek(fd, 0, os.SEEK_SET)
-            os.write(fd, b"0")
-            os.lseek(fd, 0, os.SEEK_SET)
-            msvcrt.locking(fd, msvcrt.LK_LOCK, 1)
+            # Windows rejects writes to bytes already locked by other
+            # workers. Lock byte zero without a preliminary write, using
+            # bounded nonblocking retries rather than the CRT's ten retries.
+            import errno
+
+            deadline = time.monotonic() + 30
+            while True:
+                os.lseek(fd, 0, os.SEEK_SET)
+                try:
+                    msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+                    break
+                except OSError as exc:
+                    if (
+                        exc.errno not in (errno.EACCES, errno.EAGAIN, errno.EDEADLK)
+                        and getattr(exc, "winerror", None) != 33
+                    ):
+                        raise
+                    if time.monotonic() >= deadline:
+                        raise TimeoutError("SQLite bootstrap lock contention exceeded 30s") from exc
+                    time.sleep(0.05)
         else:
             import fcntl
 
