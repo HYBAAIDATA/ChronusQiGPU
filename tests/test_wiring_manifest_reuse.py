@@ -83,3 +83,42 @@ def test_manifest_self_referencing_symlink_is_not_reused(tmp_path):
     entry = _entry(source)
     assert _already_wired([entry], bundle) == ([], [entry])
     assert build_wiring_plan([entry], bundle).canonical == [entry]
+
+
+def test_manifest_non_mapping_root_is_ignored(tmp_path):
+    source = tmp_path / "source.py"
+    source.write_bytes(b"source")
+    bundle = tmp_path / "wired"
+    bundle.mkdir()
+    (bundle / "module.py").write_bytes(b"source")
+    entry = _entry(source)
+    for invalid_root in ("[]", "null", "42", '"string"'):
+        (bundle / "__wiring_manifest.json").write_text(invalid_root, encoding="utf-8")
+        assert _already_wired([entry], bundle) == ([], [entry])
+        assert build_wiring_plan([entry], bundle).canonical == [entry]
+
+
+def test_in_bundle_symlink_alias_is_rejected(tmp_path):
+    source = tmp_path / "source.py"
+    source.write_bytes(b"matching")
+    bundle = tmp_path / "wired"
+    bundle.mkdir()
+    (bundle / "other.py").write_bytes(b"matching")
+    (bundle / "module.py").symlink_to("other.py")
+    _manifest(bundle, "module.py", b"matching")
+    entry = _entry(source)
+    assert _already_wired([entry], bundle) == ([], [entry])
+
+
+def test_symlinked_bundle_ancestor_is_rejected(tmp_path):
+    source = tmp_path / "source.py"
+    source.write_bytes(b"matching")
+    bundle = tmp_path / "wired"
+    bundle.mkdir()
+    real = bundle / "real"
+    real.mkdir()
+    (real / "module.py").write_bytes(b"matching")
+    (bundle / "nested").symlink_to("real", target_is_directory=True)
+    _manifest(bundle, "nested/module.py", b"matching")
+    entry = _entry(source, rel="nested/module.py")
+    assert _already_wired([entry], bundle) == ([], [entry])
