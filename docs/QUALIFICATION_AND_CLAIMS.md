@@ -18,6 +18,18 @@
 | Multi-region durability/failover | deployment-specific | No exact-current multi-region evidence | HELD |
 | Regulatory/accreditation claims | none awarded by repository | external assessment required | HELD |
 
+## Software-base qualification
+
+The distributable `software-base` profile has a direct executable verifier in `scripts/ci/build_product_gates.py`. It evaluates the five mandatory gates from live software behavior rather than from labels or test counts:
+
+- dual Ed25519 + ML-DSA-65 receipt verification;
+- receipt tamper rejection;
+- replay/reordering rejection;
+- fail-closed claim-register validation;
+- fresh-open THESEUS custody and journal continuity.
+
+The product-gate JSON and the bounded test-evidence JSON are attested independently. `scripts/ci/evaluate_attested.py` binds both to the same commit/run and emits the profile verdict. A successful software-base verdict does **not** promote the external customer-held custody claim; that claim remains held until a deployment profile supplies its own verified external-custody fact.
+
 ## Gate binding
 
 The executable claim mapping in `chronus.core.claims.CLAIM_GATES` binds claims to mandatory gates. A non-PASS gate or absent verified attestation keeps the associated claim held.
@@ -28,6 +40,18 @@ Mandatory gates:
 - `RS-REPLAY`
 - `FN-CLAIMS`
 - `FN-CUSTODY`
+
+## Release publication
+
+`scripts/ci/require_release_qualification.py` is invoked before build/publication from `.github/workflows/release.yml`. It requires:
+
+1. a successful full `CI` push run for the exact release commit on `main`;
+2. a successful qualification push run for that same commit;
+3. a verified GitHub attestation for the qualification verdict bound to the selected run;
+4. `status=PASS`, no blockers, all mandatory gates PASS and the required claims for the declared profile supported;
+5. verified ML-DSA-65 software signing and THESEUS custody facts for the declared profile.
+
+A tag on an unqualified commit is therefore blocked before distribution build.
 
 ## Custody policy
 
