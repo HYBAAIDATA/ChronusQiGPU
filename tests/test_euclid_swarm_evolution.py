@@ -15,7 +15,8 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from euclid.capability_qualification import CapabilityQualificationRegistry
 from euclid.swarm_evolution import (
     LEADER_SKILLS, QualifiedAgent, SwarmActivator, SwarmJournal,
-    SwarmMission, SwarmRefused, SwarmTask,
+    SwarmMission, SwarmRefused, SwarmTask, VerificationAttestation,
+    verification_payload,
 )
 
 SHA = "a" * 40
@@ -26,7 +27,8 @@ DEADLINE = NOW + 10000
 class ScopedQualification(CapabilityQualificationRegistry):
     """Test-only controlled registry subclass; never represents training evidence."""
     def __init__(self):
-        super().__init__(trusted_verifiers={"test": Ed25519PrivateKey.generate().public_key()})
+        self.signer = Ed25519PrivateKey.generate()
+        super().__init__(trusted_verifiers={"test": self.signer.public_key()})
         self.allowed = set()
         self.calls = []
 
@@ -35,6 +37,13 @@ class ScopedQualification(CapabilityQualificationRegistry):
         if (claim_id, task_scope, authority) not in self.allowed:
             raise PermissionError("not promoted")
         return True
+
+    def attest(self, mission, item, result):
+        return VerificationAttestation(
+            "test", self.signer.sign(
+                verification_payload(mission, item, result)
+            ).hex(),
+        )
 
 
 def agent(name, skills, scope="mission"):
@@ -75,9 +84,10 @@ class SwarmTests(unittest.TestCase):
         self.dispatched.append(item.task_id)
         return {"task": item.task_id, "accepted": True}
 
-    @staticmethod
-    def verify(item, result):
-        return result["task"] == item.task_id and result["accepted"] is True
+    def verify(self, active_mission, item, result):
+        if result["task"] != item.task_id or result["accepted"] is not True:
+            raise AssertionError("invalid test result")
+        return self.policy.attest(active_mission, item, result)
 
     def test_end_to_end_dependencies_are_ordered(self):
         plan = mission((task("c", dependencies=("b",)), task("a"),
