@@ -28,7 +28,7 @@ The source is being closed out under an **evidence-gated production posture**.
 
 A source constant, successful local test run, provider name or historical benchmark cannot award production admission. The current qualification path requires the exact release commit, verified CI evidence and all mandatory product gates.
 
-The mandatory product gates are defined in `src/chronus/core/qualification.py`. The evidence evaluator is `scripts/ci/evaluate_attested.py`.
+The mandatory product gates are defined in `src/chronus/core/qualification.py`. The software-base product verifier is `scripts/ci/build_product_gates.py`; `scripts/ci/evaluate_attested.py` verifies the separately attested test and product-gate artifacts. A tag can publish only after `scripts/ci/require_release_qualification.py` verifies successful full CI and an attested `PASS` qualification for the exact `main` commit.
 
 The previous self-certifying paths have been removed from the close-out branch:
 - the package facade no longer forces a production-qualified result;
@@ -42,6 +42,7 @@ Current posture and close-out details:
 - [Test and benchmark provenance](docs/production/TEST_AND_BENCHMARK_PROVENANCE.md)
 - [Machine-readable capability manifest](capabilities/triad_production_manifest.json)
 - [Historical evidence migration register](evidence/migration/chronus_historical_evidence_register.json)
+- [Deployment profile contract](capabilities/deployment_profiles.json)
 
 ## Durable custody
 
@@ -62,7 +63,7 @@ The maintained tensor runtime now includes:
 - measured-input energy comparison;
 - profile-driven routing from verified observations;
 - selective folded-state inference;
-- a physical GPU-only OpenCL tensor backend that fails closed when a qualifying GPU is absent.
+- physical OpenCL, CUDA and Apple Metal tensor backends that require device discovery, kernel readiness and a known-answer self-test before becoming eligible; none silently fall back to CPU.
 
 Physical execution and performance remain device-specific evidence. An adapter or kernel being present is not a physical benchmark.
 
@@ -86,14 +87,20 @@ python -m pytest -q
 Focused triad close-out tests:
 
 ```bash
-python -m pytest   tests/test_triad_production.py   tests/test_triad_capability_manifest.py   tests/test_geodesic_tensor_migration.py -q
+python -m pytest -q \
+  tests/test_triad_production.py \
+  tests/test_triad_capability_manifest.py \
+  tests/test_geodesic_tensor_migration.py \
+  tests/test_qualification.py \
+  tests/test_product_gates.py \
+  tests/test_release_gate.py
 ```
 
 ## CI
 
 GitHub Actions workflows in `.github/workflows/` are active for this repository. They cover the main regression suite, packaging, acceleration checks, storage evidence, mining checks, frontend builds, container restart smoke tests, release/evidence qualification and other bounded gates.
 
-Workflow existence is not a passing result; use the exact run associated with the release SHA.
+Workflow existence is not a passing result; use the exact run associated with the release SHA. The release workflow requires both a successful full `CI` push run and a successful `Chronus V2 evidence qualification` push run for that exact `main` commit before building or publishing.
 
 Azure deployment assets are also present. Their presence does not establish that a deployment is running.
 
