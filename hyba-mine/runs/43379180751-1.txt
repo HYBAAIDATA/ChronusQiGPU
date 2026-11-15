@@ -1,0 +1,6 @@
+HYBA Mine deploy run 43379180751 attempt 1
+commit da46dbcb05e329f9110424efdc4cae4e02d4e55e ref refs/heads/hyba-mine/control event push at 2026-11-13T06:30:36Z
+outcomes: requested=failure build=skipped self-test=skipped azure-sign-in=skipped registry=skipped host=skipped follow=skipped examine=skipped
+
+== requested action
+::error::unknown pools ''
