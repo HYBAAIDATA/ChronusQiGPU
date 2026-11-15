@@ -24,7 +24,7 @@ def scan(root: Path, policy: dict) -> list[str]:
     modules = policy["legacy_modules"]
     if not isinstance(modules, dict) or not modules:
         raise ValueError("legacy module inventory is empty")
-    actual = {p.name for p in (root / relroot).glob("*.py") if p.is_file()}
+    actual = {p.relative_to(root / relroot).as_posix() for p in (root / relroot).rglob("*.py") if p.is_file()}
     recorded = set(modules)
     problems = [
         f"{relroot}/{name}: new legacy quantum-labelled module needs explicit classification"
