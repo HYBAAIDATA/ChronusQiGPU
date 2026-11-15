@@ -46,7 +46,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      attestations: read
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -64,6 +65,10 @@ jobs:
       - name: Evaluate verified evidence and claims
         run: |
           python scripts/ci/evaluate_attested.py --evidence evidence/test-evidence.json --expected-commit "${{ github.sha }}" --expected-run-id "${{ github.run_id }}" --repository "${{ github.repository }}" --output manifests/ci-verdict.json
+      - name: Attest the evaluated qualification verdict
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: manifests/ci-verdict.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
