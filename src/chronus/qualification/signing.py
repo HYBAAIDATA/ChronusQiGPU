@@ -148,16 +148,19 @@ def _write_all(fd: int, payload: bytes) -> None:
 def _fsync_dir(directory: Path) -> None:
     """Durably record directory entries (required after link/create).
 
-    Prefer ``O_DIRECTORY`` when present. On platforms that cannot open a
-    directory for fsync (notably Windows), log and return — the seed file
-    itself was already ``fsync``'d before ``link``.
+    Prefer ``O_DIRECTORY`` when present. Windows cannot open a directory for
+    fsync — log and return there (the seed file itself was already
+    ``fsync``'d before ``link``). On POSIX, directory-open failures propagate
+    so publication cannot claim durability it did not establish.
     """
     flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
     try:
         dir_fd = os.open(str(directory), flags)
     except OSError as exc:
-        LOG.warning("cannot fsync %s: %s", directory, exc)
-        return
+        if os.name != "posix":
+            LOG.warning("cannot fsync %s: %s", directory, exc)
+            return
+        raise
     try:
         os.fsync(dir_fd)
     finally:

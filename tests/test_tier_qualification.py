@@ -580,12 +580,22 @@ class ForgeryAndPrecisionTests(unittest.TestCase):
                 seed_path.parent.mkdir(parents=True, exist_ok=True)
                 target = Path(tmp) / "attacker.seed"
                 target.write_text("aa" * 32, encoding="ascii")
-                os.symlink(str(target), str(seed_path))
-                with self.assertRaises(ValueError):
-                    get_qualification_signer()
-                seed_path.unlink()
-                reset_qualification_signer()
+                # Symlink creation needs SeCreateSymbolicLinkPrivilege / Developer
+                # Mode on Windows; skip only that gate when unavailable.
+                try:
+                    os.symlink(str(target), str(seed_path))
+                except OSError as exc:
+                    symlink_exc = exc
+                else:
+                    symlink_exc = None
+                if symlink_exc is None:
+                    with self.assertRaises(ValueError):
+                        get_qualification_signer()
+                    seed_path.unlink()
+                    reset_qualification_signer()
                 # Incomplete / empty seed left by a crashed writer must fail closed.
+                if seed_path.exists() or seed_path.is_symlink():
+                    seed_path.unlink()
                 fd = os.open(
                     str(seed_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600
                 )
@@ -596,6 +606,11 @@ class ForgeryAndPrecisionTests(unittest.TestCase):
                 reset_qualification_signer()
                 # Group/world-readable seed is refused.
                 if not hasattr(os, "fchmod"):
+                    if symlink_exc is not None:
+                        self.skipTest(
+                            f"symlink unavailable ({symlink_exc}); "
+                            "os.fchmod unavailable on this platform"
+                        )
                     self.skipTest("os.fchmod unavailable on this platform")
                 fd = os.open(
                     str(seed_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600

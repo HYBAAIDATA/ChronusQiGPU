@@ -25,7 +25,9 @@ import hashlib
 import ipaddress
 import json
 import os
+import platform
 import ssl
+import subprocess
 import sys
 import time
 from fractions import Fraction
@@ -49,18 +51,40 @@ class Parser(argparse.ArgumentParser):
         sys.exit(4)
 
 
+def _git_head() -> str:
+    """Commit that produced this smoke process; unknown if git is unavailable."""
+    root = Path(__file__).resolve().parents[2]
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=root, text=True
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return "unknown"
+
+
 class Transcript:
     def __init__(self, target: str) -> None:
         self.stamp = time.strftime("%Y%m%dT%H%M%S")
-        self.data: dict = {"schema": "chronus.smoke/1", "target": target,
-                           "started": self.stamp, "steps": [], "jobs": [],
-                           "set_difficulty": [], "submits": []}
+        # Capture execution provenance at run start — not at later bind time.
+        self.data: dict = {
+            "schema": "chronus.smoke/1",
+            "target": target,
+            "started": self.stamp,
+            "git_commit": _git_head(),
+            "host": platform.node(),
+            "steps": [],
+            "jobs": [],
+            "set_difficulty": [],
+            "submits": [],
+        }
 
     def step(self, name: str, ok: bool, detail: str = "", **extra) -> None:
         self.data["steps"].append({"step": name, "ok": ok, "detail": detail,
                                    "at_ms": round(time.monotonic() * 1000), **extra})
 
-    def write(self) -> Path:
+    def write(self, exit_code: int | None = None) -> Path:
+        if exit_code is not None:
+            self.data["exit_code"] = int(exit_code)
         EVIDENCE.mkdir(parents=True, exist_ok=True)
         base = f"{self.data['target']}-{self.stamp}"
         for suffix in range(0, 10_000):
@@ -801,7 +825,7 @@ def main() -> int:
     except Exception as exc:  # malformed pool data must not escape as a traceback
         tx.step("unexpected", False, f"{type(exc).__name__}: {exc}")
         code = 2
-    path = tx.write()
+    path = tx.write(exit_code=code)
     for step in tx.data["steps"]:
         print(f"  [{'ok  ' if step['ok'] else 'FAIL'}] {step['step']}: {step['detail']}")
     print(f"transcript: {path}")

@@ -39,8 +39,14 @@ def _work_roots() -> list[Path]:
 
 
 def _under_onedrive(path: Path) -> bool:
-    parts = {part.lower() for part in path.parts}
-    return any(marker in parts for marker in ONEDRIVE_MARKERS)
+    """True if any path component is OneDrive or ``OneDrive - <org>``."""
+    for part in path.parts:
+        lowered = part.lower()
+        if lowered == "onedrive" or lowered.startswith("onedrive "):
+            return True
+        if lowered.startswith("onedrive-"):  # rare compacted forms
+            return True
+    return False
 
 
 def main() -> int:

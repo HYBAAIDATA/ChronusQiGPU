@@ -21,6 +21,14 @@ class RunnerDoctorTests(unittest.TestCase):
             with patch.object(runner_doctor, "_work_roots", return_value=[fake]):
                 self.assertEqual(runner_doctor.main(), 1)
 
+    def test_org_onedrive_work_path_fails(self) -> None:
+        fake = Path(
+            "/Users/leonn/OneDrive - Contoso/Desktop/actions-runner/_work"
+        )
+        self.assertTrue(runner_doctor._under_onedrive(fake))
+        with patch.object(runner_doctor, "_work_roots", return_value=[fake]):
+            self.assertEqual(runner_doctor.main(), 1)
+
     def test_actions_requires_python_313(self) -> None:
         with patch.dict(os.environ, {"GITHUB_ACTIONS": "true"}, clear=False):
             with patch.object(runner_doctor.sys, "version_info", (3, 12, 3)):
