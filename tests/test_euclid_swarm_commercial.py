@@ -3,14 +3,20 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
 from euclid.commercial.team_orchestrator import CommercialTeamOrchestrator
+from euclid.capability_qualification import CapabilityQualificationRegistry
 from euclid.swarm_evolution import (
     LEADER_SKILLS, QualifiedAgent, SwarmActivator,
     SwarmJournal, SwarmMission, SwarmRefused, SwarmTask,
 )
 
 
-class Policy:
+class Policy(CapabilityQualificationRegistry):
+    def __init__(self):
+        super().__init__(trusted_verifiers={"test": Ed25519PrivateKey.generate().public_key()})
+
     def authorize(self, *, claim_id, source_revision, domain, task_scope, authority):
         if claim_id != "promoted." + authority or domain != "euclid.agent.skill":
             raise PermissionError("not qualified")
