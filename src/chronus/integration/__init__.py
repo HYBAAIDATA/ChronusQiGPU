@@ -92,7 +92,13 @@ class RuntimeDaemon:
     def route_work(self, work_item: Dict[str, Any]) -> Dict[str, Any]:
         """Route work through the fleet (multi-adapter) or single adapter mode."""
         if self.fleet is not None:
-            return self.fleet.executor.execute([work_item])[0]
+            result = self.fleet.executor.submit(WorkUnit.from_wire(work_item))
+            return {
+                "job_id": result.job_id,
+                "output": result.output,
+                "receipt": result.receipt,
+                "verified": result.verified,
+            }
         if self.default_adapter is not None:
             return self.default_adapter.execute(work_item)
         raise RuntimeError("No adapter configured")
