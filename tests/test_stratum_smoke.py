@@ -1,15 +1,20 @@
-"""Regression: smoke and fake pool share little-endian target comparison."""
+"""CI-discovered regressions for scripts/smoke Stratum V1 smoke."""
 
 from __future__ import annotations
 
 import asyncio
 import hashlib
 import json
+import sys
 import unittest
 from io import StringIO
+from pathlib import Path
 from unittest.mock import patch
 
-from fake_pool import (
+SMOKE_DIR = Path(__file__).resolve().parents[1] / "scripts" / "smoke"
+sys.path.insert(0, str(SMOKE_DIR))
+
+from fake_pool import (  # noqa: E402
     DIFF1,
     DIFFICULTY,
     JOB_ID,
@@ -20,7 +25,13 @@ from fake_pool import (
     header,
     network_target,
 )
-from stratum_smoke import meets, parse_host, target_from_difficulty
+from stratum_smoke import (  # noqa: E402
+    Session,
+    Transcript,
+    meets,
+    parse_host,
+    target_from_difficulty,
+)
 
 
 class EndianSmokeTests(unittest.TestCase):
@@ -43,7 +54,6 @@ class EndianSmokeTests(unittest.TestCase):
         self.assertFalse(be)
 
     def test_accept_share_uses_le_and_rejects_unknown_job(self) -> None:
-        # Build a mid-range digest by searching a soft target so LE and BE can diverge.
         soft = 1 << 248
         extranonce1 = "deadbeef"
         hit = None
@@ -58,7 +68,6 @@ class EndianSmokeTests(unittest.TestCase):
         ok, error = accept_share(extranonce1, params, soft)
         self.assertTrue(ok)
         self.assertIsNone(error)
-        # Same nonce under BE would fail; confirm the pool predicate is LE.
         self.assertFalse(int.from_bytes(digest, "big") <= soft)
 
         bad_job = list(params)
@@ -87,32 +96,96 @@ class EndianSmokeTests(unittest.TestCase):
 
 class NotifyRetentionTests(unittest.TestCase):
     def test_call_retains_notify_for_wait_for(self) -> None:
-        from stratum_smoke import Session, Transcript
-
         async def scenario() -> None:
             reader = asyncio.StreamReader()
-            # Minimal writer stub.
-            class W:
-                def write(self, _data): pass
-                async def drain(self): pass
-                def close(self): pass
-                async def wait_closed(self): pass
 
-            tx = Transcript("fake")
-            session = Session(reader, W(), tx)
+            class W:
+                def write(self, _data):
+                    pass
+
+                async def drain(self):
+                    pass
+
+                def close(self):
+                    pass
+
+                async def wait_closed(self):
+                    pass
+
+            session = Session(reader, W(), Transcript("fake"))
             try:
-                # Queue authorize reply + an early notify before the reply id matches.
+                call_task = asyncio.create_task(
+                    session.call("mining.authorize", ["u", "p"], timeout=2.0)
+                )
+                await asyncio.sleep(0)
+                # Notify arrives before the matching RPC reply.
+                reader.feed_data(
+                    (
+                        json.dumps(
+                            {
+                                "id": None,
+                                "method": "mining.notify",
+                                "params": ["early-job"] + ["00"] * 7 + [True],
+                            }
+                        )
+                        + "\n"
+                    ).encode()
+                )
                 reader.feed_data(
                     (json.dumps({"id": 1, "result": True, "error": None}) + "\n").encode()
                 )
-                # Inject notify while call is waiting — feed after starting call via pump path:
-                # send id=1 subscribe-like, then notify then authorize reply.
+                reply = await call_task
+                self.assertTrue(reply.get("result") is True)
+                notify = await session.wait_for("mining.notify", timeout=1.0)
+                self.assertEqual(notify["params"][0], "early-job")
             finally:
-                # Direct unit: stash path
-                session.stash.append({"method": "mining.notify", "params": ["j"] + [None] * 8})
-                got = await session.wait_for("mining.notify", 1)
-                self.assertEqual(got["params"][0], "j")
+                session.alive.clear()
                 session.pump.cancel()
+                try:
+                    await session.pump
+                except (asyncio.CancelledError, Exception):
+                    pass
+
+        asyncio.run(scenario())
+
+    def test_search_stops_when_alive_clears(self) -> None:
+        from stratum_smoke import search_share
+
+        async def scenario() -> None:
+            alive = asyncio.Event()
+            alive.set()
+            job = {
+                "job_id": "j",
+                "prevhash": "00" * 32,
+                "coinb1": "00",
+                "coinb2": "00",
+                "merkle_branch": [],
+                "version": "20000000",
+                "nbits": "1c00ffff",
+                "ntime": "67000000",
+            }
+
+            async def drop():
+                await asyncio.sleep(0.05)
+                alive.clear()
+
+            stopper = asyncio.create_task(drop())
+            with self.assertRaises(ConnectionError):
+                await search_share(
+                    "python",
+                    job,
+                    "deadbeef",
+                    "00000000",
+                    DIFF1,
+                    deadline=time_deadline(),
+                    alive=alive,
+                )
+            await stopper
+
+        def time_deadline() -> float:
+            import time
+
+            return time.monotonic() + 30.0
 
         asyncio.run(scenario())
 

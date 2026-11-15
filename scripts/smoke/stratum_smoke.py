@@ -177,16 +177,22 @@ async def search_share(
     extranonce2: str,
     target: int,
     deadline: float,
+    alive: asyncio.Event | None = None,
 ) -> tuple[int | None, int, str]:
     """Return (nonce_or_None, hashes_evaluated, backend_used).
 
     Runs each batch off the event loop so the Session pump can process
-    set_difficulty / notify pushes during search.
+    set_difficulty / notify pushes during search. Stops when ``alive`` clears
+    (pool disconnect) instead of waiting out the share deadline.
     """
     backend = _resolve_search(backend)
     header76 = build_header(job, extranonce1, extranonce2, 0)[:76]
     hashes = 0
     loop = asyncio.get_running_loop()
+
+    def _still_connected() -> None:
+        if alive is not None and not alive.is_set():
+            raise ConnectionError("pool closed during search")
 
     if backend == "opencl":
         from chronus.execution.opencl_sha256d import OpenCLSha256dMinerBackend
@@ -200,6 +206,7 @@ async def search_share(
         cursor = 0
         batch = 1 << 20
         while time.monotonic() < deadline and cursor < (1 << 32):
+            _still_connected()
             width = min(batch, (1 << 32) - cursor)
             header80 = header76 + b"\x00\x00\x00\x00"
             hits = await loop.run_in_executor(
@@ -215,6 +222,7 @@ async def search_share(
                     return nonce, hashes, backend
             cursor += width
             await asyncio.sleep(0)
+        _still_connected()
         return None, hashes, backend
 
     if backend == "geometric":
@@ -224,6 +232,7 @@ async def search_share(
         cursor = 0
         batch = 1 << 16
         while time.monotonic() < deadline and cursor < (1 << 32):
+            _still_connected()
             width = min(batch, (1 << 32) - cursor)
             result = await loop.run_in_executor(
                 None, miner.solve_header_range, header76, target, cursor, width
@@ -235,11 +244,13 @@ async def search_share(
             if cursor == 0 and hashes >= (1 << 32):
                 break
             await asyncio.sleep(0)
+        _still_connected()
         return None, hashes, backend
 
     nonce = 0
     batch = 4096
     while time.monotonic() < deadline and nonce < (1 << 32):
+        _still_connected()
         end = min(nonce + batch, 1 << 32)
 
         def _python_batch(start: int, stop: int) -> tuple[int | None, int]:
@@ -257,6 +268,7 @@ async def search_share(
             return found, hashes, "python"
         nonce = end
         await asyncio.sleep(0)
+    _still_connected()
     return None, hashes, "python"
 
 
@@ -269,6 +281,8 @@ class Session:
         self.stash: list[dict] = []
         self.next_id = 0
         self.phase = "setup"
+        self.alive = asyncio.Event()
+        self.alive.set()
         self.pump = asyncio.create_task(self._pump(reader))
 
     def _record_push(self, message: dict) -> None:
@@ -309,6 +323,7 @@ class Session:
         except Exception as exc:
             reason = exc
         finally:
+            self.alive.clear()
             # Always wake waiters; include the failure reason when present.
             try:
                 self.queue.put_nowait(None if reason is None else {"_pump_error": repr(reason)})
@@ -452,7 +467,7 @@ async def smoke(args, tx: Transcript) -> int:
         diff_before = len(tx.data["set_difficulty"])
         deadline = time.monotonic() + args.share_seconds
         found, hashes, used = await search_share(
-            args.search, job, extranonce1, extranonce2, target, deadline
+            args.search, job, extranonce1, extranonce2, target, deadline, alive=session.alive
         )
         tx.data["search_backend"] = used
         # Drain any pushes that arrived while the last batch ran.
@@ -460,20 +475,34 @@ async def smoke(args, tx: Transcript) -> int:
         work_changed = len(tx.data["jobs"]) > jobs_before or any(
             e["phase"] == "search" for e in tx.data["set_difficulty"][diff_before:]
         )
-        if work_changed and found is not None:
-            # Refuse to submit the original job after an intervening notify/difficulty.
-            detail = f"backend={used} hit nonce={found} but work changed mid-search ({hashes} hashes)"
-            found = None
+        tx.data.update({
+            "difficulty_events_during_search": sum(
+                1 for e in tx.data["set_difficulty"] if e["phase"] == "search"
+            ),
+            "stale_notifies": tx.data.get("stale_notifies", 0),
+        })
+        if work_changed:
+            # Never submit the original job after an intervening notify/difficulty.
+            detail = (
+                f"backend={used} work changed mid-search "
+                f"(hashes={hashes}, hit={found is not None})"
+            )
             tx.step("search", False, detail)
-        elif found is not None:
-            tx.step("search", True, f"backend={used} nonce={found} hashes={hashes}")
-        else:
+            tx.step("submit", False, "skipped: work changed during search")
+            return 2
+        if found is None:
             tx.step(
                 "search",
                 False,
                 f"backend={used} no share in {args.share_seconds}s "
                 f"({hashes} hashes, target {tx.data['target_source']})",
             )
+            if args.require_accept:
+                tx.step("submit", False, "skipped: no share found")
+                return 2
+            # Framing path: submit nonce 0 only when work is still current.
+        else:
+            tx.step("search", True, f"backend={used} nonce={found} hashes={hashes}")
 
         session.phase = "submit"
         submit_nonce = found if found is not None else 0
@@ -481,10 +510,7 @@ async def smoke(args, tx: Transcript) -> int:
         digest = hashlib.sha256(hashlib.sha256(header).digest()).digest()
         tx.data.update({"share_nonce": f"{submit_nonce:08x}",
                         "header_hex": header.hex(),
-                        "share_hash_hex": digest[::-1].hex(),
-                        "difficulty_events_during_search": sum(
-                            1 for e in tx.data["set_difficulty"] if e["phase"] == "search"),
-                        "stale_notifies": tx.data.get("stale_notifies", 0)})
+                        "share_hash_hex": digest[::-1].hex()})
 
         wanted = await session.send("mining.submit", [
             user, job["job_id"], extranonce2, job["ntime"], f"{submit_nonce:08x}"])

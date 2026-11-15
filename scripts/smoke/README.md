@@ -36,3 +36,5 @@ preset host (does not inherit a live `MINING_*_HOST`). TLS schemes
 are rejected.
 
 Transcripts land in `evidence/smoke/`.
+
+CI regressions live in `tests/test_stratum_smoke.py` (pytest discovery under `tests/`).
