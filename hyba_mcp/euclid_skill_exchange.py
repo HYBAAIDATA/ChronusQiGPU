@@ -10,6 +10,7 @@ Authentication/tenant/mission authorization is mandatory at EVERY call.
 from __future__ import annotations
 
 import re
+import json
 from collections.abc import Callable, Mapping
 from typing import Any
 
@@ -173,6 +174,16 @@ class EuclidSkillExchange:
                 raise ValueError("invalid memory kind selector")
         return arguments
 
+    @staticmethod
+    def _bounded(response: dict[str, Any]) -> dict[str, Any]:
+        try:
+            encoded = json.dumps(response, sort_keys=True, allow_nan=False).encode("utf-8")
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise RuntimeError("EUCLID response is not bounded JSON") from exc
+        if len(encoded) > _MAX_OUTPUT_BYTES:
+            raise RuntimeError("EUCLID MCP response exceeds total size limit")
+        return response
+
     def execute_tool(
         self, name: str, arguments: dict[str, Any], *, actor_id: str,
     ) -> dict[str, Any]:
@@ -196,19 +207,19 @@ class EuclidSkillExchange:
                 and record.adversarial_failures == 0 and record.held_out_utility is not None
                 and record.held_out_utility > 0
             ][:args.get("limit", 16)]
-            return {"owner": "EUCLID", "custody_binding": binding_id,
+            return self._bounded({"owner": "EUCLID", "custody_binding": binding_id,
                     "skills": [
                         {"skill_id": record.skill_id, "level": record.level,
                          "semantic": record.semantic, "seal": library.seal(record),
                          "surfaces": sorted(record.surfaces)}
                         for record in records
-                    ], "training_required_for_consumer": False}
+                    ], "training_required_for_consumer": False})
         if name in {"euclid_skill_get", "euclid_skill_render"}:
             record = self._promoted(library, args["skill_id"])
             body = library.to_payload()
             sealed_row = next(row for row in body["skills"] if row["skill_id"] == record.skill_id)
             if name == "euclid_skill_get":
-                return {"owner": "EUCLID", "custody_binding": binding_id,
+                return self._bounded({"owner": "EUCLID", "custody_binding": binding_id,
                         "skill": {
                             "skill_id": record.skill_id, "status": record.status,
                             "level": record.level, "pattern": sealed_row["pattern_json"],
@@ -218,7 +229,7 @@ class EuclidSkillExchange:
                             "held_out_utility": record.held_out_utility,
                             "provenance": record.provenance,
                             "adversarial_failures": record.adversarial_failures,
-                        }, "training_required_for_consumer": False}
+                        }, "training_required_for_consumer": False})
             roles = args["roles"]
             if set(roles) != set(_roles_of(record.pattern, [])):
                 raise ValueError("skill role binding must match the qualified pattern")
@@ -226,13 +237,19 @@ class EuclidSkillExchange:
             return {"owner": "EUCLID", "custody_binding": binding_id,
                     "skill_id": record.skill_id, "semantic_digest": record.semantic,
                     "operators": [self._mechanism(m) for m in instructions],
-                    "execution_performed": False, "authority_granted": False}
+                    "execution_performed": False, "authority_granted": False})
 
         kinds = args.get("kinds", [])
         types = [MemoryKind(x) for x in kinds] if kinds else None
         records = knowledge.memory.retrieve(frozenset(args["features"]), kinds=types)
         results = []
-        for item in records[:args.get("limit", 16)]:
+        for item in records:
+            # Mission ownership must be explicit in the custodied record.
+            # Unbound or cross-mission memories are never exported.
+            if item.payload.get("mission_id") != args["mission_id"]:
+                continue
+            if len(results) >= args.get("limit", 16):
+                break
             body = {"memory_id": item.memory_id, "kind": item.kind.value,
                     "payload": dict(item.payload), "provenance": item.provenance,
                     "structural_features": sorted(item.structural_features),
@@ -244,4 +261,4 @@ class EuclidSkillExchange:
         return {"owner": "EUCLID", "custody_binding": binding_id,
                 "memory": results, "recall_method": "EUCLID_STRUCTURAL_MEMORY",
                 "theoretical_context_window_increase": False,
-                "retraining_required_for_consumer": False}
+                "retraining_required_for_consumer": False})
