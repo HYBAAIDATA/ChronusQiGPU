@@ -2,6 +2,7 @@
 
 import json
 from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 
 import pytest
 from fastapi.testclient import TestClient
@@ -133,6 +134,22 @@ def test_concurrent_sqlite_idempotency_creates_one_workload(tmp_path, monkeypatc
     assert len({response.json()["id"] for response in responses}) == 1
     assert len(store.list_workloads("acme", 100, None, None)[0]) == 1
     assert len(clients[0].get("/v1/workloads", headers=ALPHA).json()["items"]) == 1
+
+
+def test_concurrent_sqlite_first_use_initializes_wal_once(tmp_path, monkeypatch):
+    """Concurrent first connections must not compete to switch journal modes."""
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "sqlite")
+    monkeypatch.setenv("CHRONUS_API_DB_PATH", str(tmp_path / "first-use.sqlite3"))
+    barrier = Barrier(8)
+
+    def open_connection(_):
+        barrier.wait()
+        with state.connection() as conn:
+            return conn.execute("PRAGMA journal_mode").fetchone()[0]
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        modes = list(pool.map(open_connection, range(8)))
+    assert modes == ["wal"] * 8
 
 
 def test_same_key_different_body_is_409(client):

@@ -39,7 +39,18 @@ jobs:
         if: always()
         run: |
           test "${{ steps.tests.outcome }}" = "success"
-          test "${{ steps.evidence.outcome }}" = "success"
+          test -s evidence/test-evidence.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path("evidence/test-evidence.json").read_text())
+          counts = data.get("tests", {})
+          assert data.get("schema") == "chronus-ci-test-evidence-v1"
+          assert counts.get("total", 0) > 0 and counts.get("failed") == 0
+          assert data.get("status") == (
+              "PASS" if counts.get("skipped") == 0 else "UNQUALIFIED"
+          )
+          PY
   evaluate:
     needs: test-and-attest
     if: always()
@@ -56,12 +67,15 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: chronus-test-evidence
-          path: evidence
+          # Both junit.xml and evidence/test-evidence.json are rooted at checkout.
+          path: .
       - name: Verify GitHub attestation
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh attestation verify evidence/test-evidence.json --repo "${{ github.repository }}"
       - name: Evaluate verified evidence and claims
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           python scripts/ci/evaluate_attested.py --evidence evidence/test-evidence.json --expected-commit "${{ github.sha }}" --expected-run-id "${{ github.run_id }}" --repository "${{ github.repository }}" --output manifests/ci-verdict.json
       - uses: actions/upload-artifact@v4
