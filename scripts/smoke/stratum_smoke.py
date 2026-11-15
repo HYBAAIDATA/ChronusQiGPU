@@ -829,6 +829,16 @@ def main() -> int:
     for step in tx.data["steps"]:
         print(f"  [{'ok  ' if step['ok'] else 'FAIL'}] {step['step']}: {step['detail']}")
     print(f"transcript: {path}")
+    try:
+        bind_dir = Path(__file__).resolve().parents[1] / "ci"
+        if str(bind_dir) not in sys.path:
+            sys.path.insert(0, str(bind_dir))
+        from bind_evidence import bind as bind_evidence
+
+        sidecar = bind_evidence(path, exit_code=code)
+        print(f"sidecar: {sidecar}")
+    except Exception as exc:  # binding must not hide the smoke result
+        print(f"sidecar: unbound ({type(exc).__name__}: {exc})", file=sys.stderr)
     return code
 
 
