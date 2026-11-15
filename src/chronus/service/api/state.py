@@ -243,6 +243,38 @@ def database_path() -> str:
     return os.getenv("CHRONUS_API_DB_PATH", "data/chronus-api.sqlite3")
 
 
+@contextmanager
+def _interprocess_bootstrap_lock(path: str) -> Iterator[None]:
+    """Serialize first-use SQLite schema setup across local worker processes.
+
+    This sidecar lock protects bootstrap only; SQLite transactions continue
+    to coordinate normal concurrent writes. No distributed-SQLite claim.
+    """
+    fd = os.open(path + ".bootstrap.lock", os.O_CREAT | os.O_RDWR, 0o600)
+    try:
+        if os.name == "nt":
+            import msvcrt
+
+            os.lseek(fd, 0, os.SEEK_SET)
+            os.write(fd, b"0")
+            os.lseek(fd, 0, os.SEEK_SET)
+            msvcrt.locking(fd, msvcrt.LK_LOCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(fd, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            if os.name == "nt":
+                os.lseek(fd, 0, os.SEEK_SET)
+                msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+            else:
+                fcntl.flock(fd, fcntl.LOCK_UN)
+    finally:
+        os.close(fd)
+
+
 def _open_existing_database(path: str, expected_identity: tuple[int, int]) -> sqlite3.Connection:
     """Open a previously initialized database without serializing all requests."""
     try:
@@ -303,7 +335,7 @@ def _connect() -> sqlite3.Connection:
 
     # Lock only first-use startup. Recheck inside the lock so concurrent
     # callers neither see incomplete DDL nor block steady-state requests.
-    with _SCHEMA_LOCK:
+    with _SCHEMA_LOCK, _interprocess_bootstrap_lock(path):
         prior_identity = _INITIALIZED_DB.get(path)
         if prior_identity is not None:
             return _open_existing_database(path, prior_identity)
