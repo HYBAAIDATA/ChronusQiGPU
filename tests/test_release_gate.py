@@ -97,7 +97,18 @@ def test_attestation_path_enforces_exact_identity(tmp_path, monkeypatch):
         raise AssertionError(f"unexpected command {args!r}")
 
     monkeypatch.setattr(gate, "call", fake_call)
-    assert gate.verify_release("HYBAAIDATA/ChronusQiGPU", sha) == 123
+    saved = tmp_path / "qualification-evidence" / "ci-verdict.json"
+    provenance = tmp_path / "qualification-evidence" / "attestation-verification-receipt.json"
+    assert gate.verify_release(
+        "HYBAAIDATA/ChronusQiGPU", sha,
+        verified_verdict_output=str(saved), provenance_output=str(provenance),
+    ) == 123
+    assert json.loads(saved.read_bytes()) == valid_verdict()
+    receipt = json.loads(provenance.read_text(encoding="utf-8"))
+    assert receipt["source_commit"] == sha
+    assert receipt["qualifying_run_id"] == 123
+    assert receipt["repository"] == "HYBAAIDATA/ChronusQiGPU"
+    assert receipt["attestation_verified"] is True
     assert any(args[:3] == ("gh", "attestation", "verify") for args in calls)
 
 
