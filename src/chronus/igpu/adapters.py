@@ -113,6 +113,13 @@ ADAPTER_TABLE: tuple[AdapterSpec, ...] = (
 class TypedUnavailableError(RuntimeError):
     """Raised when a typed-unavailable adapter is asked to execute work."""
 
+    def __init__(self, *, backend: str, gate: str, reason: str, message: str) -> None:
+        super().__init__(message)
+        self.backend = backend
+        self.gate = gate
+        self.reason = reason
+        self.message = message
+
 
 class TypedUnavailableAdapter:
     """An adapter known to be functional but that has not passed conformance.
@@ -122,7 +129,7 @@ class TypedUnavailableAdapter:
     failure explicitly.
     """
 
-    __slots__ = ("backend", "gate")
+    __slots__ = ("backend", "gate", "_capability_manifest")
 
     def __init__(self, backend: AdapterBackend, gate: str) -> None:
         self.backend = backend
@@ -190,13 +197,13 @@ def promote_adapter(backend: AdapterBackend, kernel: dict) -> bool:
         return False
 
     # Axiom 6: record evidence digest chain
-    from chronus.evidence import EvidenceRecord
+    from chronus.core.dataclasses import EvidenceRecord
 
     evidence = EvidenceRecord(
         layer=str(backend),
         item_id=backend.value,
         input_digest="kernel_manifest",
-        config_digest=conformance.digest_chain(),
+        config_digest=conformance.digest_chain,
         output_digest="conformance_passed",
         trust_class=TrustClass.RUNTIME_SIGNED,
     )
