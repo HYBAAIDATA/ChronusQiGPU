@@ -81,6 +81,8 @@ from chronus.tensor.geodesic import (
     TopologicalIntegrityGate,
 )
 from chronus.tensor.opencl_backend import OpenCLTensorBackend, OpenCLTensorUnavailable
+from chronus.tensor.cuda_backend import CUDATensorBackend, CUDATensorUnavailable
+from chronus.tensor.metal_backend import MetalTensorBackend, MetalTensorUnavailable
 from chronus.tensor.types import (
     BondId,
     ChargeTuple,
@@ -177,4 +179,8 @@ __all__ = [
     "TopologicalIntegrityGate",
     "OpenCLTensorBackend",
     "OpenCLTensorUnavailable",
+    "CUDATensorBackend",
+    "CUDATensorUnavailable",
+    "MetalTensorBackend",
+    "MetalTensorUnavailable",
 ]
