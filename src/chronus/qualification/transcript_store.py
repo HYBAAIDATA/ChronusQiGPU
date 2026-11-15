@@ -1,42 +1,160 @@
-"""Process-local store for sealed qualification audit transcripts.
+"""Shared qualification transcript and sticky-class store.
 
-Transcripts are keyed by evidence hash and by workload class. This is not
-durable custody: restart clears the store. Customers see the evidence hash on
-the workload; operators can re-verify against the stored transcript.
+Backed by SQLite so API replicas that share the database file observe the same
+suspension/reset state. Process restart retains evidence under the configured
+path. Set ``CHRONUS_QUALIFICATION_DB_PATH`` to override the default location.
 """
 
 from __future__ import annotations
 
-import copy
+import json
+import os
+import sqlite3
+from contextlib import contextmanager
+from pathlib import Path
 from threading import Lock
-from typing import Any
+from typing import Any, Iterator
 
 from chronus.qualification.harness import QualificationResult
+from chronus.qualification.tiers import Tier, TierContract
 
 _LOCK = Lock()
-_BY_HASH: dict[str, dict[str, Any]] = {}
-_BY_CLASS: dict[str, QualificationResult] = {}
+
+
+def _db_path() -> str:
+    configured = os.getenv("CHRONUS_QUALIFICATION_DB_PATH")
+    if configured:
+        return configured
+    workload = os.getenv("CHRONUS_WORKLOAD_DB_PATH", "data/chronus-workloads.sqlite3")
+    parent = Path(workload).parent
+    return str(parent / "chronus-qualification.sqlite3")
+
+
+@contextmanager
+def _connect() -> Iterator[sqlite3.Connection]:
+    path = _db_path()
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    connection = sqlite3.connect(path, timeout=10.0)
+    try:
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS transcripts (
+                evidence_hash TEXT PRIMARY KEY,
+                transcript_json TEXT NOT NULL
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS class_state (
+                workload_class TEXT PRIMARY KEY,
+                result_json TEXT NOT NULL
+            )
+            """
+        )
+        yield connection
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def _serialize_result(result: QualificationResult) -> str:
+    payload = {
+        "tier": result.tier.value,
+        "evidence_hash": result.evidence_hash,
+        "audit_transcript": result.audit_transcript,
+        "public_view": result.public_view,
+        "economics": result.economics,
+        "contract": {
+            "tier": result.contract.tier.value,
+            "tier_contract_version": result.contract.tier_contract_version,
+            "residual_bound_by_size": [
+                [int(size), bound] for size, bound in result.contract.residual_bound_by_size
+            ],
+            "qualification_evidence_hash": result.contract.qualification_evidence_hash,
+            "suspended": result.contract.suspended,
+        },
+    }
+    return json.dumps(payload, sort_keys=True, separators=(",", ":"))
+
+
+def _deserialize_result(raw: str) -> QualificationResult:
+    payload = json.loads(raw)
+    contract_raw = payload["contract"]
+    contract = TierContract(
+        tier=Tier(contract_raw["tier"]),
+        tier_contract_version=contract_raw["tier_contract_version"],
+        residual_bound_by_size=tuple(
+            (int(size), str(bound))
+            for size, bound in contract_raw["residual_bound_by_size"]
+        ),
+        qualification_evidence_hash=contract_raw["qualification_evidence_hash"],
+        suspended=bool(contract_raw["suspended"]),
+    )
+    return QualificationResult(
+        tier=Tier(payload["tier"]),
+        contract=contract,
+        evidence_hash=payload["evidence_hash"],
+        audit_transcript=dict(payload["audit_transcript"]),
+        public_view=dict(payload["public_view"]),
+        economics=dict(payload["economics"]),
+    )
 
 
 def remember(result: QualificationResult) -> None:
-    """Persist a deep copy of the latest qualification result."""
+    """Persist the latest qualification result for its class and evidence hash."""
+    workload_class = str(result.audit_transcript.get("workload_class", ""))
+    serialized = _serialize_result(result)
+    transcript_json = json.dumps(
+        result.audit_transcript, sort_keys=True, separators=(",", ":")
+    )
     with _LOCK:
-        _BY_HASH[result.evidence_hash] = copy.deepcopy(result.audit_transcript)
-        _BY_CLASS[str(result.audit_transcript.get("workload_class", ""))] = copy.deepcopy(
-            result
-        )
+        with _connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO transcripts (evidence_hash, transcript_json)
+                VALUES (?, ?)
+                ON CONFLICT(evidence_hash) DO UPDATE SET
+                    transcript_json=excluded.transcript_json
+                """,
+                (result.evidence_hash, transcript_json),
+            )
+            connection.execute(
+                """
+                INSERT INTO class_state (workload_class, result_json)
+                VALUES (?, ?)
+                ON CONFLICT(workload_class) DO UPDATE SET
+                    result_json=excluded.result_json
+                """,
+                (workload_class, serialized),
+            )
 
 
 def recall_by_class(workload_class: str) -> QualificationResult | None:
     with _LOCK:
-        stored = _BY_CLASS.get(workload_class)
-        return copy.deepcopy(stored) if stored is not None else None
+        with _connect() as connection:
+            row = connection.execute(
+                "SELECT result_json FROM class_state WHERE workload_class = ?",
+                (workload_class,),
+            ).fetchone()
+    if row is None:
+        return None
+    return _deserialize_result(row[0])
 
 
 def recall_by_hash(evidence_hash: str) -> dict[str, Any] | None:
     with _LOCK:
-        transcript = _BY_HASH.get(evidence_hash)
-        return copy.deepcopy(transcript) if transcript is not None else None
+        with _connect() as connection:
+            row = connection.execute(
+                "SELECT transcript_json FROM transcripts WHERE evidence_hash = ?",
+                (evidence_hash,),
+            ).fetchone()
+    if row is None:
+        return None
+    return json.loads(row[0])
 
 
 def clear_class(workload_class: str) -> dict[str, Any] | None:
@@ -46,23 +164,44 @@ def clear_class(workload_class: str) -> dict[str, Any] | None:
     evidence remains inspectable after the class is allowed to re-qualify.
     """
     with _LOCK:
-        prior = _BY_CLASS.pop(workload_class, None)
-        if prior is None:
-            return None
-        _BY_HASH.setdefault(
-            prior.evidence_hash, copy.deepcopy(prior.audit_transcript)
-        )
-        return {
-            "workload_class": workload_class,
-            "preserved_evidence_hash": prior.evidence_hash,
-            "was_suspended": bool(
-                prior.contract.suspended or prior.tier.value == "TIER_SUSPENDED"
-            ),
-        }
+        with _connect() as connection:
+            row = connection.execute(
+                "SELECT result_json FROM class_state WHERE workload_class = ?",
+                (workload_class,),
+            ).fetchone()
+            if row is None:
+                return None
+            prior = _deserialize_result(row[0])
+            connection.execute(
+                """
+                INSERT INTO transcripts (evidence_hash, transcript_json)
+                VALUES (?, ?)
+                ON CONFLICT(evidence_hash) DO UPDATE SET
+                    transcript_json=excluded.transcript_json
+                """,
+                (
+                    prior.evidence_hash,
+                    json.dumps(
+                        prior.audit_transcript, sort_keys=True, separators=(",", ":")
+                    ),
+                ),
+            )
+            connection.execute(
+                "DELETE FROM class_state WHERE workload_class = ?",
+                (workload_class,),
+            )
+    return {
+        "workload_class": workload_class,
+        "preserved_evidence_hash": prior.evidence_hash,
+        "was_suspended": bool(
+            prior.contract.suspended or prior.tier == Tier.SUSPENDED
+        ),
+    }
 
 
 def clear() -> None:
-    """Test helper — drop all process-local transcripts."""
+    """Test helper — drop all qualification state and transcripts."""
     with _LOCK:
-        _BY_HASH.clear()
-        _BY_CLASS.clear()
+        with _connect() as connection:
+            connection.execute("DELETE FROM class_state")
+            connection.execute("DELETE FROM transcripts")

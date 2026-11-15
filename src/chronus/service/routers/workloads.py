@@ -16,6 +16,7 @@ from chronus.backends.lattice import (
 from chronus.execution import execution_router
 from chronus.execution.qigpu import QiGPUOrchestrator
 from chronus.sdk.client import ChronusAPISDK, ChronusSDKError
+from chronus.service.auth_middleware import Role, require_roles
 from chronus.service.dependencies import get_current_tenant, security, service_config
 from chronus.service.models import (
     ErrorResponse,
@@ -178,13 +179,14 @@ def workload_counts() -> tuple[int, int]:
     "/qualification/reset",
     summary="Reset sticky qualification suspension after operator review",
     description=(
-        "Authenticated operator action: clear the sticky suspended state for "
-        "scaling.v1 so the next completed job may re-qualify. The prior "
-        "suspension transcript remains available by evidence hash."
+        "System-operator action: clear the sticky suspended state for "
+        "scaling.v1 so the next completed job may re-qualify. Requires "
+        "system_admin or admin. The prior suspension transcript remains "
+        "available by evidence hash in the shared qualification store."
     ),
 )
 async def reset_qualification_suspension(
-    tenant_id: str = Depends(get_current_tenant),
+    identity=Depends(require_roles(Role.SYSTEM_ADMIN, Role.ADMIN)),
 ) -> dict:
     """Clear sticky class suspension; preserve suspension evidence by hash."""
     cleared = clear_qualification_class(INTERNAL_SCALING_WORKLOAD)
@@ -205,8 +207,9 @@ async def reset_qualification_suspension(
         "preserved_evidence_hash": preserved,
         "suspension_transcript_retained": transcript is not None,
         "was_suspended": cleared["was_suspended"],
-        "operator_tenant": tenant_id,
-        "receipt_scope": "process-local",
+        "operator_tenant": identity.tenant_id,
+        "operator_roles": [role.value for role in identity.roles],
+        "store_scope": "shared-sqlite",
     }
 
 

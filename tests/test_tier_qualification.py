@@ -292,64 +292,101 @@ class ForgeryAndPrecisionTests(unittest.TestCase):
         clear()
 
     def test_suspended_class_stays_suspended_across_jobs(self) -> None:
-        from chronus.qualification.transcript_store import (
-            clear,
-            clear_class,
-            recall_by_hash,
-            remember,
-        )
+        import os
+        import tempfile
+
+        from chronus.qualification import transcript_store as store
         from chronus.service.models import WorkloadStatus
         from chronus.service.routers.workloads import _attach_tier_fields
 
-        clear()
-        harness = QualificationHarness()
-        tight = harness.qualify("LUCAS_PV_SCALING", seed=5)
-        from chronus.qualification.tiers import TIER_CONTRACT_VERSION, TierContract
+        with tempfile.TemporaryDirectory() as tmp:
+            os.environ["CHRONUS_QUALIFICATION_DB_PATH"] = str(
+                Path(tmp) / "qualification.sqlite3"
+            )
+            store.clear()
+            harness = QualificationHarness()
+            tight = harness.qualify("LUCAS_PV_SCALING", seed=5)
+            from chronus.qualification.tiers import TIER_CONTRACT_VERSION, TierContract
 
-        tightened = type(tight)(
-            tier=tight.tier,
-            contract=TierContract(
+            tightened = type(tight)(
                 tier=tight.tier,
-                tier_contract_version=TIER_CONTRACT_VERSION,
-                residual_bound_by_size=tuple(
-                    (size, format(Decimal(bound) * Decimal("1e-9"), "f"))
-                    for size, bound in tight.contract.residual_bound_by_size
+                contract=TierContract(
+                    tier=tight.tier,
+                    tier_contract_version=TIER_CONTRACT_VERSION,
+                    residual_bound_by_size=tuple(
+                        (size, format(Decimal(bound) * Decimal("1e-9"), "f"))
+                        for size, bound in tight.contract.residual_bound_by_size
+                    ),
+                    qualification_evidence_hash=tight.evidence_hash,
+                    suspended=False,
                 ),
-                qualification_evidence_hash=tight.evidence_hash,
-                suspended=False,
-            ),
-            evidence_hash=tight.evidence_hash,
-            audit_transcript=tight.audit_transcript,
-            public_view=tight.public_view,
-            economics=tight.economics,
+                evidence_hash=tight.evidence_hash,
+                audit_transcript=tight.audit_transcript,
+                public_view=tight.public_view,
+                economics=tight.economics,
+            )
+            store.remember(tightened)
+            first = _attach_tier_fields("scaling.v1", status=WorkloadStatus.COMPLETED)
+            self.assertTrue(first["tier_suspended"])
+            suspended_hash = first["qualification_evidence_hash"]
+            second = _attach_tier_fields(
+                "scaling.v1",
+                status=WorkloadStatus.COMPLETED,
+                result={
+                    "result": {
+                        "family": "scaling.v1",
+                        "index": 10,
+                        "sequence_value": "123",
+                    }
+                },
+            )
+            self.assertTrue(second["tier_suspended"])
+            self.assertEqual(second["tier"], Tier.SUSPENDED.value)
+            # Shared-file visibility: a second "replica" reading the same DB
+            # still sees the sticky suspension.
+            again = store.recall_by_class("LUCAS_PV_SCALING")
+            self.assertIsNotNone(again)
+            self.assertTrue(again.contract.suspended)
+            cleared = store.clear_class("LUCAS_PV_SCALING")
+            self.assertIsNotNone(cleared)
+            self.assertEqual(cleared["preserved_evidence_hash"], suspended_hash)
+            self.assertIsNotNone(store.recall_by_hash(suspended_hash))
+            restored = _attach_tier_fields(
+                "scaling.v1",
+                status=WorkloadStatus.COMPLETED,
+                result={
+                    "result": {
+                        "family": "scaling.v1",
+                        "index": 10,
+                        "sequence_value": "123",
+                    }
+                },
+            )
+            self.assertFalse(restored.get("tier_suspended"))
+            self.assertNotEqual(restored["tier"], Tier.SUSPENDED.value)
+            store.clear()
+            os.environ.pop("CHRONUS_QUALIFICATION_DB_PATH", None)
+
+    def test_reset_endpoint_requires_system_operator(self) -> None:
+        from fastapi.testclient import TestClient
+
+        from chronus.service.app import create_app
+        from chronus.service.auth_middleware import Role, create_jwt_token
+        from chronus.service.dependencies import auth_service
+
+        auth_service.register_tenant("tenant-user", "tenant-user-token")
+        client = TestClient(create_app())
+        denied = client.post(
+            "/workloads/qualification/reset",
+            headers={"Authorization": "Bearer tenant-user-token"},
         )
-        remember(tightened)
-        first = _attach_tier_fields("scaling.v1", status=WorkloadStatus.COMPLETED)
-        self.assertTrue(first["tier_suspended"])
-        suspended_hash = first["qualification_evidence_hash"]
-        second = _attach_tier_fields(
-            "scaling.v1",
-            status=WorkloadStatus.COMPLETED,
-            result={
-                "result": {"family": "scaling.v1", "index": 10, "sequence_value": "123"}
-            },
+        self.assertEqual(denied.status_code, 403)
+        admin = create_jwt_token("ops", "ops-admin", Role.SYSTEM_ADMIN)
+        missing = client.post(
+            "/workloads/qualification/reset",
+            headers={"Authorization": f"Bearer {admin}"},
         )
-        self.assertTrue(second["tier_suspended"])
-        self.assertEqual(second["tier"], Tier.SUSPENDED.value)
-        cleared = clear_class("LUCAS_PV_SCALING")
-        self.assertIsNotNone(cleared)
-        self.assertEqual(cleared["preserved_evidence_hash"], suspended_hash)
-        self.assertIsNotNone(recall_by_hash(suspended_hash))
-        restored = _attach_tier_fields(
-            "scaling.v1",
-            status=WorkloadStatus.COMPLETED,
-            result={
-                "result": {"family": "scaling.v1", "index": 10, "sequence_value": "123"}
-            },
-        )
-        self.assertFalse(restored.get("tier_suspended"))
-        self.assertNotEqual(restored["tier"], Tier.SUSPENDED.value)
-        clear()
+        self.assertEqual(missing.status_code, 404)
 
     def test_large_probe_residual_is_accurate(self) -> None:
         n = 500
