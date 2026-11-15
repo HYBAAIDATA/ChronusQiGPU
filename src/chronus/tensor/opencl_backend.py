@@ -25,6 +25,7 @@ class OpenCLTensorBackend:
         self._queue = None
         self._program = None
         self._device = None
+        self._self_tested = False
 
     def _initialize(self) -> None:
         if self._program is not None:
@@ -55,6 +56,23 @@ class OpenCLTensorBackend:
         self._cl, self._context, self._queue, self._program, self._device = (
             cl, context, queue, program, device
         )
+        try:
+            actual = self.execute(
+                "add",
+                np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32),
+                np.array([4.0, 3.0, 2.0, 1.0], dtype=np.float32),
+            )["output"]
+            if not np.array_equal(actual, np.array([5.0, 5.0, 5.0, 5.0], dtype=np.float32)):
+                raise OpenCLTensorUnavailable("OpenCL tensor known-answer check failed")
+            self._self_tested = True
+        except Exception as exc:
+            self._program = None
+            self._queue = None
+            self._context = None
+            self._device = None
+            if isinstance(exc, OpenCLTensorUnavailable):
+                raise
+            raise OpenCLTensorUnavailable("OpenCL tensor known-answer check failed") from exc
 
     def is_available(self) -> bool:
         try:
@@ -72,6 +90,7 @@ class OpenCLTensorBackend:
             "vendor": str(self._device.vendor),
             "driver_version": str(self._device.driver_version),
             "measured": False,
+            "known_answer_self_test": "PASS" if self._self_tested else "NOT_RUN",
         }
 
     @staticmethod
