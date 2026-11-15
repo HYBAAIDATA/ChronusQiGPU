@@ -1,0 +1,36 @@
+"""Pool configuration must preserve hostnames before any network activity."""
+import json
+import pytest
+from chronus.execution import mining_entrypoint as entry
+
+@pytest.fixture(autouse=True)
+def isolated_config(monkeypatch):
+    monkeypatch.setattr(entry, "_load_dotenv", lambda: None)
+    monkeypatch.delenv("PYTHIA_POOL_SPECS", raising=False)
+    monkeypatch.setenv("MINING_ACTIVE_POOL", "BRAIINS")
+    monkeypatch.setenv("MINING_BRAIINS_USER", "example.worker")
+    monkeypatch.setenv("MINING_BRAIINS_PASSWORD", "x")
+    monkeypatch.delenv("MINING_BRAIINS_PORT", raising=False)
+
+@pytest.mark.parametrize("host,port,expected_port", [
+    ("stratum.braiins.com", "3333", 3333),
+    ("stratum.braiins.com", "443", 443),
+    ("stratum.braiins.com", None, 3333),
+    ("stratum.braiins.com:443", "3333", 443),
+    ("stratum+tcp://stratum.braiins.com", "3333", 3333),
+    ("stratum+tcp://stratum.braiins.com:443", "3333", 443),
+])
+def test_braiins_hostname_and_port(monkeypatch, host, port, expected_port):
+    monkeypatch.setenv("MINING_BRAIINS_HOST", host)
+    if port is not None:
+        monkeypatch.setenv("MINING_BRAIINS_PORT", port)
+    label, endpoint, user, password = entry.load_env_config()
+    assert (label, endpoint.host, endpoint.port, endpoint.tls, user, password) == (
+        "BRAIINS", "stratum.braiins.com", expected_port, False, "example.worker", "x")
+
+def test_explicit_pool_specs_remain_highest_priority(monkeypatch):
+    monkeypatch.setenv("MINING_BRAIINS_HOST", "unused.invalid")
+    monkeypatch.setenv("PYTHIA_POOL_SPECS", json.dumps([
+        {"endpoint": "stratum+tcp://stratum.braiins.com:443", "user": "spec.worker"}]))
+    label, endpoint, user, _ = entry.load_env_config()
+    assert (label, endpoint.host, endpoint.port, user) == ("SPECS", "stratum.braiins.com", 443, "spec.worker")
