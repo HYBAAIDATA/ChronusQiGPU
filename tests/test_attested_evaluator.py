@@ -61,8 +61,10 @@ def test_verified_evidence_can_be_successfully_evaluated_while_unqualified(tmp_p
     assert evaluate_attested.main() == 0
     verdict = json.loads(output.read_text(encoding="utf-8"))
     assert verdict["status"] == "UNQUALIFIED"
-    assert verdict["attestation_verified"] is False
+    assert verdict["attestation_verified"] is True
+    assert verdict["test_evidence_attestation_verified"] is True
     assert verdict["gate_attestation_verified"] is False
+    assert verdict["production_evidence_verified"] is False
     assert set(verdict["gates"].values()) == {"UNQUALIFIED"}
 
 
@@ -117,6 +119,7 @@ def test_supplied_product_gates_must_have_valid_attestation(tmp_path, monkeypatc
     verdict = json.loads(output.read_text(encoding="utf-8"))
     assert verdict["status"] == "UNQUALIFIED"
     assert verdict["gate_attestation_verified"] is False
+    assert verdict["production_evidence_verified"] is False
 
 
 def test_all_attested_product_gates_can_admit_when_required_capability_is_available(
@@ -162,5 +165,7 @@ def test_all_attested_product_gates_can_admit_when_required_capability_is_availa
     verdict = json.loads(output.read_text(encoding="utf-8"))
     assert verdict["status"] == "PASS"
     assert verdict["attestation_verified"] is True
+    assert verdict["test_evidence_attestation_verified"] is True
     assert verdict["gate_attestation_verified"] is True
+    assert verdict["production_evidence_verified"] is True
     assert set(verdict["gates"].values()) == {"PASS"}
