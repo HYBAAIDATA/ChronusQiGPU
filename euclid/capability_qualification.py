@@ -495,6 +495,24 @@ class CapabilityQualificationRegistry:
             return QualificationStatus.REVOKED
         return QualificationStatus.UNAVAILABLE
 
+    def verify_attestation(
+        self, *, verifier_id: str, payload: bytes, signature: str
+    ) -> bool:
+        """Verify a detached host attestation with a configured trusted verifier."""
+        verifier = self._verifiers.get(verifier_id)
+        if (
+            verifier is None
+            or type(payload) is not bytes
+            or type(signature) is not str
+            or len(signature) != 128
+        ):
+            raise PermissionError("trusted verifier attestation required")
+        try:
+            verifier.verify(bytes.fromhex(signature), payload)
+        except (InvalidSignature, ValueError) as exc:
+            raise PermissionError("invalid verifier attestation") from exc
+        return True
+
     def active_claim(
         self, *, claim_id: str, source_revision: str, domain: str, task_scope: str
     ) -> CapabilityClaim | None:
