@@ -25,6 +25,7 @@ class CommercialIntegration(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         self.journal = SwarmJournal(Path(self.directory.name) / "events.sqlite")
         self.addCleanup(self.journal.close)
+
         def member(identifier, skills):
             return QualifiedAgent(
                 identifier, "c" * 40, "case", tuple(sorted(skills)),
