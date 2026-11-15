@@ -129,10 +129,16 @@ def target_from_nbits(nbits: str) -> int:
     return target
 
 
-def target_from_difficulty(difficulty: float) -> int:
-    if not difficulty or difficulty <= 0:
-        return 0
-    return int(Fraction(DIFF1) / Fraction(difficulty))
+def target_from_difficulty(difficulty: float | Fraction) -> int:
+    """Share target for ``difficulty``: ``int(Fraction(DIFF1) / Fraction(difficulty))``.
+
+    ``difficulty`` must be strictly positive; zero or negative raises
+    ``ValueError`` instead of letting ``Fraction`` raise three frames down.
+    """
+    value = Fraction(difficulty)
+    if value <= 0:
+        raise ValueError(f"difficulty must be > 0, got {difficulty!r}")
+    return int(Fraction(DIFF1) / value)
 
 
 def prevhash_to_header(prevhash: str) -> bytes:

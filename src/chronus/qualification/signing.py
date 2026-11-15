@@ -20,8 +20,10 @@ never treat an incomplete (empty / wrong-length) file as a valid key.
 from __future__ import annotations
 
 import hashlib
+import logging
 import os
 import stat
+import tempfile
 import time
 from pathlib import Path
 from threading import Lock
@@ -35,6 +37,8 @@ SEED_ENV = "CHRONUS_QUALIFICATION_SIGNING_SEED_HEX"
 _SEED_HEX_LEN = 64  # 32 bytes as lowercase hex
 _READ_ATTEMPTS = 8
 _READ_RETRY_SLEEP_S = 0.01
+
+LOG = logging.getLogger(__name__)
 
 _LOCK = Lock()
 _cached: Optional["QualificationSigner"] = None
@@ -144,16 +148,16 @@ def _write_all(fd: int, payload: bytes) -> None:
 def _fsync_dir(directory: Path) -> None:
     """Durably record directory entries (required after link/create).
 
-    Non-POSIX platforms cannot reliably ``os.open`` a directory for fsync; the
-    seed file itself was already ``fsync``'d before ``link``, so skip there.
+    Prefer ``O_DIRECTORY`` when present. On platforms that cannot open a
+    directory for fsync (notably Windows), log and return — the seed file
+    itself was already ``fsync``'d before ``link``.
     """
-    if os.name != "posix":
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+    try:
+        dir_fd = os.open(str(directory), flags)
+    except OSError as exc:
+        LOG.warning("cannot fsync %s: %s", directory, exc)
         return
-    flags = os.O_RDONLY
-    directory_flag = getattr(os, "O_DIRECTORY", 0)
-    if directory_flag:
-        flags |= directory_flag
-    dir_fd = os.open(str(directory), flags)
     try:
         os.fsync(dir_fd)
     finally:
@@ -161,19 +165,27 @@ def _fsync_dir(directory: Path) -> None:
 
 
 def _publish_seed_file(path: Path) -> bytes:
-    """Write seed to a private temp file, then atomically link into place.
+    """Publish a fresh seed at ``path`` atomically. Returns the bytes that won.
 
-    Durability order: open(0600) → write_all → fsync(fd) → close → link →
-    fsync(parent). ``FileExistsError`` on link is the loser path: unlink the
-    temp and return the winner's bytes via ``read_trusted``.
+    Order: temp in the destination directory → write → fsync → close →
+    link → fsync parent → unlink temp. ``tempfile.mkstemp`` already yields
+    0600 on POSIX, so no chmod is needed. Temp lives next to ``path`` so
+    ``link`` cannot raise ``EXDEV`` on a split mount.
+
+    ``FileExistsError`` on link is the loser path: the winner's bytes come
+    back via ``read_trusted``. A mismatch against our payload is logged,
+    because a differing seed means concurrent first-publish inputs were not
+    the same (expected for ``urandom``, visible for deterministic callers).
     """
-    path.parent.mkdir(parents=True, exist_ok=True)
+    parent = path.parent
+    parent.mkdir(parents=True, exist_ok=True)
     seed = os.urandom(32)
     payload = seed.hex().encode("ascii")
-    tmp = path.parent / f".{path.name}.{os.getpid()}.{os.urandom(4).hex()}.tmp"
-    published: bytes | None = None
+    fd, temp_name = tempfile.mkstemp(
+        dir=parent, prefix=f".{path.name}.", suffix=".tmp"
+    )
+    temp = Path(temp_name)
     try:
-        fd = os.open(str(tmp), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
         try:
             _write_all(fd, payload)
             os.fsync(fd)
@@ -181,30 +193,20 @@ def _publish_seed_file(path: Path) -> bytes:
             os.close(fd)
         try:
             # File must be durable before the link makes it visible.
-            os.link(str(tmp), str(path))
+            os.link(str(temp), str(path))
         except FileExistsError:
-            # Loser path — winner's final file is authoritative.
-            try:
-                os.unlink(str(tmp))
-            except FileNotFoundError:
-                pass
-            return read_trusted(path)
-        _fsync_dir(path.parent)
-        published = seed
-    except Exception:
-        try:
-            os.unlink(str(tmp))
-        except FileNotFoundError:
-            pass
-        raise
+            winner = read_trusted(path)
+            if winner != seed:
+                LOG.warning(
+                    "seed race: adopted %d bytes differing from ours at %s",
+                    len(winner),
+                    path,
+                )
+            return winner
+        _fsync_dir(parent)
+        return seed
     finally:
-        try:
-            os.unlink(str(tmp))
-        except FileNotFoundError:
-            pass
-    if published is not None:
-        return published
-    return read_trusted(path)
+        temp.unlink(missing_ok=True)
 
 
 def _resolve_seed() -> tuple[bytes, str]:

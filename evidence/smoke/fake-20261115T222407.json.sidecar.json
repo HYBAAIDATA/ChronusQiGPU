@@ -1,0 +1,8 @@
+{
+  "artifact": "evidence/smoke/fake-20261115T222407.json",
+  "commit": "c2bdc1fff23582b852b03ff4cc0dc62924d64ad2",
+  "exit_code": 0,
+  "host": "cursor",
+  "sha256": "e51deca94ac6e9654e70779ca99ef13aaae3ffff95d864af8c9fb1211737e44d",
+  "timestamp": "2026-11-15T23:06:03Z"
+}
