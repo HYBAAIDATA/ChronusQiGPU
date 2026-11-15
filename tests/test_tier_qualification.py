@@ -462,6 +462,88 @@ class ForgeryAndPrecisionTests(unittest.TestCase):
             os.environ.pop("CHRONUS_QUALIFICATION_DB_PATH", None)
             reset_qualification_signer()
 
+    def test_seed_file_rejects_symlink_and_incomplete(self) -> None:
+        import os
+        import tempfile
+
+        from chronus.qualification.signing import (
+            _seed_file_path,
+            get_qualification_signer,
+            reset_qualification_signer,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            os.environ["CHRONUS_QUALIFICATION_DB_PATH"] = str(
+                Path(tmp) / "qualification.sqlite3"
+            )
+            os.environ.pop("CHRONUS_QUALIFICATION_SIGNING_SEED_HEX", None)
+            reset_qualification_signer()
+            seed_path = _seed_file_path()
+            seed_path.parent.mkdir(parents=True, exist_ok=True)
+            target = Path(tmp) / "attacker.seed"
+            target.write_text("aa" * 32, encoding="ascii")
+            os.symlink(str(target), str(seed_path))
+            with self.assertRaises(ValueError):
+                get_qualification_signer()
+            seed_path.unlink()
+            reset_qualification_signer()
+            # Incomplete / empty seed left by a crashed writer must fail closed.
+            fd = os.open(str(seed_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+            os.close(fd)
+            with self.assertRaises(ValueError):
+                get_qualification_signer()
+            seed_path.unlink()
+            reset_qualification_signer()
+            # Group/world-readable seed is refused.
+            fd = os.open(str(seed_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+            try:
+                os.write(fd, ("bb" * 32).encode("ascii"))
+            finally:
+                os.close(fd)
+            with self.assertRaises(ValueError):
+                get_qualification_signer()
+            os.environ.pop("CHRONUS_QUALIFICATION_DB_PATH", None)
+            reset_qualification_signer()
+
+    def test_concurrent_seed_publish_converges(self) -> None:
+        import os
+        import tempfile
+        import threading
+
+        from chronus.qualification.signing import (
+            get_qualification_signer,
+            reset_qualification_signer,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            os.environ["CHRONUS_QUALIFICATION_DB_PATH"] = str(
+                Path(tmp) / "qualification.sqlite3"
+            )
+            os.environ.pop("CHRONUS_QUALIFICATION_SIGNING_SEED_HEX", None)
+            reset_qualification_signer()
+            barrier = threading.Barrier(2)
+            results: list[str] = []
+            errors: list[BaseException] = []
+
+            def worker() -> None:
+                try:
+                    barrier.wait(timeout=5)
+                    reset_qualification_signer()
+                    results.append(get_qualification_signer().key_id)
+                except BaseException as exc:  # noqa: BLE001 — collect for assert
+                    errors.append(exc)
+
+            threads = [threading.Thread(target=worker) for _ in range(2)]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join(timeout=10)
+            self.assertEqual(errors, [])
+            self.assertEqual(len(results), 2)
+            self.assertEqual(results[0], results[1])
+            os.environ.pop("CHRONUS_QUALIFICATION_DB_PATH", None)
+            reset_qualification_signer()
+
     def test_clear_class_does_not_erase_replaced_suspension(self) -> None:
         import os
         import tempfile

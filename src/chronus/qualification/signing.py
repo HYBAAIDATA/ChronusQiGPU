@@ -9,14 +9,20 @@ Key custody (not HSM-backed):
 1. ``CHRONUS_QUALIFICATION_SIGNING_SEED_HEX`` — 32-byte seed as hex (preferred
    for multi-replica deployments).
 2. Otherwise a seed file next to the qualification DB
-   (``<db>.ed25519.seed``), created once and reused so restart and replicas
-   sharing that path keep the same verification key.
+   (``<db>.ed25519.seed``), created once via write-temp + atomic link and
+   reused so restart and replicas sharing that path keep the same key.
+
+Seed-file hardening: reject symlinks, require a regular file owned by the
+process user with group/other bits clear, and never treat an incomplete
+(empty / wrong-length) file as a valid key.
 """
 
 from __future__ import annotations
 
 import hashlib
 import os
+import stat
+import time
 from pathlib import Path
 from threading import Lock
 from typing import Optional
@@ -26,6 +32,9 @@ from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 SEED_ENV = "CHRONUS_QUALIFICATION_SIGNING_SEED_HEX"
+_SEED_HEX_LEN = 64  # 32 bytes as lowercase hex
+_READ_ATTEMPTS = 8
+_READ_RETRY_SLEEP_S = 0.01
 
 _LOCK = Lock()
 _cached: Optional["QualificationSigner"] = None
@@ -45,6 +54,103 @@ def _seed_file_path() -> Path:
     return Path(_db_path()).with_name(Path(_db_path()).name + ".ed25519.seed")
 
 
+def _open_flags(base: int) -> int:
+    flags = base
+    # Refuse to follow symlinks when the platform supports it.
+    nofollow = getattr(os, "O_NOFOLLOW", 0)
+    return flags | nofollow
+
+
+def _validate_seed_stat(st: os.stat_result, *, path: Path) -> None:
+    if not stat.S_ISREG(st.st_mode):
+        raise ValueError(f"qualification seed {path} must be a regular file")
+    if st.st_mode & 0o077:
+        raise ValueError(
+            f"qualification seed {path} must not be group/world accessible "
+            f"(mode={stat.filemode(st.st_mode)})"
+        )
+    if hasattr(os, "geteuid") and st.st_uid != os.geteuid():
+        raise ValueError(
+            f"qualification seed {path} must be owned by the service user "
+            f"(uid={st.st_uid})"
+        )
+
+
+def _decode_seed_hex(text: str, *, path: Path) -> bytes:
+    cleaned = text.strip()
+    if len(cleaned) != _SEED_HEX_LEN:
+        raise ValueError(
+            f"qualification seed file {path} is incomplete or corrupt "
+            f"(expected {_SEED_HEX_LEN} hex chars, got {len(cleaned)})"
+        )
+    raw = bytes.fromhex(cleaned)
+    if len(raw) != 32:
+        raise ValueError(f"qualification seed file {path} must hold 32 bytes")
+    return raw
+
+
+def _read_seed_file(path: Path) -> bytes:
+    """Open an existing seed without following symlinks; reject incomplete files."""
+    last_error: Exception | None = None
+    for attempt in range(_READ_ATTEMPTS):
+        try:
+            fd = os.open(str(path), _open_flags(os.O_RDONLY))
+        except FileNotFoundError:
+            raise
+        except OSError as exc:
+            # ELOOP when O_NOFOLLOW hits a symlink
+            raise ValueError(f"qualification seed {path} is not a trusted regular file") from exc
+        try:
+            st = os.fstat(fd)
+            _validate_seed_stat(st, path=path)
+            data = os.read(fd, _SEED_HEX_LEN + 16)
+        finally:
+            os.close(fd)
+        try:
+            return _decode_seed_hex(data.decode("ascii"), path=path)
+        except (ValueError, UnicodeDecodeError) as exc:
+            last_error = exc
+            # Another replica may still be publishing; brief retry then fail closed.
+            if attempt + 1 < _READ_ATTEMPTS:
+                time.sleep(_READ_RETRY_SLEEP_S)
+                continue
+            raise ValueError(
+                f"qualification seed file {path} is incomplete or corrupt; "
+                "delete it only after operator review, or set "
+                f"{SEED_ENV}"
+            ) from last_error
+    assert last_error is not None
+    raise last_error
+
+
+def _publish_seed_file(path: Path) -> bytes:
+    """Write seed to a private temp file, then atomically link into place."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    seed = os.urandom(32)
+    payload = seed.hex().encode("ascii")
+    tmp = path.parent / f".{path.name}.{os.getpid()}.{os.urandom(4).hex()}.tmp"
+    fd = os.open(str(tmp), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    try:
+        os.write(fd, payload)
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+    try:
+        # link fails if the final name already exists — no replace of a live seed.
+        os.link(str(tmp), str(path))
+        published = seed
+    except FileExistsError:
+        published = None
+    finally:
+        try:
+            os.unlink(str(tmp))
+        except FileNotFoundError:
+            pass
+    if published is not None:
+        return published
+    return _read_seed_file(path)
+
+
 def _resolve_seed() -> tuple[bytes, str]:
     """Return (seed, custody_label)."""
     configured = os.getenv(SEED_ENV)
@@ -55,21 +161,11 @@ def _resolve_seed() -> tuple[bytes, str]:
         return raw, "environment-supplied seed"
 
     path = _seed_file_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        fd = os.open(str(path), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-        try:
-            seed = os.urandom(32)
-            os.write(fd, seed.hex().encode("ascii"))
-        finally:
-            os.close(fd)
-        return seed, f"seed-file:{path}"
-    except FileExistsError:
-        text = path.read_text(encoding="ascii").strip()
-        raw = bytes.fromhex(text)
-        if len(raw) != 32:
-            raise ValueError(f"qualification seed file {path} must hold 32 bytes hex")
-        return raw, f"seed-file:{path}"
+    if path.exists():
+        # exists() may follow a symlink for the existence check; open uses O_NOFOLLOW.
+        return _read_seed_file(path), f"seed-file:{path}"
+    seed = _publish_seed_file(path)
+    return seed, f"seed-file:{path}"
 
 
 class QualificationSigner:
