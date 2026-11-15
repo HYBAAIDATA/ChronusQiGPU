@@ -123,24 +123,55 @@ def _read_seed_file(path: Path) -> bytes:
     raise last_error
 
 
+def _write_all(fd: int, payload: bytes) -> None:
+    """Write every byte; treat a zero-length write as failure."""
+    offset = 0
+    while offset < len(payload):
+        written = os.write(fd, payload[offset:])
+        if written <= 0:
+            raise OSError("short write while publishing qualification seed")
+        offset += written
+
+
+def _fsync_dir(directory: Path) -> None:
+    """Durably record directory entries (required after link/create)."""
+    dir_fd = os.open(str(directory), os.O_RDONLY)
+    try:
+        os.fsync(dir_fd)
+    finally:
+        os.close(dir_fd)
+
+
 def _publish_seed_file(path: Path) -> bytes:
     """Write seed to a private temp file, then atomically link into place."""
     path.parent.mkdir(parents=True, exist_ok=True)
     seed = os.urandom(32)
     payload = seed.hex().encode("ascii")
     tmp = path.parent / f".{path.name}.{os.getpid()}.{os.urandom(4).hex()}.tmp"
-    fd = os.open(str(tmp), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    published: bytes | None = None
     try:
-        os.write(fd, payload)
-        os.fsync(fd)
-    finally:
-        os.close(fd)
-    try:
-        # link fails if the final name already exists — no replace of a live seed.
-        os.link(str(tmp), str(path))
-        published = seed
-    except FileExistsError:
-        published = None
+        fd = os.open(str(tmp), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+        try:
+            _write_all(fd, payload)
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+        try:
+            # link fails if the final name already exists — no replace of a live seed.
+            os.link(str(tmp), str(path))
+        except FileExistsError:
+            published = None
+        else:
+            _fsync_dir(path.parent)
+            published = seed
+    except Exception:
+        # Drop a partial temp before propagating; never leave a linked incomplete seed
+        # because link only runs after a full write + fsync.
+        try:
+            os.unlink(str(tmp))
+        except FileNotFoundError:
+            pass
+        raise
     finally:
         try:
             os.unlink(str(tmp))
