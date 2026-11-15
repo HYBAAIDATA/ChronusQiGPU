@@ -49,7 +49,7 @@ class CommercialIntegration(unittest.TestCase):
 
     def test_commercial_qualified_entrypoint_e2e(self):
         calls = []
-        result = CommercialTeamOrchestrator().run_qualified_swarm(
+        result = CommercialTeamOrchestrator(cost_meter=lambda: 0.0).run_qualified_swarm(
             self.activator, self.mission,
             dispatch=lambda item: calls.append(item.task_id) or {"ok": True},
             verify=lambda item, result: result == {"ok": True},
@@ -57,6 +57,26 @@ class CommercialIntegration(unittest.TestCase):
         self.assertEqual(calls, ["work"])
         self.assertEqual(result["verified_tasks"], ["work"])
         self.assertTrue(result["journal_verified"])
+
+    def test_qualified_swarm_requires_measured_cost_enforcement(self):
+        with self.assertRaisesRegex(RuntimeError, "cost enforcement"):
+            CommercialTeamOrchestrator().run_qualified_swarm(
+                self.activator, self.mission,
+                dispatch=lambda _: {"ok": True},
+                verify=lambda *_: True,
+            )
+
+    def test_commercial_budget_is_checked_around_dispatch(self):
+        samples = iter([0.0, 0.0, 2.0])
+        orchestrator = CommercialTeamOrchestrator(
+            team_budget_usd=1.0, cost_meter=lambda: next(samples), clock=lambda: 0.0
+        )
+        with self.assertRaisesRegex(RuntimeError, "budget exceeded"):
+            orchestrator.run_qualified_swarm(
+                self.activator, self.mission,
+                dispatch=lambda _: {"ok": True},
+                verify=lambda *_: True,
+            )
 
     def test_legacy_hooks_not_falsely_approved(self):
         result = CommercialTeamOrchestrator().run_collaborative_task(
@@ -71,7 +91,7 @@ class CommercialIntegration(unittest.TestCase):
         )
         self.assertNotEqual(legacy.verdict, "APPROVED_BY_CONSENSUS")
         with self.assertRaises(SwarmRefused):
-            CommercialTeamOrchestrator().run_qualified_swarm(
+            CommercialTeamOrchestrator(cost_meter=lambda: 0.0).run_qualified_swarm(
                 self.activator,
                 SwarmMission("case2", "not-authorized", "case", 3, 2000, self.mission.tasks),
                 dispatch=lambda _: {"ok": True},
