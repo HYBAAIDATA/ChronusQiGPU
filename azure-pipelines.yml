@@ -13,6 +13,12 @@
 # hand on main with "deploy" ticked (see docs/system-update/azure-deployment.md).
 # https://docs.microsoft.com/azure/devops/pipelines/languages/python
 
+# SECURITY: this pipeline runs for every branch, and branch-supplied YAML can
+# reference the privileged service connections below. The YAML conditions on the
+# publish and deploy steps do not protect those connections. Each connection
+# (the Azure Resource Manager one and the container registry one) must have a
+# branch control check in Azure DevOps (Project settings > Service connections >
+# Approvals and checks) that allows only refs/heads/main (protected branch).
 trigger:
   branches:
     include:
@@ -34,6 +40,7 @@ variables:
 
   # Deployment (deploy=true only). The Azure Resource Manager connection is the
   # CronusQiGPU one; it must be shared with this project before a deploy run.
+  # It must also have a branch control check allowing only protected main (see the note at the top of this file).
   azureServiceConnection: '1271238c-f010-4c8c-b17a-48ec0eef51fa'
   resourceGroup: 'rg-cronusqigpu-demo'
   appServicePlan: 'asp-cronusqigpu-demo-hybadata'
@@ -253,6 +260,7 @@ stages:
       condition: succeededOrFailed()
 
     # --- main only, after every check passed: push the image ---
+    # Requires a branch control check on the registry service connection (see the note at the top of this file).
     - task: Docker@2
       displayName: 'Build and push the image to the container registry (main)'
       condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
