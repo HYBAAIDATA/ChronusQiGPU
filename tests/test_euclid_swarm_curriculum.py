@@ -27,9 +27,11 @@ def curriculum():
 class LeadershipTrainingTests(unittest.TestCase):
     def test_train_real_callbacks_and_attestation_boundary(self):
         observed = {"trained_on": [], "evaluated_on": []}
+
         def train(cases):
             observed["trained_on"] = [c.case_id for c in cases]
             return {"checkpoint_id": "checkpoint-1", "sha256": hashlib.sha256(b"candidate").hexdigest()}
+
         def evaluate(checkpoint, case):
             self.assertEqual(checkpoint, "checkpoint-1")
             observed["evaluated_on"].append(case.case_id)
@@ -44,7 +46,6 @@ class LeadershipTrainingTests(unittest.TestCase):
         self.assertFalse(report["checkpoint"]["bytes_independently_verified"])
 
     def test_training_does_not_acquire_authority_or_fake_training_success(self):
-        count = []
         report = train_leadership(
             curriculum(),
             train=lambda cases: {"checkpoint_id": "candidate", "sha256": "f" * 64},
@@ -85,6 +86,7 @@ class LeadershipTrainingTests(unittest.TestCase):
 
     def test_test_data_never_sent_to_training_callback(self):
         valid = curriculum()
+
         def hostile(cases):
             assert set(c.case_id for c in cases) == set(c.case_id for c in valid.training)
             return {"checkpoint_id": "candidate", "sha256": "a" * 64}
