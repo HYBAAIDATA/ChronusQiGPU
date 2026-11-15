@@ -26,6 +26,7 @@ from chronus.security.kms import (
 from chronus.security.signers import (
     Ed25519Signer,
     MLDSASigner,
+    MlDsaSigner,
     PostQuantumError,
     VerificationError,
 )
@@ -54,6 +55,7 @@ from chronus.security.al_haras import (
 __version__ = "36.0.1"
 __all__ = [
     "MLDSASigner",
+    "MlDsaSigner",
     "Ed25519Signer",
     "ZKSTARKVerifier",
     "VerifyEndpoint",
