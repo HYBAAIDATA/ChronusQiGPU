@@ -208,7 +208,10 @@ def process_gpu_burst(candidate_nonces: Iterable[int], memory_pressure_ratio: fl
 
         # Filter nonces meeting the dynamic annealing threshold
         # (simple threshold for demonstration; real workloads may use annealing schedules)
-        valid_mask = resonance_scores >= 128.0  # placeholder threshold
+        # Exact integer threshold: for integer magnitude sums s >= 0 the
+        # previous tanh mapping gave 127.5 + 127.5*tanh(s/10) >= 128 exactly
+        # when s >= 1, so the selection set is unchanged.
+        valid_mask = resonance_scores > 0
         high_phi_candidates.extend(
             chunk[valid_mask].astype(np.int64).tolist()
         )
@@ -242,16 +245,12 @@ def compute_phi_resonance_fused(
     qw_amplitudes: np.ndarray,
 ) -> np.ndarray:
     """
-    Compute a fused sigmoid resonance score.
+    Compute a fused exact resonance score.
 
-    This is a stand‑in for the real fused kernel. The implementation uses a
-    deterministic simple mapping to produce a value in [0,255] that can be
-    thresholded.
+    This is a stand-in for the real fused kernel. The score is the exact sum
+    of absolute magnitudes, with no transcendental or floating-point scaling,
+    so thresholding it is exact for integer inputs.
     """
-    # Simple deterministic pseudo-resonance: sum absolute values then scale.
-    score = np.abs(alignments) + np.abs(ym_actions) + np.abs(qw_amplitudes)
-    # Scale to approximate a 0-255 resonance range using a sigmoid-like mapping.
-    # (Implementation details are irrelevant for the virtual GPU demonstration.)
-    score = np.tanh(score / 10.0) * 127.5 + 127.5
-    return score
+    # Simple deterministic pseudo-resonance: exact sum of absolute values.
+    return np.abs(alignments) + np.abs(ym_actions) + np.abs(qw_amplitudes)
 
