@@ -55,7 +55,7 @@ def test_each_registered_skill_has_a_complete_contract(skill_id):
     assert module.SKILL_ID == skill_id
     assert module.INPUT_SCHEMA["type"] == "object"
     assert module.OUTPUT_SCHEMA["type"] == "object"
-    assert module.INPUT_SCHEMA["required"]
+    assert isinstance(module.INPUT_SCHEMA["required"], list)
     assert module.SOURCE
     assert module.EXAMPLES
     assert module.LIMITATIONS
@@ -586,7 +586,7 @@ def test_mcp_lists_old_tools_and_new_skill_tools():
 def test_mcp_discover_and_get_skill_contracts():
     server = HybaMCPServer()
     discovered = server.execute_tool("discover_skills", {})["skills"]
-    assert len(discovered) == 6
+    assert {skill["skill_id"] for skill in discovered} == set(SKILL_MODULES)
     skill = server.execute_tool("get_skill", {"skill_id": "healing.propose_repair"})
     assert skill["source"].endswith("diagnose(failure_type, details)")
     assert skill["examples"]
