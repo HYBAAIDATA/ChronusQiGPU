@@ -77,7 +77,11 @@ def require_gh_cli_patched() -> None:
         raise ReleaseBlocked("gh CLI 2.102.0 or newer is required for exact workflow verification")
 
 
-def verify_release(repository: str, commit: str) -> int:
+def verify_release(
+    repository: str, commit: str,
+    *, verified_verdict_output: str | None = None,
+    provenance_output: str | None = None,
+) -> int:
     if not re.fullmatch(r"[0-9a-fA-F]{40}", commit):
         raise ReleaseBlocked("invalid release commit identity")
     if not re.fullmatch(r"[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+", repository):
@@ -97,10 +101,36 @@ def verify_release(repository: str, commit: str) -> int:
         verdict_file = files[0]
         # The attestation binds these bytes to the named workflow, repository,
         # exact source commit and main ref. A downloaded JSON alone is never proof.
-        call("gh", "attestation", "verify", str(verdict_file), "--repo", repository,
-             "--signer-workflow", f"{repository}/{_WORKFLOW}",
-             "--source-digest", commit, "--source-ref", "refs/heads/main")
-        check_verdict(json.loads(verdict_file.read_text(encoding="utf-8")))
+        verification_output = call(
+            "gh", "attestation", "verify", str(verdict_file), "--repo", repository,
+            "--signer-workflow", f"{repository}/{_WORKFLOW}",
+            "--source-digest", commit, "--source-ref", "refs/heads/main",
+        )
+        verified_bytes = verdict_file.read_bytes()
+        check_verdict(json.loads(verified_bytes))
+        # Preserve exactly the already-verified bytes, rather than copying
+        # a committed, potentially stale manifest from the checkout.
+        if verified_verdict_output is not None:
+            destination = Path(verified_verdict_output)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(verified_bytes)
+        if provenance_output is not None:
+            destination = Path(provenance_output)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            receipt = {
+                "repository": repository,
+                "source_commit": commit,
+                "source_ref": "refs/heads/main",
+                "workflow": _WORKFLOW,
+                "qualifying_run_id": run_id,
+                "attestation_verified": True,
+                "verification_output": verification_output,
+                "note": "Verification receipt; re-verify the exact verdict with GitHub attestations.",
+            }
+            destination.write_text(
+                json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
     print(f"Commit-matched, attested PASS qualification verified: {commit}")
     return run_id
 
@@ -109,9 +139,15 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repository", required=True)
     parser.add_argument("--commit", required=True)
+    parser.add_argument("--verified-verdict-output")
+    parser.add_argument("--provenance-output")
     args = parser.parse_args()
     try:
-        verify_release(args.repository, args.commit)
+        verify_release(
+            args.repository, args.commit,
+            verified_verdict_output=args.verified_verdict_output,
+            provenance_output=args.provenance_output,
+        )
     except (ReleaseBlocked, ValueError, OSError, subprocess.TimeoutExpired, json.JSONDecodeError) as exc:
         print(f"RELEASE BLOCKED: {exc}")
         return 1
