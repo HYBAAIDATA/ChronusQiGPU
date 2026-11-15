@@ -337,7 +337,7 @@ def _stage_brand_new_database(path: str) -> None:
             staged.close()
         # WAL is checkpointed when the final connection closes. Sync before
         # publishing so a crash cannot expose only half the schema.
-        with open(temporary, "rb") as completed:
+        with open(temporary, "rb+") as completed:
             os.fsync(completed.fileno())
         # Same-directory hard link is create-if-absent and never replaces an
         # unexpected existing database, including a symlink/alias target.

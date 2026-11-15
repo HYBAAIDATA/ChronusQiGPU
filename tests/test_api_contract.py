@@ -213,7 +213,8 @@ def test_interrupted_staging_never_publishes_incomplete_database(
     with state.connection() as conn:
         assert conn.execute("SELECT COUNT(*) FROM api_workloads").fetchone()[0] == 0
     assert database.exists()
-    assert state._schema_valid(sqlite3.connect(database))
+    with state.connection() as conn:
+        assert state._schema_valid(conn)
 
 
 def test_fresh_sqlite_bootstrap_is_serialized_across_processes(tmp_path):
