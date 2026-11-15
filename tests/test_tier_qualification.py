@@ -595,6 +595,8 @@ class ForgeryAndPrecisionTests(unittest.TestCase):
                 seed_path.unlink()
                 reset_qualification_signer()
                 # Group/world-readable seed is refused.
+                if not hasattr(os, "fchmod"):
+                    self.skipTest("os.fchmod unavailable on this platform")
                 fd = os.open(
                     str(seed_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600
                 )

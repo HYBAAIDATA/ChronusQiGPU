@@ -345,7 +345,8 @@ class Session:
         self.phase = "setup"
         self.alive = asyncio.Event()
         self.alive.set()
-        self.difficulty = None
+        # Stratum default share difficulty is 1 until set_difficulty arrives.
+        self.difficulty = 1.0
         self.work_generation = 0
         self.pump = asyncio.create_task(self._pump(reader))
 
@@ -550,12 +551,23 @@ async def smoke(args, tx: Transcript) -> int:
     )
 
     session = Session(reader, writer, tx)
+    version_rolling_active = False
+    version_bits = "00000000"
     try:
         if args.version_rolling:
             reply = await session.call(
                 "mining.configure",
                 [["version-rolling"], {"version-rolling.mask": "1fffe000"}], args.timeout)
-            tx.step("configure", bool(reply.get("result")), json.dumps(reply.get("result")))
+            result = reply.get("result")
+            configured = isinstance(result, dict) and bool(result.get("version-rolling"))
+            tx.step("configure", configured, json.dumps(result))
+            if configured:
+                version_rolling_active = True
+                mask = result.get("version-rolling.mask", "1fffe000")
+                tx.data["version_rolling_mask"] = mask
+                # Smoke search does not roll bits yet; BIP 310 still requires
+                # the sixth submit parameter after successful negotiation.
+                version_bits = "00000000"
 
         reply = await session.call("mining.subscribe", [AGENT], args.timeout)
         result = reply.get("result")
@@ -613,16 +625,15 @@ async def smoke(args, tx: Transcript) -> int:
         if not args.submit_share:
             return 0
 
+        # Use the difficulty snapshot on the selected notify only. Do not
+        # fall back to a later set_difficulty or to nbits (network target).
         if job_difficulty is not None:
-            difficulty = job_difficulty
+            difficulty = float(job_difficulty)
             target_source = "notify_difficulty"
-        elif tx.data["set_difficulty"]:
-            difficulty = tx.data["set_difficulty"][-1]["value"]
-            target_source = "set_difficulty"
         else:
-            difficulty = None
-            target_source = "nbits"
-        target = target_from_difficulty(difficulty) if difficulty else target_from_nbits(job["nbits"])
+            difficulty = 1.0
+            target_source = "default_difficulty_1"
+        target = target_from_difficulty(difficulty)
         tx.data.update({"difficulty": difficulty,
                         "target_source": target_source,
                         "target_hex": f"{target:064x}",
@@ -697,8 +708,13 @@ async def smoke(args, tx: Transcript) -> int:
                         "header_hex": header.hex(),
                         "share_hash_hex": digest[::-1].hex()})
 
-        wanted = await session.send("mining.submit", [
-            user, job["job_id"], extranonce2, job["ntime"], f"{submit_nonce:08x}"])
+        submit_params = [
+            user, job["job_id"], extranonce2, job["ntime"], f"{submit_nonce:08x}"
+        ]
+        if version_rolling_active:
+            submit_params.append(version_bits)
+            tx.data["version_bits"] = version_bits
+        wanted = await session.send("mining.submit", submit_params)
         reply = None
         deadline = time.monotonic() + args.timeout
         while True:

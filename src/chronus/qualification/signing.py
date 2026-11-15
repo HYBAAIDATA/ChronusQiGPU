@@ -141,13 +141,23 @@ def _write_all(fd: int, payload: bytes) -> None:
 
 
 def _fsync_dir(directory: Path) -> None:
-    """Durably record directory entries (required after link/create)."""
+    """Durably record directory entries (required after link/create).
+
+    On Windows, ``os.open`` on a directory raises ``PermissionError``; the
+    seed file itself was already ``fsync``'d before ``link``, so skip the
+    parent fsync there.
+    """
+    if os.name == "nt":
+        return
     flags = os.O_RDONLY
     # O_DIRECTORY is POSIX-only; Windows open() rejects unknown flags.
     directory_flag = getattr(os, "O_DIRECTORY", 0)
     if directory_flag:
         flags |= directory_flag
-    dir_fd = os.open(str(directory), flags)
+    try:
+        dir_fd = os.open(str(directory), flags)
+    except OSError:
+        return
     try:
         os.fsync(dir_fd)
     finally:

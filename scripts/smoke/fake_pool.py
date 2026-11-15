@@ -58,10 +58,15 @@ def header(extranonce1: str, params: list) -> bytes:
 
 
 def accept_share(extranonce1: str, params: list, target: int = TARGET) -> tuple[bool, list | None]:
-    """Validate submit fields and apply the LE share predicate. Used by tests."""
-    if not isinstance(params, list) or len(params) != 5:
+    """Validate submit fields and apply the LE share predicate. Used by tests.
+
+    Accepts 5-param submits or BIP 310 6-param submits (trailing version_bits).
+    """
+    if not isinstance(params, list) or len(params) not in (5, 6):
         return False, [20, "Malformed submit", None]
-    worker, job_id, en2, ntime, nonce = params
+    worker, job_id, en2, ntime, nonce = params[:5]
+    if len(params) == 6 and not _is_hex(params[5], 8):
+        return False, [20, "Malformed submit", None]
     if job_id != JOB_ID:
         return False, [21, "Job not found", None]
     if not isinstance(worker, str) or not worker:
@@ -72,7 +77,7 @@ def accept_share(extranonce1: str, params: list, target: int = TARGET) -> tuple[
         return False, [20, "Malformed submit", None]
     if not _is_hex(nonce, 8):
         return False, [20, "Malformed submit", None]
-    digest = hashlib.sha256(hashlib.sha256(header(extranonce1, params)).digest()).digest()
+    digest = hashlib.sha256(hashlib.sha256(header(extranonce1, params[:5])).digest()).digest()
     ok = int.from_bytes(digest, "little") <= target
     return ok, (None if ok else [23, "low difficulty share", None])
 

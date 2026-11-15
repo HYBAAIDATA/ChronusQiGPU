@@ -83,8 +83,17 @@ class EndianSmokeTests(unittest.TestCase):
         self.assertFalse(ok)
         self.assertEqual(error[0], 21)
 
-        extra = list(params) + ["00000000"]
-        ok, error = accept_share(extranonce1, extra, soft)
+        # BIP 310 sixth version_bits parameter is accepted when well-formed.
+        with_bits = list(params) + ["00000000"]
+        ok, error = accept_share(extranonce1, with_bits, soft)
+        self.assertTrue(ok)
+        self.assertIsNone(error)
+        bad_bits = list(params) + ["not-hex"]
+        ok, error = accept_share(extranonce1, bad_bits, soft)
+        self.assertFalse(ok)
+        self.assertEqual(error[0], 20)
+        too_many = list(params) + ["00000000", "00000000"]
+        ok, error = accept_share(extranonce1, too_many, soft)
         self.assertFalse(ok)
         self.assertEqual(error[0], 20)
 
