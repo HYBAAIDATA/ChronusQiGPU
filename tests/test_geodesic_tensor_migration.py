@@ -20,6 +20,8 @@ from chronus.tensor.geodesic import (
     TopologicalIntegrityGate,
 )
 from chronus.tensor.opencl_backend import OpenCLTensorBackend
+from chronus.tensor.cuda_backend import CUDATensorBackend, CUDATensorUnavailable
+from chronus.tensor.metal_backend import MetalTensorBackend, MetalTensorUnavailable
 
 
 def test_selective_unfold_never_calls_full_unfold(monkeypatch):
@@ -132,3 +134,31 @@ def test_profiled_router_uses_only_verified_observations():
     assert selected["route"] == "qualified-gpu"
     assert selected["profiled"] is True
     assert router.select("matmul", 2048)["route"] == "numpy-reference"
+
+
+def test_cuda_tensor_backend_is_real_or_fails_closed():
+    backend = CUDATensorBackend()
+    if backend.is_available():
+        a = np.arange(6, dtype=np.float32).reshape(2, 3)
+        b = np.arange(6, dtype=np.float32).reshape(2, 3)
+        result = backend.execute("add", a, b)
+        np.testing.assert_allclose(result["output"], a + b)
+        assert result["physical_execution"] is True
+        assert result["device"]["measured"] is False
+    else:
+        with pytest.raises(CUDATensorUnavailable):
+            backend.execute("add", np.ones(2, dtype=np.float32), np.ones(2, dtype=np.float32))
+
+
+def test_metal_tensor_backend_is_real_or_fails_closed():
+    backend = MetalTensorBackend()
+    if backend.is_available():
+        a = np.arange(6, dtype=np.float32).reshape(2, 3)
+        b = np.arange(6, dtype=np.float32).reshape(3, 2)
+        result = backend.execute("matmul", a, b)
+        np.testing.assert_allclose(result["output"], a @ b, rtol=1e-5, atol=1e-5)
+        assert result["physical_execution"] is True
+        assert result["device"]["measured"] is False
+    else:
+        with pytest.raises(MetalTensorUnavailable):
+            backend.execute("add", np.ones(2, dtype=np.float32), np.ones(2, dtype=np.float32))
