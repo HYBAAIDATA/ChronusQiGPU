@@ -46,7 +46,7 @@ def get_git_head() -> str:
         )
         return res.stdout.strip()
     except Exception:
-        return "872010095d8886169f1e96face9c8887949e6e4e"
+        return "UNAVAILABLE"
 
 
 def rfc8785_canonical_json(data: Any) -> bytes:
@@ -87,33 +87,26 @@ def run_step_1_purity_gate() -> Dict[str, Any]:
 
 
 def run_step_2_system_invariants() -> Dict[str, Any]:
-    """Step 2: System Invariants (I1-I94) & Release Gates (G1-G8)."""
-    print("\n" + "=" * 80)
-    print("STEP 2: SYSTEM INVARIANTS & FULL TEST SUITE VERIFICATION")
+    """Report observed diagnostics; missing invariant proof stays unavailable."""
+    print("\\n" + "=" * 80)
+    print("STEP 2: LOCAL DIAGNOSTICS AND RELEASE QUALIFICATION")
     print("=" * 80)
     from chronus.core import ChronusVerificationOrchestrator
 
-    orchestrator_res = ChronusVerificationOrchestrator.run_complete_verification_suite()
-    status = orchestrator_res.get("qualification_status")
-    gates_eval = orchestrator_res.get("total_release_gates_evaluated", 8)
-    gates_pass = orchestrator_res.get("release_gates_passed", 8)
-    inv_eval = orchestrator_res.get("total_invariants_evaluated", 94)
-    inv_pass = orchestrator_res.get("invariants_passed", 94)
-
-    print(f"[+] Total Release Gates: {gates_pass} / {gates_eval} PASS")
-    print(f"[+] Total System Invariants: {inv_pass} / {inv_eval} GREEN (I1 - I94 satisfied)")
-    print(f"[+] Sovereign Expansion Tests: 37 / 37 passed")
-
-    if gates_pass != 8 or inv_pass != 94:
-        raise RuntimeError(f"Invariant check failed: gates={gates_pass}/8, inv={inv_pass}/94")
-
+    observed = ChronusVerificationOrchestrator.run_complete_verification_suite()
+    gates = observed["total_release_gates_evaluated"]
+    passed = observed["release_gates_passed"]
+    print(f"Observed local gates: {passed}/{gates}")
+    print("Architectural invariant proof: UNAVAILABLE")
+    print("Release qualification: NOT_QUALIFIED")
     return {
-        "status": status,
-        "release_gates_passed": gates_pass,
-        "total_release_gates": gates_eval,
-        "invariants_passed": inv_pass,
-        "total_invariants": inv_eval,
-        "sovereign_expansion_tests_passed": 37,
+        "status": "NOT_QUALIFIED",
+        "release_gates_passed": passed,
+        "total_release_gates": gates,
+        "invariants_passed": None,
+        "total_invariants": None,
+        "sovereign_expansion_tests_passed": None,
+        "blockers": observed["blockers"],
     }
 
 
@@ -253,7 +246,7 @@ def run_step_4_cryptographic_attestation(manifest_path: Path) -> Dict[str, Any]:
         receipt_handle=pointer_id,
         stark_proof=stark_proof,
         stark_public_input={"manifest_sha256": canonical_sha256},
-        metadata={"qualification_status": "PRODUCTION_QUALIFIED", "zero_copy": True},
+        metadata={"qualification_status": "NOT_QUALIFIED", "zero_copy": True},
     )
     ovid.register_receipt_alias(pointer_id, receipt)
     ovid.register_receipt_alias(canonical_sha256, receipt)
@@ -317,7 +310,7 @@ def run_step_6_compile_manifest(
     with open(manifest_path, "r", encoding="utf-8") as f:
         manifest = json.load(f)
 
-    manifest["qualification_status"] = "PRODUCTION_QUALIFIED"
+    manifest["qualification_status"] = "NOT_QUALIFIED"
     manifest["git_commit_head"] = git_head
     manifest["timestamp"] = datetime.now(timezone.utc).isoformat()
     manifest["benchmarks"] = bench_data
@@ -358,6 +351,12 @@ def main() -> int:
 
     # 2. System Invariants & Test Suite
     inv_results = run_step_2_system_invariants()
+
+    # A passing local scan cannot supply independent production qualification.
+    # Do not execute or advertise the legacy attestation and publication stages.
+    if inv_results["status"] != "PRODUCTION_QUALIFIED":
+        print("AUDIT STOPPED: NOT_QUALIFIED; no release attestation issued.")
+        return 1
 
     # 3. Benchmarks
     bench_results = run_step_3_benchmarks()
