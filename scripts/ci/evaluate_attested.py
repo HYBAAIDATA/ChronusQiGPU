@@ -51,6 +51,9 @@ def main() -> int:
     gates={gate:"UNQUALIFIED" for gate in MANDATORY}
     gate_identity_ok=False
     gate_attestation_ok=False
+    deployment_profile=None
+    product_facts={}
+    product_gate_status="UNQUALIFIED"
     if a.product_gates:
         try:
             gate_doc=json.loads(Path(a.product_gates).read_text())
@@ -58,6 +61,9 @@ def main() -> int:
                 gate_doc.get("schema")=="chronus-product-gates-v1"
                 and gate_doc.get("commit")==a.expected_commit
                 and str(gate_doc.get("run_id"))==str(a.expected_run_id)
+                and isinstance(gate_doc.get("deployment_profile"), str)
+                and bool(gate_doc.get("deployment_profile"))
+                and isinstance(gate_doc.get("facts"), dict)
             )
             gate_verification=subprocess.run(
                 ["gh","attestation","verify",a.product_gates,"--repo",a.repository],
@@ -66,7 +72,13 @@ def main() -> int:
             gate_attestation_ok=gate_verification.returncode==0
             if gate_identity_ok and gate_attestation_ok:
                 supplied=gate_doc.get("gates",{})
-                gates={gate:("PASS" if supplied.get(gate)=="PASS" else "UNQUALIFIED") for gate in MANDATORY}
+                gates={
+                    gate:("PASS" if supplied.get(gate)=="PASS" else "UNQUALIFIED")
+                    for gate in MANDATORY
+                }
+                deployment_profile=gate_doc["deployment_profile"]
+                product_facts=gate_doc["facts"]
+                product_gate_status=str(gate_doc.get("status", "UNQUALIFIED"))
         except (ValueError,OSError,TypeError,subprocess.TimeoutExpired):
             gate_identity_ok=gate_attestation_ok=False
 
@@ -76,6 +88,7 @@ def main() -> int:
         test_attestation_verified
         and test_ok
         and gate_attestation_verified
+        and product_gate_status == "PASS"
         and all(gates.get(gate) == "PASS" for gate in MANDATORY)
     )
     verdict=qualify(
@@ -93,6 +106,9 @@ def main() -> int:
         "test_suite_pass":bool(test_ok),
         "gate_attestation_verified":gate_attestation_verified,
         "production_evidence_verified":production_evidence_verified,
+        "deployment_profile":deployment_profile,
+        "product_gate_status":product_gate_status,
+        "product_facts":product_facts,
         "gates":gates,
         "claims":dispositions(gates, production_evidence_verified),
     }
