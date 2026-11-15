@@ -160,6 +160,34 @@ def _is_hex(text: object, length: int | None = None) -> bool:
     )
 
 
+def validate_job_params(params: list) -> str | None:
+    """Return a protocol error detail, or None when the notify is usable work."""
+    if not isinstance(params, list) or len(params) < 9:
+        return "mining.notify requires 9 params"
+    job_id, prevhash, coinb1, coinb2, branches, version, nbits, ntime, clean = params[:9]
+    if not isinstance(job_id, str) or not job_id:
+        return "job_id must be a non-empty string"
+    if not _is_hex(prevhash, 64):
+        return "prevhash must be 64 hex characters"
+    if not _is_hex(coinb1) or not _is_hex(coinb2):
+        return "coinbase parts must be hex"
+    if not isinstance(branches, list) or any(not _is_hex(branch, 64) for branch in branches):
+        return "merkle branches must be 64-hex strings"
+    if not _is_hex(version, 8) or not _is_hex(nbits, 8) or not _is_hex(ntime, 8):
+        return "version, nbits and ntime must be 8 hex characters"
+    if not isinstance(clean, bool):
+        return "clean_jobs must be a boolean"
+    try:
+        target_from_nbits(nbits)
+    except (ValueError, TypeError):
+        return "nbits is not a usable compact target"
+    return None
+
+
+class WorkChanged(RuntimeError):
+    """Pool replaced the active job or difficulty while a search batch was running."""
+
+
 def _resolve_search(name: str) -> str:
     if name != "auto":
         return name
@@ -186,21 +214,30 @@ async def search_share(
     target: int,
     deadline: float,
     alive: asyncio.Event | None = None,
+    work_generation: int | None = None,
+    get_work_generation=None,
 ) -> tuple[int | None, int, str]:
     """Return (nonce_or_None, hashes_evaluated, backend_used).
 
     Runs each batch off the event loop so the Session pump can process
     set_difficulty / notify pushes during search. Stops when ``alive`` clears
-    (pool disconnect) instead of waiting out the share deadline.
+    (pool disconnect) or the work generation advances (replacement job /
+    difficulty), instead of waiting out the share deadline.
     """
     backend = _resolve_search(backend)
     header76 = build_header(job, extranonce1, extranonce2, 0)[:76]
     hashes = 0
     loop = asyncio.get_running_loop()
 
-    def _still_connected() -> None:
+    def _guards() -> None:
         if alive is not None and not alive.is_set():
             raise ConnectionError("pool closed during search")
+        if (
+            work_generation is not None
+            and get_work_generation is not None
+            and get_work_generation() != work_generation
+        ):
+            raise WorkChanged("pool replaced work during search")
 
     if backend == "opencl":
         from chronus.execution.opencl_sha256d import OpenCLSha256dMinerBackend
@@ -214,7 +251,7 @@ async def search_share(
         cursor = 0
         batch = 1 << 20
         while time.monotonic() < deadline and cursor < (1 << 32):
-            _still_connected()
+            _guards()
             width = min(batch, (1 << 32) - cursor)
             header80 = header76 + b"\x00\x00\x00\x00"
             hits = await loop.run_in_executor(
@@ -230,7 +267,7 @@ async def search_share(
                     return nonce, hashes, backend
             cursor += width
             await asyncio.sleep(0)
-        _still_connected()
+        _guards()
         return None, hashes, backend
 
     if backend == "geometric":
@@ -240,7 +277,7 @@ async def search_share(
         cursor = 0
         batch = 1 << 16
         while time.monotonic() < deadline and cursor < (1 << 32):
-            _still_connected()
+            _guards()
             width = min(batch, (1 << 32) - cursor)
             result = await loop.run_in_executor(
                 None, miner.solve_header_range, header76, target, cursor, width
@@ -252,13 +289,13 @@ async def search_share(
             if cursor == 0 and hashes >= (1 << 32):
                 break
             await asyncio.sleep(0)
-        _still_connected()
+        _guards()
         return None, hashes, backend
 
     nonce = 0
     batch = 4096
     while time.monotonic() < deadline and nonce < (1 << 32):
-        _still_connected()
+        _guards()
         end = min(nonce + batch, 1 << 32)
 
         def _python_batch(start: int, stop: int) -> tuple[int | None, int]:
@@ -276,7 +313,7 @@ async def search_share(
             return found, hashes, "python"
         nonce = end
         await asyncio.sleep(0)
-    _still_connected()
+    _guards()
     return None, hashes, "python"
 
 
@@ -291,6 +328,8 @@ class Session:
         self.phase = "setup"
         self.alive = asyncio.Event()
         self.alive.set()
+        self.difficulty = None
+        self.work_generation = 0
         self.pump = asyncio.create_task(self._pump(reader))
 
     def _record_push(self, message: dict) -> None:
@@ -301,10 +340,16 @@ class Session:
         if method == "mining.set_difficulty":
             if not params:
                 return
+            self.difficulty = params[0]
+            self.work_generation += 1
             self.tx.data["set_difficulty"].append({"value": params[0], "phase": self.phase})
         elif method == "mining.notify":
             if not params:
                 return
+            # Difficulty in effect for this job is whatever arrived before this notify.
+            message["_difficulty"] = self.difficulty
+            self.work_generation += 1
+            message["_work_generation"] = self.work_generation
             if self.phase == "search":
                 self.tx.data["stale_notifies"] = self.tx.data.get("stale_notifies", 0) + 1
             self.tx.data["jobs"].append(params[0])
@@ -357,7 +402,10 @@ class Session:
         wanted = await self.send(method, params)
         deadline = time.monotonic() + timeout
         while True:
-            message = await self._next(max(0.01, deadline - time.monotonic()))
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise asyncio.TimeoutError()
+            message = await self._next(remaining)
             if message.get("id") == wanted:
                 return message
             if message.get("method"):
@@ -369,7 +417,10 @@ class Session:
                 return self.stash.pop(index)
         deadline = time.monotonic() + timeout
         while True:
-            message = await self._next(max(0.01, deadline - time.monotonic()))
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise asyncio.TimeoutError()
+            message = await self._next(remaining)
             if message.get("method") == method:
                 return message
             if message.get("method"):
@@ -411,6 +462,10 @@ class Session:
             pass
 
 
+def _is_loopback(host: str) -> bool:
+    return host in ("127.0.0.1", "localhost", "::1")
+
+
 async def smoke(args, tx: Transcript) -> int:
     raw_host = os.environ.get(args.host_var, "")
     host, port, use_tls = parse_host(raw_host, args.port)
@@ -422,6 +477,19 @@ async def smoke(args, tx: Transcript) -> int:
     if not user:
         tx.step("config", False, f"{args.user_var} is empty")
         return 4
+    if not use_tls and not _is_loopback(host) and not getattr(args, "allow_cleartext", False):
+        tx.step(
+            "config",
+            False,
+            "cleartext Stratum to a non-loopback host requires --allow-cleartext "
+            "(worker credentials travel in the clear)",
+        )
+        return 4
+    if not use_tls and not _is_loopback(host):
+        print(
+            "warning: cleartext Stratum; use disposable worker credentials only",
+            file=sys.stderr,
+        )
 
     started = time.monotonic()
     try:
@@ -482,12 +550,19 @@ async def smoke(args, tx: Transcript) -> int:
         if pending:
             notify = pending[-1]
         params = notify.get("params")
-        if not isinstance(params, list) or len(params) < 9:
-            tx.step("job", False, "malformed mining.notify")
+        job_error = validate_job_params(params if isinstance(params, list) else [])
+        if job_error is not None:
+            tx.step("job", False, job_error)
             return 2
         job = dict(zip(
             ("job_id", "prevhash", "coinb1", "coinb2", "merkle_branch", "version",
-             "nbits", "ntime", "clean_jobs"), params))
+             "nbits", "ntime", "clean_jobs"), params[:9]))
+        # Difficulty snapshot attached when the notify was recorded (not a later push).
+        job_difficulty = notify.get("_difficulty")
+        job_work_generation = notify.get("_work_generation", session.work_generation)
+        tx.data["selected_job"] = job
+        tx.data["extranonce1"] = extranonce1
+        tx.data["extranonce2_size"] = extranonce2_size
         tx.step(
             "job",
             True,
@@ -498,11 +573,20 @@ async def smoke(args, tx: Transcript) -> int:
         if not args.submit_share:
             return 0
 
-        difficulty = tx.data["set_difficulty"][-1]["value"] if tx.data["set_difficulty"] else None
+        if job_difficulty is not None:
+            difficulty = job_difficulty
+            target_source = "notify_difficulty"
+        elif tx.data["set_difficulty"]:
+            difficulty = tx.data["set_difficulty"][-1]["value"]
+            target_source = "set_difficulty"
+        else:
+            difficulty = None
+            target_source = "nbits"
         target = target_from_difficulty(difficulty) if difficulty else target_from_nbits(job["nbits"])
         tx.data.update({"difficulty": difficulty,
-                        "target_source": "set_difficulty" if difficulty else "nbits",
-                        "target_hex": f"{target:064x}"})
+                        "target_source": target_source,
+                        "target_hex": f"{target:064x}",
+                        "work_generation": job_work_generation})
         extranonce2 = "00" * extranonce2_size
         tx.data["extranonce2"] = extranonce2
 
@@ -511,14 +595,36 @@ async def smoke(args, tx: Transcript) -> int:
         jobs_before = len(tx.data["jobs"])
         diff_before = len(tx.data["set_difficulty"])
         deadline = time.monotonic() + args.share_seconds
-        found, hashes, used = await search_share(
-            args.search, job, extranonce1, extranonce2, target, deadline, alive=session.alive
-        )
+        try:
+            found, hashes, used = await search_share(
+                args.search,
+                job,
+                extranonce1,
+                extranonce2,
+                target,
+                deadline,
+                alive=session.alive,
+                work_generation=job_work_generation,
+                get_work_generation=lambda: session.work_generation,
+            )
+        except WorkChanged as exc:
+            tx.data["search_backend"] = _resolve_search(args.search)
+            tx.data.update({
+                "difficulty_events_during_search": sum(
+                    1 for e in tx.data["set_difficulty"] if e["phase"] == "search"
+                ),
+                "stale_notifies": tx.data.get("stale_notifies", 0),
+            })
+            tx.step("search", False, f"{exc}")
+            tx.step("submit", False, "skipped: work changed during search")
+            return 2
         tx.data["search_backend"] = used
         # Drain any pushes that arrived while the last batch ran.
         await asyncio.sleep(0)
-        work_changed = len(tx.data["jobs"]) > jobs_before or any(
-            e["phase"] == "search" for e in tx.data["set_difficulty"][diff_before:]
+        work_changed = (
+            session.work_generation != job_work_generation
+            or len(tx.data["jobs"]) > jobs_before
+            or any(e["phase"] == "search" for e in tx.data["set_difficulty"][diff_before:])
         )
         tx.data.update({
             "difficulty_events_during_search": sum(
@@ -561,8 +667,11 @@ async def smoke(args, tx: Transcript) -> int:
             user, job["job_id"], extranonce2, job["ntime"], f"{submit_nonce:08x}"])
         reply = None
         deadline = time.monotonic() + args.timeout
-        while time.monotonic() < deadline:
-            message = await session._next(max(0.01, deadline - time.monotonic()))
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            message = await session._next(remaining)
             if message.get("id") == wanted:
                 reply = message
                 break
@@ -609,6 +718,11 @@ def main() -> int:
              "or pure-Python reference. auto prefers opencl then geometric.",
     )
     parser.add_argument("--version-rolling", action="store_true")
+    parser.add_argument(
+        "--allow-cleartext",
+        action="store_true",
+        help="Permit non-TLS Stratum to a non-loopback host (credentials travel in the clear).",
+    )
     args = parser.parse_args()
 
     if args.require_accept and not args.submit_share:

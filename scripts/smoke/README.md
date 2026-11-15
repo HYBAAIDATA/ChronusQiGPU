@@ -33,7 +33,10 @@ MINING_BRAIINS_USER=smoke PYTHONPATH=src \
 `--require-accept` requires `--submit-share`. `--target fake` forces the local
 preset host (does not inherit a live `MINING_*_HOST`). TLS schemes
 (`stratum+ssl` / `stratum+tls`) open a verified SSL socket; unknown schemes
-are rejected.
+are rejected. Cleartext Stratum to a non-loopback host needs
+`--allow-cleartext` (worker credentials travel in the clear). Mid-search
+`mining.notify` / `set_difficulty` advances a work generation and aborts
+submit for the superseded job.
 
 Transcripts land in `evidence/smoke/`.
 

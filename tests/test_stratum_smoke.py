@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import os
 import sys
 import unittest
 from io import StringIO
@@ -28,9 +29,11 @@ from fake_pool import (  # noqa: E402
 from stratum_smoke import (  # noqa: E402
     Session,
     Transcript,
+    WorkChanged,
     meets,
     parse_host,
     target_from_difficulty,
+    validate_job_params,
 )
 
 
@@ -97,6 +100,40 @@ class EndianSmokeTests(unittest.TestCase):
                 with self.assertRaises(SystemExit) as raised:
                     main()
         self.assertEqual(raised.exception.code, 4)
+
+    def test_cleartext_non_loopback_requires_flag(self) -> None:
+        from stratum_smoke import main
+
+        env = {
+            "MINING_BRAIINS_HOST": "stratum+tcp://pool.example:3333",
+            "MINING_BRAIINS_USER": "worker",
+        }
+        with patch.dict(os.environ, env, clear=False):
+            with patch("sys.argv", ["stratum_smoke.py", "--target", "braiins"]):
+                with patch("sys.stderr", new=StringIO()):
+                    code = main()
+        self.assertEqual(code, 4)
+
+    def test_validate_job_params_rejects_bad_fields(self) -> None:
+        good = [
+            "job-1",
+            "00" * 32,
+            "01",
+            "02",
+            ["aa" * 32],
+            "20000000",
+            "1c00ffff",
+            "67000000",
+            True,
+        ]
+        self.assertIsNone(validate_job_params(good))
+        bad_prev = list(good)
+        bad_prev[1] = "zz"
+        self.assertIsNotNone(validate_job_params(bad_prev))
+        bad_clean = list(good)
+        bad_clean[8] = "yes"
+        self.assertIsNotNone(validate_job_params(bad_clean))
+        self.assertIsNotNone(validate_job_params(good[:8]))
 
 
 class TranscriptTests(unittest.TestCase):
@@ -255,6 +292,100 @@ class NotifyRetentionTests(unittest.TestCase):
             import time
 
             return time.monotonic() + 30.0
+
+        asyncio.run(scenario())
+
+    def test_search_stops_when_work_generation_advances(self) -> None:
+        from stratum_smoke import search_share
+
+        async def scenario() -> None:
+            generation = {"value": 1}
+            job = {
+                "job_id": "j",
+                "prevhash": "00" * 32,
+                "coinb1": "00",
+                "coinb2": "00",
+                "merkle_branch": [],
+                "version": "20000000",
+                "nbits": "1c00ffff",
+                "ntime": "67000000",
+            }
+
+            async def bump():
+                await asyncio.sleep(0.05)
+                generation["value"] = 2
+
+            stopper = asyncio.create_task(bump())
+            with self.assertRaises(WorkChanged):
+                await search_share(
+                    "python",
+                    job,
+                    "deadbeef",
+                    "00000000",
+                    DIFF1,
+                    deadline=time_deadline(),
+                    work_generation=1,
+                    get_work_generation=lambda: generation["value"],
+                )
+            await stopper
+
+        def time_deadline() -> float:
+            import time
+
+            return time.monotonic() + 30.0
+
+        asyncio.run(scenario())
+
+    def test_notify_snapshots_difficulty_and_work_generation(self) -> None:
+        async def scenario() -> None:
+            reader = asyncio.StreamReader()
+
+            class W:
+                def write(self, _data):
+                    pass
+
+                async def drain(self):
+                    pass
+
+                def close(self):
+                    pass
+
+                async def wait_closed(self):
+                    pass
+
+            session = Session(reader, W(), Transcript("fake"))
+            try:
+                reader.feed_data(
+                    (
+                        json.dumps(
+                            {"id": None, "method": "mining.set_difficulty", "params": [4]}
+                        )
+                        + "\n"
+                    ).encode()
+                )
+                reader.feed_data(
+                    (
+                        json.dumps(
+                            {
+                                "id": None,
+                                "method": "mining.notify",
+                                "params": ["snap-job"] + ["00"] * 7 + [True],
+                            }
+                        )
+                        + "\n"
+                    ).encode()
+                )
+                notify = await session.wait_for("mining.notify", timeout=1.0)
+                self.assertEqual(notify["_difficulty"], 4)
+                self.assertEqual(notify["_work_generation"], session.work_generation)
+                self.assertGreaterEqual(session.work_generation, 2)
+            finally:
+                session.alive.clear()
+                session.pump.cancel()
+                try:
+                    await session.pump
+                except (asyncio.CancelledError, Exception):
+                    pass
 
         asyncio.run(scenario())
 
