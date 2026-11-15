@@ -112,6 +112,9 @@ def _attach_tier_fields(
     harness = QualificationHarness()
     prior = recall_by_class(internal)
     if prior is not None:
+        # Sticky suspension: do not auto-clear on the next job.
+        if prior.contract.suspended or prior.tier == Tier.SUSPENDED:
+            return _suspended_tier_fields(prior.contract)
         if not verify_transcript_integrity(prior.audit_transcript):
             from chronus.qualification.tiers import TIER_CONTRACT_VERSION, TierContract
 

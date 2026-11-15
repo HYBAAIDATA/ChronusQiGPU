@@ -261,9 +261,13 @@ class QualificationHarness:
     def reverify_contract(self, result: QualificationResult) -> QualificationResult:
         """Re-run the same seed/sizes; return a suspended result on breach.
 
-        Always returns a full ``QualificationResult`` so callers can persist the
-        fresh audit transcript that backs any new evidence hash.
+        Already-suspended contracts stay suspended until an explicit reset
+        (store clear / operator review). Suspension evidence is a signed audit
+        of the breach decision, distinct from the fresh measurement transcript.
         """
+        if result.contract.suspended or result.tier == Tier.SUSPENDED:
+            return result
+
         audit = result.audit_transcript
         sizes = tuple(audit["sizes"])
         seed = int(audit["seed"])
@@ -274,38 +278,75 @@ class QualificationHarness:
             sizes=sizes,
             degrade=degrade,
         )
-        violated = False
+        breached: list[dict[str, Any]] = []
         for (size, bound), (_, fresh_bound) in zip(
             result.contract.residual_bound_by_size, fresh.contract.residual_bound_by_size
         ):
             if Decimal(fresh_bound) > Decimal(bound):
-                violated = True
-                break
-        if not violated and fresh.evidence_hash != result.evidence_hash:
-            violated = True
-        if not violated:
+                breached.append(
+                    {
+                        "size": int(size),
+                        "contracted_max_residual": bound,
+                        "measured_residual": fresh_bound,
+                    }
+                )
+        reason = None
+        if breached:
+            reason = "envelope_violation"
+        elif fresh.evidence_hash != result.evidence_hash:
+            reason = "evidence_hash_mismatch"
+        if reason is None:
             return fresh
+
+        suspension_body = {
+            "decision": Tier.SUSPENDED.value,
+            "reason": reason,
+            "workload_class": audit.get("workload_class"),
+            "prior_evidence_hash": result.evidence_hash,
+            "prior_bounds": [
+                {"size": int(size), "max_residual": bound}
+                for size, bound in result.contract.residual_bound_by_size
+            ],
+            "measurement_evidence_hash": fresh.evidence_hash,
+            "fresh_sizes": list(fresh.audit_transcript.get("sizes", [])),
+            "fresh_residuals": list(fresh.audit_transcript.get("residuals", [])),
+            "breached": breached,
+            "tier": Tier.SUSPENDED.value,
+            "tier_contract_version": TIER_CONTRACT_VERSION,
+            "qualification_scope": "reference_model_class",
+            "suspended": True,
+        }
+        evidence_hash = _sha256_hex(suspension_body)
+        signature = self._default_signer(_stable_json(suspension_body))
+        suspension_transcript = {
+            **suspension_body,
+            "evidence_hash": evidence_hash,
+            "signature": signature,
+        }
         suspended_contract = TierContract(
             tier=Tier.SUSPENDED,
             tier_contract_version=TIER_CONTRACT_VERSION,
             residual_bound_by_size=fresh.contract.residual_bound_by_size,
-            qualification_evidence_hash=fresh.evidence_hash,
+            qualification_evidence_hash=evidence_hash,
             suspended=True,
         )
         economics = economics_for_tier(Tier.SUSPENDED).to_public_dict()
         public_view = {
-            **fresh.public_view,
             "tier": Tier.SUSPENDED.value,
-            "suspended": True,
+            "qualification_evidence_hash": evidence_hash,
             "envelope": suspended_contract.to_public_dict()["envelope"],
+            "tier_contract_version": TIER_CONTRACT_VERSION,
+            "suspended": True,
+            "tier_assignment_basis": external_behavior_blurb(),
+            "qualification_scope": "reference_model_class",
             "economics": economics,
         }
         assert_sealed(json.dumps(public_view), context="qualification suspended view")
         return QualificationResult(
             tier=Tier.SUSPENDED,
             contract=suspended_contract,
-            evidence_hash=fresh.evidence_hash,
-            audit_transcript=fresh.audit_transcript,
+            evidence_hash=evidence_hash,
+            audit_transcript=suspension_transcript,
             public_view=public_view,
             economics=economics,
         )

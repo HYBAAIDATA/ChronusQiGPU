@@ -208,6 +208,14 @@ class HarnessTests(unittest.TestCase):
         self.assertEqual(
             suspended.evidence_hash, suspended.audit_transcript["evidence_hash"]
         )
+        self.assertEqual(suspended.audit_transcript["decision"], Tier.SUSPENDED.value)
+        self.assertEqual(suspended.audit_transcript["reason"], "envelope_violation")
+        self.assertIn("breached", suspended.audit_transcript)
+        self.assertTrue(verify_transcript_integrity(suspended.audit_transcript))
+        # Sticky: re-verifying a suspended result must not clear it.
+        still = harness.reverify_contract(suspended)
+        self.assertTrue(still.contract.suspended)
+        self.assertEqual(still.evidence_hash, suspended.evidence_hash)
 
 
 class ForgeryAndPrecisionTests(unittest.TestCase):
@@ -281,6 +289,47 @@ class ForgeryAndPrecisionTests(unittest.TestCase):
         self.assertTrue(fields["metadata_submission_index_probed"])
         sizes = [point["size"] for point in fields["envelope"]["residual_bound"]]
         self.assertIn(10, sizes)
+        clear()
+
+    def test_suspended_class_stays_suspended_across_jobs(self) -> None:
+        from chronus.qualification.transcript_store import clear, remember
+        from chronus.service.models import WorkloadStatus
+        from chronus.service.routers.workloads import _attach_tier_fields
+
+        clear()
+        harness = QualificationHarness()
+        tight = harness.qualify("LUCAS_PV_SCALING", seed=5)
+        from chronus.qualification.tiers import TIER_CONTRACT_VERSION, TierContract
+
+        tightened = type(tight)(
+            tier=tight.tier,
+            contract=TierContract(
+                tier=tight.tier,
+                tier_contract_version=TIER_CONTRACT_VERSION,
+                residual_bound_by_size=tuple(
+                    (size, format(Decimal(bound) * Decimal("1e-9"), "f"))
+                    for size, bound in tight.contract.residual_bound_by_size
+                ),
+                qualification_evidence_hash=tight.evidence_hash,
+                suspended=False,
+            ),
+            evidence_hash=tight.evidence_hash,
+            audit_transcript=tight.audit_transcript,
+            public_view=tight.public_view,
+            economics=tight.economics,
+        )
+        remember(tightened)
+        first = _attach_tier_fields("scaling.v1", status=WorkloadStatus.COMPLETED)
+        self.assertTrue(first["tier_suspended"])
+        second = _attach_tier_fields(
+            "scaling.v1",
+            status=WorkloadStatus.COMPLETED,
+            result={
+                "result": {"family": "scaling.v1", "index": 10, "sequence_value": "123"}
+            },
+        )
+        self.assertTrue(second["tier_suspended"])
+        self.assertEqual(second["tier"], Tier.SUSPENDED.value)
         clear()
 
     def test_large_probe_residual_is_accurate(self) -> None:
