@@ -70,20 +70,31 @@ def main() -> int:
         except (ValueError,OSError,TypeError,subprocess.TimeoutExpired):
             gate_identity_ok=gate_attestation_ok=False
 
-    verified=bool(attestation_ok and identity_ok and test_ok and gate_identity_ok and gate_attestation_ok)
+    test_attestation_verified = bool(attestation_ok and identity_ok)
+    gate_attestation_verified = bool(gate_identity_ok and gate_attestation_ok)
+    production_evidence_verified = bool(
+        test_attestation_verified
+        and test_ok
+        and gate_attestation_verified
+        and all(gates.get(gate) == "PASS" for gate in MANDATORY)
+    )
     verdict=qualify(
         ci_gates=gates,
-        attestation_verified=verified,
+        attestation_verified=production_evidence_verified,
         key_provider=a.key_provider,
     )
     output={
         "status":verdict.status,
         "blockers":list(verdict.unqualified),
-        "attestation_verified":verified,
+        # Backward-compatible field: this means the supplied test-evidence
+        # artifact is authentic and bound to the expected commit/run.
+        "attestation_verified":test_attestation_verified,
+        "test_evidence_attestation_verified":test_attestation_verified,
         "test_suite_pass":bool(test_ok),
-        "gate_attestation_verified":bool(gate_identity_ok and gate_attestation_ok),
+        "gate_attestation_verified":gate_attestation_verified,
+        "production_evidence_verified":production_evidence_verified,
         "gates":gates,
-        "claims":dispositions(gates, verified),
+        "claims":dispositions(gates, production_evidence_verified),
     }
     target=Path(a.output)
     target.parent.mkdir(parents=True,exist_ok=True)
