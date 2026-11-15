@@ -74,6 +74,67 @@ _SCHEMA_OBJECTS = frozenset(
     | {f"api_{name}_tenant_created" for name in _TABLES}
     | {"api_idempotency", "api_idempotency_expires", "api_rate_limits"}
 )
+_RECORD_LAYOUT = (
+    ("record_id", "TEXT", 0, 1),
+    ("tenant_id", "TEXT", 0, 0),
+    ("state", "TEXT", 0, 0),
+    ("created_at", "TEXT", 0, 0),
+    ("record_json", "TEXT", 1, 0),
+)
+_SCHEMA_LAYOUTS = {
+    "PRAGMA table_info(api_workloads)": _RECORD_LAYOUT,
+    "PRAGMA table_info(api_nodes)": _RECORD_LAYOUT,
+    "PRAGMA table_info(api_receipts)": _RECORD_LAYOUT,
+    "PRAGMA table_info(api_idempotency)": (
+        ("tenant_id", "TEXT", 1, 1),
+        ("key", "TEXT", 1, 2),
+        ("body_hash", "TEXT", 1, 0),
+        ("status", "INTEGER", 1, 0),
+        ("body_json", "TEXT", 1, 0),
+        ("headers_json", "TEXT", 1, 0),
+        ("expires", "REAL", 1, 0),
+    ),
+    "PRAGMA table_info(api_rate_limits)": (
+        ("key", "TEXT", 0, 1),
+        ("window_start", "INTEGER", 1, 0),
+        ("count", "INTEGER", 1, 0),
+    ),
+}
+_SCHEMA_INDEXES = {
+    "PRAGMA index_info(api_workloads_tenant_created)": (
+        "tenant_id", "created_at", "record_id"
+    ),
+    "PRAGMA index_info(api_nodes_tenant_created)": (
+        "tenant_id", "created_at", "record_id"
+    ),
+    "PRAGMA index_info(api_receipts_tenant_created)": (
+        "tenant_id", "created_at", "record_id"
+    ),
+    "PRAGMA index_info(api_idempotency_expires)": ("expires",),
+}
+
+
+def _schema_valid(conn: sqlite3.Connection) -> bool:
+    """Validate the exact API schema, not just the names of its objects."""
+    objects = {
+        row[0] for row in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type IN ('table', 'index')"
+        )
+    }
+    if not _SCHEMA_OBJECTS.issubset(objects):
+        return False
+    for pragma, expected in _SCHEMA_LAYOUTS.items():
+        actual = tuple(
+            (row[1], row[2].upper(), row[3], row[5])
+            for row in conn.execute(pragma)
+        )
+        if actual != expected:
+            return False
+    for pragma, expected in _SCHEMA_INDEXES.items():
+        actual = tuple(row[2] for row in conn.execute(pragma))
+        if actual != expected:
+            return False
+    return True
 
 
 def backend() -> str:
@@ -97,6 +158,13 @@ def database_path() -> str:
 def _connect() -> sqlite3.Connection:
     path = database_path()
     Path(path).parent.mkdir(parents=True, exist_ok=True)
+    # Detect an unexpected replacement while SQLite is opening the file.
+    # Path identity alone cannot substitute for independent durable custody.
+    try:
+        before_stat = os.stat(path)
+        before_identity = (before_stat.st_dev, before_stat.st_ino)
+    except FileNotFoundError:
+        before_identity = None
     connection = sqlite3.connect(path, timeout=30.0, isolation_level=None)
     try:
         # Set timeout before any schema / journal negotiation.
@@ -104,6 +172,10 @@ def _connect() -> sqlite3.Connection:
         with _SCHEMA_LOCK:
             metadata = os.stat(path)
             identity = (metadata.st_dev, metadata.st_ino)
+            if before_identity is not None and identity != before_identity:
+                raise RuntimeError(
+                    "SQLite database changed while opening; recovery verification required"
+                )
             prior_identity = _INITIALIZED_DB.get(path)
             if prior_identity is not None and prior_identity != identity:
                 raise RuntimeError(
@@ -111,9 +183,17 @@ def _connect() -> sqlite3.Connection:
                     "recovery verification required before serving requests"
                 )
             if prior_identity is None:
+                # Restarting a process must not recreate tables in an existing
+                # incomplete database. Only a newly created file is bootstrapped.
+                if before_identity is not None and not _schema_valid(connection):
+                    raise RuntimeError(
+                        "SQLite schema missing or invalid in existing database; "
+                        "recovery verification required before serving requests"
+                    )
                 mode = connection.execute("PRAGMA journal_mode").fetchone()[0]
                 if mode.lower() != "wal":
                     connection.execute("PRAGMA journal_mode=WAL")
+                if before_identity is None:
                 for table in _TABLES:
                     connection.execute(
                         f"CREATE TABLE IF NOT EXISTS api_{table} ("
@@ -138,20 +218,25 @@ def _connect() -> sqlite3.Connection:
                     "CREATE TABLE IF NOT EXISTS api_rate_limits ("
                     "key TEXT PRIMARY KEY, window_start INTEGER NOT NULL, count INTEGER NOT NULL)"
                 )
+                if not _schema_valid(connection):
+                    raise RuntimeError(
+                        "SQLite schema invalid after initialization; "
+                        "recovery verification required before serving requests"
+                    )
                 _INITIALIZED_DB[path] = identity
             else:
-                objects = {
-                    row[0]
-                    for row in connection.execute(
-                        "SELECT name FROM sqlite_master "
-                        "WHERE type IN ('table', 'index')"
-                    )
-                }
-                if not _SCHEMA_OBJECTS.issubset(objects):
+                if connection.execute("PRAGMA journal_mode").fetchone()[0].lower() != "wal":
+                    raise RuntimeError("SQLite journal mode changed; recovery verification required")
+                if not _schema_valid(connection):
                     raise RuntimeError(
                         "SQLite schema changed after initialization; "
                         "recovery verification required before serving requests"
                     )
+            after_stat = os.stat(path)
+            if identity != (after_stat.st_dev, after_stat.st_ino):
+                raise RuntimeError(
+                    "SQLite database replaced during initialization; recovery verification required"
+                )
         return connection
     except Exception:
         connection.close()

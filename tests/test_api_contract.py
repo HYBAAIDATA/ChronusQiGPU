@@ -176,6 +176,9 @@ def test_sqlite_replaced_database_fails_closed_and_readiness_drops(
     )
     assert response.status_code == 503
     assert "state_unavailable" in response.json()["reasons"]
+    # The autouse fixture resets state after this test; do not leave it on a
+    # deliberately invalid SQLite database at teardown.
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
     # Return the test fixture to the memory backend before teardown resets.
     monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
 
@@ -194,7 +197,71 @@ def test_sqlite_missing_schema_after_initialization_fails_closed(
     with pytest.raises(RuntimeError, match="schema changed"):
         with state.connection():
             pass
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
     # Teardown must not try to clean a deliberately invalid SQLite schema.
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
+
+
+def test_sqlite_restart_does_not_repair_missing_table(tmp_path, monkeypatch):
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "sqlite")
+    db_path = tmp_path / "api.sqlite3"
+    monkeypatch.setenv("CHRONUS_API_DB_PATH", str(db_path))
+    with state.connection():
+        pass
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("DROP TABLE api_rate_limits")
+    # Simulate the empty in-memory cache on a process restart.
+    monkeypatch.setattr(state, "_INITIALIZED_DB", {})
+    with pytest.raises(RuntimeError, match="existing database"):
+        with state.connection():
+            pass
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
+
+
+def test_sqlite_schema_validation_checks_primary_key(tmp_path, monkeypatch):
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "sqlite")
+    db_path = tmp_path / "api.sqlite3"
+    monkeypatch.setenv("CHRONUS_API_DB_PATH", str(db_path))
+    with state.connection():
+        pass
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("DROP INDEX api_workloads_tenant_created")
+        conn.execute("DROP TABLE api_workloads")
+        conn.execute(
+            "CREATE TABLE api_workloads (record_id TEXT, tenant_id TEXT, "
+            "state TEXT, created_at TEXT, record_json TEXT NOT NULL)"
+        )
+        conn.execute(
+            "CREATE INDEX api_workloads_tenant_created "
+            "ON api_workloads (tenant_id, created_at, record_id)"
+        )
+    with pytest.raises(RuntimeError, match="schema changed"):
+        with state.connection():
+            pass
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
+
+
+def test_sqlite_detects_path_swap_during_connection_open(tmp_path, monkeypatch):
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "sqlite")
+    db_path = tmp_path / "api.sqlite3"
+    monkeypatch.setenv("CHRONUS_API_DB_PATH", str(db_path))
+    with state.connection():
+        pass
+    replacement_db = tmp_path / "replacement.sqlite3"
+    with sqlite3.connect(replacement_db) as conn:
+        conn.execute("CREATE TABLE unrelated (value INTEGER)")
+
+    actual_connect = state.sqlite3.connect
+    def connect_with_swap(*args, **kwargs):
+        opened = actual_connect(*args, **kwargs)
+        replacement_db.replace(db_path)
+        return opened
+
+    with monkeypatch.context() as patch:
+        patch.setattr(state.sqlite3, "connect", connect_with_swap)
+        with pytest.raises(RuntimeError, match="database changed while opening"):
+            with state.connection():
+                pass
     monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
 
 
