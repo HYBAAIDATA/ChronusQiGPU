@@ -39,7 +39,18 @@ jobs:
         if: always()
         run: |
           test "${{ steps.tests.outcome }}" = "success"
-          test "${{ steps.evidence.outcome }}" = "success"
+          test -s evidence/test-evidence.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path("evidence/test-evidence.json").read_text())
+          counts = data.get("tests", {})
+          assert data.get("schema") == "chronus-ci-test-evidence-v1"
+          assert counts.get("total", 0) > 0 and counts.get("failed") == 0
+          assert data.get("status") == (
+              "PASS" if counts.get("skipped") == 0 else "UNQUALIFIED"
+          )
+          PY
   evaluate:
     needs: test-and-attest
     if: always()
