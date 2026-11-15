@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
 Software capability evidence generator.
-Designed for DIFC (Dubai International Financial Centre) Regulatory Compliance,
-Sovereign Wealth Funds, and Institutional Due Diligence.
 
-Produces a cryptographically signed, zero-knowledge capability dossier:
+This executable produces repository-local evidence only. It does not issue a
+regulatory attestation, accreditation, customer acceptance, or external certification.
+
+The evidence run covers six maintained capability groups:
 - Validates the 6 Core Sovereign Architectural Pillars:
   1. AL HARAS (exact sheaf coboundary, Reed-Solomon repair, Paley/Ramanujan spectrum, braid relations, Hasse-bound fingerprint)
   2. THESEUS (Phyllotaxis Zero-Collision Address Space) & OVID (Verifiable Storage Custody)
@@ -16,7 +17,6 @@ Produces a cryptographically signed, zero-knowledge capability dossier:
 """
 
 import hashlib
-import hmac
 import json
 import os
 import sys
@@ -321,7 +321,7 @@ def verify_distribution_packages() -> Dict[str, Any]:
 
 def main():
     print("========================================================================")
-    print("      CHRONUS SOVEREIGN CAPABILITY & DIFC ATTESTATION GENERATOR         ")
+    print("      CHRONUS SOFTWARE CAPABILITY EVIDENCE GENERATOR         ")
     print("========================================================================")
     t0 = time.time()
 
