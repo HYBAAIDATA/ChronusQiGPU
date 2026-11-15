@@ -58,11 +58,15 @@ def run_self_tests() -> Dict[str, bool]:
     }
 
 
-def public_self_tests() -> Dict[str, bool]:
-    """Sealed self-test view for customer-facing API surfaces."""
+def public_self_tests(tests: Dict[str, bool] | None = None) -> Dict[str, bool]:
+    """Sealed self-test view for customer-facing API surfaces.
+
+    Pass already-computed ``run_self_tests()`` results to avoid a second run.
+    """
+    source = tests if tests is not None else run_self_tests()
     return {
         _PUBLIC_SELF_TEST_IDS.get(name, name): passed
-        for name, passed in run_self_tests().items()
+        for name, passed in source.items()
     }
 
 

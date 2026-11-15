@@ -137,7 +137,9 @@ class FrontierSimulationRequest(BaseModel):
 async def get_al_haras_status() -> Dict[str, Any]:
     """Self-test results and implementation status, recomputed on every call."""
     tests = run_self_tests()
-    public_tests = scrub_dict_strings(public_self_tests(), context="al_haras self_tests")
+    public_tests = scrub_dict_strings(
+        public_self_tests(tests), context="al_haras self_tests"
+    )
     expander = RamanujanExpanderSpectralGapGuard.verify_mass_gap()
     governance = SovereignGovernanceEngine.audit_sovereign_compliance("status")
     return {
