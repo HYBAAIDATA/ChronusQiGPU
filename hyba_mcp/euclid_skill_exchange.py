@@ -15,7 +15,7 @@ from collections.abc import Callable
 from typing import Any
 
 _SKILL = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}\Z")
-_FEATURE = re.compile(r"[A-Za-z0-9_.:-]{1,128}\Z")
+_FEATURE = re.compile(r"[A-Za-z0-9_.:|\-]{1,128}\Z")
 _ROLE = re.compile(r"r[0-9]{1,2}\Z")
 _MAX_OUTPUT_BYTES = 65536
 
