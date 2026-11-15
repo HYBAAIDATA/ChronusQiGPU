@@ -94,3 +94,7 @@ include = ["chronus*"]
 testpaths = ["tests"]
 pythonpath = ["src", "packages/turing/src"]
 addopts = "--basetemp=.pytest_temp"
+markers = [
+    "real: executes production code without mocked behaviour; not hardware/deployment proof",
+    "simulated: uses test doubles, synthetic harnesses or controlled fakes; not runtime evidence",
+]
