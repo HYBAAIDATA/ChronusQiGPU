@@ -37,6 +37,12 @@ class SwarmRefused(PermissionError):
     """Activation or execution lacks a mandatory authority or invariant."""
 
 
+@dataclass(frozen=True)
+class VerificationAttestation:
+    verifier_id: str
+    signature: str
+
+
 def _canonical(value: Any) -> bytes:
     try:
         return json.dumps(
@@ -52,6 +58,20 @@ def _text(value: Any, name: str) -> str:
             or not all(c.isalnum() or c in "._:-" for c in value):
         raise SwarmRefused(f"invalid {name}")
     return value
+
+
+def verification_payload(
+    mission: "SwarmMission", task: "SwarmTask", result: Mapping[str, Any]
+) -> bytes:
+    """Canonical body that a separately trusted verifier must sign."""
+    return _canonical({
+        "mission_id": mission.mission_id,
+        "scope": mission.scope,
+        "task_id": task.task_id,
+        "agent_id": task.agent_id,
+        "required_skill": task.required_skill,
+        "result_sha256": hashlib.sha256(_canonical(dict(result))).hexdigest(),
+    })
 
 
 def _positive(value: Any, name: str, maximum: int) -> int:
@@ -334,7 +354,7 @@ class SwarmActivator:
         mission: SwarmMission,
         *,
         dispatch: Callable[[SwarmTask], Mapping[str, Any]],
-        verify: Callable[[SwarmTask, Mapping[str, Any]], bool],
+        verify: Callable[[SwarmMission, SwarmTask, Mapping[str, Any]], VerificationAttestation],
     ) -> dict[str, Any]:
         """Activate one bounded swarm; never report completion without verified tasks.
 
@@ -356,7 +376,7 @@ class SwarmActivator:
                 raise SwarmRefused("unknown worker agent")
             self._authorize(agent, task.required_skill, mission.scope)
         if not callable(dispatch) or not callable(verify):
-            raise SwarmRefused("authorized dispatcher and independent verifier required")
+            raise SwarmRefused("authorized dispatcher and trusted verifier required")
 
         self.journal.admit(mission)
         consumed = 0
@@ -398,8 +418,16 @@ class SwarmActivator:
                         raise SwarmRefused("unbounded or invalid worker result")
                     self._authorize(leader, "swarm.verify", mission.scope)
                     result_snapshot = json.loads(_canonical(dict(result)))
-                    if verify(task, deepcopy(result_snapshot)) is not True:
-                        raise SwarmRefused("independent task verification refused")
+                    attestation = verify(
+                        mission, task, deepcopy(result_snapshot)
+                    )
+                    if type(attestation) is not VerificationAttestation:
+                        raise SwarmRefused("trusted verification attestation required")
+                    self.qualification.verify_attestation(
+                        verifier_id=attestation.verifier_id,
+                        payload=verification_payload(mission, task, result_snapshot),
+                        signature=attestation.signature,
+                    )
                     if self.clock_ns() >= mission.deadline_ns:
                         raise SwarmRefused("mission deadline exceeded after verification")
                     self.journal.append(mission.mission_id, {
