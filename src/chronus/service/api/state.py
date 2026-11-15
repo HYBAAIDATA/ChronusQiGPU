@@ -256,8 +256,6 @@ def _interprocess_bootstrap_lock(path: str) -> Iterator[None]:
             import msvcrt
 
             os.lseek(fd, 0, os.SEEK_SET)
-            os.write(fd, b"0")
-            os.lseek(fd, 0, os.SEEK_SET)
             msvcrt.locking(fd, msvcrt.LK_LOCK, 1)
         else:
             import fcntl
