@@ -18,6 +18,44 @@ from contextlib import contextmanager
 from pathlib import Path
 
 _TABLES = ("workloads", "nodes", "receipts")
+_RECORD_SQL = {
+    "workloads": {
+        "read": "SELECT record_json FROM api_workloads WHERE record_id = ?",
+        "all": "SELECT record_json FROM api_workloads",
+        "write": (
+            "INSERT INTO api_workloads "
+            "(record_id, tenant_id, state, created_at, record_json) "
+            "VALUES (?, ?, ?, ?, ?) ON CONFLICT(record_id) DO UPDATE SET "
+            "tenant_id=excluded.tenant_id, state=excluded.state, "
+            "created_at=excluded.created_at, record_json=excluded.record_json"
+        ),
+        "clear": "DELETE FROM api_workloads",
+    },
+    "nodes": {
+        "read": "SELECT record_json FROM api_nodes WHERE record_id = ?",
+        "all": "SELECT record_json FROM api_nodes",
+        "write": (
+            "INSERT INTO api_nodes "
+            "(record_id, tenant_id, state, created_at, record_json) "
+            "VALUES (?, ?, ?, ?, ?) ON CONFLICT(record_id) DO UPDATE SET "
+            "tenant_id=excluded.tenant_id, state=excluded.state, "
+            "created_at=excluded.created_at, record_json=excluded.record_json"
+        ),
+        "clear": "DELETE FROM api_nodes",
+    },
+    "receipts": {
+        "read": "SELECT record_json FROM api_receipts WHERE record_id = ?",
+        "all": "SELECT record_json FROM api_receipts",
+        "write": (
+            "INSERT INTO api_receipts "
+            "(record_id, tenant_id, state, created_at, record_json) "
+            "VALUES (?, ?, ?, ?, ?) ON CONFLICT(record_id) DO UPDATE SET "
+            "tenant_id=excluded.tenant_id, state=excluded.state, "
+            "created_at=excluded.created_at, record_json=excluded.record_json"
+        ),
+        "clear": "DELETE FROM api_receipts",
+    },
+}
 _BACKENDS = frozenset({"memory", "sqlite"})
 _MEMORY: dict[str, dict] = {
     "workloads": {},
@@ -129,7 +167,7 @@ def read_record(
     conn = conn or _connect()
     try:
         row = conn.execute(
-            f"SELECT record_json FROM api_{table} WHERE record_id = ?",
+            _RECORD_SQL[table]["read"],
             (record_id,),
         ).fetchone()
         return json.loads(row[0]) if row else None
@@ -145,7 +183,7 @@ def all_records(table: str) -> list[dict]:
         with _MEMORY_LOCK:
             return [dict(record) for record in _MEMORY[table].values()]
     with connection() as conn:
-        rows = conn.execute(f"SELECT record_json FROM api_{table}").fetchall()
+        rows = conn.execute(_RECORD_SQL[table]["all"]).fetchall()
     return [json.loads(row[0]) for row in rows]
 
 
@@ -167,11 +205,7 @@ def write_record(
     conn = conn or _connect()
     try:
         conn.execute(
-            f"INSERT INTO api_{table} "
-            "(record_id, tenant_id, state, created_at, record_json) "
-            "VALUES (?, ?, ?, ?, ?) ON CONFLICT(record_id) DO UPDATE SET "
-            "tenant_id=excluded.tenant_id, state=excluded.state, "
-            "created_at=excluded.created_at, record_json=excluded.record_json",
+            _RECORD_SQL[table]["write"],
             (
                 record_id,
                 record.get("tenant_id"),
@@ -193,7 +227,7 @@ def clear_records(table: str) -> None:
             _MEMORY[table].clear()
         return
     with connection() as conn:
-        conn.execute(f"DELETE FROM api_{table}")
+        conn.execute(_RECORD_SQL[table]["clear"])
 
 
 def get_idempotency(
