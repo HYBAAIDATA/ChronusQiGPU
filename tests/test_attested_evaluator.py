@@ -30,6 +30,30 @@ def _evidence(path, *, status="PASS", skipped=0):
     )
 
 
+def _gate_doc():
+    return {
+        "schema": "chronus-product-gates-v1",
+        "commit": "candidate-sha",
+        "run_id": "4242",
+        "deployment_profile": "software-base",
+        "status": "PASS",
+        "facts": {
+            "profile": {"name": "software-base", "verified": True},
+            "post_quantum_signer": {
+                "algorithm": "ML-DSA-65",
+                "verified": True,
+            },
+            "custody": {
+                "authority": "THESEUS",
+                "mechanism": "sqlite-wal",
+                "profile": "software-base",
+                "verified": True,
+            },
+        },
+        "gates": {gate: "PASS" for gate in qualification.MANDATORY},
+    }
+
+
 def _argv(evidence, output, *extra):
     return [
         "evaluate_attested.py",
@@ -47,7 +71,9 @@ def _argv(evidence, output, *extra):
     ]
 
 
-def test_verified_evidence_can_be_successfully_evaluated_while_unqualified(tmp_path, monkeypatch):
+def test_verified_evidence_can_be_successfully_evaluated_while_unqualified(
+    tmp_path, monkeypatch
+):
     evidence = tmp_path / "evidence.json"
     output = tmp_path / "verdict.json"
     _evidence(evidence)
@@ -65,6 +91,7 @@ def test_verified_evidence_can_be_successfully_evaluated_while_unqualified(tmp_p
     assert verdict["test_evidence_attestation_verified"] is True
     assert verdict["gate_attestation_verified"] is False
     assert verdict["production_evidence_verified"] is False
+    assert verdict["deployment_profile"] is None
     assert set(verdict["gates"].values()) == {"UNQUALIFIED"}
 
 
@@ -89,47 +116,7 @@ def test_supplied_product_gates_must_have_valid_attestation(tmp_path, monkeypatc
     gates = tmp_path / "gates.json"
     output = tmp_path / "verdict.json"
     _evidence(evidence)
-    gates.write_text(
-        json.dumps(
-            {
-                "schema": "chronus-product-gates-v1",
-                "commit": "candidate-sha",
-                "run_id": "4242",
-                "deployment_profile": "software-base",
-                "status": "PASS",
-                "facts": {
-                    "profile": {"name": "software-base", "verified": True},
-                    "post_quantum_signer": {
-                        "algorithm": "ML-DSA-65",
-                        "verified": True,
-                    },
-                    "custody": {
-                        "authority": "THESEUS",
-                        "mechanism": "sqlite-wal",
-                        "profile": "software-base",
-                        "verified": True,
-                    },
-                },
-                "deployment_profile": "software-base",
-                "status": "PASS",
-                "facts": {
-                    "profile": {"name": "software-base", "verified": True},
-                    "post_quantum_signer": {
-                        "algorithm": "ML-DSA-65",
-                        "verified": True,
-                    },
-                    "custody": {
-                        "authority": "THESEUS",
-                        "mechanism": "sqlite-wal",
-                        "profile": "software-base",
-                        "verified": True,
-                    },
-                },
-                "gates": {gate: "PASS" for gate in qualification.MANDATORY},
-            }
-        ),
-        encoding="utf-8",
-    )
+    gates.write_text(json.dumps(_gate_doc()), encoding="utf-8")
 
     calls = {"count": 0}
 
@@ -159,17 +146,8 @@ def test_all_attested_product_gates_can_admit_when_required_capability_is_availa
     gates = tmp_path / "gates.json"
     output = tmp_path / "verdict.json"
     _evidence(evidence)
-    gates.write_text(
-        json.dumps(
-            {
-                "schema": "chronus-product-gates-v1",
-                "commit": "candidate-sha",
-                "run_id": "4242",
-                "gates": {gate: "PASS" for gate in qualification.MANDATORY},
-            }
-        ),
-        encoding="utf-8",
-    )
+    gates.write_text(json.dumps(_gate_doc()), encoding="utf-8")
+
     monkeypatch.setattr(
         evaluate_attested.subprocess,
         "run",
