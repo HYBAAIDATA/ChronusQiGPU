@@ -103,11 +103,19 @@
       "owner": "THESEUS"
     },
     "production_admission": {
-      "status": "EVIDENCE_GATED",
+      "status": "IMPLEMENTED_BRANCH_EVIDENCE_PENDING",
       "paths": [
         "src/chronus/core/qualification.py",
-        "src/chronus/core/facade.py",
-        "scripts/ci/evaluate_attested.py"
+        "src/chronus/core/claims.py",
+        "scripts/ci/build_product_gates.py",
+        "scripts/ci/evaluate_attested.py",
+        "scripts/ci/require_release_qualification.py",
+        ".github/workflows/chronus-evidence-qualification.yml",
+        ".github/workflows/release.yml",
+        "tests/test_qualification.py",
+        "tests/test_attested_evaluator.py",
+        "tests/test_product_gates.py",
+        "tests/test_release_gate.py"
       ],
       "owner": "CHRONUS"
     },
@@ -126,7 +134,14 @@
         "tests/test_geodesic_tensor_migration.py"
       ],
       "owner": "CHRONUS"
+    },
+    "deployment_profiles": {
+      "status": "IMPLEMENTED_BRANCH",
+      "paths": [
+        "capabilities/deployment_profiles.json"
+      ],
+      "owner": "CHRONUS"
     }
   },
-  "release_rule": "No capability receives production-admitted status from source presence or historical evidence alone; exact-commit current evidence and mandatory gates are required."
+  "release_rule": "A software-base release requires successful exact-main full CI plus an independently attested PASS qualification for the same commit. Deployment-profile claims remain separately evidence-gated."
 }
