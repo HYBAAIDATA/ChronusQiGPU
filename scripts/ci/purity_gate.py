@@ -21,6 +21,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+# Support the documented standalone checkout command before editable installation.
+sys.path.insert(0, str(ROOT / "src"))
 
 EXACT_PACKAGES = [
     "src/chronus/execution",
