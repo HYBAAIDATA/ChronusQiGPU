@@ -63,6 +63,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh attestation verify evidence/test-evidence.json --repo "${{ github.repository }}"
       - name: Evaluate verified evidence and claims
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           python scripts/ci/evaluate_attested.py --evidence evidence/test-evidence.json --expected-commit "${{ github.sha }}" --expected-run-id "${{ github.run_id }}" --repository "${{ github.repository }}" --output manifests/ci-verdict.json
       - name: Attest the evaluated qualification verdict
