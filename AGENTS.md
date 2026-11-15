@@ -11,7 +11,7 @@
 
 ## Mandatory evidence-first technical reviews
 
-Mandatory for every agent performing or contributing to repository audits, qualification reviews, release checks, or evidence-backed technical documentation. Apply the procedure before drawing conclusions or submitting findings. With HYBA MCP, retrieve `review.evidence_first` through `get_skill`; the contract includes the procedure. If MCP is unavailable, apply the same procedure from the registered skill or the repository module below. Review leads must return reports that omit the reviewed revision, evidence references, or explicit material gaps before accepting them.
+Mandatory for every agent performing or contributing to repository audits, qualification reviews, release checks, or evidence-backed technical documentation. Apply the procedure before drawing conclusions or submitting findings. With HYBA MCP, retrieve `review.evidence_first` through `get_skill`; the contract includes the procedure. If MCP is unavailable, apply the same procedure from the registered skill or the repository module below. Review leads must reject or return for correction any report that lacks the reviewed revision, evidence references, or explicit material gaps before accepting it.
 
 Procedure source: [Evidence-first review](./hyba_mcp/skills/evidence_first_review.py).
 
