@@ -23,9 +23,10 @@ NOW = 1_000_000_000
 DEADLINE = NOW + 10000
 
 
-class ScopedQualification:
-    """Test-only controlled policy; never represents training evidence."""
+class ScopedQualification(CapabilityQualificationRegistry):
+    """Test-only controlled registry subclass; never represents training evidence."""
     def __init__(self):
+        super().__init__(trusted_verifiers={"test": Ed25519PrivateKey.generate().public_key()})
         self.allowed = set()
         self.calls = []
 
