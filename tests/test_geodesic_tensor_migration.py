@@ -8,12 +8,14 @@ import pytest
 from chronus.tensor.folded_inference import FoldedInferencePilot
 from chronus.tensor.folded_state import ExactFoldState
 from chronus.tensor.geodesic import (
+    EnergyModel,
     GeodesicScheduler,
     HybridGPU,
     KernelLaunchConfig,
     MetricTensor,
     PhiGPU,
     PhiMemoryHierarchy,
+    ProfiledHybridRouter,
     PhiTensorCore,
     TopologicalIntegrityGate,
 )
@@ -107,3 +109,26 @@ def test_opencl_tensor_backend_never_claims_cpu_fallback():
         assert record["measured"] is False
     else:
         assert backend.is_available() is False
+
+
+def test_energy_model_uses_only_supplied_measurements():
+    comparison = EnergyModel.compare(
+        baseline_compute_joules=10.0,
+        baseline_movement_joules=30.0,
+        candidate_compute_joules=8.0,
+        candidate_movement_joules=12.0,
+    )
+    assert comparison.baseline_joules == 40.0
+    assert comparison.candidate_joules == 20.0
+    assert comparison.reduction_fraction == pytest.approx(0.5)
+
+
+def test_profiled_router_uses_only_verified_observations():
+    router = ProfiledHybridRouter()
+    router.record(operation="matmul", backend="opencl", size_class=1024, elapsed_ns=90, verified=False)
+    router.record(operation="matmul", backend="numpy-reference", size_class=1024, elapsed_ns=120, verified=True)
+    router.record(operation="matmul", backend="qualified-gpu", size_class=1024, elapsed_ns=80, verified=True)
+    selected = router.select("matmul", 1024)
+    assert selected["route"] == "qualified-gpu"
+    assert selected["profiled"] is True
+    assert router.select("matmul", 2048)["route"] == "numpy-reference"
