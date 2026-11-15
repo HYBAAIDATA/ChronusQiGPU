@@ -163,7 +163,9 @@ class StratumSession:
 
     extranonce1: bytes
     extranonce2_size: int
-    difficulty: float = 1.0
+    # The pool difficulty is an exact rational. It stays a Fraction so that
+    # difficulty_to_target never has to round through a binary float.
+    difficulty: Fraction = Fraction(1)
 
     @property
     def target(self) -> int:
