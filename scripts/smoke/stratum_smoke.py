@@ -23,6 +23,7 @@ import asyncio
 import hashlib
 import json
 import os
+import ssl
 import sys
 import time
 from pathlib import Path
@@ -73,6 +74,16 @@ def endpoint(host: str, port: int, scheme: str = "stratum+tcp") -> tuple[str, in
         return parts.hostname, parts.port or port
     except ValueError as exc:
         raise ValueError(f"bad port in {host!r}") from exc
+
+
+def endpoint_scheme(host: str) -> str:
+    raw = host.strip()
+    if "://" not in raw:
+        return "stratum+tcp"
+    scheme = urlsplit(raw).scheme.lower()
+    if scheme not in ("stratum+tcp", "stratum+ssl"):
+        raise ValueError(f"unsupported scheme {scheme!r} in {host!r}")
+    return scheme
 
 
 def target_from_nbits(nbits: str) -> int:
@@ -188,7 +199,9 @@ class Session:
 
 
 async def smoke(args, tx: Transcript) -> int:
-    host, port = endpoint(os.environ.get(args.host_var, ""), args.port)
+    raw_host = os.environ.get(args.host_var, "")
+    host, port = endpoint(raw_host, args.port)
+    use_tls = endpoint_scheme(raw_host) == "stratum+ssl"
     user = os.environ.get(args.user_var, "")
     password = os.environ.get(args.password_var, "x")
     tx.data["endpoint"] = f"{host}:{port}"
@@ -199,11 +212,16 @@ async def smoke(args, tx: Transcript) -> int:
 
     started = time.monotonic()
     try:
-        reader, writer = await asyncio.wait_for(asyncio.open_connection(host, port), args.timeout)
+        ssl_ctx = ssl.create_default_context() if use_tls else None
+        reader, writer = await asyncio.wait_for(
+            asyncio.open_connection(host, port, ssl=ssl_ctx,
+                                    server_hostname=host if use_tls else None),
+            args.timeout)
     except (OSError, asyncio.TimeoutError) as exc:
         tx.step("tcp_connect", False, f"{type(exc).__name__}: {exc}")
         return 3
-    tx.step("tcp_connect", True, f"{(time.monotonic() - started) * 1000:.0f} ms")
+    tx.step("tcp_connect", True,
+            f"{(time.monotonic() - started) * 1000:.0f} ms" + (" (tls)" if use_tls else ""))
 
     session = Session(reader, writer, tx)
     try:
@@ -318,6 +336,9 @@ def main() -> int:
     parser.add_argument("--share-seconds", type=float, default=30.0)
     parser.add_argument("--version-rolling", action="store_true")
     args = parser.parse_args()
+
+    if args.require_accept and not args.submit_share:
+        parser.error("--require-accept requires --submit-share")
 
     if args.port is None:
         args.port = PRESETS[args.target][1]
