@@ -100,31 +100,31 @@ def _connect() -> sqlite3.Connection:
                 mode = connection.execute("PRAGMA journal_mode").fetchone()[0]
                 if mode.lower() != "wal":
                     connection.execute("PRAGMA journal_mode=WAL")
-                for table in _TABLES:
-                    connection.execute(
-                        f"CREATE TABLE IF NOT EXISTS api_{table} ("
-                        "record_id TEXT PRIMARY KEY, tenant_id TEXT, state TEXT, "
-                        "created_at TEXT, record_json TEXT NOT NULL)"
-                    )
-                    connection.execute(
-                        f"CREATE INDEX IF NOT EXISTS api_{table}_tenant_created "
-                        f"ON api_{table} (tenant_id, created_at, record_id)"
-                    )
+            for table in _TABLES:
                 connection.execute(
-                    "CREATE TABLE IF NOT EXISTS api_idempotency ("
-                    "tenant_id TEXT NOT NULL, key TEXT NOT NULL, body_hash TEXT NOT NULL, "
-                    "status INTEGER NOT NULL, body_json TEXT NOT NULL, headers_json TEXT NOT NULL, "
-                    "expires REAL NOT NULL, PRIMARY KEY (tenant_id, key))"
+                    f"CREATE TABLE IF NOT EXISTS api_{table} ("
+                    "record_id TEXT PRIMARY KEY, tenant_id TEXT, state TEXT, "
+                    "created_at TEXT, record_json TEXT NOT NULL)"
                 )
                 connection.execute(
-                    "CREATE INDEX IF NOT EXISTS api_idempotency_expires "
-                    "ON api_idempotency (expires)"
+                    f"CREATE INDEX IF NOT EXISTS api_{table}_tenant_created "
+                    f"ON api_{table} (tenant_id, created_at, record_id)"
                 )
-                connection.execute(
-                    "CREATE TABLE IF NOT EXISTS api_rate_limits ("
-                    "key TEXT PRIMARY KEY, window_start INTEGER NOT NULL, count INTEGER NOT NULL)"
-                )
-                _INITIALIZED_DB.add(path)
+            connection.execute(
+                "CREATE TABLE IF NOT EXISTS api_idempotency ("
+                "tenant_id TEXT NOT NULL, key TEXT NOT NULL, body_hash TEXT NOT NULL, "
+                "status INTEGER NOT NULL, body_json TEXT NOT NULL, headers_json TEXT NOT NULL, "
+                "expires REAL NOT NULL, PRIMARY KEY (tenant_id, key))"
+            )
+            connection.execute(
+                "CREATE INDEX IF NOT EXISTS api_idempotency_expires "
+                "ON api_idempotency (expires)"
+            )
+            connection.execute(
+                "CREATE TABLE IF NOT EXISTS api_rate_limits ("
+                "key TEXT PRIMARY KEY, window_start INTEGER NOT NULL, count INTEGER NOT NULL)"
+            )
+            _INITIALIZED_DB.add(path)
         return connection
     except Exception:
         connection.close()
