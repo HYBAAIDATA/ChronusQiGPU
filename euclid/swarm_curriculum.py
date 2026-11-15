@@ -8,12 +8,12 @@ later authorize swarm activation.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from copy import deepcopy
 import hashlib
-import json
 from typing import Any, Callable, Mapping
 
-from .swarm_evolution import LEADER_SKILLS, SwarmRefused, _canonical, _text
+from .swarm_evolution import LEADER_SKILLS, SwarmRefused, SwarmMission, SwarmActivator, SwarmTask, _canonical, _text
 
 
 @dataclass(frozen=True)
@@ -32,6 +32,8 @@ class SkillCase:
             raise SwarmRefused("training examples must have JSON object inputs and references")
         if len(_canonical(dict(self.inputs))) > 32768 or len(_canonical(dict(self.expected))) > 32768:
             raise SwarmRefused("training example exceeds 32KiB")
+        object.__setattr__(self, "inputs", deepcopy(dict(self.inputs)))
+        object.__setattr__(self, "expected", deepcopy(dict(self.expected)))
 
 
 @dataclass(frozen=True)
@@ -67,7 +69,6 @@ class LeaderCurriculum:
                     raise SwarmRefused("invalid curriculum case")
                 digest = hashlib.sha256(_canonical({
                     "skill": case.skill, "inputs": dict(case.inputs),
-                    "expected": dict(case.expected),
                 })).hexdigest()
                 if case.case_id in seen_cases or case.lineage in seen_lineages \
                         or digest in seen_contents:
@@ -108,7 +109,10 @@ def train_leadership(
     if not all(callable(item) for item in (train, evaluate, accept)):
         raise SwarmRefused("real trainer, evaluator and acceptance assessor required")
 
-    checkpoint = train(curriculum.training)
+    # Detached snapshot prevents callbacks from mutating the source curriculum.
+    curriculum = deepcopy(curriculum)
+    LeaderCurriculum.__post_init__(curriculum)
+    checkpoint = train(deepcopy(curriculum.training))
     if not isinstance(checkpoint, Mapping) or type(checkpoint.get("checkpoint_id")) is not str \
             or not checkpoint["checkpoint_id"].strip():
         raise SwarmRefused("trainer did not produce a checkpoint identity")
@@ -125,10 +129,12 @@ def train_leadership(
     ):
         outcomes = []
         for case in cases:
-            output = evaluate(checkpoint["checkpoint_id"], case)
+            # Evaluators must not receive held-out reference labels.
+            blinded = replace(case, expected={})
+            output = evaluate(checkpoint["checkpoint_id"], blinded)
             if not isinstance(output, Mapping) or len(_canonical(dict(output))) > 32768:
                 raise SwarmRefused("invalid evaluation output")
-            passed = accept(case, output)
+            passed = accept(deepcopy(case), deepcopy(dict(output)))
             if type(passed) is not bool:
                 raise SwarmRefused("assessor must return a literal boolean")
             outcomes.append({
