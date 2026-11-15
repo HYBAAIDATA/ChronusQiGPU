@@ -81,7 +81,7 @@ async def main() -> int:
     )
 
     try:
-        await run_campaign(
+        state = await run_campaign(
             engine_module,
             pools,
             lanes,
@@ -93,6 +93,9 @@ async def main() -> int:
     finally:
         lanes.close()
         logger.info("[CAPACITY] final %s", json.dumps(ledger.report(), sort_keys=True))
+    if not state.get("complete"):
+        logger.error("[CAMPAIGN] %s failed; see stage result above", campaign_id)
+        return 1
     return 0
 
 

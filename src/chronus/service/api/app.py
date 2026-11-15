@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import logging
 import os
 import time
@@ -30,9 +29,7 @@ def reset_rate_limit() -> None:
 
 
 def _rate_key(request: Request) -> str:
-    authorization = request.headers.get("Authorization")
-    if authorization:
-        return hashlib.sha256(authorization.encode("utf-8")).hexdigest()
+    # Never key rate limits by an unverified, attacker-rotatable bearer value.
     client = request.client
     return client.host if client else "unknown"
 

@@ -259,10 +259,62 @@ def run_circuit(circuit: Mapping[str, Any]) -> tuple[str, QuantumState, LinearOp
     if n_qubits <= UNITARY_BUILD_MAX_QUBITS:
         operator = build_operator(circuit)
         return "dense_operator", operator.apply(vacuum), operator
-    state = vacuum
+    amplitudes = vacuum.amplitudes
     for gate in circuit["gates"]:
-        state = embed_operator(n_qubits, gate).apply(state)
-    return "sequential_gate_apply", state, None
+        amplitudes = _apply_gate_to_amplitudes(amplitudes, n_qubits, gate)
+    return "sequential_gate_apply", QuantumState(amplitudes), None
+
+
+def _bit_mask(n_qubits: int, qubit: int) -> int:
+    """Index bit for qubit; qubit 0 is the most-significant bit."""
+    return 1 << (n_qubits - 1 - qubit)
+
+
+def _apply_gate_to_amplitudes(
+    amplitudes: tuple[complex, ...], n_qubits: int, gate: Mapping[str, Any]
+) -> tuple[complex, ...]:
+    """Apply one gate to a state vector without materializing a dense register operator."""
+    values = list(amplitudes)
+    dimension = len(values)
+    if gate["name"] == "CNOT":
+        control, target = gate["qubits"]
+        control_mask = _bit_mask(n_qubits, control)
+        target_mask = _bit_mask(n_qubits, target)
+        for index in range(dimension):
+            if index & control_mask and not index & target_mask:
+                partner = index | target_mask
+                values[index], values[partner] = values[partner], values[index]
+        return tuple(values)
+    (a, b), (c, d) = gate["operator"].matrix
+    mask = _bit_mask(n_qubits, gate["qubits"][0])
+    for index in range(dimension):
+        if not index & mask:
+            low = values[index]
+            high = values[index | mask]
+            values[index] = a * low + b * high
+            values[index | mask] = c * low + d * high
+    return tuple(values)
+
+
+def _pauli_expectation(
+    amplitudes: tuple[complex, ...], n_qubits: int, text: str
+) -> complex:
+    """Return <psi|P|psi> for a Pauli string without building P as a matrix."""
+    flip = 0
+    for qubit, char in enumerate(text):
+        if char in "XY":
+            flip |= _bit_mask(n_qubits, qubit)
+    total = 0j
+    for index, amplitude in enumerate(amplitudes):
+        phase = 1 + 0j
+        for qubit, char in enumerate(text):
+            bit = 1 if index & _bit_mask(n_qubits, qubit) else 0
+            if char == "Z" and bit:
+                phase = -phase
+            elif char == "Y":
+                phase *= -1j if bit else 1j
+        total += amplitudes[index ^ flip].conjugate() * phase * amplitude
+    return total
 
 
 def build_operator(circuit: Mapping[str, Any]) -> LinearOperator:
@@ -293,24 +345,33 @@ def _state_record(state: QuantumState, *, include_amplitudes: bool) -> dict[str,
     return record
 
 
-def expectation_records(state: QuantumState, observables: tuple[str, ...] | list[str]) -> list[dict[str, Any]]:
+def expectation_records(
+    state: QuantumState, observables: tuple[str, ...] | list[str]
+) -> list[dict[str, Any]]:
+    n_qubits = state.dimension.bit_length() - 1
     records = []
     for text in observables:
-        operator = pauli_observable(text)
-        value = operator.expectation_value(state)
+        _require_pauli(text)
+        value = _pauli_expectation(state.amplitudes, n_qubits, text)
         records.append(
             {
                 "observable": text,
-                "hermitian": operator.is_hermitian(),
+                "hermitian": True,
                 "expectation": _complex_record(value),
             }
         )
     return records
 
 
-def pauli_observable(text: str) -> LinearOperator:
-    if not isinstance(text, str) or not text or any(char not in PAULI_FACTORS for char in text):
+def _require_pauli(text: str) -> None:
+    if not isinstance(text, str) or not text or any(
+        char not in PAULI_FACTORS for char in text
+    ):
         raise ToolInputError("observable must be a non-empty string of I, X, Y, Z")
+
+
+def pauli_observable(text: str) -> LinearOperator:
+    _require_pauli(text)
     return tensor_operators(*(PAULI_FACTORS[char] for char in text))
 
 
