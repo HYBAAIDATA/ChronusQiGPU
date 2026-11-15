@@ -239,23 +239,6 @@ class EuclidSkillExchange:
 
         # StructuralMemory currently has no trusted mission binding in its schema.
         # Fail closed rather than expose or rank cross-mission episodes.
-        raise PermissionError("EUCLID memory recall is unavailable until memory custody is mission-scoped")
-        for item in records:
-            # Mission ownership must be explicit in the custodied record.
-            # Unbound or cross-mission memories are never exported.
-            if item.payload.get("mission_id") != args["mission_id"]:
-                continue
-            if len(results) >= args.get("limit", 16):
-                break
-            body = {"memory_id": item.memory_id, "kind": item.kind.value,
-                    "payload": dict(item.payload), "provenance": item.provenance,
-                    "structural_features": sorted(item.structural_features),
-                    "transfer_value": item.transfer_value}
-            encoded = __import__("json").dumps(body, allow_nan=False, sort_keys=True).encode()
-            if len(encoded) > 8192:
-                raise RuntimeError("memory item exceeds bounded MCP context window")
-            results.append(body)
-        return self._bounded({"owner": "EUCLID", "custody_binding": binding_id,
-                "memory": results, "recall_method": "EUCLID_STRUCTURAL_MEMORY",
-                "theoretical_context_window_increase": False,
-                "retraining_required_for_consumer": False})
+        raise PermissionError(
+            "EUCLID memory recall is unavailable until memory custody is mission-scoped"
+        )
