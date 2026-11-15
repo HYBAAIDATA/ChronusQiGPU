@@ -303,7 +303,7 @@ def run_step_6_compile_manifest(
     bench_data: Dict[str, Any],
     attest_data: Dict[str, Any],
 ) -> Dict[str, Any]:
-    """Step 6: Update Qualification Manifest to PRODUCTION_QUALIFIED."""
+    """Step 6: retain NOT_QUALIFIED; legacy diagnostics do not certify releases."""
     print("\n" + "=" * 80)
     print("STEP 6: QUALIFICATION DOSSIER MANIFEST COMPILATION")
     print("=" * 80)
@@ -327,7 +327,7 @@ def run_step_6_compile_manifest(
         json.dump(manifest, f, indent=2)
 
     print(f"[+] Manifest updated at: {manifest_path}")
-    print(f"[+] Qualification Status: PRODUCTION_QUALIFIED")
+    print("[HOLD] Qualification Status: NOT_QUALIFIED")
     print(f"[+] Git Commit Head    : {git_head}")
     print(f"[+] Cryptographic Digest: {attest_data['canonical_sha256']}")
     return manifest
@@ -387,8 +387,8 @@ def main() -> int:
     print(f"OVID Zero-Copy Handle  : {attest_results['pointer_id']}")
     print(f"Verification Endpoint  : HTTP 200 OK -> valid=true, zk_stark=VERIFIED, mldsa_sig=VALID")
     print("===================================================================================================")
-    print("AUDIT EXECUTION COMPLETE: IRREFUTABLE PROOF ASSEMBLED.")
-    return 0
+    print("AUDIT COMPLETE: diagnostic observations recorded, release NOT_QUALIFIED.")
+    return 1 if manifest_final["qualification_status"] != "PRODUCTION_QUALIFIED" else 0
 
 
 if __name__ == "__main__":
