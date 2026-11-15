@@ -95,6 +95,36 @@ def test_supplied_product_gates_must_have_valid_attestation(tmp_path, monkeypatc
                 "schema": "chronus-product-gates-v1",
                 "commit": "candidate-sha",
                 "run_id": "4242",
+                "deployment_profile": "software-base",
+                "status": "PASS",
+                "facts": {
+                    "profile": {"name": "software-base", "verified": True},
+                    "post_quantum_signer": {
+                        "algorithm": "ML-DSA-65",
+                        "verified": True,
+                    },
+                    "custody": {
+                        "authority": "THESEUS",
+                        "mechanism": "sqlite-wal",
+                        "profile": "software-base",
+                        "verified": True,
+                    },
+                },
+                "deployment_profile": "software-base",
+                "status": "PASS",
+                "facts": {
+                    "profile": {"name": "software-base", "verified": True},
+                    "post_quantum_signer": {
+                        "algorithm": "ML-DSA-65",
+                        "verified": True,
+                    },
+                    "custody": {
+                        "authority": "THESEUS",
+                        "mechanism": "sqlite-wal",
+                        "profile": "software-base",
+                        "verified": True,
+                    },
+                },
                 "gates": {gate: "PASS" for gate in qualification.MANDATORY},
             }
         ),
@@ -168,4 +198,7 @@ def test_all_attested_product_gates_can_admit_when_required_capability_is_availa
     assert verdict["test_evidence_attestation_verified"] is True
     assert verdict["gate_attestation_verified"] is True
     assert verdict["production_evidence_verified"] is True
+    assert verdict["deployment_profile"] == "software-base"
+    assert verdict["product_gate_status"] == "PASS"
+    assert verdict["product_facts"]["custody"]["authority"] == "THESEUS"
     assert set(verdict["gates"].values()) == {"PASS"}
