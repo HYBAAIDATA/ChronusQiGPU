@@ -30,9 +30,11 @@ from stratum_smoke import (  # noqa: E402
     Session,
     Transcript,
     WorkChanged,
+    _peer_is_loopback,
     meets,
     parse_host,
     target_from_difficulty,
+    target_from_nbits,
     validate_job_params,
 )
 
@@ -134,6 +136,84 @@ class EndianSmokeTests(unittest.TestCase):
         bad_clean[8] = "yes"
         self.assertIsNotNone(validate_job_params(bad_clean))
         self.assertIsNotNone(validate_job_params(good[:8]))
+
+    def test_nbits_rejects_zero_signed_and_overflow(self) -> None:
+        self.assertGreater(target_from_nbits("1c00ffff"), 0)
+        with self.assertRaises(ValueError):
+            target_from_nbits("1c000000")  # zero mantissa
+        with self.assertRaises(ValueError):
+            target_from_nbits("1c800000")  # sign bit
+        with self.assertRaises(ValueError):
+            target_from_nbits("23000001")  # 1 << 256
+        overflow_job = [
+            "job-1",
+            "00" * 32,
+            "01",
+            "02",
+            [],
+            "20000000",
+            "23000001",
+            "67000000",
+            True,
+        ]
+        self.assertIsNotNone(validate_job_params(overflow_job))
+
+    def test_peer_is_loopback_checks_resolved_address(self) -> None:
+        class Peer:
+            def __init__(self, addr):
+                self._addr = addr
+
+            def get_extra_info(self, name):
+                return self._addr if name == "peername" else None
+
+        self.assertTrue(_peer_is_loopback(Peer(("127.0.0.1", 3333))))
+        self.assertTrue(_peer_is_loopback(Peer(("::1", 3333))))
+        self.assertFalse(_peer_is_loopback(Peer(("8.8.8.8", 3333))))
+        self.assertFalse(_peer_is_loopback(Peer(None)))
+
+    def test_localhost_hostname_with_remote_peer_requires_cleartext(self) -> None:
+        from argparse import Namespace
+        from stratum_smoke import Transcript, smoke
+
+        class FakeWriter:
+            def get_extra_info(self, name):
+                return ("203.0.113.10", 3333) if name == "peername" else None
+
+            def close(self):
+                pass
+
+            async def wait_closed(self):
+                pass
+
+        async def fake_open_connection(*_args, **_kwargs):
+            return asyncio.StreamReader(), FakeWriter()
+
+        async def run() -> int:
+            args = Namespace(
+                host_var="MINING_BRAIINS_HOST",
+                user_var="MINING_BRAIINS_USER",
+                password_var="MINING_BRAIINS_PASSWORD",
+                port=3333,
+                timeout=1.0,
+                job_timeout=1.0,
+                submit_share=False,
+                require_accept=False,
+                share_seconds=1.0,
+                search="python",
+                version_rolling=False,
+                allow_cleartext=False,
+            )
+            tx = Transcript("fake")
+            with patch("stratum_smoke.asyncio.open_connection", fake_open_connection):
+                return await smoke(args, tx)
+
+        env = {
+            "MINING_BRAIINS_HOST": "stratum+tcp://localhost:3333",
+            "MINING_BRAIINS_USER": "smoke",
+        }
+        with patch.dict(os.environ, env, clear=False):
+            code = asyncio.run(run())
+        self.assertEqual(code, 4)
 
 
 class TranscriptTests(unittest.TestCase):
@@ -378,7 +458,81 @@ class NotifyRetentionTests(unittest.TestCase):
                 notify = await session.wait_for("mining.notify", timeout=1.0)
                 self.assertEqual(notify["_difficulty"], 4)
                 self.assertEqual(notify["_work_generation"], session.work_generation)
-                self.assertGreaterEqual(session.work_generation, 2)
+                # set_difficulty does not bump; clean_jobs=True does once.
+                self.assertEqual(session.work_generation, 1)
+            finally:
+                session.alive.clear()
+                session.pump.cancel()
+                try:
+                    await session.pump
+                except (asyncio.CancelledError, Exception):
+                    pass
+
+        asyncio.run(scenario())
+
+    def test_set_difficulty_and_non_clean_notify_keep_generation(self) -> None:
+        async def scenario() -> None:
+            reader = asyncio.StreamReader()
+
+            class W:
+                def write(self, _data):
+                    pass
+
+                async def drain(self):
+                    pass
+
+                def close(self):
+                    pass
+
+                async def wait_closed(self):
+                    pass
+
+            session = Session(reader, W(), Transcript("fake"))
+            try:
+                session.phase = "search"
+                session.work_generation = 3
+                reader.feed_data(
+                    (
+                        json.dumps(
+                            {"id": None, "method": "mining.set_difficulty", "params": [8]}
+                        )
+                        + "\n"
+                    ).encode()
+                )
+                reader.feed_data(
+                    (
+                        json.dumps(
+                            {
+                                "id": None,
+                                "method": "mining.notify",
+                                "params": ["keep-job"] + ["00"] * 7 + [False],
+                            }
+                        )
+                        + "\n"
+                    ).encode()
+                )
+                notify = await session.wait_for("mining.notify", timeout=1.0)
+                self.assertEqual(session.difficulty, 8)
+                self.assertEqual(session.work_generation, 3)
+                self.assertEqual(notify["_work_generation"], 3)
+                self.assertFalse(notify["_clean_jobs"])
+                self.assertEqual(notify["_difficulty"], 8)
+
+                reader.feed_data(
+                    (
+                        json.dumps(
+                            {
+                                "id": None,
+                                "method": "mining.notify",
+                                "params": ["clean-job"] + ["00"] * 7 + [True],
+                            }
+                        )
+                        + "\n"
+                    ).encode()
+                )
+                clean = await session.wait_for("mining.notify", timeout=1.0)
+                self.assertEqual(session.work_generation, 4)
+                self.assertTrue(clean["_clean_jobs"])
             finally:
                 session.alive.clear()
                 session.pump.cancel()

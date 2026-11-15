@@ -27,6 +27,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import hashlib
+import ipaddress
 import json
 import os
 import ssl
@@ -108,8 +109,28 @@ def endpoint(host: str, port: int, scheme: str = "stratum+tcp") -> tuple[str, in
 
 
 def target_from_nbits(nbits: str) -> int:
+    """Decode Bitcoin compact nBits into a positive 256-bit-or-smaller target.
+
+    Rejects zero mantissa, the compact sign bit, and values that overflow a
+    256-bit hash comparison (e.g. ``23000001`` → ``1 << 256``).
+    """
     raw = int(nbits, 16)
-    return (raw & 0xFFFFFF) << (8 * ((raw >> 24) - 3))
+    exponent = (raw >> 24) & 0xFF
+    mantissa = raw & 0xFFFFFF
+    if mantissa == 0:
+        raise ValueError("nbits mantissa is zero")
+    if mantissa & 0x00800000:
+        raise ValueError("nbits sign bit is set")
+    if exponent <= 3:
+        target = mantissa >> (8 * (3 - exponent))
+    else:
+        shift = 8 * (exponent - 3)
+        if shift >= 256 or mantissa.bit_length() + shift > 256:
+            raise ValueError("nbits overflows a 256-bit target")
+        target = mantissa << shift
+    if target <= 0 or target.bit_length() > 256:
+        raise ValueError("nbits is not a usable 256-bit target")
+    return target
 
 
 def target_from_difficulty(difficulty: float) -> int:
@@ -185,7 +206,7 @@ def validate_job_params(params: list) -> str | None:
 
 
 class WorkChanged(RuntimeError):
-    """Pool replaced the active job or difficulty while a search batch was running."""
+    """Pool issued clean_jobs=True and invalidated the selected job mid-search."""
 
 
 def _resolve_search(name: str) -> str:
@@ -221,8 +242,8 @@ async def search_share(
 
     Runs each batch off the event loop so the Session pump can process
     set_difficulty / notify pushes during search. Stops when ``alive`` clears
-    (pool disconnect) or the work generation advances (replacement job /
-    difficulty), instead of waiting out the share deadline.
+    (pool disconnect) or the work generation advances (``clean_jobs=True``),
+    instead of waiting out the share deadline.
     """
     backend = _resolve_search(backend)
     header76 = build_header(job, extranonce1, extranonce2, 0)[:76]
@@ -340,15 +361,19 @@ class Session:
         if method == "mining.set_difficulty":
             if not params:
                 return
+            # Applies to subsequent notifies; does not invalidate the selected job.
             self.difficulty = params[0]
-            self.work_generation += 1
             self.tx.data["set_difficulty"].append({"value": params[0], "phase": self.phase})
         elif method == "mining.notify":
             if not params:
                 return
             # Difficulty in effect for this job is whatever arrived before this notify.
             message["_difficulty"] = self.difficulty
-            self.work_generation += 1
+            clean = params[8] if len(params) > 8 else False
+            # Only clean_jobs=True retires earlier jobs; non-clean leaves them valid.
+            if clean is True:
+                self.work_generation += 1
+            message["_clean_jobs"] = clean is True
             message["_work_generation"] = self.work_generation
             if self.phase == "search":
                 self.tx.data["stale_notifies"] = self.tx.data.get("stale_notifies", 0) + 1
@@ -462,8 +487,19 @@ class Session:
             pass
 
 
-def _is_loopback(host: str) -> bool:
-    return host in ("127.0.0.1", "localhost", "::1")
+def _hostname_looks_loopback(host: str) -> bool:
+    return host.lower() in ("127.0.0.1", "localhost", "::1")
+
+
+def _peer_is_loopback(writer) -> bool:
+    """True when the connected peer address is a loopback IP (not a hostname spelling)."""
+    peer = writer.get_extra_info("peername")
+    if not peer:
+        return False
+    try:
+        return ipaddress.ip_address(peer[0]).is_loopback
+    except (TypeError, ValueError):
+        return False
 
 
 async def smoke(args, tx: Transcript) -> int:
@@ -471,13 +507,15 @@ async def smoke(args, tx: Transcript) -> int:
     host, port, use_tls = parse_host(raw_host, args.port)
     user = os.environ.get(args.user_var, "")
     password = os.environ.get(args.password_var, "x")
+    allow_cleartext = bool(getattr(args, "allow_cleartext", False))
     tx.data["endpoint"] = f"{'stratum+ssl' if use_tls else 'stratum+tcp'}://{host}:{port}"
     tx.data["user"] = user
     tx.data["tls"] = use_tls
     if not user:
         tx.step("config", False, f"{args.user_var} is empty")
         return 4
-    if not use_tls and not _is_loopback(host) and not getattr(args, "allow_cleartext", False):
+    # Fail fast for clearly remote cleartext hosts before opening a socket.
+    if not use_tls and not _hostname_looks_loopback(host) and not allow_cleartext:
         tx.step(
             "config",
             False,
@@ -485,11 +523,6 @@ async def smoke(args, tx: Transcript) -> int:
             "(worker credentials travel in the clear)",
         )
         return 4
-    if not use_tls and not _is_loopback(host):
-        print(
-            "warning: cleartext Stratum; use disposable worker credentials only",
-            file=sys.stderr,
-        )
 
     started = time.monotonic()
     try:
@@ -503,6 +536,29 @@ async def smoke(args, tx: Transcript) -> int:
     except (OSError, asyncio.TimeoutError, ssl.SSLError) as exc:
         tx.step("tcp_connect", False, f"{type(exc).__name__}: {exc}")
         return 3
+
+    peer_loopback = _peer_is_loopback(writer)
+    tx.data["peer_loopback"] = peer_loopback
+    if not use_tls and not peer_loopback and not allow_cleartext:
+        # Hostname may say "localhost" while the resolver maps it elsewhere.
+        try:
+            writer.close()
+            await writer.wait_closed()
+        except (ConnectionError, OSError):
+            pass
+        tx.step(
+            "config",
+            False,
+            "cleartext Stratum peer is not loopback; require --allow-cleartext "
+            "(worker credentials travel in the clear)",
+        )
+        return 4
+    if not use_tls and not peer_loopback:
+        print(
+            "warning: cleartext Stratum; use disposable worker credentials only",
+            file=sys.stderr,
+        )
+
     tx.step(
         "tcp_connect",
         True,
@@ -591,9 +647,6 @@ async def smoke(args, tx: Transcript) -> int:
         tx.data["extranonce2"] = extranonce2
 
         session.phase = "search"
-        # Baseline after current-job selection so pre-auth replacements are not false mid-search changes.
-        jobs_before = len(tx.data["jobs"])
-        diff_before = len(tx.data["set_difficulty"])
         deadline = time.monotonic() + args.share_seconds
         try:
             found, hashes, used = await search_share(
@@ -621,11 +674,9 @@ async def smoke(args, tx: Transcript) -> int:
         tx.data["search_backend"] = used
         # Drain any pushes that arrived while the last batch ran.
         await asyncio.sleep(0)
-        work_changed = (
-            session.work_generation != job_work_generation
-            or len(tx.data["jobs"]) > jobs_before
-            or any(e["phase"] == "search" for e in tx.data["set_difficulty"][diff_before:])
-        )
+        # Only clean_jobs=True advances work_generation; set_difficulty and
+        # non-clean notifies leave the selected job valid.
+        work_changed = session.work_generation != job_work_generation
         tx.data.update({
             "difficulty_events_during_search": sum(
                 1 for e in tx.data["set_difficulty"] if e["phase"] == "search"
@@ -633,9 +684,8 @@ async def smoke(args, tx: Transcript) -> int:
             "stale_notifies": tx.data.get("stale_notifies", 0),
         })
         if work_changed:
-            # Never submit the original job after an intervening notify/difficulty.
             detail = (
-                f"backend={used} work changed mid-search "
+                f"backend={used} clean_jobs invalidated mid-search "
                 f"(hashes={hashes}, hit={found is not None})"
             )
             tx.step("search", False, detail)
