@@ -45,4 +45,3 @@ manifests/qualification_manifest_v6.json
 manifests/qualification_manifest_v7.json
 manifests/qualification_manifest_v8.json
 manifests/qualification_manifest_v9.json
-PRODUCTION_QUALIFIED.json
