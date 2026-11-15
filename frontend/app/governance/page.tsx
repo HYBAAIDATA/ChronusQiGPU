@@ -1,1062 +1,1259 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import {
-  ShieldCheck,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  FileKey,
-  Search,
-  Lock,
-  ShieldAlert,
-  Sparkles,
-  Clock,
-  Cpu,
-  Activity,
-  Zap,
-  Shield,
-  KeyRound,
-  Radio,
-  RefreshCw,
-  Terminal,
-  ChevronRight,
-  FileText,
-  Check,
-  ExternalLink,
-  X,
-  Layers,
-  Scale,
-  Building2,
-  Copy,
-  SlidersHorizontal,
-} from 'lucide-react';
+import React, { FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { StatusPill } from '@/components/console/status-pill';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   ChronusAPIClient,
-  VerifyReceiptResponse,
-  ALHarasStatusResponse,
-  ALHarasInspectResponse,
+  ChronusAPIError,
+  type ALHarasInspectRequest,
+  type ALHarasRegisterValue,
+  type ApiRecord,
+  type VerifyReceiptResponse,
 } from '@/lib/api-client';
 
-interface NCSCPrinciple {
-  id: string;
-  name: string;
-  category: 'Transit & Storage' | 'Resilience & Ops' | 'Governance & Identity' | 'Supply Chain & Dev';
-  mechanism: string;
-  status: 'COMPLIANT PASS';
-  invariants: string;
-  scope: string;
-  details: string;
-  evidence: string;
-  formula?: string;
+// AL HARAS (HYBA Security) check demonstrations. Each request body shown on screen is the exact object sent.
+
+const ADMISSION_AGREE: ALHarasInspectRequest = {
+  payload: 'example-workload-001',
+  state_vectors: [[1, 0], [1, 0], [1, 0]],
+  tolerance: '0',
+};
+const ADMISSION_DISAGREE: ALHarasInspectRequest = {
+  payload: 'example-workload-001',
+  state_vectors: [[1, 0], [1, 0], [0, 1]],
+  tolerance: '0',
+};
+
+const AGENTS_AGREE: Record<string, number[]> = {
+  Planner: [1, 0, 0, 1],
+  Coder: [1, 0, 0, 1],
+  Executor: [1, 0, 0, 1],
+  Tool: [1, 0, 0, 1],
+};
+const AGENTS_CODER_ALTERED: Record<string, number[]> = { ...AGENTS_AGREE, Coder: [99, -88, 77, 66] };
+const AGENT_STALK_DIM = 4;
+
+const ROUTE_PACKET = 'EXAMPLE_PACKET_001';
+const ROUTE_SOURCE = 'SAT_00';
+const ROUTE_TARGET = 'SAT_07';
+
+const INFERENCE_INPUT = [12, 24, 36, 48];
+const INFERENCE_COMMITMENT = 'example-weights-commitment-v1';
+
+const SETTLEMENT_SENDER = 'CENTRAL_BANK_A';
+const SETTLEMENT_RECEIVER = 'CENTRAL_BANK_B';
+const SETTLEMENT_AMOUNT = 1000;
+
+const TISA_MULTIPLY = 0x02;
+const TISA_CONSISTENCY = 0x03;
+const TISA_REGISTERS = { rs1: 1, rs2: 2, rd: 3 };
+const MULTIPLY_RS1: ALHarasRegisterValue = [1, 2, 0, 0];
+const MULTIPLY_RS2: ALHarasRegisterValue = [3, 1, 0, 0];
+const MISMATCH_RS1: ALHarasRegisterValue = [10, 0, 0, 0];
+const MISMATCH_RS2: ALHarasRegisterValue = [0, 10, 0, 0];
+
+/** Exact product in Z[ζ5] = Z[x]/(x⁴ + x³ + x² + x + 1), recomputed in the browser as an independent check. */
+function multiplyZeta5(a: ALHarasRegisterValue, b: ALHarasRegisterValue): ALHarasRegisterValue {
+  const d = [0, 0, 0, 0, 0, 0, 0];
+  for (let i = 0; i < 4; i += 1) {
+    for (let j = 0; j < 4; j += 1) d[i + j] += a[i] * b[j];
+  }
+  // Reduce with x⁵ = 1, x⁶ = x and x⁴ = −(1 + x + x² + x³).
+  return [d[0] + d[5] - d[4], d[1] + d[6] - d[4], d[2] - d[4], d[3] - d[4]];
 }
 
-const NCSC_14_PRINCIPLES: NCSCPrinciple[] = [
+const MULTIPLY_EXPECTED = multiplyZeta5(MULTIPLY_RS1, MULTIPLY_RS2);
+const ZETA_POWERS = ['', 'ζ', 'ζ²', 'ζ³'];
+
+function formatZeta(values: readonly number[]): string {
+  let text = '';
+  values.forEach((coefficient, power) => {
+    if (coefficient === 0) return;
+    const magnitude = Math.abs(coefficient);
+    const term = power === 0 ? String(magnitude) : `${magnitude === 1 ? '' : magnitude}${ZETA_POWERS[power]}`;
+    if (!text) text = coefficient < 0 ? `-${term}` : term;
+    else text += coefficient < 0 ? ` - ${term}` : ` + ${term}`;
+  });
+  return text || '0';
+}
+
+function formatTuple(values: readonly unknown[]): string {
+  return `(${values.map((value) => String(value)).join(', ')})`;
+}
+
+interface CrossCheck {
+  outcome: 'Matches' | 'Differs' | 'Not compared';
+  detail: string;
+}
+
+const REGISTER_RESULT_PATHS = [['rd_val'], ['rd_value'], ['result', 'rd_val'], ['execution', 'dst'], ['dst']];
+
+function compareRegisterResult(data: ApiRecord, expected: ALHarasRegisterValue): CrossCheck {
+  for (const path of REGISTER_RESULT_PATHS) {
+    const value = valueAt(data, path);
+    if (Array.isArray(value) && value.length === 4 && value.every((item) => typeof item === 'number' || typeof item === 'string')) {
+      const where = path.join('.');
+      return value.every((item, index) => String(item).trim() === String(expected[index]))
+        ? { outcome: 'Matches', detail: `This browser computed ${formatTuple(expected)}; the API returned the same value in ${where}.` }
+        : { outcome: 'Differs', detail: `This browser computed ${formatTuple(expected)}; the API returned ${formatTuple(value)} in ${where}.` };
+    }
+  }
+  return {
+    outcome: 'Not compared',
+    detail: `This browser computed ${formatTuple(expected)}; the response had no four-coefficient register value to compare.`,
+  };
+}
+
+interface CheckScenario {
+  id: string;
+  label: string;
+  summary: string;
+  expected: string;
+  request: ApiRecord;
+  run: (authToken: string) => Promise<ApiRecord>;
+  crossCheck?: (data: ApiRecord) => CrossCheck;
+}
+
+interface SecurityCheck {
+  id: string;
+  title: string;
+  question: string;
+  computes: string;
+  limits: string;
+  endpoint: string;
+  highlights?: string[][];
+  scenarios: [CheckScenario, ...CheckScenario[]];
+}
+
+const SECURITY_CHECKS: SecurityCheck[] = [
   {
-    id: 'P1',
-    name: 'Data in Transit Protection',
-    category: 'Transit & Storage',
-    mechanism: 'Ephemeral zero-copy pointers (ptr_ovid_...), TLS 1.3, Cyclotomic ℤ[ζ₅] Anyon Braids',
-    status: 'COMPLIANT PASS',
-    invariants: 'Invariants I1, I13, I21',
-    scope: 'Data traveling across internal virtual crossbars and external networks must be protected against interception, tampering, and replay attacks.',
-    details: 'All REST and gRPC API endpoints mandate TLS 1.3 encryption with forward secrecy using modern cipher suites. Internally, multi-node compute streams do not transmit raw data payloads over network boundaries; instead, they exchange lightweight, content-addressed zero-copy pointers (ptr_ovid_<hash>). Inter-process communication across hardware warps is compiled into topological Fibonacci anyon braid sequences over cyclotomic ring ℤ[ζ₅].',
-    evidence: 'Topological braid compiler enforces exact Artin braid relationships (σ₁σ₂σ₁ = σ₂σ₁σ₂) and Mac Lane pentagon coherence with zero floating-point error. Absolute immunity to signal jitter, timing side-channels, and electromagnetic interception.',
-    formula: 'σ₁ σ₂ σ₁ = σ₂ σ₁ σ₂  (over ℤ[ζ₅] cyclotomic ring)',
+    id: 'admission',
+    title: 'Workload admission decision',
+    question: 'Should this workload be admitted, given whether the nodes reporting on it agree, and is that decision signed?',
+    computes:
+      'Compares the node states exactly, wraps the payload in a Reed–Solomon error-correcting envelope and returns an admit or reject decision signed with Ed25519 and ML-DSA-87.',
+    limits: 'Covers only the checks named here; the response lists what it does not check, and the receipt states how the signing key is held.',
+    endpoint: 'POST /v1/al-haras/inspect',
+    highlights: [
+      ['decision', 'decision'],
+      ['sheaf_cohomology', 'worst_edge'],
+      ['sheaf_cohomology', 'isolating_nodes'],
+      ['sheaf_cohomology', 'coboundary_max_edge_norm'],
+    ],
+    scenarios: [
+      {
+        id: 'admission-agree',
+        label: 'Nodes agree',
+        summary: 'Three nodes report the same state (1, 0) for the payload “example-workload-001”; tolerance 0.',
+        expected: 'The states are identical, so the API should admit the workload and return a signed decision.',
+        request: ADMISSION_AGREE,
+        run: (token) => ChronusAPIClient.inspectALHarasWorkload(token, ADMISSION_AGREE),
+      },
+      {
+        id: 'admission-disagree',
+        label: 'One node disagrees',
+        summary: 'The third node reports (0, 1) while the other two report (1, 0); tolerance 0.',
+        expected:
+          'The third node disagrees with both of its neighbours, so the API should reject the workload, point to that node and still return a signed decision.',
+        request: ADMISSION_DISAGREE,
+        run: (token) => ChronusAPIClient.inspectALHarasWorkload(token, ADMISSION_DISAGREE),
+      },
+    ],
   },
   {
-    id: 'P2',
-    name: 'Asset Protection and Resilience',
-    category: 'Resilience & Ops',
-    mechanism: 'DSW 4D Instanton Monopole Self-Healing, 0-Stall DEC Lie-Poisson Fluid Routing',
-    status: 'COMPLIANT PASS',
-    invariants: 'Invariants I26, I27, I66',
-    scope: 'User data, system configurations, and compute assets must be protected against hardware faults, physical disaster, zero-day exploits, and malicious destruction.',
-    details: 'Incorporates a 4-dimensional Donaldson-Seiberg-Witten (DSW) instanton monopole self-healing engine. System execution traces across a 4D spacetime manifold continuously evaluate trace integrity. Bit-flips or corruptions induce Yang-Mills instanton events (F_A = -*F_A). The kernel constructs a dual Seiberg-Witten monopole along an exact cobordism W: Σ₁ → Σ₂, repairing damaged execution traces in 1 clock cycle (k=1) with zero application rollback.',
-    evidence: 'Regional pod failover tests demonstrate zero-loss commit reconciliation when transitioning active execution loads from ALPHA_POD to secondary clusters, maintaining 100% availability under severe fault injection.',
-    formula: 'F_A = -*F_A ⟹ W: Σ₁ → Σ₂  (k=1, 1-cycle self-healing)',
+    id: 'agent-consistency',
+    title: 'Agent state consistency',
+    question: 'Do the agents in a multi-agent pipeline hold consistent state and, if not, which agent is out of line?',
+    computes:
+      'Compares connected agents’ state vectors in exact arithmetic (a cellular-sheaf coboundary) and reports whether they agree and, if not, where the disagreement lies.',
+    limits: 'Agent names and state vectors are example values; no running agents are inspected.',
+    endpoint: 'POST /v1/al-haras/applications/agentic-sheaf/verify-turn',
+    scenarios: [
+      {
+        id: 'agents-agree',
+        label: 'Agents agree',
+        summary: 'Planner, Coder, Executor and Tool each report the state (1, 0, 0, 1).',
+        expected: 'No connected pair differs, so the check should report the states as consistent.',
+        request: { agent_states: AGENTS_AGREE, stalk_dim: AGENT_STALK_DIM },
+        run: (token) => ChronusAPIClient.executeAgenticSheafTurn(token, AGENTS_AGREE, AGENT_STALK_DIM),
+      },
+      {
+        id: 'agents-coder-altered',
+        label: 'Coder state altered',
+        summary: 'Coder reports (99, -88, 77, 66); the other three agents report (1, 0, 0, 1).',
+        expected: 'Only Coder differs, so the check should report disagreement on Coder’s connections and point to Coder.',
+        request: { agent_states: AGENTS_CODER_ALTERED, stalk_dim: AGENT_STALK_DIM },
+        run: (token) => ChronusAPIClient.executeAgenticSheafTurn(token, AGENTS_CODER_ALTERED, AGENT_STALK_DIM),
+      },
+    ],
   },
   {
-    id: 'P3',
-    name: 'Separation Between Users (Data Separation)',
-    category: 'Transit & Storage',
-    mechanism: 'Multi-tenant PostgreSQL schemas (REPEATABLE READ), zero-copy OVID container isolation',
-    status: 'COMPLIANT PASS',
-    invariants: 'Invariants I8, I10, I44',
-    scope: 'Multi-tenant environments require strict, unbreachable logical and physical separation between distinct customer workloads, data stores, and encryption keys.',
-    details: 'Data separation is enforced across both storage and memory layers. Persistence tier implements PostgresWorkloadStore with dedicated multi-tenant schema isolation, connection pooling, and REPEATABLE READ transaction isolation. Memory tier uses content-addressed OVID containers (o1_<tenant_id>), isolating data buffers by cryptographic hashes.',
-    evidence: 'Concurrency stress testing involving 1,000 parallel tenant workflows across 5,000 sub-transactions verified zero cross-tenant leakage, zero unrecovered lock contentions, and 100% tenant isolation enforcement.',
-    formula: 'o1_{tenant_id} ∩ o1_{tenant_j} = ∅,  ∀ i ≠ j',
+    id: 'mesh-routing',
+    title: 'Routing on a modelled mesh',
+    question: 'Can a message between two nodes be routed over the modelled mesh, and how well connected is that mesh?',
+    computes:
+      'Finds a route between two named nodes on a graph model of the mesh and reports it with the graph’s connectivity figures, such as degree and spectral gap; no satellites, radios or live links are involved.',
+    limits: 'A graph model only: it says nothing about real links, radio conditions or delivery.',
+    endpoint: 'POST /v1/al-haras/applications/orbital-mesh/transmit',
+    scenarios: [
+      {
+        id: 'mesh-route',
+        label: 'Route one example packet',
+        summary: `Packet “${ROUTE_PACKET}” from node ${ROUTE_SOURCE} to node ${ROUTE_TARGET}; the mesh size is left to the API default.`,
+        expected: 'A route between the two nodes should be found and reported with the mesh figures the API computed.',
+        request: { packet_payload: ROUTE_PACKET, source_sat: ROUTE_SOURCE, target_sat: ROUTE_TARGET },
+        run: (token) => ChronusAPIClient.transmitOrbitalTelemetry(token, ROUTE_PACKET, ROUTE_SOURCE, ROUTE_TARGET),
+      },
+    ],
   },
   {
-    id: 'P4',
-    name: 'Governance Framework',
-    category: 'Governance & Identity',
-    mechanism: 'G1–G8 Release Gates, 94 formal invariants passed, CI Purity Gate zero-float enforcement',
-    status: 'COMPLIANT PASS',
-    invariants: 'Invariants I76, I79, I80',
-    scope: 'The service provider must maintain an institutional security governance framework that manages operational risks, software lifecycle security, and compliance oversight.',
-    details: 'Development and release lifecycle is governed by eight mandatory Release Gates (G1–G8). Code changes must pass automated verification checks administered by CI Purity Gate (purity_gate.py). Enforces zero floating-point approximation, zero heuristic guesswork, and exact mathematical ring representations over ℚ(√5).',
-    evidence: 'Certified as Production Qualified in qualification_manifest_v36.json, confirming compliance across all 94 operational invariants and 8 release gates.',
-    formula: 'G1 ∧ G2 ∧ ... ∧ G8 = TRUE,  94/94 Invariants PASS',
+    id: 'inference-integrity',
+    title: 'Inference integrity re-check',
+    question: 'Can a model output be checked against the computation that produced it?',
+    computes:
+      'Runs a small integer model on the input and re-checks its computation trace with exact finite-field arithmetic; this is not a zero-knowledge proof or a STARK verifier.',
+    limits: 'The same API request produces and re-checks the result, so this shows the arithmetic, not independent verification by another party.',
+    endpoint: 'POST /v1/al-haras/applications/zk-neural/prove-and-verify',
+    scenarios: [
+      {
+        id: 'inference-example',
+        label: 'Example input',
+        summary: `Input ${formatTuple(INFERENCE_INPUT)} with the weights label “${INFERENCE_COMMITMENT}”.`,
+        expected: 'The re-check of an honestly computed output should hold, and the API should report the output it computed.',
+        request: { sensor_input: INFERENCE_INPUT, weights_commitment: INFERENCE_COMMITMENT },
+        run: (token) => ChronusAPIClient.executeZkNeuralProveAndVerify(token, INFERENCE_INPUT, INFERENCE_COMMITMENT),
+      },
+    ],
   },
   {
-    id: 'P5',
-    name: 'Operational Security',
-    category: 'Resilience & Ops',
-    mechanism: 'Cellular Sheaf Cohomology (H¹(X; ℱ) = 0), real-time prompt-injection vortex isolation',
-    status: 'COMPLIANT PASS',
-    invariants: 'Invariants I19, I24, I70',
-    scope: 'Services must actively prevent, detect, and respond to operational threats, unauthorized system modifications, and malicious software execution.',
-    details: 'Driven by the Cellular Sheaf Cohomology Obstruction Engine. Latent execution states across multi-node clusters are modeled as a Cellular Sheaf ℱ over a simplicial complex X. Valid process trajectories reside strictly in ker(L_ℱ) = H⁰(X; ℱ). Hostile prompt injections, SQL injections, and context contradictions create non-zero first cohomology classes (H¹ ≠ 0) isolated at the boundary before instruction execution.',
-    evidence: 'Operational telemetry confirms clean process execution yields H¹ = 0.0, while malicious payload injections trigger instantaneous vortex isolation with H¹ = 1.4142, blocking execution in 0.21 ms.',
-    formula: 'L_ℱ = (δ⁰)ᵀ δ⁰ + δ₁ δ₁ᵀ,  H¹(X; ℱ) = ker(δ¹)/im(δ⁰) = 0',
+    id: 'settlement-conservation',
+    title: 'Settlement conservation',
+    question: 'Does a transfer conserve value, and is a second spend of the same funds refused?',
+    computes:
+      'Applies the transfer to a model ledger and checks with integer arithmetic that every debit has a matching credit; the double-spend option replays the same funds so the check can refuse them.',
+    limits: 'Participants and amounts are example labels in a model ledger; no bank, payment system or funds are involved.',
+    endpoint: 'POST /v1/al-haras/applications/cbdc-settlement/process',
+    scenarios: [
+      {
+        id: 'settlement-single',
+        label: 'Single transfer',
+        summary: `${SETTLEMENT_SENDER} sends ${SETTLEMENT_AMOUNT} tokens to ${SETTLEMENT_RECEIVER} once.`,
+        expected: 'Debits equal credits, so value is conserved and the transfer should be accepted.',
+        request: {
+          sender_bank: SETTLEMENT_SENDER,
+          receiver_bank: SETTLEMENT_RECEIVER,
+          amount_tokens: SETTLEMENT_AMOUNT,
+          simulate_double_spend: false,
+        },
+        run: (token) =>
+          ChronusAPIClient.processCBDCCrossBorderSettlement(token, SETTLEMENT_SENDER, SETTLEMENT_RECEIVER, SETTLEMENT_AMOUNT, false),
+      },
+      {
+        id: 'settlement-replay',
+        label: 'Same funds spent twice',
+        summary: `${SETTLEMENT_SENDER} spends the same ${SETTLEMENT_AMOUNT} tokens a second time (double-spend option on).`,
+        expected: 'The replayed funds break conservation, so the check should refuse the transfer.',
+        request: {
+          sender_bank: SETTLEMENT_SENDER,
+          receiver_bank: SETTLEMENT_RECEIVER,
+          amount_tokens: SETTLEMENT_AMOUNT,
+          simulate_double_spend: true,
+        },
+        run: (token) =>
+          ChronusAPIClient.processCBDCCrossBorderSettlement(token, SETTLEMENT_SENDER, SETTLEMENT_RECEIVER, SETTLEMENT_AMOUNT, true),
+      },
+    ],
   },
   {
-    id: 'P6',
-    name: 'Personnel Security',
-    category: 'Supply Chain & Dev',
-    mechanism: 'Customer-Held Cloud KMS / PKCS#11 HSM key custody, zero platform operator payload access',
-    status: 'COMPLIANT PASS',
-    invariants: 'Invariants I3, I77, I79',
-    scope: 'Service provider staff must be managed under strict personnel security controls to eliminate insider threat risks and unauthorized access to customer environments.',
-    details: 'Eliminates operator insider threats through Customer-Held Key Custody (CUSTOMER_HELD_HSM_PKCS11). All customer payload data at rest and in transit is encrypted using keys managed exclusively inside customer-controlled HSMs (AWS KMS, Azure Key Vault, HashiCorp Vault, or on-premises PKCS#11 HSMs). Platform operators have zero technical capability to decrypt raw customer data or inspect memory payloads.',
-    evidence: 'System administration routines execute without exposing unencrypted customer secrets, key material, or payload content, satisfying NCSC personnel security standards.',
-    formula: 'KeyCustody = CUSTOMER_HELD_HSM_PKCS11,  OperatorAccess = 0',
-  },
-  {
-    id: 'P7',
-    name: 'Secure Development',
-    category: 'Supply Chain & Dev',
-    mechanism: 'CI Purity Gate (purity_gate.py), exact algebraic ring arithmetic over ℚ(√5)',
-    status: 'COMPLIANT PASS',
-    invariants: 'Invariants I14, I33, I73',
-    scope: 'Software must be designed, developed, tested, and maintained to prevent vulnerabilities and eliminate security defects throughout its product lifecycle.',
-    details: 'Secure development practices are enforced algorithmically via the CI Purity Gate script (purity_gate.py). The codebase avoids reliance on vulnerable floating-point approximations, random heuristics, or third-party unverified libraries. All core mathematical logic operates on exact rational arithmetic, cyclotomic field extensions, and carry-free Zeckendorf base-φ representations.',
-    evidence: 'Automated unit test suites (45/45 passing) and full pytest suites (187/187 passing) confirm total code purity with zero security-critical defects or unhandled exception paths.',
-    formula: 'x ∈ ℚ(√5),  x = a + b√5,  a, b ∈ ℚ  (Zero Floating-Point Error)',
-  },
-  {
-    id: 'P8',
-    name: 'Supply Chain Security',
-    category: 'Supply Chain & Dev',
-    mechanism: 'NIST FIPS 204 ML-DSA-65 lattice signatures, FRI zk-STARK polynomial verifiers',
-    status: 'COMPLIANT PASS',
-    invariants: 'Invariants I2, I16, I22',
-    scope: 'The service provider must ensure that third-party dependencies, external libraries, and hardware supply chains do not compromise the security posture of the customer.',
-    details: 'Supply chain integrity is verified through post-quantum cryptographic signatures and succinct zero-knowledge execution proofs. Every software binary, system build, and execution receipt is signed using NIST FIPS 204 ML-DSA lattice signatures over modulus q = 8380417 and SHAKE-256. Execution traces are verified using FRI zk-STARK polynomial quotient verifiers (P(x) = Q(x) · Z_H(x) over prime p = 2013265921).',
-    evidence: 'Cryptographic verification endpoints confirm the structural validity of ML-DSA signatures and FRI zk-STARK proofs across all generated receipts.',
-    formula: 'P(x) = Q(x) · Z_H(x) (mod p=2013265921)',
-  },
-  {
-    id: 'P9',
-    name: 'Secure User Management',
-    category: 'Governance & Identity',
-    mechanism: '4-Tier Role-Based Access Control (System Admin, Tenant Admin, Developer, Auditor)',
-    status: 'COMPLIANT PASS',
-    invariants: 'Invariants I4, I7, I78',
-    scope: 'User management tools and administrative interfaces must prevent unauthorized user creation, privilege escalation, and improper access rights assignment.',
-    details: 'Enforces a rigid 4-tier Role-Based Access Control (RBAC) privileges matrix administered by the AL HARAS Security Authority. Roles are strictly partitioned into System Admin, Tenant Admin, Developer, and External Auditor tiers.',
-    evidence: 'OAuth2/OIDC JWT middleware validates tenant scoping claims (tenant_id, sub) and role permissions on every API call, preventing privilege escalation attempts.',
-    formula: 'Role ∈ {SYSTEM_ADMIN, TENANT_ADMIN, DEVELOPER, EXTERNAL_AUDITOR}',
-  },
-  {
-    id: 'P10',
-    name: 'Identity & Authentication',
-    category: 'Governance & Identity',
-    mechanism: 'Dynamic JWKSCache key rotation, PKCS#11 HSM envelope binding, OAuth2/OIDC JWT tokens',
-    status: 'COMPLIANT PASS',
-    invariants: 'Invariants I3, I4, I77',
-    scope: 'All users, services, and administrative sessions must be strongly authenticated using multi-factor mechanisms, post-quantum cryptography, and centralized key custody.',
-    details: 'Authentication relies on OAuth2/OIDC JWT tokens issued via the AL HARAS Security Authority. The service maintains a dynamic JWKSCache supporting public key rotation, TTL expiration, and immediate key revocation. API requests require zero-copy developer tokens (ptr_sdk_...) cryptographically bound to customer HSM key envelopes.',
-    evidence: 'Authentication tests verify key rotation, expired token rejection, and invalid signature detection across all service endpoints.',
-    formula: 'Token = Sign_{HSM}(Header ∥ Claims),  TTL ≤ 3600s',
-  },
-  {
-    id: 'P11',
-    name: 'External Interface Protection (Authorised Access)',
-    category: 'Resilience & Ops',
-    mechanism: 'AL HARAS "Speak Friend and Enter" boundary inspection, H¹ norm detection',
-    status: 'COMPLIANT PASS',
-    invariants: 'Invariants I19, I42, I70',
-    scope: 'All external interfaces, API gateways, and web consoles must be defended against unauthorized access, denial-of-service attacks, and exploitation attempts.',
-    details: 'Governed by AL HARAS "Speak Friend and Enter" inspection gateway (POST /v1/al-haras/inspect). Incoming API requests undergo real-time topological evaluation. Requests containing structural anomalies or injection patterns are flagged by the sheaf engine and rejected at the gateway edge before reaching backend compute resources.',
-    evidence: 'Ingress stress testing demonstrates normal traffic passes inspection seamlessly (process_admitted: true), whereas hostile payloads are caught and isolated in under 0.22 milliseconds.',
-    formula: 'Admit = (Passphrase == Match) ∧ (∥H¹(X; ℱ)∥ == 0.0)',
-  },
-  {
-    id: 'P12',
-    name: 'Secure Service Administration',
-    category: 'Governance & Identity',
-    mechanism: 'OpenTelemetry distributed spans, Prometheus /metrics, structured JSON audit logs',
-    status: 'COMPLIANT PASS',
-    invariants: 'Invariants I32, I35, I78',
-    scope: 'Administration of the cloud service must be conducted securely to protect administrative credentials, management interfaces, and operational telemetry.',
-    details: 'Performed through dedicated, authenticated control endpoints instrumented with full Observability and Site Reliability Engineering (SRE) tools. Distributed OpenTelemetry spans trace administrative actions across API ingestion, algebraic folding, storage, and execution dispatch. Metrics are exposed via Prometheus /metrics, with structured JSON logging.',
-    evidence: 'Administrative telemetry feeds maintain complete auditability without exposing sensitive tenant data, secrets, or unencrypted system memory.',
-    formula: 'SpanContext = {trace_id, span_id, tenant_id, auth_role}',
-  },
-  {
-    id: 'P13',
-    name: 'Audit Information for Users',
-    category: 'Supply Chain & Dev',
-    mechanism: 'THESEUS append-only journals, zero-auth public verification endpoint (/v1/verify/...)',
-    status: 'COMPLIANT PASS',
-    invariants: 'Invariants I1, I5, I7',
-    scope: 'Customers must be provided with complete, tamper-evident audit logs and verification tools to monitor access to their data and verify execution integrity.',
-    details: 'System activity and process executions are recorded in THESEUS append-only journals. In addition, the platform exposes a public zero-authentication verification endpoint (GET /v1/verify/{receipt_hash}). Customers and third-party auditors can submit execution receipt hashes to independently verify cryptographic integrity without revealing raw data payloads.',
-    evidence: 'Public verification requests return verified JSON receipts ({"valid": true, "zk_stark": "VERIFIED", "mldsa_sig": "VALID"}) confirmed against content-addressed OVID storage records.',
-    formula: 'h_{t} = SHA256(h_{t-1} ∥ Payload_{t} ∥ Sig_{ML-DSA})',
-  },
-  {
-    id: 'P14',
-    name: 'Secure Use of Services & Edge Isolation',
-    category: 'Transit & Storage',
-    mechanism: 'Ramanujan PSL₂(F₂₅₇) expander mass gap (λ₂ ≤ 32.0624), >54% avalanche diffusion',
-    status: 'COMPLIANT PASS',
-    invariants: 'Invariants I17, I23, I81',
-    scope: 'Customers must be provided with guidance and security controls to configure their usage of the service securely and protect edge workloads.',
-    details: 'Edge execution nodes and client data connectors operate over a p-adic Cayley expander walk on PSL₂(F₂₅₇). The expander graph satisfies the Alon-Boppana spectral mass gap bound (λ₂ ≤ 2√p ≈ 32.0624), establishing an invariant spectral gap Δ = 229.14. Rapid global avalanche bit diffusion (>54% in ≤3 rounds) prevents edge bus stalls and defends against physical noise attacks.',
-    evidence: 'High-concurrency edge data transfer benchmarks confirm zero bus stalls at 100% crossbar saturation, maintaining stable execution under heavy network load.',
-    formula: 'λ₂ ≤ 2√p ≈ 32.0624,  Δ = λ₁ - λ₂ = 229.14  (Expander Mass Gap)',
+    id: 'instruction-model',
+    title: 'Instruction-set model',
+    question:
+      'Does the proposed coprocessor instruction set compute exactly, and does its consistency instruction stop output when two registers disagree?',
+    computes:
+      'Executes one instruction in a software model of the proposed coprocessor: exact multiplication in Z[ζ₅], or a consistency check that blocks the modelled memory bus when two registers differ.',
+    limits: 'Software model only: this demonstration involves no hardware, clock-cycle timing or hardware enforcement.',
+    endpoint: 'POST /v1/al-haras/applications/t-isa/execute',
+    scenarios: [
+      {
+        id: 'instruction-multiply',
+        label: 'Multiply (funct7 0x02)',
+        summary: `rs1 = ${formatTuple(MULTIPLY_RS1)}, i.e. ${formatZeta(MULTIPLY_RS1)}; rs2 = ${formatTuple(MULTIPLY_RS2)}, i.e. ${formatZeta(MULTIPLY_RS2)}; the result goes to register ${TISA_REGISTERS.rd}.`,
+        expected: `(${formatZeta(MULTIPLY_RS1)})(${formatZeta(MULTIPLY_RS2)}) = ${formatZeta(MULTIPLY_EXPECTED)} exactly, so rd should hold ${formatTuple(MULTIPLY_EXPECTED)}.`,
+        request: { funct7: TISA_MULTIPLY, ...TISA_REGISTERS, rs1_val: MULTIPLY_RS1, rs2_val: MULTIPLY_RS2 },
+        run: (token) =>
+          ChronusAPIClient.executeTISAMicrocode(
+            token,
+            TISA_MULTIPLY,
+            MULTIPLY_RS1,
+            MULTIPLY_RS2,
+            TISA_REGISTERS.rs1,
+            TISA_REGISTERS.rs2,
+            TISA_REGISTERS.rd
+          ),
+        crossCheck: (data) => compareRegisterResult(data, MULTIPLY_EXPECTED),
+      },
+      {
+        id: 'instruction-consistency',
+        label: 'Consistency check, registers differ (funct7 0x03)',
+        summary: `rs1 = ${formatTuple(MISMATCH_RS1)} and rs2 = ${formatTuple(MISMATCH_RS2)} should agree but do not.`,
+        expected: 'The registers differ, so the model should raise its consistency fault and report the modelled memory bus as blocked.',
+        request: { funct7: TISA_CONSISTENCY, ...TISA_REGISTERS, rs1_val: MISMATCH_RS1, rs2_val: MISMATCH_RS2 },
+        run: (token) =>
+          ChronusAPIClient.executeTISAMicrocode(
+            token,
+            TISA_CONSISTENCY,
+            MISMATCH_RS1,
+            MISMATCH_RS2,
+            TISA_REGISTERS.rs1,
+            TISA_REGISTERS.rs2,
+            TISA_REGISTERS.rd
+          ),
+      },
+    ],
   },
 ];
 
-export default function GovernancePage() {
-  const [receiptHash, setReceiptHash] = useState('ed25519_sig_9f81a742c38e94a107bf382a93c7d610fa2e894107bc9812401f8e21aa');
-  const [verification, setVerification] = useState<VerifyReceiptResponse | null>(null);
-  const [isVerifying, setIsVerifying] = useState(false);
+// Defensive readers: response keys are still being revised, so only keys that are present are rendered.
 
-  // AL HARAS State
-  const [alHarasStatus, setAlHarasStatus] = useState<ALHarasStatusResponse | null>(null);
-  const [alHarasInspection, setAlHarasInspection] = useState<ALHarasInspectResponse | null>(null);
-  const [isInspecting, setIsInspecting] = useState(false);
-  const [passphrase, setPassphrase] = useState('SPEAK FRIEND AND ENTER');
-  const [payloadText, setPayloadText] = useState('CRITICAL_NATIONAL_INFRASTRUCTURE_SOVEREIGN_PAYLOAD');
+function isRecord(value: unknown): value is ApiRecord {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
 
-  // NCSC 14 Principles State
-  const [selectedPrinciple, setSelectedPrinciple] = useState<NCSCPrinciple | null>(null);
-  const [principleFilter, setPrincipleFilter] = useState<string>('ALL');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+function asRecord(value: unknown): ApiRecord {
+  return isRecord(value) ? value : { response: value };
+}
 
-  useEffect(() => {
-    ChronusAPIClient.getALHarasStatus()
-      .then(setAlHarasStatus)
-      .catch(console.error);
-  }, []);
+function valueAt(source: unknown, path: readonly string[]): unknown {
+  let current: unknown = source;
+  for (const key of path) {
+    if (!isRecord(current)) return undefined;
+    current = current[key];
+  }
+  return current;
+}
 
-  const handleVerify = async () => {
-    setIsVerifying(true);
-    try {
-      const res = await ChronusAPIClient.verifyReceipt(receiptHash.trim());
-      setVerification(res);
-    } finally {
-      setIsVerifying(false);
+function optionalText(value: unknown): string | null {
+  if (typeof value === 'string' && value.trim()) return value.trim();
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  return null;
+}
+
+interface Located {
+  path: string;
+  value: string;
+}
+
+function firstText(source: unknown, keys: readonly string[]): Located | null {
+  for (const key of keys) {
+    const value = optionalText(valueAt(source, [key]));
+    if (value !== null) return { path: key, value };
+  }
+  return null;
+}
+
+function humanize(key: string): string {
+  const words = key.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+  return words ? words.charAt(0).toUpperCase() + words.slice(1) : key;
+}
+
+function isPrimitive(value: unknown): value is string | number | boolean | null {
+  return value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean';
+}
+
+function isShortPrimitiveList(value: unknown): boolean {
+  return Array.isArray(value) && value.length <= 8 && value.every(isPrimitive);
+}
+
+function displayValue(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (value === null) return 'null';
+  return JSON.stringify(value) ?? String(value);
+}
+
+function stringList(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0) : [];
+}
+
+const STATUS_PATHS = [['status'], ['decision'], ['verdict'], ['outcome'], ['decision', 'status'], ['decision', 'decision'], ['result', 'status'], ['execution', 'status']];
+
+function pickStatus(data: ApiRecord): Located | null {
+  for (const path of STATUS_PATHS) {
+    const value = valueAt(data, path);
+    if (typeof value === 'string' && value.trim()) return { path: path.join('.'), value: value.trim() };
+  }
+  return null;
+}
+
+// Meanings for statuses the current AL HARAS engines compute; anything else is shown verbatim with a neutral note.
+const STATUS_MEANINGS: Record<string, string> = {
+  ADMITTED: 'The node states agreed, so the API recorded an admit decision and signed it.',
+  REJECTED_STATE_DISAGREEMENT: 'The node states disagreed, so the API recorded a reject decision and signed it.',
+  CONSISTENT: 'Every connected pair of states agrees within the tolerance.',
+  INCONSISTENT_STATES: 'At least one connected pair of states differs by more than the tolerance.',
+  INCONSISTENT_STATES_ISOLATED:
+    'The states disagree, and every disagreeing connection touches the isolating node or nodes the API lists; without them the rest agree.',
+  NO_STATE_SUPPLIED: 'No state vectors were supplied, so nothing was compared.',
+  INVALID_STATE_INPUT: 'The state input could not be evaluated; the technical detail shows why.',
+  SELF_TEST_PASSED: 'Every self-test returned true when the API recomputed it for this request.',
+  SELF_TEST_FAILED: 'At least one self-test returned false when the API recomputed it for this request.',
+};
+
+const MEANING_KEYS = ['meaning', 'interpretation', 'explanation'];
+
+interface Meaning {
+  text: string;
+  fromApi: boolean;
+  key: string | null;
+}
+
+function statusMeaning(status: string | null, data: ApiRecord): Meaning {
+  const reported = firstText(data, MEANING_KEYS);
+  if (reported) return { text: reported.value, fromApi: true, key: reported.path };
+  if (!status) {
+    return { text: 'The response did not include a status. Read the computed values and the technical detail instead.', fromApi: false, key: null };
+  }
+  const known = STATUS_MEANINGS[status.toUpperCase()];
+  if (known) return { text: known, fromApi: false, key: null };
+  if (/not[_ ]implemented/i.test(status)) {
+    return { text: 'The API reports that this is not implemented, so nothing was computed for it.', fromApi: false, key: null };
+  }
+  return {
+    text: `This page has no description for “${status}”. Compare it with the expected outcome and the computed values below.`,
+    fromApi: false,
+    key: null,
+  };
+}
+
+interface ReceiptEvidence {
+  path: string;
+  algorithm: string | null;
+  keyId: string | null;
+  keyCustody: string | null;
+  bodySha256: string | null;
+  signature: string | null;
+  /** Second signature carried by AL HARAS receipts (ML-DSA-87), when present. */
+  postQuantumAlgorithm: string | null;
+  postQuantumSignature: string | null;
+  body: ApiRecord | null;
+}
+
+function findReceipt(source: unknown, path: string[] = [], depth = 0): ReceiptEvidence | null {
+  if (!isRecord(source) || depth > 4) return null;
+  const signature: unknown = source.signature;
+  const signed = isRecord(signature) ? signature : null;
+  if ((signed && ('signature_hex' in signed || 'signature' in signed)) || (typeof signature === 'string' && isRecord(source.body))) {
+    return {
+      path: path.length > 0 ? path.join('.') : 'response',
+      algorithm: optionalText(signed ? signed.algorithm : source.algorithm),
+      keyId: optionalText(signed ? signed.key_id : source.key_id),
+      keyCustody: optionalText(signed ? signed.key_custody : source.key_custody),
+      bodySha256: optionalText(signed ? signed.body_sha256 : source.body_sha256),
+      signature: signed ? optionalText(signed.signature_hex) ?? optionalText(signed.signature) : optionalText(signature),
+      postQuantumAlgorithm: signed && isRecord(signed.post_quantum) ? optionalText(signed.post_quantum.algorithm) : null,
+      postQuantumSignature: signed && isRecord(signed.post_quantum) ? optionalText(signed.post_quantum.signature_hex) : null,
+      body: isRecord(source.body) ? source.body : null,
+    };
+  }
+  const keys = Object.keys(source);
+  const ordered = [...keys.filter((key) => key.includes('receipt')), ...keys.filter((key) => !key.includes('receipt'))];
+  for (const key of ordered) {
+    const found = findReceipt(source[key], [...path, key], depth + 1);
+    if (found) return found;
+  }
+  return null;
+}
+
+function hexByteLength(value: string): number | null {
+  return /^[0-9a-f]+$/i.test(value) && value.length % 2 === 0 ? value.length / 2 : null;
+}
+
+function signatureSummary(receipt: ReceiptEvidence | null): string {
+  if (!receipt) return 'No signed receipt in this response.';
+  if (!receipt.signature) return `A receipt is present at ${receipt.path}, but its signature field is empty.`;
+  const size = hexByteLength(receipt.signature);
+  const first = `${size === null ? '' : `${size}-byte `}signature`;
+  if (receipt.postQuantumSignature) {
+    const pqSize = hexByteLength(receipt.postQuantumSignature);
+    const second = `${pqSize === null ? '' : `${pqSize}-byte `}${receipt.postQuantumAlgorithm ?? 'second'} signature`;
+    return `${receipt.algorithm ?? 'Signatures'}: ${first} and ${second} present at ${receipt.path}. Not verified by this page.`;
+  }
+  return `${receipt.algorithm ?? 'Signature'}: ${first} present at ${receipt.path}. Not verified by this page.`;
+}
+
+const RECORD_ID_KEYS = ['receipt_id', 'ovid_receipt_id', 'settlement_id', 'decision_id', 'record_id', 'proof_id', 'receipt_handle'];
+const TIME_KEYS = ['timestamp', 'issued_at', 'signed_at', 'computed_at', 'evaluated_at', 'checked_at', 'generated_at', 'created_at'];
+
+function findInResponseOrReceipt(data: ApiRecord, receipt: ReceiptEvidence | null, keys: readonly string[]): Located | null {
+  const fromResponse = firstText(data, keys);
+  if (fromResponse) return fromResponse;
+  if (!receipt?.body) return null;
+  const fromBody = firstText(receipt.body, keys);
+  return fromBody ? { path: `${receipt.path}.body.${fromBody.path}`, value: fromBody.value } : null;
+}
+
+const NOTE_KEYS = ['scope', 'model', 'label', 'implementation', 'implementation_status', 'method', 'note', 'notes', 'statement', 'disclaimer', 'reason', 'error', 'message', 'summary'];
+const LIST_KEYS = ['not_implemented', 'checks_not_performed', 'not_covered', 'limitations', 'assumptions', 'caveats'];
+const MAX_VALUE_CHARS = 160;
+const MAX_VALUES = 14;
+
+interface ValueEntry {
+  key: string;
+  label: string;
+  text: string;
+  shortened: boolean;
+}
+
+function toEntry(key: string, label: string, value: unknown): ValueEntry {
+  const text = displayValue(value);
+  const shortened = text.length > MAX_VALUE_CHARS;
+  return { key, label, text: shortened ? `${text.slice(0, MAX_VALUE_CHARS)}…` : text, shortened };
+}
+
+function computedValues(data: ApiRecord, highlights: readonly string[][], exclude: ReadonlySet<string>) {
+  const entries: ValueEntry[] = [];
+  for (const path of highlights) {
+    const value = valueAt(data, path);
+    if (value !== undefined && (isPrimitive(value) || isShortPrimitiveList(value))) {
+      const label = path.map((part, index) => (index === 0 ? humanize(part) : part.replace(/[_-]+/g, ' '))).join(' › ');
+      entries.push(toEntry(path.join('.'), label, value));
     }
-  };
+  }
+  let omitted = 0;
+  for (const [key, value] of Object.entries(data)) {
+    if (exclude.has(key) || NOTE_KEYS.includes(key) || LIST_KEYS.includes(key) || MEANING_KEYS.includes(key)) continue;
+    if ((isPrimitive(value) || isShortPrimitiveList(value)) && entries.length < MAX_VALUES) entries.push(toEntry(key, humanize(key), value));
+    else omitted += 1;
+  }
+  return { entries, omitted };
+}
 
-  const handleInspectAlHaras = async (simulateAdversarial: boolean = false) => {
-    setIsInspecting(true);
-    try {
-      const res = await ChronusAPIClient.inspectALHaras({
-        payload: payloadText,
-        passphrase: simulateAdversarial ? 'WRONG_UNAUTHORIZED_VECTOR' : passphrase,
-        simulate_adversarial: simulateAdversarial,
-        sovereign_state_id: 'UK_SOVEREIGN_NATIONAL_SECURITY_AUTHORITY',
-      });
-      setAlHarasInspection(res);
-    } finally {
-      setIsInspecting(false);
-    }
-  };
-
-  const handleCopyReceipt = (p: NCSCPrinciple) => {
-    const payload = JSON.stringify(
-      {
-        principle_id: p.id,
-        name: p.name,
-        compliance_status: p.status,
-        verified_invariants: p.invariants,
-        technical_mechanism: p.mechanism,
-        accreditation_authority: 'UK_NCSC_FIVE_EYES_SOVEREIGN_COUNCIL',
-        signature: 'mldsa65_fips204_verified_pass',
-      },
-      null,
-      2
-    );
-    navigator.clipboard.writeText(payload);
-    setCopiedId(p.id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const filteredPrinciples = NCSC_14_PRINCIPLES.filter((p) => {
-    const matchesFilter =
-      principleFilter === 'ALL' || p.category === principleFilter;
-    const query = searchQuery.toLowerCase().trim();
-    const matchesSearch =
-      query === '' ||
-      p.id.toLowerCase().includes(query) ||
-      p.name.toLowerCase().includes(query) ||
-      p.mechanism.toLowerCase().includes(query) ||
-      p.invariants.toLowerCase().includes(query);
-    return matchesFilter && matchesSearch;
+/** Lists of what the API says it did not cover, at the top level or one object below it. */
+function reportedLists(data: ApiRecord) {
+  const containers = [data, ...Object.values(data).filter(isRecord)];
+  return LIST_KEYS.flatMap((key) => {
+    const items = containers.map((container) => stringList(container[key])).find((list) => list.length > 0);
+    return items ? [{ key, items }] : [];
   });
+}
 
-  const GATES = [
-    {
-      gate: 'G1',
-      name: 'Scope & Baseline',
-      desc: 'Immutable source identity, approved scope, reconciled requirements register',
-      status: 'PASS' as const,
-      evidence: 'Commit ba92879 · Exact algebraic ring & 5D CCE specification',
-      authority: 'Product & Tech Lead',
-    },
-    {
-      gate: 'G2',
-      name: 'Functional Behavior',
-      desc: 'Exact representation arithmetic, deterministic test suite & 94 invariants',
-      status: 'PASS' as const,
-      evidence: '242/242 pytest · 45 unittest · 94/94 invariants passing',
-      authority: 'Verification Lead',
-    },
-    {
-      gate: 'G3',
-      name: 'Data Integrity & Recovery',
-      desc: 'Durable multi-instance PostgreSQL HA storage, REPEATABLE READ, retry backoff',
-      status: 'PASS' as const,
-      evidence: 'PostgresWorkloadStore asyncpg pool · Alembic 0001_initial_schema',
-      authority: 'Database / SRE Lead',
-    },
-    {
-      gate: 'G4',
-      name: 'Security & Isolation (AL HARAS OS)',
-      desc: 'Topological Quantum Immunity Swarm, Sheaf Cohomology, DSW 4D Monopole, HSM KMS',
-      status: 'PASS' as const,
-      evidence: 'AL HARAS OS v36.0: 6/6 Pillars · OIDC/JWKS 4-Tier RBAC · NCSC 14/14',
-      authority: 'Sovereign Security Authority',
-    },
-    {
-      gate: 'G5',
-      name: 'Performance & Capacity',
-      desc: 'Multi-target HardwareAcceleratorDispatcher, 32-lane RTL ALU, sub-ms latency',
-      status: 'PASS' as const,
-      evidence: '89,285.72 ops/sec · p99 0.3642 ms · 32-lane RTL 8,095 cells',
-      authority: 'Hardware / Perf Lead',
-    },
-    {
-      gate: 'G6',
-      name: 'Operations & SRE',
-      desc: 'Prometheus /metrics & Alertmanager rules, OpenTelemetry spans, JSON logs',
-      status: 'PASS' as const,
-      evidence: 'OTel TracerProvider · Prometheus /metrics · chronus-rules.yml',
-      authority: 'Operations Lead',
-    },
-    {
-      gate: 'G7',
-      name: 'Customer Acceptance',
-      desc: 'Multi-tenant burst concurrency (1,000 workflows) & Hermiten 25% settlement',
-      status: 'PASS' as const,
-      evidence: '1,000/1,000 burst workflows (100%) · NVIDIA & Palantir E2E verified',
-      authority: 'Commercial Lead',
-    },
-    {
-      gate: 'G8',
-      name: 'Release Decision',
-      desc: 'Final release authority sign-off; all gates G1–G7 verified with ML-DSA-87 proof',
-      status: 'PASS' as const,
-      evidence: 'PRODUCTION_QUALIFIED · NIST FIPS 204 ML-DSA-87 & FRI zk-STARK Signed',
-      authority: 'Release Authority',
-    },
-  ];
+type ErrorKind = 'denied' | 'invalid' | 'unavailable' | 'failed';
 
+interface ClassifiedError {
+  kind: ErrorKind;
+  title: string;
+  message: string;
+  apiMessage: string;
+  payload: unknown;
+}
+
+function classifyError(cause: unknown, action: string): ClassifiedError {
+  if (cause instanceof ChronusAPIError) {
+    const base = { apiMessage: cause.message, payload: cause.payload };
+    switch (cause.status) {
+      case 401:
+        return {
+          ...base,
+          kind: 'denied',
+          title: 'Permission denied (HTTP 401)',
+          message: `The API did not accept the bearer token, so it did not ${action}. Check that the token is current and issued for your tenant, then try again.`,
+        };
+      case 403:
+        return {
+          ...base,
+          kind: 'denied',
+          title: 'Permission denied (HTTP 403)',
+          message: `The API recognised the token, but this tenant is not permitted to ${action}. Ask your platform operator for access.`,
+        };
+      case 400:
+      case 422:
+        return { ...base, kind: 'invalid', title: `Input rejected (HTTP ${cause.status})`, message: 'The API rejected the example input, so nothing was computed.' };
+      case 0:
+      case 502:
+      case 503:
+      case 504:
+        return {
+          ...base,
+          kind: 'unavailable',
+          title: cause.status === 0 ? 'API unavailable' : `API unavailable (HTTP ${cause.status})`,
+          message: 'The connected API could not be reached or is not configured, so nothing was computed. Check the backend connection and try again.',
+        };
+      case 404:
+        return {
+          ...base,
+          kind: 'failed',
+          title: 'Not available (HTTP 404)',
+          message: 'The connected API does not provide this endpoint; it may be running a different version.',
+        };
+      default:
+        return { ...base, kind: 'failed', title: `Request failed (HTTP ${cause.status})`, message: 'The API returned an error, so no result is available.' };
+    }
+  }
+  return {
+    kind: 'failed',
+    title: 'Request failed',
+    message: 'The request did not complete, so no result is available.',
+    apiMessage: cause instanceof Error ? cause.message : '',
+    payload: undefined,
+  };
+}
+
+interface PillState {
+  status: string;
+  label?: string;
+}
+
+const ERROR_PILL: Record<ErrorKind, PillState> = {
+  denied: { status: 'BLOCKED', label: 'Permission denied' },
+  invalid: { status: 'REJECTED', label: 'Input rejected' },
+  unavailable: { status: 'UNAVAILABLE', label: 'API unavailable' },
+  failed: { status: 'FAILED', label: 'Failed' },
+};
+
+const PANEL = 'gap-5 border-neutral-800 bg-neutral-900/50 p-5 sm:p-6';
+const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300';
+const PRIMARY_BUTTON = `inline-flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS_RING}`;
+const SECONDARY_BUTTON = `inline-flex items-center justify-center gap-2 rounded-lg border border-neutral-700 px-3.5 py-2 text-sm font-medium text-neutral-200 transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS_RING}`;
+const SECTION_LABEL = 'text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500';
+const PRE = `max-h-72 overflow-auto whitespace-pre-wrap break-all rounded-lg border border-neutral-800 bg-neutral-950 p-3 font-mono text-[11px] leading-5 text-neutral-300 ${FOCUS_RING}`;
+
+const TIME_FORMAT = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'long' });
+
+function TimeStamp({ iso }: { iso: string }) {
+  const date = new Date(iso);
   return (
-    <div className="space-y-8">
-      {/* Executive Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-neutral-800 bg-neutral-900/60 backdrop-blur-md gap-4">
-        <div>
-          <div className="text-xs font-mono uppercase tracking-wider text-neutral-400">
-            Governance & Assurance · Institutional Accreditation
-          </div>
-          <h2 className="text-xl font-semibold text-white tracking-tight">
-            G1–G8 Release Gates & UK NCSC 14 Cloud Security Principles
-          </h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <StatusPill status="PASS" label="NCSC 14/14 COMPLIANT" />
-          <StatusPill status="PASS" label="PRODUCTION QUALIFIED" />
-        </div>
-      </div>
+    <time dateTime={iso} title={iso}>
+      {Number.isNaN(date.getTime()) ? iso : TIME_FORMAT.format(date)}
+    </time>
+  );
+}
 
-      {/* MCKINSEY EXECUTIVE ACCREDITATION SUMMARY */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-4 border-neutral-800 bg-neutral-900/60">
-          <div className="flex items-center justify-between text-neutral-400 text-xs font-mono">
-            <span>NCSC 14 PRINCIPLES</span>
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          </div>
-          <div className="text-2xl font-bold text-white mt-2">14 / 14</div>
-          <div className="text-[11px] text-emerald-400 font-mono mt-1 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3" />
-            100% Evaluated & Certified
-          </div>
-        </Card>
+function Spinner() {
+  return <span aria-hidden="true" className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none" />;
+}
 
-        <Card className="p-4 border-neutral-800 bg-neutral-900/60">
-          <div className="flex items-center justify-between text-neutral-400 text-xs font-mono">
-            <span>POST-QUANTUM POSTURE</span>
-            <Lock className="w-4 h-4 text-indigo-400" />
-          </div>
-          <div className="text-2xl font-bold text-white mt-2">FIPS 204</div>
-          <div className="text-[11px] text-indigo-400 font-mono mt-1">
-            ML-DSA-65 & FRI zk-STARK
-          </div>
-        </Card>
-
-        <Card className="p-4 border-neutral-800 bg-neutral-900/60">
-          <div className="flex items-center justify-between text-neutral-400 text-xs font-mono">
-            <span>INVARIANT COMPLIANCE</span>
-            <Activity className="w-4 h-4 text-emerald-400" />
-          </div>
-          <div className="text-2xl font-bold text-white mt-2">94 / 94</div>
-          <div className="text-[11px] text-neutral-400 font-mono mt-1">
-            0 Invariant Violations (G1–G8)
-          </div>
-        </Card>
-
-        <Card className="p-4 border-neutral-800 bg-neutral-900/60">
-          <div className="flex items-center justify-between text-neutral-400 text-xs font-mono">
-            <span>SOVEREIGN DEPLOYMENT</span>
-            <Building2 className="w-4 h-4 text-purple-400" />
-          </div>
-          <div className="text-2xl font-bold text-white mt-2">Five Eyes / NATO</div>
-          <div className="text-[11px] text-purple-300 font-mono mt-1">
-            Critical National Infra Ready
-          </div>
-        </Card>
-      </div>
-
-      {/* UK NCSC 14 CLOUD SECURITY PRINCIPLES MASTER COMPLIANCE MATRIX */}
-      <Card className="border-emerald-900/40 bg-gradient-to-br from-neutral-900/90 via-neutral-950/90 to-emerald-950/20 backdrop-blur-md p-6 space-y-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-neutral-800 pb-5">
-          <div className="flex items-start sm:items-center gap-3.5">
-            <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shrink-0">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-white tracking-tight">
-                  UK NCSC 14 Cloud Security Principles Master Compliance Matrix
-                </h3>
-                <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                  OFFICIAL DOSSIER
-                </span>
-              </div>
-              <p className="text-xs text-neutral-400 mt-1 font-mono">
-                UK National Cyber Security Centre Cloud Assurance Standards · Formal Evidence & Mathematical Proofs
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Filter principle, invariant (e.g. I19)..."
-                className="bg-neutral-950 border-neutral-800 pl-8 h-8 text-xs font-mono text-white w-48 sm:w-64"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Category Filters */}
-        <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
-          <span className="text-neutral-500 mr-1 flex items-center gap-1">
-            <SlidersHorizontal className="w-3.5 h-3.5" /> Scope:
-          </span>
-          {[
-            { id: 'ALL', label: 'All Principles (14)' },
-            { id: 'Transit & Storage', label: 'Transit & Storage (3)' },
-            { id: 'Resilience & Ops', label: 'Resilience & Ops (3)' },
-            { id: 'Governance & Identity', label: 'Governance & Identity (4)' },
-            { id: 'Supply Chain & Dev', label: 'Supply Chain & Dev (4)' },
-          ].map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setPrincipleFilter(cat.id)}
-              className={`px-3 py-1 rounded-lg transition-colors border ${principleFilter === cat.id
-                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-semibold'
-                : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:bg-neutral-800'
-                }`}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Master Principles Table */}
-        <div className="border border-neutral-800 rounded-xl overflow-hidden bg-neutral-950/60">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs font-mono">
-              <thead className="bg-neutral-900/80 text-neutral-400 border-b border-neutral-800 uppercase tracking-wider text-[11px]">
-                <tr>
-                  <th className="py-3 px-4">ID</th>
-                  <th className="py-3 px-4">NCSC Principle Name</th>
-                  <th className="py-3 px-4">Technical Mechanism</th>
-                  <th className="py-3 px-4">Verified Invariants</th>
-                  <th className="py-3 px-4 text-center">Status</th>
-                  <th className="py-3 px-4 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-800/60">
-                {filteredPrinciples.map((p) => (
-                  <tr
-                    key={p.id}
-                    className="hover:bg-neutral-800/30 transition-colors group cursor-pointer"
-                    onClick={() => setSelectedPrinciple(p)}
-                  >
-                    <td className="py-3.5 px-4 font-bold text-white">
-                      <span className="px-2 py-0.5 rounded bg-neutral-800 text-neutral-200 border border-neutral-700">
-                        {p.id}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 font-sans font-medium text-white max-w-xs">
-                      <div>{p.name}</div>
-                      <div className="text-[10px] text-neutral-500 font-mono mt-0.5">
-                        {p.category}
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4 text-neutral-300 max-w-sm truncate text-[11px]">
-                      {p.mechanism}
-                    </td>
-                    <td className="py-3.5 px-4 text-emerald-400 text-[11px]">
-                      {p.invariants}
-                    </td>
-                    <td className="py-3.5 px-4 text-center">
-                      <StatusPill status="PASS" label="COMPLIANT" />
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedPrinciple(p);
-                        }}
-                        className="h-7 text-xs text-neutral-400 hover:text-white hover:bg-neutral-800"
-                      >
-                        Inspect
-                        <ChevronRight className="w-3.5 h-3.5 ml-1" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </Card>
-
-      {/* DETAIL MODAL FOR SELECTED PRINCIPLE */}
-      {selectedPrinciple && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-          <Card className="w-full max-w-2xl bg-neutral-900 border-neutral-700 shadow-2xl p-6 space-y-5 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-start justify-between border-b border-neutral-800 pb-4">
-              <div>
-                <div className="flex items-center gap-2 font-mono text-xs text-neutral-400">
-                  <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">
-                    {selectedPrinciple.id}
-                  </span>
-                  <span>{selectedPrinciple.category}</span>
-                </div>
-                <h3 className="text-lg font-bold text-white tracking-tight mt-1">
-                  {selectedPrinciple.name}
-                </h3>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedPrinciple(null)}
-                className="h-8 w-8 p-0 text-neutral-400 hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="space-y-4 text-xs font-mono">
-              <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-800">
-                <div className="text-neutral-500 text-[10px] uppercase font-semibold">
-                  NCSC Scope & Requirement
-                </div>
-                <div className="text-neutral-300 mt-1 font-sans text-xs leading-relaxed">
-                  {selectedPrinciple.scope}
-                </div>
-              </div>
-
-              <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-800">
-                <div className="text-indigo-400 text-[10px] uppercase font-semibold">
-                  Technical Architecture & Implementation Details
-                </div>
-                <div className="text-neutral-300 mt-1 font-sans text-xs leading-relaxed">
-                  {selectedPrinciple.details}
-                </div>
-              </div>
-
-              <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-800">
-                <div className="text-emerald-400 text-[10px] uppercase font-semibold">
-                  Verified Invariants & Audit Evidence
-                </div>
-                <div className="text-neutral-300 mt-1 font-sans text-xs leading-relaxed">
-                  {selectedPrinciple.evidence}
-                </div>
-                <div className="mt-2 text-emerald-400 font-mono text-[11px] font-semibold">
-                  {selectedPrinciple.invariants}
-                </div>
-              </div>
-
-              {selectedPrinciple.formula && (
-                <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-800">
-                  <div className="text-purple-400 text-[10px] uppercase font-semibold">
-                    Mathematical Invariant Formulation
-                  </div>
-                  <pre className="mt-1 text-purple-300 text-xs font-mono overflow-x-auto p-2 bg-neutral-900/60 rounded">
-                    {selectedPrinciple.formula}
-                  </pre>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between pt-2 border-t border-neutral-800">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleCopyReceipt(selectedPrinciple)}
-                className="text-xs border-neutral-700 bg-neutral-800 hover:bg-neutral-700 text-white"
-              >
-                {copiedId === selectedPrinciple.id ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 mr-1 text-emerald-400" />
-                    Receipt Copied
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5 mr-1" />
-                    Copy Cryptographic Receipt
-                  </>
-                )}
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => setSelectedPrinciple(null)}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-5"
-              >
-                Done
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* AL HARAS SOVEREIGN TOPOLOGICAL IMMUNITY SWARM & OS */}
-      <Card className="border-indigo-900/60 bg-gradient-to-br from-indigo-950/30 via-neutral-900/90 to-purple-950/20 backdrop-blur-md p-6 space-y-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-indigo-900/40 pb-5">
-          <div className="flex items-start sm:items-center gap-3.5">
-            <div className="p-3 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 shrink-0">
-              <Shield className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-white tracking-tight">
-                  AL HARAS Topological Quantum Immunity Swarm & OS (v36.0)
-                </h3>
-                <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                  REMOVED THE DOOR
-                </span>
-              </div>
-              <p className="text-xs text-neutral-400 mt-1 font-mono">
-                &ldquo;Speak friend and enter or you shall not pass.&rdquo; · Topological Invariance & Differential Geometry
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
-              onClick={() => handleInspectAlHaras(false)}
-              disabled={isInspecting}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium px-4 py-2"
-            >
-              <KeyRound className="w-3.5 h-3.5 mr-1.5" />
-              Speak Friend & Enter
-            </Button>
-            <Button
-              onClick={() => handleInspectAlHaras(true)}
-              disabled={isInspecting}
-              variant="destructive"
-              className="bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium px-4 py-2"
-            >
-              <ShieldAlert className="w-3.5 h-3.5 mr-1.5" />
-              Simulate Adversarial Vortex
-            </Button>
-          </div>
-        </div>
-
-        {/* 6 Pillars Topological Immunity Matrix */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Pillar 1: Sheaf Cohomology */}
-          <div className="p-4 rounded-xl border border-neutral-800 bg-neutral-950/60 space-y-2">
-            <div className="flex items-center justify-between text-xs font-mono">
-              <span className="text-indigo-400 font-semibold">1. Sheaf Cohomology H¹(X; ℱ)</span>
-              <span className="text-[10px] text-neutral-500">T0 & T14</span>
-            </div>
-            <div className="text-xs text-white font-medium">Hodge Laplacian Obstruction Isolator</div>
-            <p className="text-[11px] text-neutral-400 leading-relaxed">
-              Consensus resides strictly in ker(L_ℱ) = H⁰(X; ℱ). Adversarial injections generate H¹ ≠ 0 classes, mathematically isolated before token dispatch.
-            </p>
-            <div className="text-[10px] font-mono text-emerald-400 bg-emerald-950/30 p-2 rounded border border-emerald-900/30">
-              H¹ Norm = 0.0 · Vortex Isolated (0-Loss)
-            </div>
-          </div>
-
-          {/* Pillar 2: DSW 4D Instanton Monopole */}
-          <div className="p-4 rounded-xl border border-neutral-800 bg-neutral-950/60 space-y-2">
-            <div className="flex items-center justify-between text-xs font-mono">
-              <span className="text-purple-400 font-semibold">2. DSW 4D Instanton Monopole</span>
-              <span className="text-[10px] text-neutral-500">T11 & T12</span>
-            </div>
-            <div className="text-xs text-white font-medium">1-Cycle Cobordism Self-Healer</div>
-            <p className="text-[11px] text-neutral-400 leading-relaxed">
-              Spacetime execution traces form 4D manifolds. Bit-flips trigger Yang-Mills instanton events, reversed via Seiberg-Witten dual in 1 cycle without rollback.
-            </p>
-            <div className="text-[10px] font-mono text-purple-400 bg-purple-950/30 p-2 rounded border border-purple-900/30">
-              Latency: 1 Clock Cycle · 0 Bytes Rollback
-            </div>
-          </div>
-
-          {/* Pillar 3: Ramanujan Expander */}
-          <div className="p-4 rounded-xl border border-neutral-800 bg-neutral-950/60 space-y-2">
-            <div className="flex items-center justify-between text-xs font-mono">
-              <span className="text-blue-400 font-semibold">3. Ramanujan PSL₂(𝔽₂₅₇) Expander</span>
-              <span className="text-[10px] text-neutral-500">T3 & T6</span>
-            </div>
-            <div className="text-xs text-white font-medium">Spectral Mass Gap Guard</div>
-            <p className="text-[11px] text-neutral-400 leading-relaxed">
-              Alon-Boppana bound λ₂ ≤ 2√p ≈ 32.0624 on Cayley graph over 𝔽₂₅₇. Mass gap Δ = 229.14 ensures &gt;54% global avalanche diffusion in ≤3 rounds.
-            </p>
-            <div className="text-[10px] font-mono text-blue-400 bg-blue-950/30 p-2 rounded border border-blue-900/30">
-              λ₂ = 28.86 ≤ 32.0624 · Δ = 229.14 Gap
-            </div>
-          </div>
-
-          {/* Pillar 4: Cyclotomic Anyon Braids */}
-          <div className="p-4 rounded-xl border border-neutral-800 bg-neutral-950/60 space-y-2">
-            <div className="flex items-center justify-between text-xs font-mono">
-              <span className="text-amber-400 font-semibold">4. Cyclotomic ℤ[ζ₅] Anyon Braids</span>
-              <span className="text-[10px] text-neutral-500">T8 & T9</span>
-            </div>
-            <div className="text-xs text-white font-medium">Noise-Immune TQFT Scheduler</div>
-            <p className="text-[11px] text-neutral-400 leading-relaxed">
-              Exact algebraic representation over ℤ[ζ₅]. Mac Lane pentagon & Artin braid relations verified with zero floating-point error. Absolute thermal immunity.
-            </p>
-            <div className="text-[10px] font-mono text-amber-400 bg-amber-950/30 p-2 rounded border border-amber-900/30">
-              Exact φ · Zero-Float Truncation · TQFT Clean
-            </div>
-          </div>
-
-          {/* Pillar 5: BSD Hecke Checksum */}
-          <div className="p-4 rounded-xl border border-neutral-800 bg-neutral-950/60 space-y-2">
-            <div className="flex items-center justify-between text-xs font-mono">
-              <span className="text-cyan-400 font-semibold">5. BSD Hecke Modular Eigenforms</span>
-              <span className="text-[10px] text-neutral-500">Modular T_n</span>
-            </div>
-            <div className="text-xs text-white font-medium">Commutative Monopole Checksum</div>
-            <p className="text-[11px] text-neutral-400 leading-relaxed">
-              Commutative Hecke operators [T_m, T_n] = 0 anchor folded payloads to weight-2 modular forms. Eigenvalues strictly satisfy Weil bound |a_p| ≤ 2√p.
-            </p>
-            <div className="text-[10px] font-mono text-cyan-400 bg-cyan-950/30 p-2 rounded border border-cyan-900/30">
-              [T_m, T_n] = 0 · Weil Bound Satisfied
-            </div>
-          </div>
-
-          {/* Pillar 6: Post-Quantum & NCSC Compliance */}
-          <div className="p-4 rounded-xl border border-neutral-800 bg-neutral-950/60 space-y-2">
-            <div className="flex items-center justify-between text-xs font-mono">
-              <span className="text-emerald-400 font-semibold">6. FIPS 204 & Sovereign Governance</span>
-              <span className="text-[10px] text-neutral-500">NCSC & FedRAMP</span>
-            </div>
-            <div className="text-xs text-white font-medium">ML-DSA & FRI zk-STARK Verifier</div>
-            <p className="text-[11px] text-neutral-400 leading-relaxed">
-              Post-quantum Dilithium signatures bound to FRI STARK quotient proofs P(x)/Z_H(x). Customer-held HSM KMS custody & NCSC 14/14 principles certified.
-            </p>
-            <div className="text-[10px] font-mono text-emerald-400 bg-emerald-950/30 p-2 rounded border border-emerald-900/30">
-              NCSC 14/14 · FedRAMP High · DoD IL6 Ready
-            </div>
-          </div>
-        </div>
-
-        {/* Live AL HARAS Inspection Telemetry Output */}
-        {alHarasInspection && (
-          <div className="p-5 rounded-xl bg-neutral-950 border border-neutral-800 space-y-4">
-            <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3">
-              <div className="flex items-center gap-2 text-xs font-mono">
-                <Terminal className="w-4 h-4 text-indigo-400" />
-                <span className="text-white font-semibold">AL HARAS Ingress Evaluation Telemetry</span>
-                <span className="text-neutral-500">({alHarasInspection.inspection_latency_ms} ms)</span>
-              </div>
-              <StatusPill
-                status={alHarasInspection.admitted_to_execution_fabric ? 'PASS' : 'FAIL'}
-                label={alHarasInspection.admitted_to_execution_fabric ? 'ADMITTED TO FABRIC' : 'REJECTED & HEALED'}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs font-mono">
-              <div className="p-3 rounded-lg bg-neutral-900/80 border border-neutral-800">
-                <div className="text-neutral-500 text-[10px]">SHEAF CONSENSUS</div>
-                <div className={`font-semibold mt-1 ${alHarasInspection.sheaf_cohomology.is_secure ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {alHarasInspection.sheaf_cohomology.status}
-                </div>
-                <div className="text-neutral-400 text-[10px] mt-0.5">
-                  H¹ Norm: {alHarasInspection.sheaf_cohomology.h1_vortex_norm}
-                </div>
-              </div>
-
-              <div className="p-3 rounded-lg bg-neutral-900/80 border border-neutral-800">
-                <div className="text-neutral-500 text-[10px]">DSW MONOPOLE SELF-HEAL</div>
-                <div className="text-purple-300 font-semibold mt-1">
-                  {alHarasInspection.dsw_instanton_self_healing.cobordism_status}
-                </div>
-                <div className="text-neutral-400 text-[10px] mt-0.5">
-                  Cycles: {alHarasInspection.dsw_instanton_self_healing.repair_latency_cycles} · k = {alHarasInspection.dsw_instanton_self_healing.instanton_number_k}
-                </div>
-              </div>
-
-              <div className="p-3 rounded-lg bg-neutral-900/80 border border-neutral-800">
-                <div className="text-neutral-500 text-[10px]">RAMANUJAN MASS GAP</div>
-                <div className="text-blue-300 font-semibold mt-1">
-                  Δ = {alHarasInspection.ramanujan_expander_mass_gap.spectral_mass_gap}
-                </div>
-                <div className="text-neutral-400 text-[10px] mt-0.5">
-                  λ₂ = {alHarasInspection.ramanujan_expander_mass_gap.lambda_2} ≤ {alHarasInspection.ramanujan_expander_mass_gap.ramanujan_bound_2sqrt_p}
-                </div>
-              </div>
-
-              <div className="p-3 rounded-lg bg-neutral-900/80 border border-neutral-800">
-                <div className="text-neutral-500 text-[10px]">LATTICE SIGNATURE</div>
-                <div className="text-indigo-300 font-semibold truncate mt-1">
-                  {alHarasInspection.verification_signature}
-                </div>
-                <div className="text-neutral-400 text-[10px] mt-0.5">
-                  NIST FIPS 204 ML-DSA
-                </div>
-              </div>
-            </div>
-
-            <pre className="p-3 rounded-lg bg-black/60 border border-neutral-800/80 font-mono text-[10px] text-neutral-300 overflow-x-auto max-h-48">
-              {JSON.stringify(alHarasInspection, null, 2)}
-            </pre>
-          </div>
-        )}
-
-        {/* AL HARAS STRATEGIC EXPANSION FRONTIERS */}
-        <div className="pt-6 border-t border-indigo-900/40 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-sm font-bold text-white tracking-tight flex items-center gap-2">
-                <Cpu className="w-4 h-4 text-indigo-400" />
-                Strategic Expansions: Silicon T-ISA, Lean 4 Formal Proofs & Defense Frontiers
-              </h4>
-              <p className="text-[11px] text-neutral-400 font-mono mt-0.5">
-                Hardware silicon gates, formal machine-checked specifications, autonomous agent immunity & orbital space mesh.
-              </p>
-            </div>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">
-              EAL7 & SILICON READY
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs font-mono">
-            {/* Frontier 1: Silicon Substrate */}
-            <div className="p-3.5 rounded-xl bg-neutral-900/90 border border-neutral-800 space-y-2 hover:border-indigo-500/40 transition-colors">
-              <div className="flex items-center justify-between">
-                <span className="text-indigo-400 font-bold text-[11px]">T-ISA Silicon Coprocessor</span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
-                  RISC-V RoCC
-                </span>
-              </div>
-              <p className="text-[11px] text-neutral-300 font-sans leading-relaxed">
-                Hardware-level gate coprocessor in synthesizable SystemVerilog. 32 cyclotomic registers in ℤ[ζ₅] with 1-cycle Sheaf traps.
-              </p>
-              <div className="text-[10px] text-neutral-500 pt-1 border-t border-neutral-800">
-                Opcode: 0x0B · File: t_isa_coprocessor.sv
-              </div>
-            </div>
-
-            {/* Frontier 2: Lean 4 Formal Verification */}
-            <div className="p-3.5 rounded-xl bg-neutral-900/90 border border-neutral-800 space-y-2 hover:border-emerald-500/40 transition-colors">
-              <div className="flex items-center justify-between">
-                <span className="text-emerald-400 font-bold text-[11px]">Lean 4 Formal Proofs</span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
-                  EAL7 Certified
-                </span>
-              </div>
-              <p className="text-[11px] text-neutral-300 font-sans leading-relaxed">
-                Machine-checked mathematical proofs in Lean 4 for Sheaf Laplacian positive semi-definiteness & DSW cobordisms.
-              </p>
-              <div className="text-[10px] text-neutral-500 pt-1 border-t border-neutral-800">
-                Theorems 1–3 · File: ChronusAlHaras.lean
-              </div>
-            </div>
-
-            {/* Frontier 3: Orbital Space Mesh */}
-            <div className="p-3.5 rounded-xl bg-neutral-900/90 border border-neutral-800 space-y-2 hover:border-blue-500/40 transition-colors">
-              <div className="flex items-center justify-between">
-                <span className="text-blue-400 font-bold text-[11px]">Space Force Orbital Mesh</span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-300 border border-blue-500/20">
-                  SDA PWSA
-                </span>
-              </div>
-              <p className="text-[11px] text-neutral-300 font-sans leading-relaxed">
-                Cosmic-ray Single-Event Upset (SEU) immunity via anyon knots. Ramanujan expander guarantees 0-stall laser routing under jamming.
-              </p>
-              <div className="text-[10px] text-neutral-500 pt-1 border-t border-neutral-800">
-                16 Satellites · Δ = 229.14 Mass Gap
-              </div>
-            </div>
-
-            {/* Frontier 4: Verifiable Neural Compute */}
-            <div className="p-3.5 rounded-xl bg-neutral-900/90 border border-neutral-800 space-y-2 hover:border-purple-500/40 transition-colors">
-              <div className="flex items-center justify-between">
-                <span className="text-purple-400 font-bold text-[11px]">Line-Rate zk-ML Verifier</span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">
-                  FRI STARK
-                </span>
-              </div>
-              <p className="text-[11px] text-neutral-300 font-sans leading-relaxed">
-                O(1) line-rate proofs verifying neural network inference against authentic sovereign weights for hypersonic & autonomous mission AI.
-              </p>
-              <div className="text-[10px] text-neutral-500 pt-1 border-t border-neutral-800">
-                P(x)/Z_H(x) · Sub-millisecond Verification
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* CI Purity Gate Verified Banner */}
-      <Card className="p-5 border-emerald-900/40 bg-emerald-950/20 backdrop-blur-md">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-white">CI Purity Gate: PASSED</h4>
-              <p className="text-xs text-neutral-400 mt-0.5 font-mono">
-                Scanned: src/chronus/execution, backends, storage, security, quantum, al_haras
-              </p>
-            </div>
-          </div>
-          <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-            0 THEATRE · 0 APPROXIMATION · 0 PSEUDORANDOM
-          </span>
-        </div>
-      </Card>
-
-      {/* G1-G8 Mandatory Release Gate Matrix */}
-      <Card className="border-neutral-800 bg-neutral-900/60 backdrop-blur-md overflow-hidden">
-        <div className="p-4 border-b border-neutral-800 flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-semibold text-white">
-              Mandatory Release Gates (G1–G8 Framework)
-            </h3>
-            <p className="text-xs text-neutral-400 mt-0.5">
-              Strict governance: docs/system-update/governance-and-acceptance.md
-            </p>
-          </div>
-          <span className="text-xs font-mono text-neutral-400">8 Release Controls</span>
-        </div>
-
-        <div className="divide-y divide-neutral-800/80 font-mono text-xs">
-          {GATES.map((g) => (
-            <div key={g.gate} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-neutral-800/20 transition-colors">
-              <div className="flex items-start sm:items-center gap-3.5">
-                <span className="px-2.5 py-0.5 rounded bg-neutral-800 text-neutral-200 font-bold text-xs shrink-0">
-                  {g.gate}
-                </span>
-                <div>
-                  <div className="font-semibold text-white text-sm">{g.name}</div>
-                  <div className="text-neutral-400 text-xs font-sans mt-0.5">{g.desc}</div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 pl-11 sm:pl-0">
-                <span className="text-neutral-400 text-[11px] truncate max-w-xs">{g.evidence}</span>
-                <StatusPill status={g.status} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Cryptographic Receipt Inspector */}
-      <Card className="p-6 border-neutral-800 bg-neutral-900/70 backdrop-blur-md space-y-4">
-        <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-          <div className="flex items-center gap-2">
-            <FileKey className="w-4 h-4 text-purple-400" />
-            <h3 className="text-base font-semibold text-white">
-              Zero-Auth Cryptographic Receipt Inspector
-            </h3>
-          </div>
-          <span className="text-xs font-mono text-neutral-500">GET /v1/verify/&#123;receipt_hash&#125;</span>
-        </div>
-
-        <p className="text-xs text-neutral-300 leading-relaxed font-mono">
-          Input any 64-character SHA-256 digest or Ed25519 receipt signature to verify execution authenticity:
-        </p>
-
-        <div className="flex gap-2">
-          <Input
-            value={receiptHash}
-            onChange={(e) => setReceiptHash(e.target.value)}
-            className="bg-neutral-950 border-neutral-800 font-mono text-xs text-white"
-            placeholder="Paste 64-character SHA-256 receipt hash or signature..."
-          />
-          <Button
-            onClick={handleVerify}
-            disabled={isVerifying}
-            className="bg-purple-600 hover:bg-purple-500 text-white font-medium text-xs px-5"
-          >
-            {isVerifying ? (
-              <Clock className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Search className="w-3.5 h-3.5 mr-1.5" />
-            )}
-            Verify
-          </Button>
-        </div>
-
-        {verification && (
-          <div className="p-4 rounded-xl bg-neutral-950 border border-neutral-800 font-mono text-xs space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-neutral-400 font-semibold">Verification Certificate</span>
-              <StatusPill status={verification.qualification_status} />
-            </div>
-            <div className="text-[11px] text-neutral-300">
-              {verification.invariant_summary}
-            </div>
-            {verification.algorithm && (
-              <div className="text-[10px] text-neutral-500">
-                Algorithm: {verification.algorithm} · Verified at: {verification.timestamp}
-              </div>
-            )}
-          </div>
-        )}
-      </Card>
+function Field({ label, mono = false, children }: { label: string; mono?: boolean; children: React.ReactNode }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-xs text-neutral-500">{label}</dt>
+      <dd className={mono ? 'mt-1 break-all font-mono text-xs leading-5 text-neutral-200' : 'mt-1 text-sm leading-6 text-neutral-200'}>{children}</dd>
     </div>
   );
+}
+
+function ErrorPanel({ error, at, children }: { error: ClassifiedError; at: string; children?: React.ReactNode }) {
+  const tone = error.kind === 'denied' ? 'border-amber-500/25 bg-amber-500/[0.07] text-amber-100' : 'border-rose-500/25 bg-rose-500/10 text-rose-100';
+  return (
+    <div role="alert" className={`rounded-lg border p-3.5 text-sm ${tone}`}>
+      <p className="font-medium">{error.title}</p>
+      <p className="mt-1 leading-6 opacity-90">{error.message}</p>
+      {error.apiMessage && error.apiMessage !== error.message && (
+        <p className="mt-2 max-h-28 overflow-auto break-words font-mono text-xs opacity-80">API message: {error.apiMessage}</p>
+      )}
+      <p className="mt-2 text-xs opacity-70">
+        Recorded <TimeStamp iso={at} /> by this browser.
+      </p>
+      {children && <div className="mt-3 flex flex-wrap gap-2">{children}</div>}
+    </div>
+  );
+}
+
+function TechnicalDetail({
+  endpoint,
+  request,
+  requestLabel = 'Request body',
+  response,
+  responseLabel = 'Response body (raw JSON)',
+}: {
+  endpoint: string;
+  request?: ApiRecord;
+  requestLabel?: string;
+  response?: unknown;
+  responseLabel?: string;
+}) {
+  return (
+    <details className="rounded-lg border border-neutral-800 bg-neutral-950/60 text-xs">
+      <summary className={`cursor-pointer select-none rounded-lg px-3 py-2.5 font-medium text-neutral-300 transition hover:text-white ${FOCUS_RING}`}>
+        Technical detail
+      </summary>
+      <div className="space-y-3 border-t border-neutral-800 p-3">
+        <p className="text-neutral-500">
+          Endpoint <code className="ml-1 break-all font-mono text-neutral-300">{endpoint}</code>
+        </p>
+        {request && (
+          <div className="space-y-1.5">
+            <p className="text-neutral-500">{requestLabel}</p>
+            <pre tabIndex={0} aria-label={requestLabel} className={PRE}>{JSON.stringify(request, null, 2)}</pre>
+          </div>
+        )}
+        {response !== undefined && response !== null && (
+          <div className="space-y-1.5">
+            <p className="text-neutral-500">{responseLabel}</p>
+            <pre tabIndex={0} aria-label={responseLabel} className={PRE}>{JSON.stringify(response, null, 2)}</pre>
+          </div>
+        )}
+      </div>
+    </details>
+  );
+}
+
+function CheckResult({ check, scenario, data, at }: { check: SecurityCheck; scenario: CheckScenario; data: ApiRecord; at: string }) {
+  const status = pickStatus(data);
+  const meaning = statusMeaning(status?.value ?? null, data);
+  const receipt = findReceipt(data);
+  const recordId = findInResponseOrReceipt(data, receipt, RECORD_ID_KEYS);
+  const serverTime = findInResponseOrReceipt(data, receipt, TIME_KEYS);
+  const exclude = new Set(
+    [status?.path, receipt?.path, recordId?.path, serverTime?.path, meaning.key].filter(
+      (path): path is string => typeof path === 'string' && !path.includes('.')
+    )
+  );
+  const { entries, omitted } = computedValues(data, check.highlights ?? [], exclude);
+  const notes = NOTE_KEYS.flatMap((key) => {
+    const text = optionalText(data[key]);
+    return text ? [{ key, text }] : [];
+  });
+  const lists = reportedLists(data);
+  const cross = scenario.crossCheck?.(data);
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-500">
+        <span>Reported status</span>
+        {status ? <StatusPill status={status.value} showDot={false} /> : <span className="text-neutral-300">not reported</span>}
+        <span>for “{scenario.label}”</span>
+      </div>
+      <dl className="grid gap-3">
+        <Field label={meaning.fromApi ? 'Meaning (as reported by the API)' : 'Meaning'}>{meaning.text}</Field>
+        <Field label="Expected for this example">{scenario.expected}</Field>
+        {cross && (
+          <Field label="Independent check in this browser">
+            <span className="font-medium">{cross.outcome}.</span> {cross.detail}
+          </Field>
+        )}
+      </dl>
+      <div>
+        <h4 className={SECTION_LABEL}>Evidence</h4>
+        <dl className="mt-2 grid gap-x-6 gap-y-3 sm:grid-cols-2">
+          <Field label="Signed receipt">{signatureSummary(receipt)}</Field>
+          {receipt?.keyId && <Field label="Signing key id" mono>{receipt.keyId}</Field>}
+          {receipt?.keyCustody && <Field label="Key custody (as reported)">{receipt.keyCustody}</Field>}
+          {receipt?.bodySha256 && <Field label="Receipt body SHA-256" mono>{receipt.bodySha256}</Field>}
+          {recordId && <Field label={`Record id (${recordId.path})`} mono>{recordId.value}</Field>}
+          <Field label="Response received (this browser)">
+            <TimeStamp iso={at} />
+          </Field>
+          {serverTime && <Field label={`Server time (${serverTime.path})`} mono>{serverTime.value}</Field>}
+        </dl>
+      </div>
+      {entries.length > 0 && (
+        <div>
+          <h4 className={SECTION_LABEL}>Computed values, as returned</h4>
+          <dl className="mt-2 grid gap-x-6 gap-y-3 sm:grid-cols-2">
+            {entries.map((entry) => (
+              <Field key={entry.key} label={entry.label} mono>
+                {entry.text}
+                {entry.shortened && <span className="ml-1 font-sans text-neutral-500">(shortened; full value in the technical detail)</span>}
+              </Field>
+            ))}
+          </dl>
+          {omitted > 0 && (
+            <p className="mt-2 text-xs text-neutral-500">
+              {omitted} further {omitted === 1 ? 'field is' : 'fields are'} in the technical detail.
+            </p>
+          )}
+        </div>
+      )}
+      {(notes.length > 0 || lists.length > 0) && (
+        <div>
+          <h4 className={SECTION_LABEL}>Scope reported by the API</h4>
+          <dl className="mt-2 grid gap-3">
+            {notes.map((note) => (
+              <Field key={note.key} label={humanize(note.key)}>{note.text}</Field>
+            ))}
+            {lists.map((list) => (
+              <Field key={list.key} label={humanize(list.key)}>
+                <ul className="list-disc space-y-1 pl-4">
+                  {list.items.map((item, index) => (
+                    <li key={`${list.key}-${index}`}>{item}</li>
+                  ))}
+                </ul>
+              </Field>
+            ))}
+          </dl>
+        </div>
+      )}
+    </div>
+  );
+}
+
+type CheckRun =
+  | { phase: 'idle' }
+  | { phase: 'running'; scenario: CheckScenario }
+  | { phase: 'done'; scenario: CheckScenario; data: ApiRecord; at: string }
+  | { phase: 'error'; scenario: CheckScenario; error: ClassifiedError; at: string };
+
+function SecurityCheckCard({
+  check,
+  position,
+  total,
+  authToken,
+  onEditToken,
+  onDenied,
+}: {
+  check: SecurityCheck;
+  position: number;
+  total: number;
+  authToken: string;
+  onEditToken: () => void;
+  onDenied: (error: ClassifiedError, at: string) => void;
+}) {
+  const baseId = useId();
+  const [scenarioId, setScenarioId] = useState(check.scenarios[0].id);
+  const [run, setRun] = useState<CheckRun>({ phase: 'idle' });
+  const selected = check.scenarios.find((scenario) => scenario.id === scenarioId) ?? check.scenarios[0];
+  const token = authToken.trim();
+  const running = run.phase === 'running';
+  const hintId = `${baseId}-hint`;
+
+  async function execute(scenario: CheckScenario) {
+    if (!token || running) return;
+    setRun({ phase: 'running', scenario });
+    try {
+      const data = await scenario.run(token);
+      setRun({ phase: 'done', scenario, data: asRecord(data), at: new Date().toISOString() });
+    } catch (cause) {
+      const error = classifyError(cause, 'run this check');
+      const at = new Date().toISOString();
+      setRun({ phase: 'error', scenario, error, at });
+      if (error.kind === 'denied') onDenied(error, at);
+    }
+  }
+
+  const pill: PillState =
+    run.phase === 'idle'
+      ? { status: 'NOT_RUN', label: 'Not run' }
+      : run.phase === 'running'
+        ? { status: 'CHECKING', label: 'Running' }
+        : run.phase === 'error'
+          ? ERROR_PILL[run.error.kind]
+          : { status: 'RECEIVED', label: 'Result received' };
+  const announcement =
+    run.phase === 'running' ? `${check.title}: running on the API.` : run.phase === 'done' ? `${check.title}: result received.` : '';
+  const shown = run.phase === 'idle' ? selected : run.scenario;
+
+  return (
+    <Card className={`${PANEL} min-w-0`}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-neutral-500">
+            Check {position} of {total}
+          </p>
+          <h3 className="mt-1 font-semibold text-white">{check.title}</h3>
+        </div>
+        <StatusPill status={pill.status} label={pill.label} showDot={false} />
+      </div>
+
+      <dl className="grid gap-3">
+        <Field label="Security question">{check.question}</Field>
+        <Field label="What the API computes">{check.computes}</Field>
+        <Field label="Limits of this demonstration">{check.limits}</Field>
+      </dl>
+
+      <div className="space-y-3 rounded-lg border border-neutral-800 bg-neutral-950/40 p-3.5">
+        {check.scenarios.length > 1 ? (
+          <fieldset disabled={running} className="space-y-2">
+            <legend className="mb-2 text-xs font-medium text-neutral-400">Example input</legend>
+            {check.scenarios.map((scenario) => (
+              <label
+                key={scenario.id}
+                className="flex cursor-pointer gap-3 rounded-lg border border-neutral-800 bg-neutral-950/70 p-3 text-sm transition has-[:checked]:border-blue-400/50 has-[:disabled]:cursor-not-allowed"
+              >
+                <input
+                  type="radio"
+                  name={`${baseId}-scenario`}
+                  value={scenario.id}
+                  checked={scenario.id === selected.id}
+                  onChange={() => setScenarioId(scenario.id)}
+                  className="mt-1 h-4 w-4 shrink-0 accent-blue-500"
+                />
+                <span className="min-w-0">
+                  <span className="block font-medium text-neutral-100">{scenario.label}</span>
+                  <span className="mt-0.5 block text-xs leading-5 text-neutral-400">{scenario.summary}</span>
+                </span>
+              </label>
+            ))}
+          </fieldset>
+        ) : (
+          <div>
+            <p className="text-xs font-medium text-neutral-400">Example input</p>
+            <p className="mt-1 text-sm font-medium text-neutral-100">{selected.label}</p>
+            <p className="mt-0.5 text-xs leading-5 text-neutral-400">{selected.summary}</p>
+          </div>
+        )}
+        <p className="text-xs leading-5 text-neutral-400">
+          <span className="text-neutral-500">Expected for this example: </span>
+          {selected.expected}
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => void execute(selected)}
+            disabled={!token || running}
+            aria-describedby={token ? undefined : hintId}
+            className={PRIMARY_BUTTON}
+          >
+            {running ? (
+              <>
+                <Spinner />
+                Running…
+              </>
+            ) : (
+              'Run check'
+            )}
+            <span className="sr-only">: {check.title}</span>
+          </button>
+          {!token && (
+            <p id={hintId} className="text-xs text-neutral-500">
+              Enter a bearer token under Access to run this check.
+            </p>
+          )}
+        </div>
+      </div>
+
+      <p role="status" className="sr-only">
+        {announcement}
+      </p>
+      <div aria-busy={running}>
+        {run.phase === 'idle' && (
+          <p className="rounded-lg border border-dashed border-neutral-800 px-4 py-6 text-center text-sm text-neutral-500">
+            Not run yet. The reported status, its meaning and the evidence will appear here.
+          </p>
+        )}
+        {run.phase === 'running' && (
+          <p className="flex items-center justify-center gap-2 rounded-lg border border-neutral-800 px-4 py-6 text-sm text-neutral-300">
+            <Spinner />
+            Running “{run.scenario.label}” on the connected API…
+          </p>
+        )}
+        {run.phase === 'error' && (
+          <ErrorPanel error={run.error} at={run.at}>
+            {run.error.kind === 'denied' && (
+              <button type="button" onClick={onEditToken} className={SECONDARY_BUTTON}>
+                Update token
+              </button>
+            )}
+            <button type="button" onClick={() => void execute(run.scenario)} disabled={!token} className={SECONDARY_BUTTON}>
+              Try again
+            </button>
+          </ErrorPanel>
+        )}
+        {run.phase === 'done' && <CheckResult check={check} scenario={run.scenario} data={run.data} at={run.at} />}
+      </div>
+
+      <TechnicalDetail
+        endpoint={check.endpoint}
+        request={shown.request}
+        requestLabel={run.phase === 'idle' ? 'Request body that Run check will send' : 'Request body sent'}
+        response={run.phase === 'done' ? run.data : run.phase === 'error' ? run.error.payload : undefined}
+        responseLabel={run.phase === 'error' ? 'Error response body' : 'Response body (raw JSON)'}
+      />
+    </Card>
+  );
+}
+
+type StatusLoad =
+  | { phase: 'loading' }
+  | { phase: 'done'; data: ApiRecord; at: string }
+  | { phase: 'error'; error: ClassifiedError; at: string };
+
+function SelfTestResult({ data, at }: { data: ApiRecord; at: string }) {
+  const status = pickStatus(data);
+  const meaning = statusMeaning(status?.value ?? null, data);
+  const selfTests = isRecord(data.self_tests) ? Object.entries(data.self_tests) : [];
+  const trueCount = selfTests.filter(([, value]) => value === true).length;
+  const notImplemented = stringList(data.not_implemented);
+  const implemented = isRecord(data.implemented_checks) ? Object.entries(data.implemented_checks) : [];
+  const custody = optionalText(valueAt(data, ['key_custody', 'custody_mode']));
+
+  return (
+    <div className="space-y-5">
+      <p className="text-sm leading-6 text-neutral-200">{meaning.text}</p>
+      <div className="grid gap-5 lg:grid-cols-2">
+        {selfTests.length > 0 && (
+          <div className="min-w-0">
+            <h4 className={SECTION_LABEL}>
+              Self-tests: {trueCount} of {selfTests.length} returned true
+            </h4>
+            <ul className="mt-2 divide-y divide-neutral-800 rounded-lg border border-neutral-800">
+              {selfTests.map(([name, value]) => (
+                <li key={name} className="flex items-center justify-between gap-3 px-3 py-2 text-xs">
+                  <span className="min-w-0 text-neutral-300">{humanize(name)}</span>
+                  <span className="shrink-0 font-mono text-neutral-100">{displayValue(value)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {notImplemented.length > 0 && (
+          <div className="min-w-0">
+            <h4 className={SECTION_LABEL}>Not implemented, as reported by the API</h4>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-neutral-300">
+              {notImplemented.map((item, index) => (
+                <li key={`not-implemented-${index}`}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+      <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+        {custody && <Field label="Receipt signing key custody (as reported)">{custody}</Field>}
+        <Field label="Response received (this browser)">
+          <TimeStamp iso={at} />
+        </Field>
+      </dl>
+      {implemented.length > 0 && (
+        <details className="rounded-lg border border-neutral-800 bg-neutral-950/60 text-xs">
+          <summary className={`cursor-pointer select-none rounded-lg px-3 py-2.5 font-medium text-neutral-300 transition hover:text-white ${FOCUS_RING}`}>
+            What the API reports as implemented
+          </summary>
+          <dl className="grid gap-3 border-t border-neutral-800 p-3">
+            {implemented.map(([name, value]) => (
+              <Field key={name} label={humanize(name)} mono={typeof value !== 'string'}>
+                {displayValue(value)}
+              </Field>
+            ))}
+          </dl>
+        </details>
+      )}
+    </div>
+  );
+}
+
+function ModuleSelfTestPanel() {
+  const [state, setState] = useState<StatusLoad>({ phase: 'loading' });
+
+  const load = useCallback(async () => {
+    setState({ phase: 'loading' });
+    try {
+      const data = await ChronusAPIClient.getALHarasStatus();
+      setState({ phase: 'done', data: asRecord(data), at: new Date().toISOString() });
+    } catch (cause) {
+      setState({ phase: 'error', error: classifyError(cause, 'return the module status'), at: new Date().toISOString() });
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const status = state.phase === 'done' ? pickStatus(state.data) : null;
+  const pill: PillState =
+    state.phase === 'loading'
+      ? { status: 'CHECKING', label: 'Running self-tests' }
+      : state.phase === 'error'
+        ? ERROR_PILL[state.error.kind]
+        : status
+          ? { status: status.value }
+          : { status: 'RECEIVED', label: 'No status reported' };
+
+  return (
+    <Card className={PANEL} aria-busy={state.phase === 'loading'}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="font-semibold text-white">Module self-test</h3>
+          <p className="mt-1 max-w-2xl text-xs leading-5 text-neutral-500">
+            What the connected API reports about its AL HARAS engines. Public and read-only, so no token is needed; the API recomputes these exact
+            self-tests for each request.
+          </p>
+        </div>
+        <StatusPill status={pill.status} label={pill.label} showDot={false} />
+      </div>
+      {state.phase === 'loading' && (
+        <p className="flex items-center gap-2 text-sm text-neutral-300">
+          <Spinner />
+          Running self-tests on the connected API…
+        </p>
+      )}
+      {state.phase === 'error' && <ErrorPanel error={state.error} at={state.at} />}
+      {state.phase === 'done' && <SelfTestResult data={state.data} at={state.at} />}
+      <div>
+        <button type="button" onClick={() => void load()} disabled={state.phase === 'loading'} className={SECONDARY_BUTTON}>
+          {state.phase === 'loading' ? 'Running…' : state.phase === 'error' ? 'Try again' : 'Run self-tests again'}
+        </button>
+      </div>
+      <TechnicalDetail
+        endpoint="GET /v1/al-haras/status"
+        response={state.phase === 'done' ? state.data : state.phase === 'error' ? state.error.payload : undefined}
+        responseLabel={state.phase === 'error' ? 'Error response body' : 'Response body (raw JSON)'}
+      />
+    </Card>
+  );
+}
+
+export default function GovernancePage() {
+  const [receiptId, setReceiptId] = useState('');
+  const [result, setResult] = useState<VerifyReceiptResponse | null>(null);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  // AL HARAS checks: the bearer token lives only in this component's memory.
+  const [authToken, setAuthToken] = useState('');
+  const [denial, setDenial] = useState<{ title: string; at: string } | null>(null);
+  const tokenInputRef = useRef<HTMLInputElement>(null);
+  const tokenFieldId = useId();
+  const tokenInputId = `${tokenFieldId}-input`;
+  const tokenHelpId = `${tokenFieldId}-help`;
+  const tokenEntered = authToken.trim().length > 0;
+
+  async function verify(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setResult(null); setError(''); setBusy(true);
+    try { setResult(await ChronusAPIClient.verifyReceipt(receiptId.trim())); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Receipt verification failed.'); }
+    finally { setBusy(false); }
+  }
+
+  const boolLabel = (value: unknown) => value === true ? 'Yes' : value === false ? 'No' : 'Not reported';
+
+  const focusTokenInput = useCallback(() => tokenInputRef.current?.focus(), []);
+  const recordDenial = useCallback((denied: ClassifiedError, at: string) => setDenial({ title: denied.title, at }), []);
+
+  function updateToken(value: string) {
+    setAuthToken(value);
+    setDenial(null);
+  }
+
+  return <div className="space-y-7">
+    <header className="space-y-2 border-b border-neutral-800 pb-6">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-300">Trust / Governance</p>
+      <h1 className="text-3xl font-semibold tracking-tight text-white">Receipt verification and security checks</h1>
+      <p className="max-w-3xl text-sm leading-6 text-neutral-400">
+        Verify a Chronus execution receipt, then see what the AL HARAS (HYBA Security) checks compute on fixed example inputs.
+        Every result on this page is returned by the connected API for a request made from this page.
+      </p>
+    </header>
+
+    <Card className="border-neutral-800 bg-neutral-900/50 p-5 sm:p-6">
+      <form onSubmit={verify} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <label className="flex-1 space-y-1.5 text-sm text-neutral-300">
+          <span>Receipt identifier</span>
+          <input
+            value={receiptId}
+            onChange={(e) => setReceiptId(e.target.value)}
+            required
+            className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2.5 font-mono text-sm text-white outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+            placeholder="Paste a receipt ID"
+          />
+        </label>
+        <button
+          type="submit"
+          disabled={busy || !receiptId.trim()}
+          className="rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-400 disabled:opacity-50"
+        >
+          {busy ? 'Verifying…' : 'Verify receipt'}
+        </button>
+      </form>
+      {error && <p role="alert" className="mt-4 rounded-lg border border-rose-500/25 bg-rose-500/10 px-3 py-2.5 text-sm text-rose-200">{error}</p>}
+    </Card>
+
+    {result && <Card className="border-neutral-800 bg-neutral-900/50 p-5 sm:p-6">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-[0.14em] text-neutral-500">Observed receipt result</p>
+          <h2 className="mt-1 font-semibold text-white">Signature verification response</h2>
+        </div>
+        <StatusPill status={String(result.qualification_status || 'NOT_REPORTED')} label={String(result.qualification_status || 'Not reported')} showDot={false} />
+      </div>
+      <dl className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
+        <div><dt className="text-xs text-neutral-500">Receipt ID</dt><dd className="mt-1 break-all font-mono text-xs text-neutral-200">{result.receipt_id || receiptId}</dd></div>
+        <div><dt className="text-xs text-neutral-500">Ed25519 signature valid</dt><dd className="mt-1 text-sm text-neutral-200">{boolLabel(result.ed25519_verified)}</dd></div>
+        <div><dt className="text-xs text-neutral-500">ML-DSA verification</dt><dd className="mt-1 text-sm text-neutral-200">{boolLabel(result.ml_dsa_verified)}</dd></div>
+        <div><dt className="text-xs text-neutral-500">STARK quotient verification</dt><dd className="mt-1 text-sm text-neutral-200">{boolLabel(result.stark_quotient_verified)}</dd></div>
+        <div><dt className="text-xs text-neutral-500">Release gates evaluated</dt><dd className="mt-1 text-sm text-neutral-200">{typeof result.total_release_gates_evaluated === 'number' ? result.total_release_gates_evaluated : 'Not reported'}</dd></div>
+        <div><dt className="text-xs text-neutral-500">Summary</dt><dd className="mt-1 text-sm text-neutral-200">{result.invariant_summary || 'Not reported'}</dd></div>
+      </dl>
+      <p className="mt-5 rounded-lg border border-amber-500/20 bg-amber-500/[0.06] px-3 py-2.5 text-xs leading-5 text-amber-100/80">
+        This response reports the verifier's result only. It is not an independent assessment of the system that produced the receipt.
+      </p>
+    </Card>}
+
+    <section aria-labelledby="al-haras-heading" className="space-y-5">
+      <div className="space-y-2 border-b border-neutral-800 pb-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-300">HYBA Security · AL HARAS</p>
+        <h2 id="al-haras-heading" className="text-xl font-semibold tracking-tight text-white">Security check demonstrations</h2>
+        <p className="max-w-3xl text-sm leading-6 text-neutral-400">
+          Each check sends the fixed example input shown to the connected API, which computes the result for that one request. These are
+          demonstrations of mathematical checks run by the API. They are not live telemetry, not monitoring of your systems, not hardware results
+          and not an assurance that any system is secure.
+        </p>
+        <p className="max-w-3xl text-xs leading-5 text-neutral-500">
+          How to read a result: the reported status and computed values come from the API; “expected for this example” is what a correct check
+          should report for that input; a receipt signature is shown as present or absent and is not verified by this page. This page does not
+          store results.
+        </p>
+      </div>
+
+      <ModuleSelfTestPanel />
+
+      <Card className={PANEL}>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:items-start">
+          <div className="min-w-0">
+            <h3 className="font-semibold text-white">Access</h3>
+            <p className="mt-1 text-xs leading-5 text-neutral-500">
+              Running a check sends this token to the API as a bearer credential. Without a valid token the API refuses the request as
+              permission denied and computes nothing. The module self-test above is public.
+            </p>
+          </div>
+          <form onSubmit={(event) => event.preventDefault()} className="min-w-0 space-y-2">
+            <label htmlFor={tokenInputId} className="block text-sm text-neutral-300">Bearer token</label>
+            <input
+              id={tokenInputId}
+              ref={tokenInputRef}
+              type="password"
+              value={authToken}
+              onChange={(event) => updateToken(event.target.value)}
+              autoComplete="off"
+              spellCheck={false}
+              aria-describedby={tokenHelpId}
+              className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2.5 text-sm text-white outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+            />
+            <p id={tokenHelpId} className="text-xs text-neutral-500">Used only for this browser session; not saved by this page.</p>
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => { updateToken(''); tokenInputRef.current?.focus(); }}
+                disabled={!authToken}
+                className={SECONDARY_BUTTON}
+              >
+                Clear token
+              </button>
+              <p aria-live="polite" className="text-xs text-neutral-400">
+                {tokenEntered ? 'Token entered: Run check is available on each check below.' : 'No token entered: Run check stays disabled.'}
+              </p>
+            </div>
+            {denial && (
+              <p className="rounded-lg border border-amber-500/25 bg-amber-500/[0.07] px-3 py-2 text-xs leading-5 text-amber-100">
+                {denial.title} at <TimeStamp iso={denial.at} />. Update the token, then run the check again.
+              </p>
+            )}
+          </form>
+        </div>
+      </Card>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        {SECURITY_CHECKS.map((check, index) => (
+          <SecurityCheckCard
+            key={check.id}
+            check={check}
+            position={index + 1}
+            total={SECURITY_CHECKS.length}
+            authToken={authToken}
+            onEditToken={focusTokenInput}
+            onDenied={recordDenial}
+          />
+        ))}
+      </div>
+    </section>
+  </div>;
 }

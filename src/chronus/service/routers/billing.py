@@ -31,7 +31,9 @@ async def usage_receipt(tenant_id: Optional[str] = Depends(get_current_tenant)) 
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Valid authentication token required for billing usage.",
         )
-    items, total = workloads.workload_store.list_for_tenant(tenant_id, offset=0, limit=100)
+    items, total = workloads.workload_store.list_for_tenant(
+        tenant_id, offset=0, limit=100
+    )
     completed = [item for item in items if item.status == "COMPLETED"]
     ccu_total = sum(item.ccu_cost or 0.0 for item in completed)
     usage = {

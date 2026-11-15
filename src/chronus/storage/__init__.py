@@ -29,6 +29,12 @@ from chronus.storage.phyllotaxis import (
     metallic_lane,
     phyllotaxis_coordinate,
 )
+from chronus.storage.prime_codec import (
+    PrimeCodecError,
+    PrimeCodecIntegrityError,
+    decode as decode_prime_symbols,
+    encode as encode_prime_symbols,
+)
 from chronus.storage.theseus import TheseusRecord, TheseusService
 
 __all__ = [
@@ -47,12 +53,16 @@ __all__ = [
     "PREBUILT_CONNECTOR_SPECS",
     "PhyllotaxisCoordinate",
     "PhyllotaxisMesh",
+    "PrimeCodecError",
+    "PrimeCodecIntegrityError",
     "RegisteredConnector",
     "SchemaDiscoveryMiddleware",
     "TheseusRecord",
     "TheseusService",
     "ZeroCopyConnectorManager",
     "classify_memory_access_class",
+    "decode_prime_symbols",
+    "encode_prime_symbols",
     "golden_angle_hash",
     "golden_lane",
     "metallic_conjugate_64",

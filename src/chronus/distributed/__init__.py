@@ -24,7 +24,7 @@ from chronus.distributed.orchestrator import (
     WorkloadAssignment,
 )
 
-__version__ = "36.0.0"
+__version__ = "36.0.1"
 __all__ = [
     "FailureInjectionEngine",
     "FailureType",

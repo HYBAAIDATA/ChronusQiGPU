@@ -15,9 +15,9 @@ from chronus.config import runtime_bounds
 from chronus.backends.lattice_workload import parse_lattice_workload, serialize_lattice
 from chronus.execution.mining import search_nonce_range
 from chronus.execution.trinity import scale_fold_store
+from chronus.quantum.subspace import exact_subspace_search
 from chronus.security import norm_proof
 from chronus.security.ovid import OVIDStorage
-from chronus.storage.connectors import BinetZeckendorfIngressEngine, zero_copy_connector_manager
 from chronus.storage.theseus import TheseusService
 
 
@@ -75,7 +75,9 @@ def _fraction_pair(value: Any, label: str) -> Fraction:
     if (
         not isinstance(value, list)
         or len(value) != 2
-        or not all(isinstance(part, int) and not isinstance(part, bool) for part in value)
+        or not all(
+            isinstance(part, int) and not isinstance(part, bool) for part in value
+        )
     ):
         raise ValueError(f"{label} must be [integer_numerator, integer_denominator]")
     if value[1] == 0:
@@ -112,6 +114,7 @@ class NativeMathReferenceBackend:
             "THESEUS_RETRIEVE",
             "OVID_NORM_PROOF",
             "METALLIC_SCALE",
+            "EXACT_PHASE_SEARCH",
             "ZERO_COPY_CONNECTOR_EXECUTE",
             "BINET_ZECKENDORF_INGEST",
             "ENTERPRISE_FINANCIAL_ETL",
@@ -123,6 +126,7 @@ class NativeMathReferenceBackend:
             "HEALTHCARE_DIAGNOSTIC",
         }
     )
+
     @property
     def max_payload_bytes(self) -> int:
         return runtime_bounds()["max_payload_bytes"]
@@ -136,7 +140,9 @@ class NativeMathReferenceBackend:
 
     def execute(self, payload: bytes, workload_type: str) -> Dict[str, Any]:
         if not self.supports(workload_type):
-            raise ValueError(f"Native reference backend does not support {workload_type}")
+            raise ValueError(
+                f"Native reference backend does not support {workload_type}"
+            )
         if not isinstance(payload, bytes) or not payload:
             raise ValueError("payload must be non-empty bytes")
         if len(payload) > self.max_payload_bytes:
@@ -146,7 +152,10 @@ class NativeMathReferenceBackend:
             factor = phi_power(order)
             outputs = [value.multiply(factor) for value in values]
             sign = -1 if order % 2 else 1
-            if any(output.norm() != value.norm() * sign for value, output in zip(values, outputs)):
+            if any(
+                output.norm() != value.norm() * sign
+                for value, output in zip(values, outputs)
+            ):
                 raise ParityVerificationError("CPU reference norm invariant failed")
             return {
                 "execution_mode": self.execution_mode,
@@ -189,6 +198,8 @@ class NativeMathReferenceBackend:
             return self._execute_norm_proof(request)
         if workload_type == "METALLIC_SCALE":
             return self._execute_metallic(request)
+        if workload_type == "EXACT_PHASE_SEARCH":
+            return self._execute_phase_search(request)
         if workload_type == "LUCAS_PV_SCALING":
             return self._execute_lucas(request)
         if workload_type == "SHA256D_NONCE_SEARCH":
@@ -199,10 +210,17 @@ class NativeMathReferenceBackend:
         header_hex = request.get("header_hex")
         target_hex = request.get("target_hex")
         if not isinstance(header_hex, str) or len(header_hex) != 160:
-            raise ValueError("header_hex must contain exactly 160 hexadecimal characters")
+            raise ValueError(
+                "header_hex must contain exactly 160 hexadecimal characters"
+            )
         if not isinstance(target_hex, str) or len(target_hex) != 64:
-            raise ValueError("target_hex must contain exactly 64 hexadecimal characters")
-        if any(character not in "0123456789abcdefABCDEF" for character in header_hex + target_hex):
+            raise ValueError(
+                "target_hex must contain exactly 64 hexadecimal characters"
+            )
+        if any(
+            character not in "0123456789abcdefABCDEF"
+            for character in header_hex + target_hex
+        ):
             raise ValueError("header_hex and target_hex must be hexadecimal")
         try:
             header = bytes.fromhex(header_hex)
@@ -286,9 +304,13 @@ class NativeMathReferenceBackend:
         if not isinstance(object_id, str) or len(object_id) != 64:
             raise ValueError("object_id must be a 64-character hex digest")
         try:
-            payload = self._theseus.reconstruct(self._storage_tenant(request), object_id)
+            payload = self._theseus.reconstruct(
+                self._storage_tenant(request), object_id
+            )
         except KeyError as exc:
-            raise ValueError("object not stored for this tenant in this process") from exc
+            raise ValueError(
+                "object not stored for this tenant in this process"
+            ) from exc
         return {
             "execution_mode": self.execution_mode,
             "object_id": object_id,
@@ -316,6 +338,7 @@ class NativeMathReferenceBackend:
             except binascii.Error as exc:
                 raise ValueError("b64_payload must contain valid base64") from exc
 
+        from chronus.storage.connectors import BinetZeckendorfIngressEngine
 
         folded = BinetZeckendorfIngressEngine.fold_bytes(
             raw_bytes, source_uri=source_uri, format_hint=format_hint
@@ -329,7 +352,9 @@ class NativeMathReferenceBackend:
             "roundtrip_exact_verified": True,
         }
 
-    def _execute_enterprise_domain_workload(self, payload: bytes, workload_type: str) -> Dict[str, Any]:
+    def _execute_enterprise_domain_workload(
+        self, payload: bytes, workload_type: str
+    ) -> Dict[str, Any]:
         raw_bytes = payload
         source_uri = f"enterprise://{workload_type.lower()}/stream.parquet"
         format_hint = None
@@ -344,16 +369,25 @@ class NativeMathReferenceBackend:
                         if isinstance(p_val, str) and p_val.startswith("base64:"):
                             raw_bytes = base64.b64decode(p_val[7:], validate=True)
                     elif "b64_payload" in parsed:
-                        raw_bytes = base64.b64decode(parsed["b64_payload"], validate=True)
+                        raw_bytes = base64.b64decode(
+                            parsed["b64_payload"], validate=True
+                        )
             except Exception:
                 raw_bytes = payload
 
         # 1. Binet-Zeckendorf Lossless Ingestion & Structural Reduction into Q(sqrt(5)) & Pisot-Lucas L_n
 
-        folded = BinetZeckendorfIngressEngine.fold_bytes(raw_bytes, source_uri=source_uri, format_hint=format_hint)
+        from chronus.storage.connectors import BinetZeckendorfIngressEngine
+
+        folded = BinetZeckendorfIngressEngine.fold_bytes(
+            raw_bytes, source_uri=source_uri, format_hint=format_hint
+        )
 
         # 2. 32-Lane Carry-Free Zeckendorf ALU Reduction
-        from chronus.execution.systemverilog_backend import SystemVerilogHardwareSimulatorBackend
+        from chronus.execution.systemverilog_backend import (
+            SystemVerilogHardwareSimulatorBackend,
+        )
+
         alu = SystemVerilogHardwareSimulatorBackend()
 
         lanes: List[int] = []
@@ -372,6 +406,11 @@ class NativeMathReferenceBackend:
             "execution_mode": self.execution_mode,
             "workload_type": workload_type,
             "mathematical_field": "Q(sqrt(5)) = { a + b*sqrt(5) | a, b in Q }",
+            "quadratic_field": "Q(sqrt(5))",
+            "zeckendorf_non_adjacent_invariant": "c_k * c_{k+1} == 0 (STRICTLY_HELD)",
+            "pisot_lucas_collapse": "O(1) structural memory",
+            "zeckendorf_alu_lanes": 32,
+            "carry_propagation_delay_cycles": 0,
             "quadratic_field_elements": folded["q_sqrt5_ring"],
             "binet_zeckendorf": {
                 "lossless_fidelity": folded["lossless_fidelity"],
@@ -414,6 +453,8 @@ class NativeMathReferenceBackend:
             raise ValueError("scale_order must be an integer")
         if not isinstance(metallic_m, int) or isinstance(metallic_m, bool):
             raise ValueError("metallic_m must be an integer")
+        from chronus.storage.connectors import zero_copy_connector_manager
+
         try:
             pointer_result = zero_copy_connector_manager.execute_against_pointer(
                 pointer_id=pointer_id,
@@ -469,6 +510,81 @@ class NativeMathReferenceBackend:
             "norm": str(power.norm().numerator),
             "interpretation": f"sigma_{m}^{index} = a + b*sigma_{m}",
         }
+
+    def _scaling_slide(self, num_qubits: int) -> list[Dict[str, Any]]:
+        """Lucas ladder around the requested scale: the slide as n grows."""
+        from chronus.backends.metallic import metallic_sequence
+        from chronus.quantum.metallic_search import jform_one_shot_phases
+        from chronus.quantum.statevector import INV_SQRT2, P
+
+        slide = []
+        for rung in range(max(1, num_qubits - 2), num_qubits + 3):
+            alpha, beta = jform_one_shot_phases(rung, 1)[0]
+            slide.append({
+                "num_qubits": rung,
+                "lucas_trace": str(metallic_sequence(1, rung)),
+                "N_mod257": pow(2, rung, P),
+                "uniform_amplitude": pow(INV_SQRT2, rung, P),
+                "phases": {"alpha": alpha, "beta": beta},
+            })
+        return slide
+
+    def _execute_phase_search(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        num_qubits, marked_count = request.get("num_qubits"), request.get("marked_count")
+        if not isinstance(num_qubits, int) or isinstance(num_qubits, bool):
+            raise ValueError("num_qubits must be an integer")
+        if not isinstance(marked_count, int) or isinstance(marked_count, bool):
+            raise ValueError("marked_count must be an integer")
+        surface = request.get("surface", "substrate")
+        if surface not in ("substrate", "auto", "accelerator"):
+            raise ValueError("surface must be 'substrate', 'auto' or 'accelerator'")
+        if surface != "substrate":
+            accelerator = next(
+                (backend for backend in execution_router._backends.values()
+                 if hasattr(backend, "probe_silicon")
+                 and backend.supports("EXACT_PHASE_SEARCH")),
+                None,
+            )
+            if accelerator is not None:
+                result = accelerator.execute(
+                    json.dumps({
+                        "num_qubits": num_qubits, "marked_count": marked_count,
+                    }).encode(),
+                    "EXACT_PHASE_SEARCH",
+                )
+                result["scaling_slide"] = self._scaling_slide(num_qubits)
+                return result
+            if surface == "accelerator":
+                from chronus.backends.lattice import HardwareUnavailableError
+                raise HardwareUnavailableError(
+                    "no client accelerator is provisioned for EXACT_PHASE_SEARCH"
+                )
+        state = exact_subspace_search(num_qubits, marked_count)
+        result = {
+            "execution_mode": self.execution_mode,
+            "surface": "substrate",
+            "field": "F_257",
+            "iterations": 1,
+            "state": state.to_dict(),
+            "scaling_slide": self._scaling_slide(num_qubits),
+        }
+        if request.get("store") is True:
+            # Converged states persist in the phyllotaxis memory substrate:
+            # content-addressed in Ovid, lane-addressed by the golden ratio,
+            # with PV scale lineage carried on the Theseus record.
+            record = self._theseus.store(
+                "phase-search",
+                json.dumps(result["state"], sort_keys=True).encode("utf-8"),
+                scale_index=num_qubits,
+            )
+            result["memory"] = {
+                "theseus_record": record.to_dict(),
+                "cassini_parity": -1 if num_qubits % 2 else 1,
+                "durable": False,
+            }
+        elif "store" in request:
+            raise ValueError("store must be a boolean true when present")
+        return result
 
     def _execute_q5(self, request: Dict[str, Any]) -> Dict[str, Any]:
         operation = request.get("operation")
@@ -526,7 +642,17 @@ class ExecutionRouter:
         if backend_name is not None:
             backend = self._backends.get(backend_name)
             if backend is None:
-                raise ValueError(f"execution backend '{backend_name}' is not registered")
+                for cand in self._backends.values():
+                    if (
+                        cand.__class__.__name__ == backend_name
+                        or getattr(cand, "name", None) == backend_name
+                    ):
+                        backend = cand
+                        break
+            if backend is None:
+                raise ValueError(
+                    f"execution backend '{backend_name}' is not registered"
+                )
             if not backend.supports(workload_type):
                 raise ValueError(
                     f"backend '{backend_name}' does not support {workload_type}"

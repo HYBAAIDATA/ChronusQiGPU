@@ -87,7 +87,9 @@ class WorkloadRequest(BaseModel):
         description="Exact algebraic representation mode",
     )
     priority: Priority = Field(default=Priority.HIGH, description="Workload priority")
-    tenant_id: str = Field(..., description="Tenant identifier", min_length=1, max_length=128)
+    tenant_id: str = Field(
+        ..., description="Tenant identifier", min_length=1, max_length=128
+    )
     region: str = Field(default="us-east-1", description="Deployment region")
     endpoint: str = Field(default="internal_v1", description="API endpoint version")
     backend_preference: Optional[str] = Field(
@@ -107,7 +109,9 @@ class WorkloadRequest(BaseModel):
             try:
                 return base64.b64decode(value[7:], validate=True)
             except (ValueError, binascii.Error) as exc:
-                raise ValueError("payload_bytes must contain valid base64 data") from exc
+                raise ValueError(
+                    "payload_bytes must contain valid base64 data"
+                ) from exc
         return value
 
     @field_validator("payload_bytes")
@@ -134,7 +138,9 @@ class WorkloadRequest(BaseModel):
 class WorkloadResponse(BaseModel):
     """Response model for workload submission and status."""
 
-    workload_id: UUID = Field(default_factory=uuid4, description="Unique workload identifier")
+    workload_id: UUID = Field(
+        default_factory=uuid4, description="Unique workload identifier"
+    )
     status: WorkloadStatus = Field(default=WorkloadStatus.SUBMITTED)
     workload_type: WorkloadType
     representation_mode: RepresentationMode
@@ -179,7 +185,7 @@ class HealthResponse(BaseModel):
     """Overall service health response."""
 
     status: HealthStatus
-    version: str = "36.0.0"
+    version: str = "36.0.1"
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     components: List[ComponentHealth]
     uptime_seconds: float
@@ -194,6 +200,10 @@ class VerificationResult(BaseModel):
         default="NOT_A_RELEASE_QUALIFICATION",
         description="Receipt verification result; this is not release qualification",
     )
+    valid: Optional[bool] = Field(default=None, description="Cryptographic validity boolean")
+    zk_stark: Optional[str] = Field(default=None, description="zk-STARK verification status (VERIFIED/NOT_EVALUATED)")
+    mldsa_sig: Optional[str] = Field(default=None, description="ML-DSA-65 post-quantum signature status (VALID/NOT_EVALUATED)")
+    reason: Optional[str] = Field(default=None, description="Verification reason or detail code")
     total_release_gates_evaluated: int = 0
     release_gates_passed: int = 0
     total_invariants_evaluated: int = 0

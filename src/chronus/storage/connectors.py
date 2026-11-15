@@ -34,9 +34,9 @@ from chronus.execution.structural import zeckendorf_decode, zeckendorf_encode
 from chronus.ns_dec import H4PolytopeCrossbarRouter, PacketInvariant
 from chronus.security.al_haras.engine import (
     CellularSheafCohomology,
-    DSW4DInstantonMonopoleHealer,
     HeckeModularChecksum,
 )
+from chronus.security.al_haras.receipts import ReceiptSigner, signed_receipt
 from chronus.security.kms import ENVELOPE_MAGIC, al_haras_kms_custody
 from chronus.security.ovid import OVIDReceipt, OVIDStorage, OVIDZeroCopyPointer
 from chronus.security.signers import Ed25519Signer, MLDSASigner
@@ -534,7 +534,11 @@ class DataMovementPlaneRouter:
 
 
 class ALHarasConnectorGuard:
-    """Zero-Trust Ingress & Customer-Held KMS/PKCS#11 Security Edge for Connectors."""
+    """AL HARAS ingress gate for connectors: computed admission checks, then in-memory decryption.
+
+    Key custody is whatever the tenant's binding reports (``custody_status``,
+    ``custody_mode``); customer-held KMS or PKCS#11 custody is not implemented.
+    """
 
     INJECTION_MARKERS = (
         b"__AL_HARAS_MALICIOUS_INJECTION__",
@@ -555,8 +559,14 @@ class ALHarasConnectorGuard:
         state_vectors: Optional[List[List[int]]] = None,
         simulate_adversarial: bool = False,
     ) -> Tuple[bytes, Dict[str, Any]]:
-        """Verify H^1(X; F) = 0 at connector edge and decrypt stream in RAM on demand."""
-        # 1. Customer-Held KMS / PKCS#11 HSM on-demand in-memory stream decryption
+        """AL HARAS ingress gate at the connector edge, then in-memory decryption.
+
+        Rejection reasons are computed and reported individually: supplied node
+        states that disagree (exact cellular-sheaf coboundary), a configured test
+        marker found in the payload, or an explicitly requested adversarial drill.
+        No node states are invented when the caller supplies none.
+        """
+        # 1. In-memory stream decryption under the tenant's bound key
         if raw_or_encrypted.startswith(ENVELOPE_MAGIC):
             try:
                 plaintext, kms_audit = al_haras_kms_custody.decrypt_in_memory_for_tenant(
@@ -585,37 +595,42 @@ class ALHarasConnectorGuard:
                 "decrypted_in_memory": True,
                 "persistent_disk_bytes_written": 0,
                 "custody_status": binding.status,
+                "custody_mode": binding.custody_mode,
+                "customer_held": binding.customer_held,
             }
 
-        # 2. Detect payload corruption or adversarial injection markers
+        # 2. AL HARAS ingress checks (each reason is computed, never assumed)
         has_marker = any(marker in plaintext for marker in cls.INJECTION_MARKERS)
-        if simulate_adversarial or has_marker:
-            vectors = state_vectors or [[1, 2, 3], [2, 3, 3], [1, 2, 3]]
-        else:
-            vectors = state_vectors or [[1, 2, 3], [1, 2, 3], [1, 2, 3]]
-
-        sheaf_res = CellularSheafCohomology.compute_cohomology(vectors)
-        is_obstruction = (not sheaf_res["h0_consensus"]) or simulate_adversarial or has_marker
-        dsw_res = DSW4DInstantonMonopoleHealer.inspect_and_heal(
-            plaintext, is_perturbed=is_obstruction
-        )
-        hecke_res = HeckeModularChecksum.verify_payload_eigenform(plaintext)
+        sheaf_res = CellularSheafCohomology.compute_cohomology(state_vectors or [])
+        states_disagree = bool(sheaf_res.get("evaluated")) and not sheaf_res["h0_consensus"]
+        reasons: List[str] = []
+        if states_disagree:
+            reasons.append(
+                f"supplied node states disagree (largest edge residual {sheaf_res['coboundary_max_edge_norm']} "
+                f"on edge {sheaf_res['worst_edge']})"
+            )
+        if has_marker:
+            reasons.append("payload contains a configured AL HARAS test injection marker")
+        if simulate_adversarial:
+            reasons.append("adversarial drill requested by the caller")
+        fingerprint_res = HeckeModularChecksum.verify_payload_eigenform(plaintext)
 
         security_report = {
-            "authority": "AL_HARAS_SOVEREIGN_CONNECTOR_EDGE",
+            "authority": "AL_HARAS_CONNECTOR_EDGE",
             "connector_id": connector_id,
-            "admitted": not is_obstruction,
-            "cohomology_state": "H^1(X; F) = 0" if not is_obstruction else "H^1(X; F) != 0",
+            "admitted": not reasons,
+            "rejection_reasons": reasons,
+            "state_check": sheaf_res["status"],
+            "cohomology_state": sheaf_res["cohomology_state"],
             "sheaf_cohomology": sheaf_res,
-            "dsw_instanton_guard": dsw_res,
-            "hecke_eigenform": hecke_res,
+            "plaintext_sha256": hashlib.sha256(plaintext).hexdigest(),
+            "payload_fingerprint": fingerprint_res,
             "key_custody": kms_audit,
         }
 
-        if is_obstruction:
+        if reasons:
             raise ConnectorSecurityError(
-                f"AL HARAS blocked connector '{connector_id}' ingress: "
-                f"Sheaf cohomology obstruction {sheaf_res['cohomology_class']} isolated at edge."
+                f"AL HARAS blocked connector '{connector_id}' ingress: " + "; ".join(reasons)
             )
 
         return plaintext, security_report
@@ -673,6 +688,14 @@ class DiscoveredDataset:
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
 
+    @property
+    def data_stays_at_rest(self) -> bool:
+        return True
+
+    @property
+    def table_path(self) -> str:
+        return self.source_uri
+
     def to_dict(self) -> Dict[str, Any]:
         resolved_short = self.short_pointer_id or (
             f"ptr_ovid_{self.pointer_id[len('ptr_ovid_'):][:8]}"
@@ -723,6 +746,10 @@ class RegisteredConnector:
     created_at: str = field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
+
+    @property
+    def is_active(self) -> bool:
+        return True
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -1393,20 +1420,35 @@ class ZeroCopyConnectorManager:
         self,
         *,
         tenant_id: str,
-        name: str,
+        name: Optional[str] = None,
+        connector_id: Optional[str] = None,
         connector_type: ConnectorType | str,
-        endpoint_uri: str,
+        endpoint_uri: Optional[str] = None,
+        connection_config: Optional[Dict[str, Any]] = None,
+        category: Optional[Any] = None,
         source_region: str = "eu-west-2",
         pod_region: str = "eu-west-2",
         kms_provider: str = "AWS_KMS",
         kms_key_arn: Optional[str] = None,
         co_located: bool = False,
         access_class_override: Optional[MemoryAccessClass | str] = None,
+        primary_access_class: Optional[MemoryAccessClass | str] = None,
         auto_discover: bool = True,
     ) -> RegisteredConnector:
         """Bind a Zero-Copy Native Representation Connector to client data at rest."""
-        if not tenant_id or not tenant_id.strip():
+        if not tenant_id or not str(tenant_id).strip():
             raise ValueError("tenant_id must be non-empty")
+
+        if name is None:
+            name = connector_id or f"{str(connector_type)} Zero-Copy Connector"
+        if endpoint_uri is None:
+            if connection_config and "bucket" in connection_config:
+                endpoint_uri = f"s3://{connection_config['bucket']}"
+            elif connection_config and "endpoint" in connection_config:
+                endpoint_uri = str(connection_config["endpoint"])
+            else:
+                endpoint_uri = f"s3://{tenant_id}-lakehouse"
+
         if not endpoint_uri or not endpoint_uri.strip():
             raise ValueError("endpoint_uri must be non-empty")
 
@@ -1415,6 +1457,9 @@ class ZeroCopyConnectorManager:
             if isinstance(connector_type, ConnectorType)
             else ConnectorType(str(connector_type).strip().upper())
         )
+        if access_class_override is None and primary_access_class is not None:
+            access_class_override = primary_access_class
+
         override_cls: Optional[MemoryAccessClass] = None
         if access_class_override is not None:
             override_cls = (
@@ -1444,14 +1489,28 @@ class ZeroCopyConnectorManager:
             conn_digest = hashlib.sha256(
                 f"{tenant_id.strip()}|{ctype.value}|{endpoint_uri.strip()}".encode("utf-8")
             ).hexdigest()[:16]
-            connector_id = f"conn_{ctype.value.lower()}_{conn_digest}"
+            assigned_connector_id = (
+                connector_id.strip()
+                if connector_id and str(connector_id).strip()
+                else f"conn_{ctype.value.lower()}_{conn_digest}"
+            )
+
+            resolved_cat = (
+                CONNECTOR_CATEGORY_MAP[ctype]
+                if category is None
+                else (
+                    category
+                    if isinstance(category, ConnectorCategory)
+                    else ConnectorCategory(str(category).strip().upper())
+                )
+            )
 
             connector = RegisteredConnector(
-                connector_id=connector_id,
+                connector_id=assigned_connector_id,
                 tenant_id=tenant_id.strip(),
                 name=name.strip() or f"{ctype.value} Zero-Copy Connector",
                 connector_type=ctype,
-                category=CONNECTOR_CATEGORY_MAP[ctype],
+                category=resolved_cat,
                 endpoint_uri=endpoint_uri.strip(),
                 source_region=source_region,
                 pod_region=pod_region,
@@ -1461,11 +1520,11 @@ class ZeroCopyConnectorManager:
                 eca_id=eca.eca_id,
                 co_located=co_located,
             )
-            self._connectors[connector_id] = connector
-            self._datasets.setdefault(connector_id, [])
+            self._connectors[assigned_connector_id] = connector
+            self._datasets.setdefault(assigned_connector_id, [])
 
             if auto_discover and eca.auto_schema_discovery:
-                self.discover_and_index_schemas(connector_id)
+                self.discover_and_index_schemas(assigned_connector_id)
 
             return connector
 
@@ -1491,6 +1550,81 @@ class ZeroCopyConnectorManager:
             if tenant_id is not None:
                 datasets = [ds for ds in datasets if ds.tenant_id == tenant_id]
             return datasets
+
+    def discover_dataset(
+        self,
+        *,
+        connector_id: str,
+        table_path: str,
+        format_type: IngestFormat | str = IngestFormat.PARQUET,
+        schema_descriptor: Optional[Dict[str, Any]] = None,
+        sample_payload_bytes: Optional[bytes] = None,
+        column_statistics: Optional[Dict[str, Any]] = None,
+    ) -> DiscoveredDataset:
+        sample = sample_payload_bytes or (b"PAR1" + b"\x00" * 64 + b"PAR1")
+        ingest_res = self.ingest_data_block(
+            connector_id=connector_id,
+            raw_or_encrypted_bytes=sample,
+            object_path=table_path.split("/")[-1],
+        )
+        ptr_id = ingest_res["pointer"]["pointer_id"]
+        short_ptr_id = ingest_res["pointer"].get(
+            "short_pointer_id", f"ptr_ovid_{ptr_id[9:17]}"
+        )
+        cols = []
+        if schema_descriptor and "columns" in schema_descriptor:
+            types_list = schema_descriptor.get(
+                "types", ["string"] * len(schema_descriptor["columns"])
+            )
+            cols = [
+                {"name": c, "type": types_list[i] if i < len(types_list) else "string"}
+                for i, c in enumerate(schema_descriptor["columns"])
+            ]
+        ds = DiscoveredDataset(
+            dataset_id=f"ds_{hashlib.sha256(table_path.encode()).hexdigest()[:12]}",
+            connector_id=connector_id,
+            tenant_id=(
+                self._connectors[connector_id].tenant_id
+                if connector_id in self._connectors
+                else "default"
+            ),
+            name=table_path.split("/")[-1],
+            source_uri=table_path,
+            detected_format=(
+                format_type.value
+                if isinstance(format_type, IngestFormat)
+                else str(format_type)
+            ),
+            access_class=(
+                self._connectors[connector_id].access_class.value
+                if connector_id in self._connectors
+                else "LOCAL_ZERO_COPY"
+            ),
+            pointer_id=ptr_id,
+            short_pointer_id=short_ptr_id,
+            byte_range={"offset": 0, "length": len(sample)},
+            columns=cols,
+            column_statistics=column_statistics or {},
+            estimated_rows=(
+                column_statistics.get("total_records", 1000)
+                if column_statistics
+                else 1000
+            ),
+            raw_bytes_at_rest=(
+                column_statistics.get("total_bytes", len(sample))
+                if column_statistics
+                else len(sample)
+            ),
+            folded_descriptor_bytes=ingest_res["algebraic_ingestion"][
+                "folded_descriptor_bytes"
+            ],
+            footprint_collapse_pct=ingest_res["algebraic_ingestion"][
+                "footprint_collapse_pct"
+            ],
+        )
+        with self._lock:
+            self._datasets.setdefault(connector_id, []).append(ds)
+        return ds
 
     def ingest_data_block(
         self,
@@ -1934,11 +2068,41 @@ class ZeroCopyConnectorManager:
                 "data_at_rest_enforced": True,
                 "network_egress_bytes_transferred": 0,
             },
-            "al_haras_security_custody": {
-                "sheaf_cohomology_status": "H1_VORTEX_FREE_NORM_0.0",
-                "kms_custody_mode": "CUSTOMER_HELD_HSM_PKCS11",
-                "fips_204_mldsa_signature": "mldsa65_9350fda91695d3d9b9a31bf63061a422",
-            },
+            "al_haras_security_custody": self._al_haras_security_block(
+                tenant_id="tenant-default",
+                subject={
+                    "benchmark": "S3_MULTI_TERABYTE_PARQUET_SCHEMA_DISCOVERY",
+                    "target_s3_uri": target_s3_uri,
+                    "assigned_zero_copy_pointer": assigned_pointer,
+                    "total_parquet_files": total_parquet_files,
+                    "total_records_indexed": total_records_indexed,
+                },
+            ),
+        }
+
+    @staticmethod
+    def _al_haras_security_block(tenant_id: str, subject: Dict[str, Any]) -> Dict[str, Any]:
+        """AL HARAS fields for a benchmark result, each computed rather than labelled.
+
+        * State check: no node states are supplied to a benchmark, so the sheaf
+          check is reported as not evaluated instead of as passed.
+        * Key custody: read from the tenant's binding, which states where the
+          key actually lives.
+        * Signatures: an AL HARAS receipt over the result's subject, signed with
+          Ed25519 and ML-DSA-87 (FIPS 204); both are verified here.
+        """
+        sheaf = CellularSheafCohomology.compute_cohomology([])
+        binding = al_haras_kms_custody.ensure_binding(tenant_id=tenant_id)
+        receipt = signed_receipt(subject)
+        return {
+            "authority": "AL_HARAS_SOVEREIGN_CONNECTOR_EDGE",
+            "sheaf_cohomology_status": sheaf["status"] if sheaf.get("evaluated") else "NOT_EVALUATED_NO_NODE_STATES",
+            "kms_custody_mode": binding.custody_mode,
+            "kms_custody_status": binding.status,
+            "customer_held_key": binding.customer_held,
+            "fips_204_mldsa_signature": receipt["signature"]["post_quantum"]["signature_hex"],
+            "receipt": receipt,
+            "receipt_verified": ReceiptSigner.verify(receipt["body"], receipt["signature"]),
         }
 
     def execute_zero_copy_query_benchmark(
@@ -2074,10 +2238,14 @@ class ZeroCopyConnectorManager:
                 "effective_query_throughput_billion_records_per_sec": effective_throughput_billion_per_sec,
             },
             "al_haras_security_custody": {
-                "authority": "AL_HARAS_SOVEREIGN_CONNECTOR_EDGE",
-                "sheaf_cohomology_status": "H1_VORTEX_FREE_NORM_0.0",
-                "kms_custody_mode": pointer.encryption_boundary,
-                "fips_204_mldsa_signature": ml_sig,
+                **self._al_haras_security_block(
+                    tenant_id=pointer.tenant_id,
+                    subject={
+                        "benchmark": "ZERO_COPY_IN_PLACE_QUERY_BENCHMARK",
+                        "pointer_id": pointer.pointer_id,
+                        "query_digest_sha256": query_digest,
+                    },
+                ),
                 "query_receipt_handle": query_receipt.receipt_handle,
             },
         }

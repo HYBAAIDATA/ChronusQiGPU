@@ -37,7 +37,9 @@ def test_client_accelerator_surface_scales_in_when_provisioned():
     router.register_backend(FakeAccelerator())
     inventory = QiGPUOrchestrator(router).inventory()
     assert inventory["accelerator_surfaces"] == ["fake-gpu"]
-    accelerator = next(s for s in inventory["surfaces"] if s["surface_id"] == "fake-gpu")
+    accelerator = next(
+        s for s in inventory["surfaces"] if s["surface_id"] == "fake-gpu"
+    )
     assert accelerator["kind"] == "client_accelerator"
     assert accelerator["telemetry"]["known_answer_test"] == "passed"
 
@@ -72,7 +74,9 @@ def test_phylotaxis_store_and_theseus_retrieve_via_native_backend():
     assert base64.b64decode(retrieved["data"][7:]) == b"golden"
     with pytest.raises(ValueError, match="not stored"):
         backend.execute(
-            json.dumps({"object_id": record["object_id"], "tenant_id": "other"}).encode(),
+            json.dumps(
+                {"object_id": record["object_id"], "tenant_id": "other"}
+            ).encode(),
             "THESEUS_RETRIEVE",
         )
 
@@ -81,13 +85,18 @@ def test_auto_select_climbs_into_client_accelerator_when_provisioned():
     router = ExecutionRouter()
     orchestrator = QiGPUOrchestrator(router)
     assert orchestrator.auto_select("PV_LATTICE_FOLD") == (
-        "python-math-reference", "cpu-substrate"
+        "python-math-reference",
+        "cpu-substrate",
     )
     router.register_backend(FakeAccelerator())
-    assert orchestrator.auto_select("PV_LATTICE_FOLD") == ("fake-gpu", "client-accelerator")
+    assert orchestrator.auto_select("PV_LATTICE_FOLD") == (
+        "fake-gpu",
+        "client-accelerator",
+    )
     # Workloads the accelerator does not support stay on the CPU substrate.
     assert orchestrator.auto_select("LUCAS_PV_SCALING") == (
-        "python-math-reference", "cpu-substrate"
+        "python-math-reference",
+        "cpu-substrate",
     )
     with pytest.raises(ValueError, match="no execution surface"):
         orchestrator.auto_select("UNKNOWN_WORKLOAD")
@@ -96,18 +105,24 @@ def test_auto_select_climbs_into_client_accelerator_when_provisioned():
 def test_trinity_store_option_persists_folded_state():
     backend = NativeMathReferenceBackend()
     result = backend.execute(
-        json.dumps({
-            "increment": 479,
-            "store": True,
-            "values": [{"a": 1, "b": 0, "denominator": 1}],
-        }).encode(),
+        json.dumps(
+            {
+                "increment": 479,
+                "store": True,
+                "values": [{"a": 1, "b": 0, "denominator": 1}],
+            }
+        ).encode(),
         "TRINITY_SCALE_FOLD_STORE",
     )
     storage = result["storage"]
     assert storage["theseus_record"]["scale_index"] == 479
     retrieved = backend.execute(
-        json.dumps({"object_id": storage["theseus_record"]["object_id"],
-                    "tenant_id": "trinity"}).encode(),
+        json.dumps(
+            {
+                "object_id": storage["theseus_record"]["object_id"],
+                "tenant_id": "trinity",
+            }
+        ).encode(),
         "THESEUS_RETRIEVE",
     )
     assert json.loads(base64.b64decode(retrieved["data"][7:])) == result["state"]

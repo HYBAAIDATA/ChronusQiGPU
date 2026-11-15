@@ -46,14 +46,22 @@ class QiGPUOrchestrator:
             telemetry: dict[str, Any] = {}
             if hasattr(backend, "probe_silicon"):
                 telemetry = backend.probe_silicon()
-            result.append(ExecutionSurface(
-                surface_id=name,
-                kind=("client_accelerator" if hasattr(backend, "probe_silicon") else "cpu_substrate"),
-                execution_mode=getattr(backend, "execution_mode", "SOFTWARE_EXECUTION"),
-                workloads=sorted(backend.supported_workloads),
-                available=True,
-                telemetry=telemetry,
-            ))
+            result.append(
+                ExecutionSurface(
+                    surface_id=name,
+                    kind=(
+                        "client_accelerator"
+                        if hasattr(backend, "probe_silicon")
+                        else "cpu_substrate"
+                    ),
+                    execution_mode=getattr(
+                        backend, "execution_mode", "SOFTWARE_EXECUTION"
+                    ),
+                    workloads=sorted(backend.supported_workloads),
+                    available=True,
+                    telemetry=telemetry,
+                )
+            )
         return result
 
     def resolve(self, workload_type: str, preference: str | None) -> str:
@@ -63,7 +71,9 @@ class QiGPUOrchestrator:
             if backend is None:
                 raise ValueError(f"execution surface '{preference}' is not provisioned")
             if not backend.supports(workload_type):
-                raise ValueError(f"surface '{preference}' does not support {workload_type}")
+                raise ValueError(
+                    f"surface '{preference}' does not support {workload_type}"
+                )
             return preference
         for name, backend in self.router._backends.items():
             if backend.supports(workload_type):

@@ -66,7 +66,9 @@ class CUDABackendAdapter:
     def execute(self, payload: bytes, workload_type: str) -> Dict[str, Any]:
         """Execute on physical CUDA device or raise HardwareUnavailableError."""
         if not self.is_available():
-            raise HardwareUnavailableError("Physical CUDA GPU hardware is not provisioned on host")
+            raise HardwareUnavailableError(
+                "Physical CUDA GPU hardware is not provisioned on host"
+            )
 
         if len(payload) > self.max_device_memory_bytes:
             raise ValueError("Payload exceeds CUDA device memory limit")
@@ -80,6 +82,7 @@ class CUDABackendAdapter:
             # Physical hardware kernel dispatch
             # Dispatches via compiled PTX / CUDA driver API
             from chronus.execution.reference import NativeMathReferenceBackend
+
             ref = NativeMathReferenceBackend()
             res = ref.execute(payload, workload_type)
             res["execution_mode"] = self.execution_mode

@@ -3,7 +3,7 @@
 import base64
 import os
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
 import httpx
@@ -90,9 +90,7 @@ class ChronusAPISDK:
         for attempt in range(attempts):
             started = time.perf_counter()
             try:
-                response = self._client.request(
-                    method, path, json=json, params=params
-                )
+                response = self._client.request(method, path, json=json, params=params)
             except httpx.RequestError as exc:
                 if attempt + 1 == attempts:
                     raise ServiceUnavailableError(
@@ -218,9 +216,13 @@ class ChronusAPISDK:
     def get_health(self) -> Dict[str, Any]:
         return self._request("GET", "/health")
 
-    def instant_onboard_tenant(self, onboarding_payload: Dict[str, Any]) -> Dict[str, Any]:
+    def instant_onboard_tenant(
+        self, onboarding_payload: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Trigger Zero-Friction instant tenant provisioning (<30s T0 SLA)."""
-        return self._request("POST", "/v1/tenants/onboard/instant", json=onboarding_payload)
+        return self._request(
+            "POST", "/v1/tenants/onboard/instant", json=onboarding_payload
+        )
 
     def expand_capacity(
         self,
@@ -237,7 +239,9 @@ class ChronusAPISDK:
         }
         if expand_storage_gb is not None:
             payload["expand_storage_gb"] = expand_storage_gb
-        return self._request("PATCH", f"/v1/tenants/{target_tenant}/capacity", json=payload)
+        return self._request(
+            "PATCH", f"/v1/tenants/{target_tenant}/capacity", json=payload
+        )
 
     def get_capacity_status(self, tenant_id: Optional[str] = None) -> Dict[str, Any]:
         """Retrieve Enduring Capacity Addendum and real-time Hermiten settlement status."""
@@ -263,7 +267,9 @@ class ChronusAPISDK:
         }
         if kms_key_arn is not None:
             payload["kms_key_arn"] = kms_key_arn
-        return self._request("POST", f"/v1/connectors/eca/{target_tenant}/authorize", json=payload)
+        return self._request(
+            "POST", f"/v1/connectors/eca/{target_tenant}/authorize", json=payload
+        )
 
     def register_connector(
         self,
@@ -300,7 +306,9 @@ class ChronusAPISDK:
 
     def list_connectors(self, tenant_id: Optional[str] = None) -> Dict[str, Any]:
         """List bound Zero-Copy Native Representation Connectors."""
-        params: Optional[Dict[str, Any]] = {"tenant_id": tenant_id} if tenant_id else None
+        params: Optional[Dict[str, Any]] = (
+            {"tenant_id": tenant_id} if tenant_id else None
+        )
         return self._request("GET", "/v1/connectors", params=params)
 
     def ingest_zero_copy(
@@ -337,7 +345,9 @@ class ChronusAPISDK:
         body: Dict[str, Any] = {}
         if additional_tables is not None:
             body["additional_tables"] = additional_tables
-        return self._request("POST", f"/v1/connectors/{connector_id}/discover", json=body)
+        return self._request(
+            "POST", f"/v1/connectors/{connector_id}/discover", json=body
+        )
 
     def execute_zero_copy_pointer(
         self,
@@ -371,7 +381,9 @@ class ChronusAPISDK:
             "total_records_indexed": total_records_indexed,
             "discovered_columns_count": discovered_columns_count,
         }
-        return self._request("POST", "/v1/connectors/benchmarks/s3-parquet-discovery", json=payload)
+        return self._request(
+            "POST", "/v1/connectors/benchmarks/s3-parquet-discovery", json=payload
+        )
 
     def benchmark_zero_copy_query(
         self,
@@ -399,7 +411,9 @@ class ChronusAPISDK:
 
     def list_workloads_v1(self, page: int = 1, page_size: int = 50) -> Dict[str, Any]:
         """List tenant workloads via GET /v1/workloads."""
-        return self._request("GET", "/v1/workloads", params={"page": page, "page_size": page_size})
+        return self._request(
+            "GET", "/v1/workloads", params={"page": page, "page_size": page_size}
+        )
 
     def verify_receipt_v1(self, receipt_hash: str) -> Dict[str, Any]:
         """Public zero-auth cryptographic verification via GET /v1/verify/{receipt_hash}."""
@@ -429,7 +443,8 @@ class ChronusAPISDK:
             "region": region,
             "blade_count": blade_count,
             "interconnect": interconnect,
-            "subsystems": subsystems or [
+            "subsystems": subsystems
+            or [
                 "NVIDIA_BLACKWELL_B200",
                 "NVFP4_TENSOR_CORES",
                 "HBM3E_DISAGGREGATED_POOL",
@@ -487,10 +502,238 @@ class ChronusAPISDK:
             "tenant_id": tenant_id,
             "organization_name": organization_name,
             "requested_warps": requested_warps,
-            "aws_kms_key_arn": aws_kms_key_arn or "arn:aws:kms:us-east-1:112233445566:key/chronus-pkcs11-custody",
+            "aws_kms_key_arn": aws_kms_key_arn
+            or "arn:aws:kms:us-east-1:112233445566:key/chronus-pkcs11-custody",
             "contact_email": contact_email or f"admin@{tenant_id}.internal",
         }
         return self._request("POST", "/v1/tenants/onboard/instant", json=payload)
+
+    def execute_agentic_sheaf_turn(
+        self,
+        agent_states: Optional[Dict[str, List[float]]] = None,
+        stalk_dim: int = 4,
+    ) -> Dict[str, Any]:
+        """Check one agent turn with the exact sheaf coboundary; returns the located node and the verified repair, if any."""
+        states = agent_states or {
+            "Planner": [1.0, 0.0, 0.0, 1.0],
+            "Coder": [1.0, 0.0, 0.0, 1.0],
+            "Executor": [1.0, 0.0, 0.0, 1.0],
+            "Tool": [1.0, 0.0, 0.0, 1.0],
+        }
+        return self._request(
+            "POST",
+            "/v1/al-haras/applications/agentic-sheaf/verify-turn",
+            json={"agent_states": states, "stalk_dim": stalk_dim},
+        )
+
+    def transmit_orbital_telemetry(
+        self,
+        packet_payload: str = "REFERENCE_TELEMETRY_PACKET_001",
+        source_sat: str = "SAT_00",
+        target_sat: str = "SAT_07",
+        constellation_size: int = 16,
+    ) -> Dict[str, Any]:
+        """Transmit satellite telemetry over PSL_2(F_257) Ramanujan LPS Expander."""
+        return self._request(
+            "POST",
+            "/v1/al-haras/applications/orbital-mesh/transmit",
+            json={
+                "packet_payload": packet_payload,
+                "source_sat": source_sat,
+                "target_sat": target_sat,
+                "constellation_size": constellation_size,
+            },
+        )
+
+    def prove_and_verify_zk_neural(
+        self,
+        sensor_input: Optional[List[int]] = None,
+        weights_commitment: str = "sovereign_weights_merkle_root_v4_7f9c2b",
+    ) -> Dict[str, Any]:
+        """Build and check an F_257 trace receipt for the demo layer (not zero-knowledge, not succinct)."""
+        return self._request(
+            "POST",
+            "/v1/al-haras/applications/zk-neural/prove-and-verify",
+            json={
+                "sensor_input": sensor_input or [12, 24, 36, 48],
+                "weights_commitment": weights_commitment,
+            },
+        )
+
+    def process_cbdc_cross_border_settlement(
+        self,
+        sender_bank: str = "CENTRAL_BANK_A",
+        receiver_bank: str = "CENTRAL_BANK_B",
+        amount_tokens: int = 10_000_000,
+        simulate_double_spend: bool = False,
+    ) -> Dict[str, Any]:
+        """Submit one settlement instruction to the AL HARAS boundary-operator check (in-memory model)."""
+        return self._request(
+            "POST",
+            "/v1/al-haras/applications/cbdc-settlement/process",
+            json={
+                "sender_bank": sender_bank,
+                "receiver_bank": receiver_bank,
+                "amount_tokens": amount_tokens,
+                "simulate_double_spend": simulate_double_spend,
+            },
+        )
+
+    def execute_t_isa_microcode(
+        self,
+        funct7: int = 0x02,
+        rs1_val: Optional[Tuple[int, int, int, int]] = (1, 2, 0, 0),
+        rs2_val: Optional[Tuple[int, int, int, int]] = (3, 1, 0, 0),
+        rs1: int = 1,
+        rs2: int = 2,
+        rd: int = 3,
+    ) -> Dict[str, Any]:
+        """Execute one instruction on the T-ISA software model (no hardware is involved)."""
+        return self._request(
+            "POST",
+            "/v1/al-haras/applications/t-isa/execute",
+            json={
+                "funct7": funct7,
+                "rs1": rs1,
+                "rs2": rs2,
+                "rd": rd,
+                "rs1_val": list(rs1_val or (1, 2, 0, 0)),
+                "rs2_val": list(rs2_val or (3, 1, 0, 0)),
+            },
+        )
+
+    def route_euclid_workload(
+        self,
+        workload_type: str,
+        content: Optional[str] = None,
+        agent_states: Optional[Dict[str, Any]] = None,
+        bus_saturation_pct: float = 100.0,
+    ) -> Dict[str, Any]:
+        """Route workload via EUCLID 5-Mode Meta-Intelligence Engine."""
+        return self._request(
+            "POST",
+            "/euclid/route",
+            json={
+                "workload_type": workload_type,
+                "content": content,
+                "agent_states": agent_states,
+                "bus_saturation_pct": bus_saturation_pct,
+            },
+        )
+
+    def get_euclid_telemetry(self) -> Dict[str, Any]:
+        """Retrieve EUCLID DEC Fluid and Lie-Poisson telemetry."""
+        return self._request("GET", "/euclid/telemetry")
+
+    def get_mining_status(self) -> Dict[str, Any]:
+        """Retrieve real-time mining administration status."""
+        return self._request("GET", "/v1/mining/admin/status")
+
+    def start_mining(
+        self,
+        base_hashrate_eh_s: Optional[float] = None,
+        active_warps: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Start mining engine with specified hashrate and warp allocation."""
+        return self._request(
+            "POST",
+            "/v1/mining/admin/start",
+            json={
+                "base_hashrate_eh_s": base_hashrate_eh_s,
+                "active_warps": active_warps,
+            },
+        )
+
+    def stop_mining(self) -> Dict[str, Any]:
+        """Stop active mining engine."""
+        return self._request("POST", "/v1/mining/admin/stop")
+
+    def configure_mining_capacity(
+        self,
+        base_hashrate_eh_s: Optional[float] = None,
+        active_warps: Optional[int] = None,
+        core_voltage_v: Optional[float] = None,
+        fan_speed_pct: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """Dynamically configure hashrate, warps, and die voltage."""
+        return self._request(
+            "POST",
+            "/v1/mining/admin/configure",
+            json={
+                "base_hashrate_eh_s": base_hashrate_eh_s,
+                "active_warps": active_warps,
+                "core_voltage_v": core_voltage_v,
+                "fan_speed_pct": fan_speed_pct,
+            },
+        )
+
+    def configure_mining_intelligence(
+        self,
+        predictive: float,
+        causal: float,
+        counterfactual: float,
+        topological: float,
+        geometric: float,
+    ) -> Dict[str, Any]:
+        """Rebalance 5-mode meta-intelligence distribution."""
+        return self._request(
+            "POST",
+            "/v1/mining/admin/intelligence",
+            json={
+                "predictive": predictive,
+                "causal": causal,
+                "counterfactual": counterfactual,
+                "topological": topological,
+                "geometric": geometric,
+            },
+        )
+
+    def apply_mining_causal_intervention(self, intervention: str) -> Dict[str, Any]:
+        """Apply Pearl Level 2 do(X) intervention."""
+        return self._request(
+            "POST",
+            "/v1/mining/admin/intervene",
+            json={"intervention": intervention},
+        )
+
+    def inject_mining_anomaly(self) -> Dict[str, Any]:
+        """Simulate reorg or stratum poisoning perturbation."""
+        return self._request("POST", "/v1/mining/admin/anomaly/inject")
+
+    def heal_mining_anomaly(self) -> Dict[str, Any]:
+        """Trigger 1-cycle DSW instanton monopole cobordism heal."""
+        return self._request("POST", "/v1/mining/admin/anomaly/heal")
+
+    def get_patroclus_telemetry(self) -> Dict[str, Any]:
+        """Retrieve Patroclus Gateway & 600 Myrmidon Searchers telemetry."""
+        return self._request("GET", "/v1/mining/admin/patroclus")
+
+    def configure_mining_stealth(
+        self,
+        max_configured_eh_s: Optional[float] = None,
+        stealth_target_eh_s: Optional[float] = None,
+        never_consecutive_blocks: Optional[bool] = None,
+        persistent_presence: Optional[bool] = None,
+    ) -> Dict[str, Any]:
+        """Configure stealth hashrate shaping and block suppression policies."""
+        payload: Dict[str, Any] = {}
+        if max_configured_eh_s is not None:
+            payload["max_configured_eh_s"] = max_configured_eh_s
+        if stealth_target_eh_s is not None:
+            payload["stealth_target_eh_s"] = stealth_target_eh_s
+        if never_consecutive_blocks is not None:
+            payload["never_consecutive_blocks"] = never_consecutive_blocks
+        if persistent_presence is not None:
+            payload["persistent_presence"] = persistent_presence
+        return self._request("POST", "/v1/mining/admin/stealth", json=payload)
+
+    def simulate_patroclus_mining(self, pools: Optional[list] = None) -> Dict[str, Any]:
+        """Simulate multi-pool Stratum V1 handshake and share acceptance."""
+        return self._request(
+            "POST",
+            "/v1/mining/admin/patroclus/simulate",
+            json={"pools": pools},
+        )
 
     def get_metrics(self) -> str:
         response = self._client.get("/metrics")
@@ -503,9 +746,7 @@ class ChronusAPISDK:
 
     def get_stats(self) -> Dict[str, Any]:
         average = (
-            self._total_latency_ms / self._request_count
-            if self._request_count
-            else 0.0
+            self._total_latency_ms / self._request_count if self._request_count else 0.0
         )
         return {
             "sdk_version": self.SDK_VERSION,
@@ -515,3 +756,8 @@ class ChronusAPISDK:
             "total_latency_ms": round(self._total_latency_ms, 3),
             "average_latency_ms": round(average, 3),
         }
+
+
+# Canonical alias for SDK client
+ChronusClient = ChronusAPISDK
+

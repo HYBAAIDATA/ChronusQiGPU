@@ -1,0 +1,13 @@
+# Modules compiled to native extensions by the opt-in sealed-appliance build
+# profile (HYBA_NATIVE_BUILD=1; see packaging/partner/README.md).
+#
+# One glob per line, relative to the repository root and ending in .py. Each
+# match is mapped to a dotted module name through the package roots "src" and
+# "packages/turing/src". __init__.py files are never compiled. A pattern that
+# matches nothing is skipped with a warning (packages that have not merged
+# yet); the build fails if no pattern resolves at all.
+src/chronus/math/*.py
+src/chronus/licensing/*.py
+src/chronus/hendrix/*.py
+packages/turing/src/turing/algebra/*.py
+packages/turing/src/turing/algorithms/*.py

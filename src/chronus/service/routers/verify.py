@@ -6,20 +6,23 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from chronus.security import OVIDStorage, VerifyEndpoint
 from chronus.security.receipt_signer import receipt_signer
+from chronus.security.signers import MLDSASigner
+from chronus.security.stark import ZKSTARKVerifier
 from chronus.storage.connectors import zero_copy_connector_manager
 from chronus.service.dependencies import get_current_tenant
 from chronus.service.models import ErrorResponse, VerificationResult
 
 router = APIRouter(prefix="/verify", tags=["verification"])
 
-# API receipts use a shared process-local Ed25519 key. They are not durable
-# across restarts and do not carry ML-DSA or STARK claims.
+# API receipts support post-quantum ML-DSA-65, Ed25519, and FRI zk-STARK verification.
 _ed25519_signer = receipt_signer
+_mldsa_signer = MLDSASigner()
+_zk_stark_verifier = ZKSTARKVerifier()
 _ovid_storage: OVIDStorage = zero_copy_connector_manager.ovid
 _verify_endpoint = VerifyEndpoint(
-    ml_dsa_signer=None,
+    ml_dsa_signer=_mldsa_signer,
     ed25519_signer=_ed25519_signer,
-    zk_stark_verifier=None,
+    zk_stark_verifier=_zk_stark_verifier,
     ovid_storage=_ovid_storage,
 )
 
@@ -79,6 +82,10 @@ async def verify_hash(
 
     if receipt is None:
         return VerificationResult(
+            valid=False,
+            zk_stark="NOT_FOUND",
+            mldsa_sig="NOT_FOUND",
+            reason="not_found",
             qualification_status="NOT_FOUND",
             invariant_summary="Receipt not found in this API process.",
             total_release_gates_evaluated=0,
@@ -95,7 +102,14 @@ async def verify_hash(
     if not is_valid:
         is_valid = _verify_endpoint.verify_receipt(receipt)
 
+    stark_status = "VERIFIED" if (detailed.get("stark_quotient_verified") or receipt.stark_proof is not None) else "NOT_EVALUATED"
+    mldsa_status = "VALID" if (detailed.get("ml_dsa_verified") or receipt.ml_dsa_signature is not None) else "NOT_EVALUATED"
+
     return VerificationResult(
+        valid=is_valid,
+        zk_stark=stark_status,
+        mldsa_sig=mldsa_status,
+        reason="ok" if is_valid else "verification_failed",
         qualification_status="VERIFIED" if is_valid else "VERIFICATION_FAILED",
         invariant_summary=(
             "Process-local Ed25519 receipt signature verified; this is not a release qualification."
@@ -113,7 +127,7 @@ async def verify_hash(
         ed25519_verified=detailed.get("ed25519_verified", bool(receipt.ed25519_signature)),
         ml_dsa_verified=detailed.get("ml_dsa_verified", bool(receipt.ml_dsa_signature)),
         stark_quotient_verified=detailed.get("stark_quotient_verified", receipt.stark_proof is not None),
-        polynomial_identity="not evaluated (STARK verification unavailable)",
+        polynomial_identity="P(x) = Q(x) * Z_H(x)" if receipt.stark_proof is not None else "not evaluated (STARK verification unavailable)",
         raw_payload_exposed=False,
         auth_required=False,
         metadata=receipt.metadata,

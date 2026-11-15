@@ -3,7 +3,7 @@
 Implements the 4-Stage Zero-Friction Provisioning Architecture (< 30s T0 SLA):
 - Stage 1: Contract Signature & Webhook Ingress (DocuSign / Ironclad / CPQ / System Admin)
 - Stage 2: Automated Tenant Provisioning & Storage Fabrics (PostgreSQL REPEATABLE READ + OVID o1_<tenant> + THESEUS Journal)
-- Stage 3: AL HARAS Security Authority & KMS Key Deployment (4-Tier RBAC + PKCS#11 Cloud KMS Custody + Encrypted Handoff)
+- Stage 3: AL HARAS key binding (4-tier RBAC + KMS provider binding whose status states where the key lives; customer-held KMS/HSM custody is not implemented + encrypted handoff)
 - Stage 4: Enduring CCE & Dynamic Self-Service Expansion (Zero-Addendum Scaling + Hermiten 25% Value-Share Settlement)
 """
 
@@ -163,7 +163,7 @@ class InstantOnboardResponse(BaseModel):
     status: str = "TENANT_PROVISIONED_INSTANTLY"
     tenant_id: str
     assigned_cce_id: str
-    al_haras_kms_status: str = "KMS_BOUND_CUSTOMER_CUSTODY"
+    al_haras_kms_status: str = "NOT_BOUND"
     tenant_admin_token: str
     console_access_url: str
     zero_copy_prefix: str
@@ -177,6 +177,7 @@ class InstantOnboardResponse(BaseModel):
     kms_binding: Dict[str, Any]
     credential_handoff: CredentialHandoffEnvelope
     stage_telemetry: ProvisioningStageTelemetry
+    cce_allocations: Optional[Dict[str, Any]] = None
 
 
 class CapacityExpansionRequest(BaseModel):
@@ -316,9 +317,9 @@ def verify_webhook_hmac_signature(
     expected_hex = digest.hex()
     expected_b64 = base64.b64encode(digest).decode("ascii")
 
-    return hmac.compare_digest(cleaned.lower(), expected_hex.lower()) or hmac.compare_digest(
-        cleaned, expected_b64
-    )
+    return hmac.compare_digest(
+        cleaned.lower(), expected_hex.lower()
+    ) or hmac.compare_digest(cleaned, expected_b64)
 
 
 def _extract_org_slug(tenant_id: str, company_name: str) -> str:
@@ -327,7 +328,9 @@ def _extract_org_slug(tenant_id: str, company_name: str) -> str:
     tokens = [tok for tok in re.split(r"[^a-z0-9]+", stripped) if tok]
     if tokens and tokens[0] not in ("id", "org", "prod", "test"):
         return tokens[0][:24]
-    company_tokens = [tok for tok in re.split(r"[^a-z0-9]+", company_name.strip().lower()) if tok]
+    company_tokens = [
+        tok for tok in re.split(r"[^a-z0-9]+", company_name.strip().lower()) if tok
+    ]
     if company_tokens:
         return company_tokens[0][:24]
     return "enterprise"
@@ -355,7 +358,9 @@ class InstantProvisioningEngine:
             if existing.contract_id:
                 self._contracts[existing.contract_id] = existing.tenant_id
             self._postgres_descriptors[existing.tenant_id] = (
-                PostgresWorkloadStore.build_tenant_isolation_descriptor(existing.tenant_id)
+                PostgresWorkloadStore.build_tenant_isolation_descriptor(
+                    existing.tenant_id
+                )
             )
 
     def _allocate_cce_id(self, tenant_id: str, slug: str) -> str:
@@ -368,7 +373,9 @@ class InstantProvisioningEngine:
             self._assigned_cce_ids[base_cce_id] = tenant_id
             return base_cce_id
 
-        full_slug = re.sub(r"[^a-z0-9_]+", "_", re.sub(r"^tenant[_-]+", "", tenant_id.lower())).strip("_")
+        full_slug = re.sub(
+            r"[^a-z0-9_]+", "_", re.sub(r"^tenant[_-]+", "", tenant_id.lower())
+        ).strip("_")
         candidate = f"cce_{full_slug}_{now_utc.year}_q{quarter}"
         if candidate not in self._assigned_cce_ids:
             self._assigned_cce_ids[candidate] = tenant_id
@@ -387,7 +394,9 @@ class InstantProvisioningEngine:
         aes_key = bytes.fromhex(kms_fingerprint_hex[:64])
         nonce = secrets.token_bytes(12)
         plaintext = json.dumps(handoff_payload, sort_keys=True).encode("utf-8")
-        ciphertext = AESGCM(aes_key).encrypt(nonce, plaintext, b"CHRONUS_AL_HARAS_HANDOFF_V1")
+        ciphertext = AESGCM(aes_key).encrypt(
+            nonce, plaintext, b"CHRONUS_AL_HARAS_HANDOFF_V1"
+        )
         envelope_bytes = nonce + ciphertext
         envelope_b64 = base64.b64encode(envelope_bytes).decode("ascii")
         envelope_sha256 = hashlib.sha256(envelope_bytes).hexdigest()
@@ -501,10 +510,14 @@ class InstantProvisioningEngine:
         if register_auth_token:
             auth_service.register_tenant(request.tenant_id, sdk_api_key)
 
-        console_base = os.getenv("CHRONUS_CONSOLE_BASE_URL", "https://console.chronus.io").rstrip("/")
+        console_base = os.getenv(
+            "CHRONUS_CONSOLE_BASE_URL", "https://console.chronus.io"
+        ).rstrip("/")
         console_access_url = f"{console_base}/tenants/{request.tenant_id}/workloads"
         oauth2_endpoint = f"{console_base}/v1/auth/token"
-        sso_metadata_url = f"{console_base}/v1/tenants/{request.tenant_id}/sso/oidc-configuration"
+        sso_metadata_url = (
+            f"{console_base}/v1/tenants/{request.tenant_id}/sso/oidc-configuration"
+        )
 
         welcome_payload = {
             "tenant_id": request.tenant_id,
@@ -570,6 +583,7 @@ class InstantProvisioningEngine:
             self._store.save_tenant(profile)
 
         from chronus.storage.connectors import zero_copy_connector_manager
+
         if request.enduring_addendum_accepted:
             zero_copy_connector_manager.authorize_eca(
                 tenant_id=request.tenant_id,
@@ -613,6 +627,11 @@ class InstantProvisioningEngine:
             kms_binding=kms_binding.to_dict(),
             credential_handoff=handoff,
             stage_telemetry=telemetry,
+            cce_allocations=(
+                request.cce_allocations.model_dump()
+                if request.cce_allocations
+                else None
+            ),
         )
 
     def expand_capacity(
@@ -657,7 +676,9 @@ class InstantProvisioningEngine:
 
             updated_cce = ChronusCapacityEntitlement(
                 data_at_rest_gb=new_storage_gb,
-                data_in_motion_gb=max(tenant.cce.data_in_motion_gb, new_storage_gb // 2),
+                data_in_motion_gb=max(
+                    tenant.cce.data_in_motion_gb, new_storage_gb // 2
+                ),
                 data_processed_gb=max(tenant.cce.data_processed_gb, new_storage_gb * 4),
                 compute_intensity_ccu=new_warps * 16,
                 concurrency_limit=new_warps,
@@ -786,6 +807,7 @@ class InstantProvisioningEngine:
         al_haras_kms_custody.remove_binding(tenant_id)
         self._storage_registry.remove_tenant_fabric(tenant_id)
         from chronus.storage.connectors import zero_copy_connector_manager
+
         zero_copy_connector_manager.revoke_tenant(tenant_id)
 
     def simulate_concurrent_activations(
@@ -825,7 +847,9 @@ class InstantProvisioningEngine:
 
         wall_start_ns = time.perf_counter_ns()
 
-        def _activate_one(req: InstantOnboardRequest) -> tuple[InstantOnboardResponse, bool, bool]:
+        def _activate_one(
+            req: InstantOnboardRequest,
+        ) -> tuple[InstantOnboardResponse, bool, bool]:
             resp = self.provision_instant_tenant(
                 req,
                 register_auth_token=not sim_request.cleanup_ephemeral,
@@ -834,7 +858,9 @@ class InstantProvisioningEngine:
             journal_ok = self._storage_registry.verify_journal_continuity(req.tenant_id)
             return resp, kms_ok, journal_ok
 
-        with ThreadPoolExecutor(max_workers=sim_request.concurrency_workers) as executor:
+        with ThreadPoolExecutor(
+            max_workers=sim_request.concurrency_workers
+        ) as executor:
             results = list(executor.map(_activate_one, requests_batch))
 
         wall_ms = round((time.perf_counter_ns() - wall_start_ns) / 1_000_000, 4)
@@ -850,7 +876,9 @@ class InstantProvisioningEngine:
         def _percentile(sorted_vals: List[float], pct: int) -> float:
             if not sorted_vals:
                 return 0.0
-            idx = min(len(sorted_vals) - 1, max(0, (len(sorted_vals) * pct + 99) // 100 - 1))
+            idx = min(
+                len(sorted_vals) - 1, max(0, (len(sorted_vals) * pct + 99) // 100 - 1)
+            )
             return round(sorted_vals[idx], 4)
 
         throughput = round((count * 1000.0) / max(wall_ms, 0.001), 2)

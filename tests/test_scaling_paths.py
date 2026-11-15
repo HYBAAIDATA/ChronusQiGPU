@@ -42,7 +42,10 @@ def test_fast_doubling_and_metallic_paths_agree_everywhere():
         golden = phi_power(order)
         metallic = metallic_power(1, order)
         assert (golden.a, golden.b, golden.denominator) == (
-            metallic.a, metallic.b, metallic.denominator)
+            metallic.a,
+            metallic.b,
+            metallic.denominator,
+        )
         assert metallic_sequence(1, order) == golden.trace()
 
 
@@ -50,7 +53,9 @@ def test_lucas_pv_workload_uses_the_same_scaling_engine():
     """The API workload agrees with direct phi_power at the same orders."""
     backend = NativeMathReferenceBackend()
     for order in (0, 1, 90, 479, 4781, 50000):
-        result = backend.execute(json.dumps({"index": order}).encode(), "LUCAS_PV_SCALING")
+        result = backend.execute(
+            json.dumps({"index": order}).encode(), "LUCAS_PV_SCALING"
+        )
         power = phi_power(order)
         assert result["fibonacci"] == _decimal_string(power.b)
         assert result["lucas"] == _decimal_string(power.trace().numerator)
@@ -60,15 +65,21 @@ def test_lucas_pv_workload_uses_the_same_scaling_engine():
 def test_lattice_fold_factor_is_the_same_scaling_engine():
     """PV_LATTICE_FOLD multiplies by phi^order; verify against phi_power."""
     value = PhiElement(-7, 11, 3)
-    payload = json.dumps({
-        "order": 137,
-        "values": [{"a": str(value.a), "b": str(value.b), "denominator": "3"}],
-    }).encode()
+    payload = json.dumps(
+        {
+            "order": 137,
+            "values": [{"a": str(value.a), "b": str(value.b), "denominator": "3"}],
+        }
+    ).encode()
     receipt = ExecutionRouter().execute(payload, "PV_LATTICE_FOLD")
     expected = value.multiply(phi_power(137))
-    assert receipt.result["values"] == [{
-        "a": str(expected.a), "b": str(expected.b), "denominator": "3",
-    }]
+    assert receipt.result["values"] == [
+        {
+            "a": str(expected.a),
+            "b": str(expected.b),
+            "denominator": "3",
+        }
+    ]
 
 
 def test_metallic_trace_recurrence_matches_powers_across_family():
@@ -126,6 +137,49 @@ def test_lucas_weighted_partition_is_exact_and_disjoint():
     assert sum(b - a for a, b in lanes) == sum(b - a for a, b in uniform) == 65536
 
 
+def test_rtl_companion_step_semantics_match_phi_power():
+    """The silicon scale step (a,b) -> (b, a+b) reproduces phi^k exactly.
+
+    Mirrors hw/pv_scale_32lane.sv: k register steps from any (a, b) must equal
+    multiplication by phi^k, for every order the lattice workloads serve.
+    """
+    for order in range(0, 361, 19):
+        a, b = 0, 1
+        for _ in range(order):
+            a, b = b, a + b
+        power = phi_power(order + 1)
+        assert (a, b) == (power.a, power.b)
+    # Composition: k1 steps then k2 steps equals k1+k2 steps.
+    a1, b1 = 3, -2
+    for _ in range(47):
+        a1, b1 = b1, a1 + b1
+    for _ in range(90):
+        a1, b1 = b1, a1 + b1
+    a2, b2 = 3, -2
+    for _ in range(137):
+        a2, b2 = b2, a2 + b2
+    assert (a1, b1) == (a2, b2)
+
+
+def test_planck_ladder_climbs_lucas_rungs_with_exact_coverage():
+    from chronus.core.scaling import planck_ladder
+
+    assert planck_ladder(1) == [1]
+    assert planck_ladder(2) == [1, 1]       # L_1 = 1, remainder 1
+    assert planck_ladder(10) == [1, 3, 4, 2]  # L_1, L_2, L_3, remainder
+    ladder = planck_ladder(1000)
+    assert sum(ladder) == 1000
+    # Every rung except the last is a Lucas number on the ladder.
+    from chronus.backends.metallic import metallic_sequence
+
+    lucas = {metallic_sequence(1, i) for i in range(1, 20)}
+    assert all(rung in lucas for rung in ladder[:-1])
+    assert ladder[:-1] == sorted(ladder[:-1])  # Lucas rungs ascend
+    assert ladder[-1] <= ladder[-2]  # final rung is the exact remainder
+    with pytest.raises(ValueError):
+        planck_ladder(0)
+
+
 def test_trinity_scale_index_composes_with_lattice_fold():
     """Advancing the scale index and materializing agree with direct fold."""
     from chronus.execution.trinity import scale_fold_store
@@ -134,9 +188,37 @@ def test_trinity_scale_index_composes_with_lattice_fold():
     staged = scale_fold_store({"values": values, "increment": 100})
     staged = scale_fold_store({"state": staged["state"], "increment": 37})
     assert staged["state"]["scale_index"] == 137
-    direct = ExecutionRouter().execute(json.dumps({
-        "order": 137,
-        "values": [{"a": 3, "b": -2, "denominator": 7}],
-    }).encode(), "PV_LATTICE_FOLD")
+    direct = ExecutionRouter().execute(
+        json.dumps(
+            {
+                "order": 137,
+                "values": [{"a": 3, "b": -2, "denominator": 7}],
+            }
+        ).encode(),
+        "PV_LATTICE_FOLD",
+    )
     expected = PhiElement(3, -2, 7).multiply(phi_power(137))
     assert direct.result["values"][0]["a"] == str(expected.a)
+
+
+@pytest.mark.parametrize('index,expected', [
+    (10**4, (170,73)), (10**5, (186,210)), (10**12,(87,160)),
+    (10**15,(96,216)), (10**18,(2,3)), (10**20,(248,130)),
+])
+def test_structural_scale_field_factor_and_lucas_trace(index, expected):
+    from chronus.core.scaling import PVScale
+    scale = PVScale(index)
+    assert scale.index == index
+    assert scale.field_factor() == expected
+    assert scale.field_trace() == (2*expected[0]+expected[1]) % 257
+    assert scale.advance(516).field_factor() == expected
+    assert scale.advance(516).index == index + 516
+
+
+def test_integer_lattice_does_not_reduce_by_field_period():
+    # The integer domain must retain information erased by reduction to F_257.
+    assert phi_power(516) != PhiElement(1, 0)
+    a, b = 1, 0
+    for order in range(1000):
+        assert phi_power(order) == PhiElement(a, b)
+        a, b = b, a+b

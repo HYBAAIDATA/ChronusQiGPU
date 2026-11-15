@@ -1,90 +1,32 @@
-# Next.js Multi-Tenant Example
+# Chronus web console
 
-A production-ready example of a multi-tenant application built with Next.js 16, featuring custom subdomains for each tenant.
+This Next.js application is an evidence-first product preview, not a production-qualified multi-tenant control plane. Legacy views contained simulated telemetry, hard-coded performance numbers, and unsupported compliance or hardware claims. Those views have been replaced or quarantined; remaining functionality is not release-qualified.
 
-## Features
+## Run locally
 
-- ✅ Custom subdomain routing with Next.js proxy
-- ✅ Tenant-specific content and pages
-- ✅ Shared components and layouts across tenants
-- ✅ Redis for tenant data storage
-- ✅ Admin interface for managing tenants
-- ✅ Emoji support for tenant branding
-- ✅ Support for local development with subdomains
-- ✅ Compatible with Vercel preview deployments
+Requirements: Node.js 20.9+ and pnpm.
 
-## Tech Stack
+```bash
+pnpm install --frozen-lockfile
+```
 
-- [Next.js 16](https://nextjs.org/) with App Router
-- [React 19](https://react.dev/)
-- [Upstash Redis](https://upstash.com/) for data storage
-- [Tailwind 4](https://tailwindcss.com/) for styling
-- [shadcn/ui](https://ui.shadcn.com/) for the design system
+Set `CHRONUS_BACKEND_URL` in the frontend service environment to the base URL of a Chronus API instance, then start the app:
 
-## Getting Started
+```bash
+pnpm dev
+```
 
-### Prerequisites
+The web proxy forwards API requests to the configured URL. If the variable is unset or the service is unreachable, the UI reports that explicitly; it does not substitute mock operational success. The workload page accepts a bearer token at request time and does not store it.
 
-- Node.js 20.9.0 or later
-- pnpm (recommended) or npm/yarn
-- Upstash Redis account (for production)
+## Evidence and release posture
 
-### Installation
+- The overview reads `/health/ready`. A successful readiness probe is not a product, security, compliance, performance, or production-capacity qualification.
+- Workload results are shown from API responses. Native reference execution and associated records may be process-local; do not use this preview with sensitive production payloads.
+- Receipt verification reports only the verifier's result. It is not a release gate or external certification.
+- Tenant, connector, hardware, benchmark, and policy claims require independent implementation review and reproducible evidence before being described as production capabilities.
 
-1. Clone the repository:
+## Build
 
-   ```bash
-   git clone https://github.com/vercel/platforms.git
-   cd platforms
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   pnpm install
-   ```
-
-3. Set up environment variables:
-   Create a `.env.local` file in the root directory with:
-
-   ```
-   KV_REST_API_URL=your_redis_url
-   KV_REST_API_TOKEN=your_redis_token
-   ```
-
-4. Start the development server:
-
-   ```bash
-   pnpm dev
-   ```
-
-5. Access the application:
-   - Main site: http://localhost:3000
-   - Admin panel: http://localhost:3000/admin
-   - Tenants: http://[tenant-name].localhost:3000
-
-## Multi-Tenant Architecture
-
-This application demonstrates a subdomain-based multi-tenant architecture where:
-
-- Each tenant gets their own subdomain (`tenant.yourdomain.com`)
-- The proxy handles routing requests to the correct tenant
-- Tenant data is stored in Redis using a `subdomain:{name}` key pattern
-- The main domain hosts the landing page and admin interface
-- Subdomains are dynamically mapped to tenant-specific content
-
-The proxy (`proxy.ts`, the Next.js 16 replacement for `middleware.ts`) intelligently detects subdomains across various environments (local development, production, and Vercel preview deployments).
-
-## Deployment
-
-This application is designed to be deployed on Vercel. To deploy:
-
-1. Push your repository to GitHub
-2. Connect your repository to Vercel
-3. Configure environment variables
-4. Deploy
-
-For custom domains, make sure to:
-
-1. Add your root domain to Vercel
-2. Set up a wildcard DNS record (`*.yourdomain.com`) on Vercel
+```bash
+pnpm build
+```

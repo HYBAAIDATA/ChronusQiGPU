@@ -32,6 +32,16 @@ class HealthCheckResult:
     message: str = ""
     details: Dict[str, Any] = field(default_factory=dict)
 
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "component": self.component,
+            "status": self.status.value,
+            "latency_ms": self.latency_ms,
+            "timestamp": self.timestamp.isoformat(),
+            "message": self.message,
+            "details": self.details,
+        }
+
 
 
 class HealthCheckService:
@@ -127,13 +137,4 @@ class HealthCheckService:
                 1 for s in self._node_statuses.values() if s == NodeStatus.UNHEALTHY
             ),
             "cluster_healthy": self.is_cluster_healthy(),
-        }
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "component": self.component,
-            "status": self.status.value,
-            "latency_ms": self.latency_ms,
-            "timestamp": self.timestamp.isoformat(),
-            "message": self.message,
-            "details": self.details,
         }

@@ -1,33 +1,47 @@
 """
-================================================================================
- AL HARAS SOVEREIGN EDITION — PRODUCT & GOVERNANCE MODULE
-================================================================================
- Authoritative Sovereign Product Module for Defence, Sovereign States, and
- Critical National Infrastructure (CNI).
+AL HARAS governance register and product SDK (HYBA Security).
 
- NCSC 14 Cyber Security Principles, FedRAMP High, DoD IL6 Air-Gap KMS Custody.
-================================================================================
+The governance register maps the 14 UK NCSC Cloud Security Principles to the
+mechanisms present in this repository. It reports facts the code can establish
+(for example, which key provider is configured) and records that no principle
+has been independently assessed. HYBA holds no certification, accreditation or
+authorisation for AL HARAS, and nothing here claims one (see
+docs/claim-audit.md and RELEASE_DECISION_MCKINSEY_TECH.md).
 """
 
-import json
 import hashlib
+import json
 import time
-from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
+from fractions import Fraction
+from typing import Any, Dict, List, Optional
 
 from chronus.security.al_haras.engine import (
-    CellularSheafCohomology,
-    DSW4DInstantonMonopoleHealer,
-    RamanujanExpanderSpectralGapGuard,
-    CyclotomicAnyonBraidEngine,
-    HeckeModularChecksum,
     ALHarasSecurityFabric,
+    CellularSheafCohomology,
+    CyclotomicAnyonBraidEngine,
+    DSW4DInstantonMonopoleHealer,
+    HeckeModularChecksum,
+    RamanujanExpanderSpectralGapGuard,
 )
+from chronus.security.al_haras.exact import decimal_string
 from chronus.security.ovid import OVIDStorage
-from chronus.security.signers import MLDSASigner
 
+__all__ = [
+    "ExactQ5",
+    "GaloisField257Phi",
+    "SovereignGovernanceEngine",
+    "ALHarasSovereignProductSDK",
+    "sovereign_ovid_chain",
+    # re-exported engines used by older import paths
+    "CellularSheafCohomology",
+    "DSW4DInstantonMonopoleHealer",
+    "RamanujanExpanderSpectralGapGuard",
+    "CyclotomicAnyonBraidEngine",
+    "HeckeModularChecksum",
+    "ALHarasSecurityFabric",
+]
 
-_SOVEREIGN_ML_DSA_65 = MLDSASigner(security_level=3)
 sovereign_ovid_chain = OVIDStorage()
 
 
@@ -35,31 +49,65 @@ sovereign_ovid_chain = OVIDStorage()
 # 1. EXACT ALGEBRAIC FIELD DEFINITIONS
 # ------------------------------------------------------------------------------
 
-def _int_gcd(a: int, b: int) -> int:
-    while b:
-        a, b = b, a % b
-    return abs(a) if a else 1
-
 
 class ExactQ5:
-    """Exact rational pair in Q(sqrt(5)): a + b*sqrt(5)."""
-    def __init__(self, a_num: int, a_den: int = 1, b_num: int = 0, b_den: int = 1):
-        g_a = _int_gcd(abs(a_num), abs(a_den))
-        self.a_num = (a_num // g_a) * (1 if a_den > 0 else -1)
-        self.a_den = abs(a_den) // g_a
-        g_b = _int_gcd(abs(b_num), abs(b_den))
-        self.b_num = (b_num // g_b) * (1 if b_den > 0 else -1)
-        self.b_den = abs(b_den) // g_b
+    """Exact element a + b*sqrt(5) of Q(sqrt(5)) with rational a and b."""
 
-    def to_float(self) -> float:
-        return (self.a_num / self.a_den) + (self.b_num / self.b_den) * (5.0 ** 0.5)
+    def __init__(self, a_num: int, a_den: int = 1, b_num: int = 0, b_den: int = 1):
+        self.a = Fraction(a_num, a_den)
+        self.b = Fraction(b_num, b_den)
+
+    @property
+    def a_num(self) -> int:
+        return self.a.numerator
+
+    @property
+    def a_den(self) -> int:
+        return self.a.denominator
+
+    @property
+    def b_num(self) -> int:
+        return self.b.numerator
+
+    @property
+    def b_den(self) -> int:
+        return self.b.denominator
+
+    def __add__(self, other: "ExactQ5") -> "ExactQ5":
+        out = ExactQ5(0)
+        out.a, out.b = self.a + other.a, self.b + other.b
+        return out
+
+    def __mul__(self, other: "ExactQ5") -> "ExactQ5":
+        out = ExactQ5(0)
+        out.a = self.a * other.a + 5 * self.b * other.b
+        out.b = self.a * other.b + self.b * other.a
+        return out
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, ExactQ5) and self.a == other.a and self.b == other.b
+
+    def norm(self) -> Fraction:
+        """Field norm a^2 - 5 b^2 (exact)."""
+        return self.a * self.a - 5 * self.b * self.b
+
+    def decimal(self, places: int = 12) -> str:
+        """Decimal value computed with integer square roots only."""
+        from math import isqrt
+
+        scale = 10 ** places
+        b_abs = abs(self.b)
+        root = Fraction(isqrt(5 * b_abs.numerator**2 * scale * scale // b_abs.denominator**2), scale)
+        value = self.a + (root if self.b >= 0 else -root)
+        return decimal_string(value, places)
 
     def __repr__(self) -> str:
-        return f"({self.a_num}/{self.a_den}) + ({self.b_num}/{self.b_den})√5"
+        return f"({self.a}) + ({self.b})√5"
 
 
 class GaloisField257Phi:
-    """Galois Field extension F_257[φ] = F_257[x]/(x^2 - x - 1)."""
+    """F_257[phi] = F_257[x]/(x^2 - x - 1), exact modular arithmetic."""
+
     PRIME = 257
 
     def __init__(self, c0: int, c1: int):
@@ -70,147 +118,148 @@ class GaloisField257Phi:
         return GaloisField257Phi(self.c0 + other.c0, self.c1 + other.c1)
 
     def __mul__(self, other: "GaloisField257Phi") -> "GaloisField257Phi":
-        ac = (self.c0 * other.c0) % self.PRIME
-        bd = (self.c1 * other.c1) % self.PRIME
-        ad_bc = (self.c0 * other.c1 + self.c1 * other.c0) % self.PRIME
+        ac = self.c0 * other.c0
+        bd = self.c1 * other.c1
+        ad_bc = self.c0 * other.c1 + self.c1 * other.c0
         return GaloisField257Phi(ac + bd, ad_bc + bd)
 
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, GaloisField257Phi) and (self.c0, self.c1) == (other.c0, other.c1)
+
 
 # ------------------------------------------------------------------------------
-# 2. SOVEREIGN GOVERNANCE & COMPLIANCE ENGINE
+# 2. GOVERNANCE REGISTER (EVIDENCE POINTERS, NOT CERTIFICATIONS)
 # ------------------------------------------------------------------------------
+
+NCSC_PRINCIPLES: List[Dict[str, Any]] = [
+    {"id": 1, "name": "Data in transit protection", "evidence": ["TLS termination is a deployment responsibility; not configured in this repository"]},
+    {"id": 2, "name": "Asset protection and resilience", "evidence": ["src/chronus/security/al_haras/reed_solomon.py (trace repair)", "src/chronus/security/ovid.py (content addressing)"]},
+    {"id": 3, "name": "Separation between customers", "evidence": ["src/chronus/service/auth_middleware.py (tenant-scoped tokens)"]},
+    {"id": 4, "name": "Governance framework", "evidence": ["docs/claim-audit.md", "RELEASE_DECISION_MCKINSEY_TECH.md"]},
+    {"id": 5, "name": "Operational security", "evidence": [".github/workflows/ci.yml (tests, static analysis, dependency audit)"]},
+    {"id": 6, "name": "Personnel security", "evidence": []},
+    {"id": 7, "name": "Secure development", "evidence": [".github/workflows/ci.yml", "AGENTS.md"]},
+    {"id": 8, "name": "Supply chain security", "evidence": ["pinned GitHub Actions in .github/workflows", "pip-audit job in ci.yml"]},
+    {"id": 9, "name": "Secure user management", "evidence": ["src/chronus/service/auth_middleware.py"]},
+    {"id": 10, "name": "Identity and authentication", "evidence": ["src/chronus/service/auth_middleware.py"]},
+    {"id": 11, "name": "External interface protection", "evidence": ["pydantic request validation in src/chronus/service/routers"]},
+    {"id": 12, "name": "Secure service administration", "evidence": []},
+    {"id": 13, "name": "Audit information and alerting for customers", "evidence": ["src/chronus/security/al_haras/receipts.py (decision receipts signed with Ed25519 and ML-DSA-87)"]},
+    {"id": 14, "name": "Secure use of the service", "evidence": []},
+]
+
+
+def describe_key_custody() -> Dict[str, Any]:
+    """Report the configured key provider without overstating custody."""
+    from chronus.security.kms import LocalMemoryKeyProvider, get_kms_provider
+
+    provider = get_kms_provider()
+    local = isinstance(provider, LocalMemoryKeyProvider)
+    return {
+        "configured_provider": type(provider).__name__,
+        "custody_mode": "local process memory (development only)"
+        if local
+        else "provider abstraction configured; remote or HSM custody not demonstrated",
+        "customer_held_hsm_demonstrated": False,
+        "reference": "docs/claim-audit.md (Cloud KMS, Vault, PKCS#11, HSM)",
+    }
+
 
 class SovereignGovernanceEngine:
-    """Sovereign Governance, NCSC 14 Principles & FedRAMP High Assurance Engine.
-    
-    Manages air-gapped KMS key custody, zero-trust proof receipts, and compliance profiles.
-    """
-    NCSC_PRINCIPLES = [
-        "P1_Data_in_Transit_Protection",
-        "P2_Asset_Protection",
-        "P3_Operational_Security",
-        "P4_Identity_and_Authentication",
-        "P5_Authorised_Access",
-        "P6_Data_Separation",
-        "P7_Governance_Framework",
-        "P8_Operational_Management",
-        "P9_Personnel_Security",
-        "P10_Secure_Development",
-        "P11_Supply_Chain_Security",
-        "P12_Secure_User_Management",
-        "P13_Audit_and_Logging",
-        "P14_Unclassified_External_Services",
-    ]
+    """Governance register for AL HARAS (evidence pointers, no certification)."""
+
+    NCSC_PRINCIPLES = [p["name"] for p in NCSC_PRINCIPLES]
 
     @classmethod
     def audit_sovereign_compliance(cls, tenant_id: str) -> Dict[str, Any]:
+        principles = {
+            f"P{p['id']}_{p['name'].replace(' ', '_')}": {
+                "assessment": "NOT_ASSESSED",
+                "repository_evidence": p["evidence"],
+            }
+            for p in NCSC_PRINCIPLES
+        }
         return {
             "tenant_id": tenant_id,
-            "sovereign_profile": "SOVEREIGN_INSTITUTIONAL_EDITION",
-            "ncsc_14_principles": {p: "COMPLIANT_PASS" for p in cls.NCSC_PRINCIPLES},
-            "fedramp_high_readiness": "FEDRAMP_HIGH_CERTIFIED",
-            "dod_il6_compliance": "DOD_IL6_AIRGAPPED_READY",
-            "kms_custody_mode": "CUSTOMER_HELD_HSM_PKCS11",
-            "air_gapped": True,
-            "external_telemetry_egress_bytes": 0,
-            "palantir_foundry_il6_ready": True,
-            "audit_timestamp": datetime.now(timezone.utc).isoformat(),
+            "framework": "UK NCSC Cloud Security Principles (14)",
+            "ncsc_14_principles": principles,
+            "principles_independently_assessed": 0,
+            "certifications_held": [],
+            "statement": "No certification, accreditation or authorisation (for example FedRAMP, DoD IL levels, "
+            "FIPS 140 or Common Criteria) is held or claimed for AL HARAS.",
+            "key_custody": describe_key_custody(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
         }
 
 
 # ------------------------------------------------------------------------------
-# 3. AL HARAS SOVEREIGN PRODUCT SDK & COMMERCIAL INTERFACE
+# 3. AL HARAS PRODUCT SDK
 # ------------------------------------------------------------------------------
 
+
 class ALHarasSovereignProductSDK:
-    """Commercial Product Gateway & SDK for AL HARAS Sovereign Edition.
-    
-    Serves Sovereign Nations, Defence Organizations, and Critical Infrastructure Providers.
-    """
-    def __init__(self, sovereign_state_id: str = "sovereign_state_default", hsm_kms_key_id: str = "kms_hsm_pkcs11_key_001"):
+    """Inspect a workload before execution and record a signed decision receipt."""
+
+    def __init__(self, sovereign_state_id: str = "sovereign_state_default", hsm_kms_key_id: Optional[str] = None):
         self.sovereign_state_id = sovereign_state_id
         self.kms_key_id = hsm_kms_key_id
 
     def inspect_and_admit_workload(
         self,
         payload: bytes,
-        state_vectors: Optional[List[List[float]]] = None,
+        state_vectors: Optional[List[List[Any]]] = None,
         passphrase: Optional[str] = None,
+        edges: Optional[List[Any]] = None,
+        tolerance: Any = 0,
+        node_names: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
-        """Main entry point: Runs complete 6-layer AL HARAS topological inspection
-        before allowing workload execution into the compute fabric.
-        """
-        t0 = time.perf_counter()
-
-        vectors = state_vectors or [
-            [1.0, 2.0, 3.0],
-            [1.0001, 2.0001, 3.0001],
-            [0.9999, 1.9999, 2.9999],
-        ]
-        sheaf_res = CellularSheafCohomology.compute_cohomology(vectors)
-
-        is_corrupted = not sheaf_res["h0_consensus"] or (
-            passphrase is not None and passphrase.strip().upper() != ALHarasSecurityFabric.PASSPHRASE_FRIEND
+        t0 = time.perf_counter_ns()
+        payload = payload.encode("utf-8") if isinstance(payload, str) else bytes(payload)
+        edge_pairs = [tuple(e) for e in edges] if edges else None
+        ingress = ALHarasSecurityFabric.evaluate_ingress(
+            payload, state_vectors, passphrase, edges=edge_pairs, tolerance=tolerance, node_names=node_names
         )
-        dsw_res = DSW4DInstantonMonopoleHealer.inspect_and_heal(payload, is_perturbed=is_corrupted)
-
-        ramanujan_res = RamanujanExpanderSpectralGapGuard.verify_mass_gap()
-        braid_res = CyclotomicAnyonBraidEngine.compile_braid(["sigma_1", "sigma_2", "sigma_1"])
-        hecke_res = HeckeModularChecksum.verify_payload_eigenform(payload)
-        gov_res = SovereignGovernanceEngine.audit_sovereign_compliance(self.sovereign_state_id)
-
-        admitted = sheaf_res["h0_consensus"] and ramanujan_res["satisfies_bound"] and not is_corrupted
-
-        report_envelope = json.dumps(
+        admitted = ingress["admitted"]
+        envelope = json.dumps(
             {
-                "sovereign_state_id": self.sovereign_state_id,
-                "kms_key_id": self.kms_key_id,
+                "tenant": self.sovereign_state_id,
                 "admitted": admitted,
-                "cohomology_state": sheaf_res["cohomology_state"],
-                "vortex_norm": sheaf_res["h1_vortex_norm_str"],
                 "payload_sha256": hashlib.sha256(payload).hexdigest(),
-                "braid_word": braid_res["braid_word"],
+                "receipt_body_sha256": ingress["receipt"]["signature"]["body_sha256"],
             },
             sort_keys=True,
         ).encode("utf-8")
-        ovid_id = sovereign_ovid_chain.store(report_envelope)
-        mldsa65_sig = _SOVEREIGN_ML_DSA_65.sign(ovid_id.encode("ascii"))
-        t1 = time.perf_counter()
-        elapsed_ms = round((t1 - t0) * 1000.0, 4)
-
-        slug = "".join(c for c in self.sovereign_state_id.lower() if c.isalnum())[:12] or "sovereign"
-        receipt_handle = f"o1_{slug}_{ovid_id[:8]}"
+        ovid_id = sovereign_ovid_chain.store(envelope)
+        elapsed_ns = time.perf_counter_ns() - t0
+        slug = "".join(c for c in self.sovereign_state_id.lower() if c.isalnum())[:12] or "tenant"
+        handle = f"o1_{slug}_{ovid_id[:8]}"
         ovid_receipt = sovereign_ovid_chain.create_receipt(
             ovid_id,
-            ml_dsa_signature=mldsa65_sig,
-            latency_ms=elapsed_ms,
-            receipt_handle=receipt_handle,
-            metadata={
-                "sovereign_state_id": self.sovereign_state_id,
-                "kms_custody_mode": "CUSTOMER_HELD_HSM_PKCS11",
-                "external_telemetry_egress_bytes": 0,
-                "admitted": admitted,
-            },
+            ed25519_signature=ingress["receipt"]["signature"]["signature_hex"],
+            latency_ms=elapsed_ns // 1_000_000,
+            receipt_handle=handle,
+            metadata={"tenant": self.sovereign_state_id, "admitted": admitted},
         )
-
         return {
-            "al_haras_authority": "TOPOLOGICAL_QUANTUM_IMMUNITY_SWARM_V36",
-            "sovereign_state_id": self.sovereign_state_id,
-            "security_paradigm": "REMOVED_DOOR_TOPOLOGICAL_IMMUNITY",
+            "product": "AL HARAS (HYBA Security)",
+            "tenant": self.sovereign_state_id,
+            "admitted_to_execution": admitted,
             "admitted_to_execution_fabric": admitted,
-            "external_telemetry_egress_bytes": 0,
-            "sheaf_cohomology": sheaf_res,
-            "dsw_instanton_self_healing": dsw_res,
-            "ramanujan_expander_mass_gap": ramanujan_res,
-            "cyclotomic_braids": braid_res,
-            "hecke_eigenform_checksum": hecke_res,
-            "sovereign_governance": gov_res,
-            "signature_standard": "NIST FIPS 204 ML-DSA-65",
-            "fips_204_mldsa65_signature": mldsa65_sig,
-            "mldsa65_public_key": _SOVEREIGN_ML_DSA_65.get_public_key(),
-            "ovid_receipt_handle": receipt_handle,
+            "decision": ingress,
+            "sheaf_cohomology": ingress["sheaf_cohomology"],
+            "signature_standard": "Ed25519 (RFC 8032) and ML-DSA-87 (FIPS 204); both must verify",
+            "receipt": ingress["receipt"],
+            "ovid_receipt_handle": handle,
             "ovid_receipt_id": ovid_id,
             "ovid_receipt": ovid_receipt.to_dict(),
-            "verification_signature": mldsa65_sig,
-            "inspection_latency_ms": elapsed_ms,
+            "inspection_latency_ms_measured": decimal_string(Fraction(elapsed_ns, 1_000_000), 4),
+        }
+
+    def get_full_governance_report(self, tenant_id: str = "sovereign_default") -> Dict[str, Any]:
+        """Governance register plus a fresh, signed inspection of a fixed audit payload."""
+        inspection = self.inspect_and_admit_workload(b"GOVERNANCE_AUDIT")
+        return {
+            "tenant_id": tenant_id,
+            "governance": SovereignGovernanceEngine.audit_sovereign_compliance(tenant_id),
+            "inspection": inspection,
         }

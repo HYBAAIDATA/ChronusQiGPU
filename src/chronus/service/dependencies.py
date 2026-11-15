@@ -40,9 +40,7 @@ class ServiceConfig:
 class RateLimiter:
     """Token bucket rate limiter per tenant."""
 
-    def __init__(
-        self, requests_per_minute: int = 600, burst: int = 100
-    ) -> None:
+    def __init__(self, requests_per_minute: int = 600, burst: int = 100) -> None:
         self.requests_per_minute = requests_per_minute
         self.burst = burst
         self._buckets: Dict[str, Dict[str, float]] = defaultdict(
@@ -60,8 +58,9 @@ class RateLimiter:
         now = time.monotonic()
         bucket = self._buckets[tenant_id]
 
-        # Refill tokens
-        elapsed = now - bucket["last_refill"]
+        # Refill tokens; clamp at zero because a freshly created bucket
+        # samples last_refill after `now`, yielding a tiny negative elapsed.
+        elapsed = max(0.0, now - bucket["last_refill"])
         refill_amount = elapsed * (self.requests_per_minute / 60.0)
         bucket["tokens"] = min(self.burst, bucket["tokens"] + refill_amount)
         bucket["last_refill"] = now
@@ -107,6 +106,7 @@ class AuthService:
         # JWT validation via AL HARAS KMS middleware
         try:
             from chronus.service.auth_middleware import jwt_validator
+
             identity = jwt_validator.validate_token(token)
             return identity.tenant_id
         except Exception:
@@ -172,9 +172,7 @@ def get_current_tenant(
 
     # For workload submission, require authentication
     protected_operation = request.method in ("POST", "PUT", "PATCH", "DELETE")
-    protected_resource = request.url.path.startswith(
-        ("/workloads", "/verify/receipt")
-    )
+    protected_resource = request.url.path.startswith(("/workloads", "/verify/receipt"))
     if tenant_id is None and (protected_operation or protected_resource):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

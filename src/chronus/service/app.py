@@ -21,6 +21,9 @@ from chronus.service.routers import (
     ciaas_router,
     connectors_router,
     console_router,
+    euclid_router,
+    mining_admin_router,
+    tensor_router,
     health_router,
     metrics_router,
     v1_router,
@@ -44,7 +47,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 def create_app() -> FastAPI:
     app = FastAPI(
         title="Chronus Quantum iGPU API",
-        version="36.0.0",
+        version="36.0.1",
         description=(
             "Chronus is a mathematics-first, representation-aware computational "
             "substrate. Its execution model is designed to operate on a native "
@@ -95,7 +98,11 @@ def create_app() -> FastAPI:
                     message="Request validation failed",
                     details={
                         "errors": [
-                            {key: error[key] for key in ("type", "loc", "msg") if key in error}
+                            {
+                                key: error[key]
+                                for key in ("type", "loc", "msg")
+                                if key in error
+                            }
                             for error in exc.errors()
                         ]
                     },
@@ -147,6 +154,9 @@ def create_app() -> FastAPI:
     app.include_router(ciaas_router)
     app.include_router(al_haras_router)
     app.include_router(connectors_router)
+    app.include_router(euclid_router)
+    app.include_router(mining_admin_router)
+    app.include_router(tensor_router)
 
     @app.get("/", include_in_schema=False)
     async def root():

@@ -1,23 +1,10 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { ExecutionBadge } from '@/lib/api-client';
 
-export type OperationalStatus = 
-  | 'PASS' 
-  | 'FAIL' 
-  | 'BLOCKED' 
-  | 'OPERATIONAL' 
-  | 'ONLINE'
-  | 'RUNNING' 
-  | 'PENDING'
-  | 'DEGRADED'
-  | 'UNAVAILABLE'
-  | 'UNVERIFIED'
-  | 'SIMULATED'
-  | ExecutionBadge;
+export type OperationalStatus = string;
 
 interface StatusPillProps {
-  status: OperationalStatus | string;
+  status: OperationalStatus;
   label?: string;
   className?: string;
   showDot?: boolean;
@@ -25,55 +12,25 @@ interface StatusPillProps {
 
 export function StatusPill({ status, label, className, showDot = true }: StatusPillProps) {
   const displayLabel = label || status.replace(/_/g, ' ');
-
-  // Strict Operational Colour System:
-  // 🟢 Green (#10B981): Verified execution with cryptographic proof receipt
-  // 🟡 Amber (#F59E0B): Pending, degraded, or simulated state
-  // 🔴 Red (#EF4444): Execution failure or security rejection
-  // ⚪ Muted Grey (#71717A): Feature unverified or hardware unavailable
+  // Green is reserved for states returned by a live health/readiness check.
   const colorMap: Record<string, string> = {
-    // Verified Green
-    PASS: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    OPERATIONAL: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    ONLINE: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    RUNNING: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    VERIFIED: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    PHYSICAL_HARDWARE_EXECUTION: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-
-    // Mathematical Execution Purple
-    MATHEMATICAL_EXECUTION: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-
-    // Software Execution Blue
-    SOFTWARE_EXECUTION: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-
-    // Amber
-    PENDING: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-    DEGRADED: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-    SIMULATED: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-    BLOCKED: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-
-    // Red
-    FAIL: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
-    FAILED: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
-    REJECTED: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
-    REVOKED: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
-
-    // Grey
-    UNAVAILABLE: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
-    UNVERIFIED: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
+    READY: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25',
+    HEALTHY: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25',
+    FAIL: 'bg-rose-500/10 text-rose-300 border-rose-500/25',
+    FAILED: 'bg-rose-500/10 text-rose-300 border-rose-500/25',
+    NOT_READY: 'bg-rose-500/10 text-rose-300 border-rose-500/25',
+    REJECTED: 'bg-rose-500/10 text-rose-300 border-rose-500/25',
+    PENDING: 'bg-amber-500/10 text-amber-300 border-amber-500/25',
+    CHECKING: 'bg-amber-500/10 text-amber-300 border-amber-500/25',
+    DEGRADED: 'bg-amber-500/10 text-amber-300 border-amber-500/25',
+    SIMULATED: 'bg-amber-500/10 text-amber-300 border-amber-500/25',
+    BLOCKED: 'bg-amber-500/10 text-amber-300 border-amber-500/25',
   };
-
-  const currentStyle = colorMap[status] || 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20';
+  const currentStyle = colorMap[status] || 'bg-neutral-500/10 text-neutral-300 border-neutral-500/20';
 
   return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-medium border tracking-wide transition-colors',
-        currentStyle,
-        className
-      )}
-    >
-      {showDot && <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />}
+    <span className={cn('inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[11px] font-medium tracking-wide', currentStyle, className)}>
+      {showDot && <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />}
       {displayLabel}
     </span>
   );

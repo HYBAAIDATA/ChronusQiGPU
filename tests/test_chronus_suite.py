@@ -2,7 +2,7 @@ import os
 import sys
 import unittest
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 from chronus.core import ChronusVerificationOrchestrator
 from chronus.config import (
     ENABLE_POST_QUANTUM_SIGNATURES,

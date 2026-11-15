@@ -1,0 +1,37 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.15, pytest-9.2.0, pluggy-1.7.0 -- /usr/local/bin/python
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: /data/accel
+plugins: hypothesis-6.170.15, cov-7.1.0, anyio-4.16.0
+collecting ... collected 18 items
+
+tests/acceleration/test_state.py::TestInvariant::test_basis_norm_and_identity_exhaustive_bounded PASSED [  5%]
+tests/acceleration/test_state.py::TestProperty::test_scale_invariance_and_normalization PASSED [ 11%]
+tests/acceleration/test_state.py::TestAdversarial::test_bad_vectors[v0] PASSED [ 16%]
+tests/acceleration/test_state.py::TestAdversarial::test_bad_vectors[v1] PASSED [ 22%]
+tests/acceleration/test_state.py::TestAdversarial::test_bad_vectors[v2] PASSED [ 27%]
+tests/acceleration/test_state.py::TestAdversarial::test_bad_vectors[v3] PASSED [ 33%]
+tests/acceleration/test_state.py::TestAdversarial::test_bad_vectors[v4] PASSED [ 38%]
+tests/acceleration/test_state.py::TestAdversarial::test_reject_nonunitary_nonfinite_and_incompatible_matrices PASSED [ 44%]
+tests/acceleration/test_state.py::TestAdversarial::test_overflowing_complex_magnitude PASSED [ 50%]
+tests/acceleration/test_state.py::TestEdge::test_empty_invalid_zero[v0] PASSED [ 55%]
+tests/acceleration/test_state.py::TestEdge::test_empty_invalid_zero[v1] PASSED [ 61%]
+tests/acceleration/test_state.py::TestEdge::test_empty_invalid_zero[v2] PASSED [ 66%]
+tests/acceleration/test_state.py::TestEdge::test_empty_invalid_zero[None] PASSED [ 72%]
+tests/acceleration/test_state.py::TestEdge::test_large_finite_small_finite_and_limit PASSED [ 77%]
+tests/acceleration/test_state.py::TestEdge::test_unnormalized PASSED     [ 83%]
+tests/acceleration/test_state.py::TestUnit::test_known_normalization_and_matrix PASSED [ 88%]
+tests/acceleration/test_state.py::TestIntegration::test_state_with_fourier PASSED [ 94%]
+tests/acceleration/test_state.py::TestEndToEnd::test_public_api_prepare_transform_and_recover PASSED [100%]
+
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.13.15-final-0 _______________
+
+Name                                Stmts   Miss Branch BrPart  Cover   Missing
+-------------------------------------------------------------------------------
+src/chronus/acceleration/state.py      38      1     14      1    96%   59
+-------------------------------------------------------------------------------
+TOTAL                                  38      1     14      1    96%
+Coverage JSON written to file evidence/acceleration/state-coverage.json
+============================== 18 passed in 1.34s ==============================

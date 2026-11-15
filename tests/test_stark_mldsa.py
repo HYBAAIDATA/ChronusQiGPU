@@ -117,8 +117,12 @@ class TestZKSTARKVerifier(unittest.TestCase):
         self.assertTrue(verifier.verify_proof(proof))
 
         # Verifier checks public input boundary
-        self.assertTrue(verifier.verify_proof(proof, public_input={"start": 1, "end": 8}))
-        self.assertFalse(verifier.verify_proof(proof, public_input={"start": 99, "end": 8}))
+        self.assertTrue(
+            verifier.verify_proof(proof, public_input={"start": 1, "end": 8})
+        )
+        self.assertFalse(
+            verifier.verify_proof(proof, public_input={"start": 99, "end": 8})
+        )
 
     def test_proof_rejection_on_tampering(self):
         """Test that invalid or tampered STARK proofs are rejected."""

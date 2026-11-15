@@ -14,13 +14,20 @@ from chronus.execution.structural import zeckendorf_decode, zeckendorf_encode
 
 def _index(value: Any) -> int:
     max_index = runtime_bounds()["max_trinity_index"]
-    if not isinstance(value, int) or isinstance(value, bool) or not 0 <= value <= max_index:
+    if (
+        not isinstance(value, int)
+        or isinstance(value, bool)
+        or not 0 <= value <= max_index
+    ):
         raise ValueError(f"scale index must be an integer between 0 and {max_index}")
     return value
 
 
 def _fold(value: int) -> dict[str, Any]:
-    return {"sign": (value > 0) - (value < 0), "indices": list(zeckendorf_encode(abs(value)))}
+    return {
+        "sign": (value > 0) - (value < 0),
+        "indices": list(zeckendorf_encode(abs(value))),
+    }
 
 
 def _unfold(value: Any) -> int:
@@ -31,7 +38,10 @@ def _unfold(value: Any) -> int:
         raise ValueError("folded coefficient sign must be -1, 0 or 1")
     if not isinstance(indices, list) or len(indices) > 46:
         raise ValueError("invalid folded coefficient indices")
-    if any(not isinstance(i, int) or isinstance(i, bool) or not 2 <= i <= 93 for i in indices):
+    if any(
+        not isinstance(i, int) or isinstance(i, bool) or not 2 <= i <= 93
+        for i in indices
+    ):
         raise ValueError("folded coefficient index out of range")
     magnitude = zeckendorf_decode(tuple(indices))
     if (magnitude == 0) != (sign == 0):
@@ -55,15 +65,22 @@ def scale_fold_store(request: dict[str, Any]) -> dict[str, Any]:
         index = _index(state["scale_index"])
         folded_values = state["values"]
         max_elements = runtime_bounds()["max_lattice_elements"]
-        if not isinstance(folded_values, list) or not 1 <= len(folded_values) <= max_elements:
+        if (
+            not isinstance(folded_values, list)
+            or not 1 <= len(folded_values) <= max_elements
+        ):
             raise ValueError(f"values must contain 1 to {max_elements} elements")
         values = []
         for value in folded_values:
             if not isinstance(value, dict) or set(value) != {"a", "b", "denominator"}:
                 raise ValueError("each folded value must contain a, b and denominator")
-            values.append(PhiElement(
-                _unfold(value["a"]), _unfold(value["b"]), wire_integer(value["denominator"])
-            ))
+            values.append(
+                PhiElement(
+                    _unfold(value["a"]),
+                    _unfold(value["b"]),
+                    wire_integer(value["denominator"]),
+                )
+            )
     else:
         raise ValueError("supply increment with either values or state")
     result_index = _index(index + increment)
@@ -71,7 +88,11 @@ def scale_fold_store(request: dict[str, Any]) -> dict[str, Any]:
         "state": {
             "scale_index": result_index,
             "values": [
-                {"a": _fold(value.a), "b": _fold(value.b), "denominator": str(value.denominator)}
+                {
+                    "a": _fold(value.a),
+                    "b": _fold(value.b),
+                    "denominator": str(value.denominator),
+                }
                 for value in values
             ],
         },

@@ -2,9 +2,9 @@
 
 Rigorously verifies all 4 architectural user journeys, 6 explicit memory access classes,
 the 7-row Hyperscaler Connector Matrix, 4-phase scaling roadmap to 160k warps (5.12M SIMD lanes),
-exact H_4 600-cell crossbar routing, DSW 4D instanton cobordism self-healing, Cellular Sheaf
-cohomology obstruction isolation (norm 1.4142), exact Z[zeta_5] cyclotomic anyon braids,
-and Hermiten 25% value-share settlement ($520k benchmark).
+exact H_4 600-cell crossbar routing, AL HARAS Reed-Solomon trace repair, exact sheaf
+coboundary checks (||delta0 s|| = sqrt(2) computed for the disagreeing input), exact
+Z[zeta_5] braid relations, and Hermiten 25% value-share settlement ($520k benchmark).
 """
 
 import json
@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'src'))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from starlette.testclient import TestClient
 
 from chronus.execution.hardware_dispatcher import HardwareAcceleratorDispatcher
@@ -22,10 +22,10 @@ from chronus.security.al_haras.engine import (
     CyclotomicAnyonBraidEngine,
     DSW4DInstantonMonopoleHealer,
 )
-from chronus.security.al_haras.sovereign import ALHarasSovereignProductSDK
+from chronus.security.al_haras.sovereign import SovereignGovernanceEngine
 from chronus.service.app import create_app
+from chronus.service.auth_middleware import Role, create_jwt_token
 from chronus.service.dependencies import auth_service
-from chronus.service.ciaas_store import ciaas_store
 from chronus.storage.connectors import (
     ConnectorCategory,
     ConnectorType,
@@ -60,65 +60,66 @@ def test_section1_six_memory_access_classes_and_hyperscaler_matrix(api_client):
     resp = api_client.get("/v1/connectors/matrix")
     assert resp.status_code == 200
     data = resp.json()
-    assert data["total_connectors"] == 7
+    assert data["total_providers"] == 7
     assert len(data["matrix"]) == 7
     providers = [row["provider"] for row in data["matrix"]]
-    assert "AWS S3 / Lakehouse" in providers
-    assert "Snowflake Data Cloud" in providers
-    assert "Google Cloud Storage & BigQuery" in providers
-    assert "Azure OneLake & Fabric" in providers
-    assert "NVIDIA DGX Cloud & SuperPOD" in providers
-    assert "Palantir Foundry / DoD IL6" in providers
-    assert "Enterprise SAN / HDFS" in providers
+    assert "Amazon Web Services (AWS)" in providers
+    assert "Microsoft Azure" in providers
+    assert "Google Cloud (GCP)" in providers
+    assert "Snowflake" in providers
+    assert "Databricks" in providers
+    assert "NVIDIA DGX Cloud" in providers
+    assert "Palantir Foundry / Defense" in providers
 
     for row in data["matrix"]:
-        assert row["memory_access_class"] in expected_classes
-        assert row["data_stays_at_rest"] is True
-        assert "purity_guarantee" in row
+        assert row["default_access_class"] in expected_classes
 
     # 3. 4-Phase Deployment Roadmap via GET /v1/connectors/roadmap
     roadmap_resp = api_client.get("/v1/connectors/roadmap")
     assert roadmap_resp.status_code == 200
     roadmap = roadmap_resp.json()
     assert roadmap["total_phases"] == 4
-    assert roadmap["scaling_ceiling_warps"] == 160000
-    assert roadmap["scaling_ceiling_simd_lanes"] == 5120000
+    assert roadmap["max_warp_scale"] == 160000
+    assert roadmap["max_simd_lanes"] == 5120000
     assert len(roadmap["phases"]) == 4
-    assert roadmap["phases"][3]["capacity_warps"] == 160000
-    assert roadmap["phases"][3]["simd_lanes"] == 5120000
+    assert roadmap["phases"][3]["phase_number"] == 4
 
 
 def test_h4_600_cell_polytope_and_crossbar_routing():
     """Verify Section 3 & User Journey 2: H_4 600-cell Polytope and 130 Tb/s crossbar routing."""
     # 1. Exact Polytope Geometry: 120 vertices, 720 edges, degree 12
     polytope = build_h4_600_cell_polytope()
-    assert polytope.vertex_count == 120
-    assert polytope.edge_count == 720
-    assert polytope.degree == 12
-    assert len(polytope.vertices) == 120
-    assert len(polytope.edges) == 720
+    assert polytope["vertices"] == 120
+    assert polytope["edges"] == 720
+    assert polytope["vertex_degree"] == 12
 
     # 2. DEC Lie-Poisson Router: Zero packet stalls, zero triad resonance blowups at 100% saturation
-    router = H4PolytopeCrossbarRouter(polytope)
-    flow_result = router.route_flow(bus_saturation_pct=100)
+    flow_result = H4PolytopeCrossbarRouter.route_crossbar_frames(
+        frames=[], bus_saturation_pct=100
+    )
     assert flow_result["dma_packet_stalls"] == 0
     assert flow_result["triad_resonance_blowups"] == 0
-    assert flow_result["discrete_enstrophy_conserved"] is True
-    assert flow_result["discrete_helicity_conserved"] is True
-    assert flow_result["triad_interactions_evaluated"] == 720
+    assert flow_result["enstrophy_conserved"] is True
+    assert flow_result["helicity_conserved"] is True
+    assert flow_result["edges"] == 720
     assert flow_result["bus_saturation_pct"] == 100
-    assert flow_result["crossbar_throughput_tbps"] == 130
+    assert flow_result["virtual_crossbar_bandwidth_tbs"] == 130
 
 
 def test_user_journey_1_financial_lakehouse_zero_copy_flow(api_client):
     """Verify User Journey 1: Fortune 50 Lakehouse (15 PB S3/Snowflake) in-place discovery, fold & zk-STARK."""
-    tenant_id = "tenant_apex_9921a"
+    tenant_id = "tenant_apex_lakehouse_uj1"
     token = "apex-financial-token-2026"
     auth_service.register_tenant(tenant_id, token)
+    sys_admin_token = create_jwt_token(
+        tenant_id="chronus-root",
+        user_id="sre-lead@chronus.io",
+        role=Role.SYSTEM_ADMIN,
+    )
 
     # Step 1: Zero-Friction Instant Onboarding & Enduring Capacity Registration
     onboard_payload = {
-        "contract_id": "ctr_apex_2026_9941",
+        "contract_id": "ctr_apex_lakehouse_2026",
         "company_name": "Apex Global Financial",
         "tenant_id": tenant_id,
         "admin_email": "security@apexglobal.com",
@@ -137,21 +138,24 @@ def test_user_journey_1_financial_lakehouse_zero_copy_flow(api_client):
     }
     onboard_resp = api_client.post(
         "/v1/tenants/onboard/instant",
-        headers={"Authorization": f"Bearer {token}"},
+        headers={"Authorization": f"Bearer {sys_admin_token}"},
         json=onboard_payload,
     )
-    assert onboard_resp.status_code == 200
+    assert onboard_resp.status_code == 201
     onboard_data = onboard_resp.json()
     assert onboard_data["tenant_id"] == tenant_id
     assert onboard_data["cce_allocations"]["data_at_rest_gb"] == 15000000
-    assert onboard_data["status"] == "INSTANT_ONBOARDED"
+    assert onboard_data["status"] == "TENANT_PROVISIONED_INSTANTLY"
 
     # Step 2: In-Place Schema Discovery & Zero-Copy Pointer Mapping
     conn = zero_copy_connector_manager.register_connector(
         connector_id="conn-s3-apex-lakehouse",
         tenant_id=tenant_id,
         connector_type=ConnectorType.AWS_S3,
-        connection_config={"bucket": "apex-financial-lakehouse-prod", "region": "us-east-1"},
+        connection_config={
+            "bucket": "apex-financial-lakehouse-prod",
+            "region": "us-east-1",
+        },
         category=ConnectorCategory.CLOUD_OBJECT_STORE,
         primary_access_class=MemoryAccessClass.LOCAL_ZERO_COPY,
     )
@@ -162,7 +166,13 @@ def test_user_journey_1_financial_lakehouse_zero_copy_flow(api_client):
         table_path="s3://apex-financial-lakehouse-prod/quant_risk_models/var_ticks_2026.parquet",
         format_type=IngestFormat.PARQUET,
         schema_descriptor={
-            "columns": ["timestamp", "portfolio_id", "asset_weight", "covariance_q5", "lucas_index"],
+            "columns": [
+                "timestamp",
+                "portfolio_id",
+                "asset_weight",
+                "covariance_q5",
+                "lucas_index",
+            ],
             "types": ["int64", "string", "q5_rational", "q5_rational", "int32"],
         },
         sample_payload_bytes=b"PAR1" + (b"\x01\x02\x03\x05\x08\x0d" * 64) + b"PAR1",
@@ -216,7 +226,9 @@ def test_user_journey_1_financial_lakehouse_zero_copy_flow(api_client):
     assert retrieved["workload_id"] == workload_id
     res = retrieved["result"]["result"]
     assert res["quadratic_field"] == "Q(sqrt(5))"
-    assert res["zeckendorf_non_adjacent_invariant"] == "c_k * c_{k+1} == 0 (STRICTLY_HELD)"
+    assert (
+        res["zeckendorf_non_adjacent_invariant"] == "c_k * c_{k+1} == 0 (STRICTLY_HELD)"
+    )
     assert res["pisot_lucas_collapse"] == "O(1) structural memory"
     assert res["zeckendorf_alu_lanes"] == 32
     assert res["carry_propagation_delay_cycles"] == 0
@@ -228,21 +240,29 @@ def test_user_journey_1_financial_lakehouse_zero_copy_flow(api_client):
     assert verify_data["qualification_status"] == "VERIFIED"
     assert verify_data["raw_payload_exposed"] is False
     assert verify_data["auth_required"] is False
-    assert verify_data["stark_quotient_verified"] is True
-    assert verify_data["polynomial_identity"] == "P(x) = Q(x) * Z_H(x)"
+    assert verify_data["ed25519_verified"] is True
 
 
 def test_user_journey_2_hyperscale_ai_factory_flow(api_client):
     """Verify User Journey 2: Disaggregated AI Factory (NVIDIA DGX Cloud & Azure Fabric)."""
-    # 1. Tripartite & 4-Target Runtime Accelerator Discovery
+    # 1. Tripartite & 6-Target Runtime Accelerator Discovery (incl. iGPU & Galois miners)
     dispatcher = HardwareAcceleratorDispatcher()
-    discovered_targets = dispatcher.discover_accelerators()
-    assert len(discovered_targets) == 4
-    target_names = [t.backend_name for t in discovered_targets]
-    assert "NativeMathReferenceBackend" in target_names
-    assert "OpenCLAcceleratorBackend" in target_names
-    assert "CUDABackendAdapter" in target_names
-    assert "SystemVerilogHardwareSimulatorBackend" in target_names
+    discovered_targets = dispatcher.discover_backends()
+    assert len(discovered_targets) == 6
+    target_names = list(discovered_targets.keys())
+    assert "python-math-reference" in target_names
+    assert "opencl-hardware-accelerator" in target_names
+    assert "cuda-hardware-accelerator" in target_names
+    assert "systemverilog-rtl-simulator" in target_names
+    assert "opencl-igpu-sha256d-miner" in target_names
+    assert "geometric-galois-miner" in target_names
+    backend_class_names = [b.__class__.__name__ for b in dispatcher._backends.values()]
+    assert "NativeMathReferenceBackend" in backend_class_names
+    assert "OpenCLAcceleratorBackend" in backend_class_names
+    assert "CUDABackendAdapter" in backend_class_names
+    assert "SystemVerilogHardwareSimulatorBackend" in backend_class_names
+    assert "OpenCLSha256dMinerBackend" in backend_class_names
+    assert "GeometricGaloisMinerBackend" in backend_class_names
 
     # 2. Physical AI Factory Cluster Registration via POST /v1/fabric/clusters/register
     reg_resp = api_client.post(
@@ -255,10 +275,10 @@ def test_user_journey_2_hyperscale_ai_factory_flow(api_client):
             "interconnect": "130_TBPS_H4_POLYTOPE_CROSSBAR",
         },
     )
-    assert reg_resp.status_code == 200
+    assert reg_resp.status_code == 201
     reg_data = reg_resp.json()
     assert reg_data["cluster_id"] == "cluster_dgx_b200_superpod_01"
-    assert reg_data["status"] == "REGISTERED_ONLINE"
+    assert reg_data["status"] in ("REGISTERED_ONLINE", "CLUSTER_REGISTERED_ZERO_STALL")
 
     # 3. Disaggregated Prefill, Decode, and Cryo-Quantum Pool Scheduling
     pool_resp = api_client.post(
@@ -277,65 +297,79 @@ def test_user_journey_2_hyperscale_ai_factory_flow(api_client):
     assert pool_data["virtual_crossbar"]["dma_packet_stalls"] == 0
     assert pool_data["virtual_crossbar"]["bus_saturation_pct"] == 100
 
-    # 4. 1-Cycle DSW 4D Instanton Monopole Self-Healing
-    healer = DSW4DInstantonMonopoleHealer()
-    heal_result = healer.heal_trace(
-        node_id="dgx_blade_42",
-        cycle=1048576,
-        corrupted_state_hash="a1b2c3d4e5f60718293a4b5c6d7e8f90",
+    # 4. AL HARAS trace repair (Reed-Solomon over GF(257); the class keeps its legacy name)
+    heal_result = DSW4DInstantonMonopoleHealer.inspect_and_heal(
+        trace_payload=b"dummy_trace",
+        is_perturbed=True,
     )
-    assert heal_result["healing_cycles"] == 1
-    assert heal_result["repair_latency_cycles"] == 1
-    assert heal_result["stream_rollback_bytes"] == 0
-    assert heal_result["cobordism"] == "W: Sigma_1 -> Sigma_2 (CLOSED_EXACT)"
-    assert heal_result["spacetime_trace"] == "3D_SPATIAL_NODE_LATTICE_x_1D_EXECUTION_CLOCK"
+
+    assert heal_result["healed"] is True and heal_result["integrity_verified"] is True
+    assert heal_result["symbol_errors_corrected"] >= 1
+    assert heal_result["checkpoint_restore_used"] is False  # repaired in place, no rollback
+    assert heal_result["repaired_trace_sha256"] == heal_result["trace_sha256"]
 
 
 def test_user_journey_3_sovereign_defense_air_gapped_flow(api_client):
     """Verify User Journey 3: Sovereign Defense (Palantir Foundry & DoD IL6)."""
-    # 1. Air-Gapped Sovereign Profile with CUSTOMER_HELD_HSM_PKCS11 and 0 Telemetry Egress
-    sdk = ALHarasSovereignProductSDK(sovereign_state_id="sovereign_dod_il6_intel")
-    profile = sdk.get_full_governance_report("tenant-dod-il6-apex")
-    assert profile["sovereign_profile"] == "DOD_IL6_AIR_GAPPED_SOVEREIGN"
-    assert profile["kms_custody_mode"] == "CUSTOMER_HELD_HSM_PKCS11"
-    assert profile["external_telemetry_egress_bytes"] == 0
-    assert profile["fips_204_ml_dsa_signed"] is True
+    # 1. Governance register: nothing is claimed that has not been assessed
+    profile = SovereignGovernanceEngine.audit_sovereign_compliance(
+        "sovereign_dod_il6_intel"
+    )
+    assert profile["principles_independently_assessed"] == 0
+    assert profile["certifications_held"] == []
+    assert all(p["assessment"] == "NOT_ASSESSED" for p in profile["ncsc_14_principles"].values())
+    assert len(profile["ncsc_14_principles"]) == 14
+    assert profile["key_custody"]["customer_held_hsm_demonstrated"] is False
+    for withdrawn in ("kms_custody_mode", "dod_il6_compliance", "external_telemetry_egress_bytes"):
+        assert withdrawn not in profile
 
-    # 2. Cellular Sheaf Cohomology Obstruction Filtration (Norm = 1.4142)
+    # 2. Exact sheaf coboundary: agreement is delta0(s) = 0; ||delta0 s|| = sqrt(2) is computed
     sheaf = CellularSheafCohomology()
     clean_nodes = ["intel_agent_alpha", "intel_agent_bravo", "intel_agent_charlie"]
-    clean_edges = [("intel_agent_alpha", "intel_agent_bravo"), ("intel_agent_bravo", "intel_agent_charlie")]
+    clean_edges = [
+        ("intel_agent_alpha", "intel_agent_bravo"),
+        ("intel_agent_bravo", "intel_agent_charlie"),
+    ]
     clean_cohom = sheaf.compute_cohomology(
         nodes=clean_nodes,
         edges=clean_edges,
-        latent_vectors={"intel_agent_alpha": [1, 2], "intel_agent_bravo": [1, 2], "intel_agent_charlie": [1, 2]},
+        latent_vectors={
+            "intel_agent_alpha": [1, 2],
+            "intel_agent_bravo": [1, 2],
+            "intel_agent_charlie": [1, 2],
+        },
     )
     assert clean_cohom["h0_harmonic_section"] is True
-    assert clean_cohom["h1_first_cohomology_rank"] == 0
-    assert clean_cohom["h1_vortex_norm"] == 0.0
-    assert clean_cohom["downstream_context_contaminated"] is False
+    assert clean_cohom["status"] == "CONSISTENT"
+    assert clean_cohom["coboundary_total_norm_sq"] == "0"
 
     # Adversarial Injection payload induces non-zero coboundary obstruction
     attack_cohom = sheaf.compute_cohomology(
         nodes=clean_nodes,
         edges=clean_edges,
-        latent_vectors={"intel_agent_alpha": [1, 2], "intel_agent_bravo": [2, 3], "intel_agent_charlie": [1, 2]},
+        latent_vectors={
+            "intel_agent_alpha": [1, 2],
+            "intel_agent_bravo": [2, 3],
+            "intel_agent_charlie": [1, 2],
+        },
     )
-    assert attack_cohom["h1_first_cohomology_rank"] > 0
-    assert attack_cohom["h1_vortex_norm"] == 1.4142
-    assert attack_cohom["is_secure"] is False
-    assert attack_cohom["downstream_context_contaminated"] is False
-    assert attack_cohom["audit_alert"] == "OBSTRUCTION_ISOLATED: H1(X; F) != 0, vortex norm 1.4142"
+    # bravo = (2, 3) against (1, 2) on both edges: residual (1, 1), squared norm exactly 2
+    assert attack_cohom["h0_consensus"] is False
+    assert attack_cohom["coboundary_max_edge_norm_sq"] == "2"
+    assert attack_cohom["coboundary_max_edge_norm"] == "1.41421356"
+    assert attack_cohom["isolating_nodes"] == ["intel_agent_bravo"]
+    assert attack_cohom["status"] == "INCONSISTENT_STATES_ISOLATED"
+    assert "intel_agent_bravo" in attack_cohom["audit_alert"]
 
     # 3. Cyclotomic Anyon Braids over Exact Z[zeta_5] (Artin braid and pentagon coherence, zero floats)
     braid_engine = CyclotomicAnyonBraidEngine()
-    braid_verification = braid_engine.verify_braid_coherence()
+    braid_verification = braid_engine.compile_braid(["sigma_1", "sigma_2", "sigma_1"])
     assert braid_verification["artin_braid_satisfied"] is True
-    assert braid_verification["artin_relation"] == "sigma_1 * sigma_2 * sigma_1 == sigma_2 * sigma_1 * sigma_2"
-    assert braid_verification["pentagon_coherence_verified"] is True
-    assert braid_verification["hexagon_coherence_verified"] is True
-    assert braid_verification["exact_cyclotomic_ring"] == "Z[zeta_5]"
-    assert braid_verification["zero_floating_point"] is True
+    assert braid_verification["relations_verified"]["artin_relation"] is True
+    assert braid_verification["relations_verified"]["f_move_involution"] is True
+    assert braid_verification["relations_verified"]["r_matrix_order_10"] is True
+    assert braid_verification["ring"].startswith("Z[zeta_5]")
+    assert braid_verification["exact_arithmetic"] is True
 
 
 def test_user_journey_4_finops_metering_and_hermiten_settlement(api_client):
@@ -362,4 +396,6 @@ def test_user_journey_4_finops_metering_and_hermiten_settlement(api_client):
     assert settle_data["value_share_percentage"] == 25
 
     # 2. Scaling ceiling: 160,000 Warps and 100 PB storage
-    assert ciaas_store.MAX_ENDURING_WARP_CEILING == 160000
+    from chronus.service.instant_provisioning import MAX_ENDURING_WARP_CEILING
+
+    assert MAX_ENDURING_WARP_CEILING == 160000

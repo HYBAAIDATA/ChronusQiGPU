@@ -11,6 +11,8 @@ downloads/
 eggs/
 .eggs/
 lib/
+# The web console keeps source in frontend/lib (api-client.ts, utils.ts); keep it tracked.
+!frontend/lib/
 lib64/
 parts/
 sdist/
@@ -102,9 +104,11 @@ data/
 .next/
 frontend/.next/
 .pytest_tmp/
+.pytest_temp/
 .hypothesis/
 master_repo/
 *.tar.gz
 *.zip
 /chronus_gpiu-v36.py
 /qualification_manifest_v36.json
+.venv-test/

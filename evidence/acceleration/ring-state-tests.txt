@@ -1,0 +1,24 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.15, pytest-9.2.0, pluggy-1.7.0 -- /usr/local/bin/python
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: /data/cyclo
+plugins: hypothesis-6.170.15, cov-7.1.0, anyio-4.16.0
+collecting ... collected 8 items
+
+tests/test_ring_state_seven_classes.py::TestInvariant::test_scalar_vector_agreement_bounded_exhaustive PASSED [ 12%]
+tests/test_ring_state_seven_classes.py::TestProperty::test_linearity_and_composition PASSED [ 25%]
+tests/test_ring_state_seven_classes.py::TestAdversarial::test_invalid_inputs PASSED [ 37%]
+tests/test_ring_state_seven_classes.py::TestAdversarial::test_no_float_or_complex_literals_in_module PASSED [ 50%]
+tests/test_ring_state_seven_classes.py::TestEdge::test_bounds PASSED     [ 62%]
+tests/test_ring_state_seven_classes.py::TestUnit::test_known_values PASSED [ 75%]
+tests/test_ring_state_seven_classes.py::TestIntegration::test_coordinate_projection PASSED [ 87%]
+tests/test_ring_state_seven_classes.py::TestEndToEnd::test_prepare_scale_verify PASSED [100%]
+
+============================== 8 passed in 0.82s ===============================
+Name                                Stmts   Miss Branch BrPart  Cover   Missing
+-------------------------------------------------------------------------------
+src/chronus/quantum/ring_state.py      16      0     10      0   100%
+-------------------------------------------------------------------------------
+TOTAL                                  16      0     10      0   100%
+Wrote JSON report to evidence/acceleration/ring-state-coverage.json

@@ -1,0 +1,71 @@
+name: Chronus V2 evidence qualification
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+jobs:
+  test-and-attest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[test]'
+      - name: Execute tests
+        id: tests
+        continue-on-error: true
+        run: python -m pytest -q --junitxml=junit.xml
+      - name: Derive test evidence
+        id: evidence
+        continue-on-error: true
+        run: python scripts/ci/build_evidence.py --junit junit.xml --output evidence/test-evidence.json
+      - name: Attest test evidence
+        if: always() && hashFiles('evidence/test-evidence.json') != ''
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: evidence/test-evidence.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: chronus-test-evidence
+          path: |
+            evidence/test-evidence.json
+            junit.xml
+      - name: Enforce test failures
+        if: always()
+        run: |
+          test "${{ steps.tests.outcome }}" = "success"
+          test "${{ steps.evidence.outcome }}" = "success"
+  evaluate:
+    needs: test-and-attest
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      attestations: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[test]'
+      - uses: actions/download-artifact@v4
+        with:
+          name: chronus-test-evidence
+          path: evidence
+      - name: Verify GitHub attestation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh attestation verify evidence/test-evidence.json --repo "${{ github.repository }}"
+      - name: Evaluate verified evidence and claims
+        run: |
+          python scripts/ci/evaluate_attested.py --evidence evidence/test-evidence.json --expected-commit "${{ github.sha }}" --expected-run-id "${{ github.run_id }}" --repository "${{ github.repository }}" --output manifests/ci-verdict.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: chronus-qualification-verdict
+          path: manifests/ci-verdict.json

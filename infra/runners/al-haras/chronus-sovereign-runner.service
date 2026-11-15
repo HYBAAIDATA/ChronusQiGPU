@@ -1,0 +1,53 @@
+[Unit]
+Description=Chronusv2 ephemeral GitHub Actions runner (AL HARAS kernel/LSM pre-job checks)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=github-runner
+Group=github-runner
+WorkingDirectory=/opt/actions-runner
+
+# Everything set here reaches every job step (the runner passes its environment
+# on), so no secrets: the registration token lives in the root-only
+# /etc/al-haras/runner.env, which only register-ephemeral.sh reads.
+# The hooks live outside the job-writable runner directory.
+Environment=ACTIONS_RUNNER_HOOK_JOB_STARTED=/usr/local/libexec/al-haras/hooks/pre-job-attest.sh
+Environment=ACTIONS_RUNNER_HOOK_JOB_COMPLETED=/usr/local/libexec/al-haras/hooks/post-job-scrub.sh
+Environment=ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER=false
+Environment=HOME=/opt/actions-runner
+Environment=AL_HARAS_DIAG_RETENTION_DAYS=14
+
+# "+" runs a command as root without the sandbox settings below. The bootstrap
+# needs that to write /proc/sys/kernel/unprivileged_bpf_disabled (read-only
+# under ProtectKernelTunables=), to mount bpffs and pin under /sys/fs/bpf in
+# the host mount namespace (read-only and private under ProtectSystem=/
+# ProtectKernelTunables=), and to recreate /opt/actions-runner.
+# register-ephemeral.sh starts as root only to read /etc/al-haras/runner.env;
+# it runs config.sh as github-runner, because config.sh refuses to run as root.
+ExecStartPre=+/usr/local/sbin/al-haras-bootstrap.sh
+ExecStartPre=+/usr/local/libexec/al-haras/register-ephemeral.sh
+# Registered with --ephemeral: run.sh takes one job and exits.
+ExecStart=/opt/actions-runner/run.sh
+# Runs after the runner exited and systemd stopped what was left in the cgroup.
+ExecStopPost=+/usr/local/sbin/al-haras-teardown.sh
+
+# Start the next cycle (bootstrap, registration, one job). A failing bootstrap
+# or registration is retried every RestartSec without ever registering.
+Restart=always
+RestartSec=3
+TimeoutStartSec=300
+KillMode=control-group
+
+# Sandbox for run.sh, the runner and every job step.
+NoNewPrivileges=true
+PrivateTmp=true
+RemoveIPC=true
+ProtectSystem=strict
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ReadWritePaths=/opt/actions-runner
+
+[Install]
+WantedBy=multi-user.target

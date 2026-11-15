@@ -36,7 +36,9 @@ class MockFailingAccelerator:
         return workload_type in self.supported_workloads
 
     def execute(self, payload: bytes, workload_type: str):
-        raise HardwareUnavailableError("CUDA device out of memory / ECC double bit error")
+        raise HardwareUnavailableError(
+            "CUDA device out of memory / ECC double bit error"
+        )
 
 
 class MockHangingAccelerator:
@@ -76,11 +78,13 @@ class TestHardwareDispatcher(unittest.TestCase):
 
     def test_mathematical_reference_dispatch(self):
         """Dispatching exact Q(√5) arithmetic executes and stamps MATHEMATICAL_EXECUTION."""
-        payload = json.dumps({
-            "operation": "add",
-            "left": {"rational": [3, 1], "sqrt5": [2, 1]},
-            "right": {"rational": [1, 1], "sqrt5": [1, 1]},
-        }).encode("utf-8")
+        payload = json.dumps(
+            {
+                "operation": "add",
+                "left": {"rational": [3, 1], "sqrt5": [2, 1]},
+                "right": {"rational": [1, 1], "sqrt5": [1, 1]},
+            }
+        ).encode("utf-8")
         receipt = self.dispatcher.dispatch(
             payload=payload,
             workload_type="EXACT_Q5_ALGEBRAIC",
@@ -113,11 +117,13 @@ class TestHardwareDispatcher(unittest.TestCase):
         failing_backend = MockFailingAccelerator()
         self.dispatcher.register_backend(failing_backend)
 
-        payload = json.dumps({
-            "operation": "multiply",
-            "left": {"rational": [2, 1], "sqrt5": [1, 1]},
-            "right": {"rational": [2, 1], "sqrt5": [-1, 1]},
-        }).encode("utf-8")
+        payload = json.dumps(
+            {
+                "operation": "multiply",
+                "left": {"rational": [2, 1], "sqrt5": [1, 1]},
+                "right": {"rational": [2, 1], "sqrt5": [-1, 1]},
+            }
+        ).encode("utf-8")
         receipt = self.dispatcher.dispatch(
             payload=payload,
             workload_type="EXACT_Q5_ALGEBRAIC",
@@ -128,18 +134,23 @@ class TestHardwareDispatcher(unittest.TestCase):
         self.assertTrue(receipt["fallback_occurred"])
         self.assertEqual(receipt["backend"], "python-math-reference")
         self.assertIn("ECC double bit error", receipt["fallback_reason"])
-        self.assertEqual(receipt["result"]["hardware_fallback"]["faulted_target"], "mock_gpu_accelerator")
+        self.assertEqual(
+            receipt["result"]["hardware_fallback"]["faulted_target"],
+            "mock_gpu_accelerator",
+        )
 
     def test_timeout_guard_fallback(self):
         """A hanging hardware execution times out and falls back to software/math reference."""
         hanging_backend = MockHangingAccelerator()
         self.dispatcher.register_backend(hanging_backend)
 
-        payload = json.dumps({
-            "operation": "add",
-            "left": {"rational": [1, 1], "sqrt5": [0, 1]},
-            "right": {"rational": [0, 1], "sqrt5": [1, 1]},
-        }).encode("utf-8")
+        payload = json.dumps(
+            {
+                "operation": "add",
+                "left": {"rational": [1, 1], "sqrt5": [0, 1]},
+                "right": {"rational": [0, 1], "sqrt5": [1, 1]},
+            }
+        ).encode("utf-8")
         receipt = self.dispatcher.dispatch(
             payload=payload,
             workload_type="EXACT_Q5_ALGEBRAIC",

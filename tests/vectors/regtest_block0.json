@@ -1,0 +1,18 @@
+{
+  "network": "regtest",
+  "block_height": 0,
+  "description": "Bitcoin Core Regtest Genesis Block 0 Reference Vector",
+  "header_hex": "0100000000000000000000000000000000000000000000000000000000000000000000003ba3edfd7a7b12b27ac72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4adae5494dffff7f2002000000",
+  "block_hash_be": "0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206",
+  "fields": {
+    "version": 1,
+    "prevhash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "merkle_root": "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b",
+    "merkle_root_internal_le": "3ba3edfd7a7b12b27ac72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4a",
+    "ntime": 1296688602,
+    "ntime_hex": "4d49e37a",
+    "nbits": 545259519,
+    "nbits_hex": "207fffff",
+    "nonce": 2
+  }
+}

@@ -1,8 +1,10 @@
 """Security primitives in the Chronus reference implementation.
 
-Integrates NIST FIPS 204 ML-DSA, Ed25519, FRI ZK-STARK verifier,
-the AL HARAS Sovereign Topological Quantum Immunity Swarm Fabric,
-and the Pentagon, GCHQ, and NATO 4-Frontier Strategic Defense Substrates.
+Includes Ed25519 signing, an experimental ML-DSA module that is NOT a conformant
+FIPS 204 implementation, proof-shaped STARK checks whose soundness is not
+established (see docs/claim-audit.md), KMS provider abstractions, OVID
+content-addressed storage, and the AL HARAS (HYBA Security) engines. AL HARAS
+results are computed exactly; see docs/security/AL_HARAS_NOTES_RECONCILIATION.md.
 """
 
 from chronus.security.ovid import (
@@ -49,7 +51,7 @@ from chronus.security.al_haras import (
     StrategicDefenseCoordinator,
 )
 
-__version__ = "36.0.0"
+__version__ = "36.0.1"
 __all__ = [
     "MLDSASigner",
     "Ed25519Signer",
@@ -103,7 +105,9 @@ class SecurityContext:
         self.zk_stark = ZKSTARKVerifier()
         self.ovid = OVIDStorage()
         self.al_haras_fabric = ALHarasSecurityFabric()
-        self.al_haras_sovereign = ALHarasSovereignProductSDK(sovereign_state_id=sovereign_state_id)
+        self.al_haras_sovereign = ALHarasSovereignProductSDK(
+            sovereign_state_id=sovereign_state_id
+        )
         self.defense_coordinator = StrategicDefenseCoordinator()
         self.verify_endpoint = VerifyEndpoint(
             ml_dsa_signer=self.ml_dsa,

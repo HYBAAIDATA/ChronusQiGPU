@@ -1,0 +1,58 @@
+{
+  "workload": "start 2**53 and add one 100 times",
+  "expected_integer": 9007199254741092,
+  "source_blob_zeckendorf": "1687afd68d841bb9ededc675d4fb6e5afd63e6fe",
+  "warmups": 1,
+  "samples": 7,
+  "timer": "perf_counter_ns",
+  "timing_scope": "function call; includes construction, excludes post-check; reference not actual ALU throughput",
+  "python": "3.13.15 (main, Aug 24 2026, 00:00:00) [GCC 11.5.0 20240719 (Red Hat 11.5.0-5)]",
+  "platform": "Linux-6.18.56-x86_64-with-glibc2.34",
+  "results": [
+    {
+      "implementation": "zeckendorf_reference",
+      "duration_ns": [
+        1110755,
+        1052527,
+        1075520,
+        1076648,
+        1054180,
+        1039475,
+        1041355
+      ],
+      "output": 9007199254741092,
+      "error_from_exact_integer": 0,
+      "additions_per_sample": 100
+    },
+    {
+      "implementation": "ring",
+      "duration_ns": [
+        115585,
+        114867,
+        113052,
+        113946,
+        112731,
+        113961,
+        113479
+      ],
+      "output": 9007199254741092,
+      "error_from_exact_integer": 0,
+      "additions_per_sample": 100
+    },
+    {
+      "implementation": "binary64_baseline",
+      "duration_ns": [
+        2661,
+        2334,
+        2324,
+        2178,
+        2260,
+        2220,
+        2196
+      ],
+      "output": 9007199254740992.0,
+      "error_from_exact_integer": -100,
+      "additions_per_sample": 100
+    }
+  ]
+}

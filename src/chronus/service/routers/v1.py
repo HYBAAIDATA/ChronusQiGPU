@@ -1,12 +1,12 @@
-"""V1 REST API endpoints for Chronus GPIU production gateway.
+"""V1 REST API endpoints for the Chronus service.
 
 Exposes:
-- GET /v1/capabilities: System capabilities, algebraic representations, and registered backends.
-- GET /v1/capacity: Real-time CCU capacity, workload counts, and resident memory status.
+- GET /v1/capabilities: Process-local execution backend inventory (not qualification).
+- GET /v1/capacity: Process-local workload and storage counters (not capacity commitments).
 - POST /v1/workloads: Direct workload submission.
 - GET /v1/workloads: List tenant workloads.
-- GET /v1/verify/{receipt_hash}: Public zero-auth cryptographic verification.
-- GET /v1/storage: Phyllotaxis storage density and Theseus invariant stats.
+- GET /v1/verify/{receipt_hash}: Receipt verification (not release qualification).
+- GET /v1/storage: Process-local counters (not durability or zero-copy evidence).
 """
 
 from typing import Any, Dict
@@ -19,9 +19,14 @@ from chronus.execution import execution_router
 from chronus.execution.qigpu import QiGPUOrchestrator
 from chronus.execution.reference import NativeMathReferenceBackend
 from chronus.service.ciaas_store import ciaas_store
-from chronus.storage.connectors import ConnectorType, MemoryAccessClass, zero_copy_connector_manager
+from chronus.storage.connectors import zero_copy_connector_manager
 from chronus.service.dependencies import get_current_tenant, security
-from chronus.service.models import PaginatedWorkloads, WorkloadRequest, WorkloadResponse, VerificationResult
+from chronus.service.models import (
+    PaginatedWorkloads,
+    WorkloadRequest,
+    WorkloadResponse,
+    VerificationResult,
+)
 from chronus.service.routers.workloads import (
     get_workload,
     list_workloads,
@@ -35,92 +40,58 @@ router = APIRouter(prefix="/v1", tags=["v1"])
 
 @router.get(
     "/capabilities",
-    summary="Get system capabilities and active backends",
-    description="Returns exact algebraic rings, hardware backends, and purity gate status.",
+    summary="Inspect registered execution backends",
+    description=(
+        "Returns the backends registered in this process. Registration is not evidence "
+        "of hardware availability, performance, formal verification, or release qualification."
+    ),
 )
 async def get_capabilities() -> Dict[str, Any]:
     backends = execution_router.list_backends()
-    orchestrator = QiGPUOrchestrator(execution_router)
+    inventory = QiGPUOrchestrator(execution_router).inventory()
     return {
-        "status": "OPERATIONAL",
-        "substrate_mode": "SUBSTRATE_AND_HARDWARE_AGNOSTIC",
-        "algebraic_rings": [
-            "Q(sqrt(5))",
-            "Metallic Means Family (phi, delta_S, delta_B)",
-            "Pisot-Vijayaraghavan Lattice",
-            "Zeckendorf Non-Adjacent Base",
-        ],
+        "status": "inventory_only",
+        "measurement_scope": "process-local",
+        "release_qualification": "not_assessed",
         "registered_backends": list(backends.keys()),
-        "backends_workloads": backends,
-        "qigpu_surfaces": orchestrator.inventory()["surfaces"],
-        "default_surface": orchestrator.inventory()["default_surface"],
-        "hardware_abstraction": {
-            "rtl_zeckendorf_32lane": "SYNTHESISED_VERIFIED",
-            "opencl_pv_lattice": "AVAILABLE",
-            "native_reference": "ACTIVE_DEFAULT",
-        },
-        "purity_gate": {
-            "status": "PASSED",
-            "zero_floating_point": True,
-            "zero_heuristics": True,
-            "zero_quantum_theatre": True,
-        },
-        "zero_copy_connectors": {
-            "pointer_prefix": "ptr_ovid_",
-            "supported_connectors": [ct.value for ct in ConnectorType],
-            "memory_access_classes": [mc.value for mc in MemoryAccessClass],
-            "ingress_engine": "BINET_ZECKENDORF_LOSSLESS_FOLD_V36",
-            "security_edge": "AL_HARAS_SHEAF_COHOMOLOGY_AND_CUSTOMER_KMS_PKCS11",
-        },
-        "version": "36.0.0",
+        "backend_inventory": backends,
+        "execution_surfaces": inventory.get("surfaces", []),
+        "default_surface": inventory.get("default_surface"),
+        "version": "36.0.1",
     }
 
 
 @router.get(
     "/capacity",
-    summary="Get CCU capacity and resource utilization",
-    description="Returns real-time CCU usage, memory fabric, and workload metrics.",
+    summary="Read process-local workload and storage counters",
+    description=(
+        "Counters reflect this API process only. They do not represent distributed "
+        "capacity, accelerator health, billing, or a service-level commitment."
+    ),
 )
 async def get_capacity() -> Dict[str, Any]:
     total_wklds, active_wklds = workload_counts()
     storage_stats = NativeMathReferenceBackend._theseus.stats()
     tenants = ciaas_store.list_tenants()
-    total_allocated_ccu = max(
-        1024, sum(t.cce.compute_intensity_ccu for t in tenants)
-    )
+    total_allocated_ccu = max(1024, sum(t.cce.compute_intensity_ccu for t in tenants))
     total_active_warps = sum(t.cce.concurrency_limit for t in tenants)
     total_max_warps = sum(t.max_authorized_warps for t in tenants)
     return {
-        "status": "ONLINE",
+        "status": "observed",
+        "measurement_scope": "process-local",
+        "total_allocated_ccu": total_allocated_ccu,
+        "total_active_warps": total_active_warps,
+        "total_max_warps": total_max_warps,
         "workloads": {
             "total": total_wklds,
             "active": active_wklds,
-            "completed": total_wklds - active_wklds,
+            "completed": max(0, total_wklds - active_wklds),
         },
-        "ccu": {
-            "allocated_units": total_allocated_ccu,
-            "consumed_units": active_wklds * 16,
-            "unit_price_usd": "0.045",
-            "billing_signature": "ed25519_signed_billing_ledger",
-        },
-        "enduring_capacity": {
-            "active_tenants": len(tenants),
-            "active_warps": total_active_warps,
-            "max_authorized_warps": total_max_warps,
-            "hermiten_value_share_pct": 25,
-        },
-        "memory_fabric": {
-            "mode": "PhyllotaxisMesh",
-            "lane_count": storage_stats["lane_count"],
-            "records": storage_stats["records"],
-            "golden_angle_degrees": 137.507764,
-            "collision_rate": 0.0,
-        },
-        "hardware_pool": {
-            "accelerator_type": "QiGPU_VIRTUAL_SUBSTRATE",
-            "health": "HEALTHY",
-            "hardware_agnostic": True,
-        },
+        "storage_counters": storage_stats,
+        "qualification_note": (
+            "These counters are observational only; persistence, cluster-wide totals, "
+            "hardware capacity, and billing are not assessed by this endpoint."
+        ),
     }
 
 
@@ -135,7 +106,9 @@ async def v1_submit_workload(
     tenant_id: str = Depends(get_current_tenant),
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> WorkloadResponse:
-    return await submit_workload(request=request, tenant_id=tenant_id, credentials=credentials)
+    return await submit_workload(
+        request=request, tenant_id=tenant_id, credentials=credentials
+    )
 
 
 @router.get(
@@ -156,7 +129,7 @@ async def v1_list_workloads(
     "/workloads/{workload_id}",
     response_model=WorkloadResponse,
     summary="Get workload status and results via v1 API",
-    description="Retrieve workload execution status, CCU cost, and cryptographic verification receipt in 0.1245ms.",
+    description="Retrieve the authenticated tenant's workload record and any attached receipt.",
 )
 async def v1_get_workload(
     workload_id: UUID,
@@ -168,7 +141,7 @@ async def v1_get_workload(
 @router.get(
     "/verify/{receipt_hash}",
     response_model=VerificationResult,
-    summary="Zero-auth cryptographic receipt verifier",
+    summary="Verify a receipt identifier",
 )
 async def v1_verify_receipt(receipt_hash: str) -> VerificationResult:
     return await verify_hash(hash_value=receipt_hash)
@@ -176,19 +149,22 @@ async def v1_verify_receipt(receipt_hash: str) -> VerificationResult:
 
 @router.get(
     "/storage",
-    summary="Inspect Phyllotaxis and Theseus storage fabric",
+    summary="Read process-local storage counters",
+    description="Returns counters exposed by the in-process reference stores; no durability or zero-copy guarantee is implied.",
 )
 async def get_storage_fabric() -> Dict[str, Any]:
     storage_stats = NativeMathReferenceBackend._theseus.stats()
     ovid_stats = zero_copy_connector_manager.ovid.get_stats()
     return {
-        "status": "ONLINE",
-        "storage": storage_stats,
-        "zero_copy_pointers": {
-            "pointer_prefix": "ptr_ovid_",
+        "status": "observed",
+        "measurement_scope": "process-local",
+        "storage_counters": storage_stats,
+        "connector_counters": {
             "active_pointers": ovid_stats["zero_copy_pointers"],
             "bound_connectors": len(zero_copy_connector_manager.list_connectors()),
-            "discovered_datasets": len(zero_copy_connector_manager.list_discovered_datasets()),
+            "discovered_datasets": len(
+                zero_copy_connector_manager.list_discovered_datasets()
+            ),
             "bulk_staging_bytes": 0,
             "data_stays_at_rest": True,
         },
@@ -197,5 +173,8 @@ async def get_storage_fabric() -> Dict[str, Any]:
             "reconstruction_drift": 0.0,
             "ovid_partitioning": "ACTIVE",
         },
+        "qualification_note": (
+            "This endpoint does not assess persistence, data movement, durability, "
+            "reconstruction invariants, or production readiness."
+        ),
     }
-

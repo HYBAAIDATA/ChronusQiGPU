@@ -24,9 +24,27 @@ ML_DSA_N = 256
 
 # Parameters for ML-DSA-44, ML-DSA-65, ML-DSA-87
 ML_DSA_PARAMS = {
-    2: {"k": 4, "l": 4, "gamma1": 1 << 17, "gamma2": (ML_DSA_Q - 1) // 88, "name": "ML-DSA-44"},
-    3: {"k": 6, "l": 5, "gamma1": 1 << 19, "gamma2": (ML_DSA_Q - 1) // 32, "name": "ML-DSA-65"},
-    5: {"k": 8, "l": 7, "gamma1": 1 << 19, "gamma2": (ML_DSA_Q - 1) // 32, "name": "ML-DSA-87"},
+    2: {
+        "k": 4,
+        "l": 4,
+        "gamma1": 1 << 17,
+        "gamma2": (ML_DSA_Q - 1) // 88,
+        "name": "ML-DSA-44",
+    },
+    3: {
+        "k": 6,
+        "l": 5,
+        "gamma1": 1 << 19,
+        "gamma2": (ML_DSA_Q - 1) // 32,
+        "name": "ML-DSA-65",
+    },
+    5: {
+        "k": 8,
+        "l": 7,
+        "gamma1": 1 << 19,
+        "gamma2": (ML_DSA_Q - 1) // 32,
+        "name": "ML-DSA-87",
+    },
 }
 
 
@@ -255,9 +273,11 @@ class Ed25519Signer:
 
 class PostQuantumError(Exception):
     """Base exception for post-quantum cryptographic operations."""
+
     pass
 
 
 class VerificationError(PostQuantumError):
     """Exception for signature verification failures."""
+
     pass

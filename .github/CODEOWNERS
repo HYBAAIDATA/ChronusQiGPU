@@ -1,0 +1,5 @@
+# Telemetry measurement code and workflow definitions are governance-critical:
+# changes require review by the repository owner (pair with the sovereign-main
+# ruleset's required_signatures + code owner review to make this enforceable).
+.github/workflows/ @hybadatadevops1
+/scripts/ @hybadatadevops1

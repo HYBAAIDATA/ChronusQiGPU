@@ -1,0 +1,9 @@
+input: 340282366920938463463374607431768211456
+Traceback (most recent call last):
+  File "/data/cyclo/evidence/acceleration/blocked_zeckendorf_test.py", line 5, in <module>
+    actual = unfold(fold_to_zeckendorf(n))
+                    ~~~~~~~~~~~~~~~~~~^^^
+  File "/data/cyclo/src/chronus/hw/zeckendorf.py", line 47, in fold_to_zeckendorf
+    raise ValueError(f"Zeckendorf invariant violated for {n}: consecutive 1s found.")
+ValueError: Zeckendorf invariant violated for 340282366920938463463374607431768211456: consecutive 1s found.
+exit status: 1

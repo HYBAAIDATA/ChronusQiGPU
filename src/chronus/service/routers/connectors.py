@@ -139,7 +139,11 @@ async def get_connector_specifications() -> Dict[str, Any]:
                 "id": "BINET_ZECKENDORF_STRUCTURAL_INGESTION",
                 "engine": "BinetZeckendorfIngressEngine",
                 "supported_formats": [fmt.value for fmt in IngestFormat],
-                "algebraic_rings": ["Q(sqrt(5))", "Pisot-Lucas L_n", "Zeckendorf Non-Adjacent Base"],
+                "algebraic_rings": [
+                    "Q(sqrt(5))",
+                    "Pisot-Lucas L_n",
+                    "Zeckendorf Non-Adjacent Base",
+                ],
                 "max_footprint_collapse": "99.90%",
                 "fidelity": "100% Exact Lossless Round-Trip",
             },
@@ -185,6 +189,7 @@ async def get_hyperscaler_connector_matrix() -> Dict[str, Any]:
             cls.value: spec for cls, spec in DATA_MOVEMENT_PLANE_SPECS.items()
         },
         "total_providers": len(HYPERSCALER_CONNECTOR_MATRIX),
+        "total_connectors": len(HYPERSCALER_CONNECTOR_MATRIX),
         "matrix": HYPERSCALER_CONNECTOR_MATRIX,
     }
 
@@ -371,7 +376,9 @@ async def list_connectors(
     datasets = zero_copy_connector_manager.list_discovered_datasets(tenant_id=tenant_id)
     by_access_class: Dict[str, int] = {cls.value: 0 for cls in MemoryAccessClass}
     for conn in connectors:
-        by_access_class[conn.access_class.value] = by_access_class.get(conn.access_class.value, 0) + 1
+        by_access_class[conn.access_class.value] = (
+            by_access_class.get(conn.access_class.value, 0) + 1
+        )
 
     return {
         "total": len(connectors),
@@ -432,7 +439,9 @@ async def get_connector_detail(connector_id: str) -> Dict[str, Any]:
                 "message": f"Connector '{connector_id}' not found.",
             },
         )
-    datasets = zero_copy_connector_manager.list_discovered_datasets(connector_id=connector_id)
+    datasets = zero_copy_connector_manager.list_discovered_datasets(
+        connector_id=connector_id
+    )
     pointers = zero_copy_connector_manager.ovid.list_pointers(connector_id=connector_id)
     body = connector.to_dict()
     body["spec"] = PREBUILT_CONNECTOR_SPECS.get(connector.connector_type.value, {})
@@ -468,7 +477,10 @@ async def ingest_connector_block(
         except (ValueError, binascii.Error) as exc:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"error": "invalid_base64", "message": "payload_b64 must be valid base64"},
+                detail={
+                    "error": "invalid_base64",
+                    "message": "payload_b64 must be valid base64",
+                },
             ) from exc
     elif request.payload_text is not None:
         payload_bytes = request.payload_text.encode("utf-8")
@@ -484,7 +496,10 @@ async def ingest_connector_block(
     if not payload_bytes:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"error": "empty_payload", "message": "Ingest payload must be non-empty."},
+            detail={
+                "error": "empty_payload",
+                "message": "Ingest payload must be non-empty.",
+            },
         )
 
     ingress_stream = payload_bytes

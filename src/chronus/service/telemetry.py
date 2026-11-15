@@ -70,7 +70,7 @@ _span_exporter = InMemorySpanExporter()
 _tracer_provider = TracerProvider()
 _tracer_provider.add_span_processor(SimpleSpanProcessor(_span_exporter))
 trace.set_tracer_provider(_tracer_provider)
-tracer = trace.get_tracer("chronus.execution.fabric", "36.0.0")
+tracer = trace.get_tracer("chronus.execution.fabric", "36.0.1")
 
 
 @contextmanager

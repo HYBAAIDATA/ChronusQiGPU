@@ -114,9 +114,7 @@ class ZKSTARKVerifier:
         product = [0] * (len(quotient_polynomial) + len(z_h_polynomial) - 1)
         for quotient_index, quotient_value in enumerate(quotient_polynomial):
             for domain_index, domain_value in enumerate(z_h_polynomial):
-                product[quotient_index + domain_index] += (
-                    quotient_value * domain_value
-                )
+                product[quotient_index + domain_index] += quotient_value * domain_value
         while product and product[-1] == 0:
             product.pop()
         expected = list(polynomial_coefficients)
@@ -171,7 +169,13 @@ class ZKSTARKVerifier:
         queries = proof.get("queries")
         fri_layers = proof.get("fri_layers")
 
-        if not (trace_root and quotient_root and trace_len and queries and fri_layers is not None):
+        if not (
+            trace_root
+            and quotient_root
+            and trace_len
+            and queries
+            and fri_layers is not None
+        ):
             return False
 
         # 1. Verify Public Input Boundary Conditions if supplied
@@ -204,9 +208,17 @@ class ZKSTARKVerifier:
             if not _verify_merkle_path(trace_root, p_leaf, idx, t_path):
                 return False
 
-            if idx == 0 and proof.get("boundary_start") is not None and p_val != proof.get("boundary_start"):
+            if (
+                idx == 0
+                and proof.get("boundary_start") is not None
+                and p_val != proof.get("boundary_start")
+            ):
                 return False
-            if idx == trace_len - 1 and proof.get("boundary_end") is not None and p_val != proof.get("boundary_end"):
+            if (
+                idx == trace_len - 1
+                and proof.get("boundary_end") is not None
+                and p_val != proof.get("boundary_end")
+            ):
                 return False
 
             q_leaf = q_val.to_bytes(8, "big")
@@ -273,20 +285,24 @@ class ZKSTARKVerifier:
         queries = []
         for idx in query_indices:
             x_i = pow(ROOT_OF_UNITY_27, idx * (1 << 23), MODULUS)
-            queries.append({
-                "index": idx,
-                "x": x_i,
-                "p_eval": trace[idx],
-                "p_next_eval": trace[(idx + 1) % trace_len],
-                "q_eval": quotients[idx],
-                "trace_path": _merkle_path(trace_leaves, idx),
-                "quotient_path": _merkle_path(quotient_leaves, idx),
-            })
+            queries.append(
+                {
+                    "index": idx,
+                    "x": x_i,
+                    "p_eval": trace[idx],
+                    "p_next_eval": trace[(idx + 1) % trace_len],
+                    "q_eval": quotients[idx],
+                    "trace_path": _merkle_path(trace_leaves, idx),
+                    "quotient_path": _merkle_path(quotient_leaves, idx),
+                }
+            )
 
         # Step 4: FRI Folding Layers
         # Fold quotients in half: f_1(x) = (q[i] + q[i+1]) % MODULUS
         layer_leaves = [
-            ((quotients[i] + quotients[(i + 1) % trace_len]) % MODULUS).to_bytes(8, "big")
+            ((quotients[i] + quotients[(i + 1) % trace_len]) % MODULUS).to_bytes(
+                8, "big"
+            )
             for i in range(0, trace_len, 2)
         ]
         layer_root = _merkle_root(layer_leaves)

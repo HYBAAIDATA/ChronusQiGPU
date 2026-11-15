@@ -16,14 +16,20 @@ Zero floating point; strictly compliant with CI purity gate.
 
 import concurrent.futures
 import logging
+import os
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from chronus.backends.lattice import HardwareUnavailableError
 from chronus.execution.cuda_backend import CUDABackendAdapter
+from chronus.execution.native_simd import NativeSIMDBackendAdapter
 from chronus.execution.opencl_backend import OpenCLAcceleratorBackend
+from chronus.execution.opencl_sha256d import OpenCLSha256dMinerBackend
+from chronus.execution.geometric_galois_miner import GeometricGaloisMinerBackend
 from chronus.execution.reference import NativeMathReferenceBackend
-from chronus.execution.systemverilog_backend import SystemVerilogHardwareSimulatorBackend
+from chronus.execution.systemverilog_backend import (
+    SystemVerilogHardwareSimulatorBackend,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,19 +42,30 @@ PHYSICAL_HARDWARE_EXECUTION = "PHYSICAL_HARDWARE_EXECUTION"
 class HardwareAcceleratorDispatcher:
     """Dispatches workloads across mathematical, software, and physical hardware surfaces."""
 
-    def __init__(self, default_timeout_seconds: int = 30) -> None:
+    def __init__(
+        self,
+        default_timeout_seconds: int = 30,
+        enable_simd: bool = False,
+    ) -> None:
         self.default_timeout_seconds = default_timeout_seconds
         self._reference_backend = NativeMathReferenceBackend()
         self._opencl_backend = OpenCLAcceleratorBackend()
         self._cuda_backend = CUDABackendAdapter()
         self._rtl_backend = SystemVerilogHardwareSimulatorBackend()
+        self._opencl_miner_backend = OpenCLSha256dMinerBackend()
+        self._geometric_galois_backend = GeometricGaloisMinerBackend()
+        self._simd_backend = NativeSIMDBackendAdapter()
 
         self._backends: Dict[str, Any] = {
             self._reference_backend.name: self._reference_backend,
             self._opencl_backend.name: self._opencl_backend,
             self._cuda_backend.name: self._cuda_backend,
             self._rtl_backend.name: self._rtl_backend,
+            self._opencl_miner_backend.name: self._opencl_miner_backend,
+            self._geometric_galois_backend.name: self._geometric_galois_backend,
         }
+        if enable_simd or os.getenv("CHRONUS_ENABLE_SIMD") == "1":
+            self._backends[self._simd_backend.name] = self._simd_backend
 
     def register_backend(self, backend: Any) -> None:
         """Register an additional hardware or execution backend."""
@@ -63,12 +80,36 @@ class HardwareAcceleratorDispatcher:
             classification = getattr(b, "runtime_classification", mode)
             summary[name] = {
                 "name": name,
+                "backend_name": name,
                 "available": is_avail,
                 "execution_mode": mode,
                 "runtime_classification": classification,
                 "supported_workloads": sorted(list(b.supported_workloads)),
             }
         return summary
+
+    def discover_accelerators(self) -> List[Any]:
+        """Discover accelerators returning target objects with .backend_name attribute."""
+        class _DiscoveredTarget:
+            def __init__(self, name: str, info: Dict[str, Any]) -> None:
+                self.backend_name = name
+                self.name = name
+                self.available = info["available"]
+                self.execution_mode = info["execution_mode"]
+                self.runtime_classification = info["runtime_classification"]
+                self.supported_workloads = info["supported_workloads"]
+
+            def to_dict(self) -> Dict[str, Any]:
+                return {
+                    "backend_name": self.backend_name,
+                    "name": self.name,
+                    "available": self.available,
+                    "execution_mode": self.execution_mode,
+                    "runtime_classification": self.runtime_classification,
+                    "supported_workloads": self.supported_workloads,
+                }
+
+        return [_DiscoveredTarget(name, info) for name, info in self.discover_backends().items()]
 
     def dispatch(
         self,
@@ -98,6 +139,8 @@ class HardwareAcceleratorDispatcher:
                 backend = self._opencl_backend
             elif self._rtl_backend.supports(workload_type):
                 backend = self._rtl_backend
+            elif self._simd_backend.supports(workload_type):
+                backend = self._simd_backend
             else:
                 backend = self._reference_backend
 
@@ -107,9 +150,13 @@ class HardwareAcceleratorDispatcher:
 
         try:
             # Memory limit check
-            max_bytes = getattr(backend, "max_device_memory_bytes", None) or getattr(backend, "max_payload_bytes", 1024 * 1024)
+            max_bytes = getattr(backend, "max_device_memory_bytes", None) or getattr(
+                backend, "max_payload_bytes", 1024 * 1024
+            )
             if len(payload) > max_bytes:
-                raise ValueError(f"Payload size {len(payload)} exceeds target memory limit {max_bytes}")
+                raise ValueError(
+                    f"Payload size {len(payload)} exceeds target memory limit {max_bytes}"
+                )
 
             # Execution with watchdog timeout
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
@@ -117,14 +164,20 @@ class HardwareAcceleratorDispatcher:
                 try:
                     result = future.result(timeout=timeout)
                 except concurrent.futures.TimeoutError as exc:
-                    raise TimeoutError(f"Execution timed out on {target_name} after {timeout}s") from exc
+                    raise TimeoutError(
+                        f"Execution timed out on {target_name} after {timeout}s"
+                    ) from exc
 
         except (HardwareUnavailableError, TimeoutError, Exception) as fault:
             # 3. Fault handling: automatic fallback to mathematical reference backend
-            if target_name != self._reference_backend.name and self._reference_backend.supports(workload_type):
+            if (
+                target_name != self._reference_backend.name
+                and self._reference_backend.supports(workload_type)
+            ):
                 logger.warning(
                     "Fault on hardware target '%s': %s. Engaging automatic reference fallback.",
-                    target_name, fault
+                    target_name,
+                    fault,
                 )
                 fallback_occurred = True
                 fallback_reason = str(fault)
@@ -160,7 +213,9 @@ class HardwareAcceleratorDispatcher:
 
         if isinstance(result, dict):
             result["runtime_classification"] = classification
-            result["execution_mode"] = getattr(backend, "execution_mode", classification)
+            result["execution_mode"] = getattr(
+                backend, "execution_mode", classification
+            )
             if fallback_occurred:
                 result["hardware_fallback"] = {
                     "faulted_target": target_name,
