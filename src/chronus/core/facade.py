@@ -101,21 +101,14 @@ def _gate_canonical_json() -> tuple[bool, str]:
 
 
 def _gate_purity() -> tuple[bool, str]:
-    from scripts.ci import purity_gate
+    from chronus.core.purity_scanner import scan_installed_package
 
-    violations: list[str] = []
-    scanned: list[Path] = []
-    for package in purity_gate.EXACT_PACKAGES:
-        for path in sorted((purity_gate.ROOT / package).rglob("*.py")):
-            scanned.append(path)
-            violations.extend(purity_gate.scan_file(path))
-    for name in ("config.py", "ns_dec.py"):
-        path = purity_gate.ROOT / "src" / "chronus" / name
-        scanned.append(path)
-        violations.extend(purity_gate.scan_file(path))
+    count, violations = scan_installed_package()
     if violations:
         return False, "; ".join(violations[:5])
-    return True, f"{len(scanned)} files scanned in declared scope"
+    if count == 0:
+        return False, "installed purity scope is empty"
+    return True, f"{count} installed package files scanned"
 
 
 def _gate_claim_audit() -> tuple[bool, str]:
@@ -188,8 +181,15 @@ class ChronusVerificationOrchestrator:
             / "manifests"
             / "qualification_manifest_v36.json"
         )
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+        try:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+        except OSError as exc:
+            # Local diagnostic remains usable on read-only installed packages,
+            # but missing manifest persistence is always reported as a blocker.
+            record["blockers"].append(
+                f"Local qualification manifest unavailable: {type(exc).__name__}"
+            )
         return record
 
 
