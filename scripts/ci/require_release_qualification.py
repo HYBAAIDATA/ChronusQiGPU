@@ -41,7 +41,7 @@ def check_verdict(verdict: dict) -> None:
         raise ReleaseBlocked("qualification claims are not independently supported")
 
 
-def select_run(data: dict, commit: str) -> int:
+def _select_run_record(data: dict, commit: str) -> dict:
     runs = data.get("workflow_runs", [])
     eligible = [
         run for run in runs
@@ -56,10 +56,16 @@ def select_run(data: dict, commit: str) -> int:
         and run.get("status") == "completed"
         and run.get("conclusion") == "success"
         and isinstance(run.get("id"), int)
+        and isinstance(run.get("run_attempt"), int)
+        and run["run_attempt"] >= 1
     ]
     if not eligible:
         raise ReleaseBlocked("no successful main-branch qualification run for release commit")
-    return max(eligible, key=lambda run: (run.get("run_started_at") or "", run["id"]))["id"]
+    return max(eligible, key=lambda run: (run.get("run_started_at") or "", run["id"]))
+
+
+def select_run(data: dict, commit: str) -> int:
+    return _select_run_record(data, commit)["id"]
 
 
 def call(*args: str) -> str:
@@ -91,7 +97,11 @@ def verify_release(
         f"repos/{repository}/actions/workflows/chronus-evidence-qualification.yml/runs"
         f"?head_sha={commit}&event=push&status=success&per_page=100"
     )
-    run_id = select_run(json.loads(call("gh", "api", api_path)), commit)
+    run = _select_run_record(json.loads(call("gh", "api", api_path)), commit)
+    run_id = run["id"]
+    expected_invocation = (
+        f"https://github.com/{repository}/actions/runs/{run_id}/attempts/{run['run_attempt']}"
+    )
     with tempfile.TemporaryDirectory(prefix="chronus-release-gate-") as folder:
         call("gh", "run", "download", str(run_id), "--repo", repository,
              "--name", "chronus-qualification-verdict", "--dir", folder)
@@ -105,7 +115,20 @@ def verify_release(
             "gh", "attestation", "verify", str(verdict_file), "--repo", repository,
             "--signer-workflow", f"{repository}/{_WORKFLOW}",
             "--source-digest", commit, "--source-ref", "refs/heads/main",
+            "--format", "json",
         )
+        # Only verified certificate identity is trusted for run provenance.
+        # SLSA statement/predicate fields are workflow-controlled and insufficient.
+        attestations = json.loads(verification_output)
+        if not isinstance(attestations, list) or not any(
+            isinstance(item, dict)
+            and item.get("verificationResult", {})
+                .get("signature", {})
+                .get("certificate", {})
+                .get("runInvocationURI") == expected_invocation
+            for item in attestations
+        ):
+            raise ReleaseBlocked("attestation run invocation does not match selected CI run/attempt")
         verified_bytes = verdict_file.read_bytes()
         check_verdict(json.loads(verified_bytes))
         # Preserve exactly the already-verified bytes, rather than copying
@@ -123,6 +146,8 @@ def verify_release(
                 "source_ref": "refs/heads/main",
                 "workflow": _WORKFLOW,
                 "qualifying_run_id": run_id,
+                "qualifying_run_attempt": run["run_attempt"],
+                "verified_run_invocation": expected_invocation,
                 "attestation_verified": True,
                 "verification_output": verification_output,
                 "note": "Verification receipt; re-verify the exact verdict with GitHub attestations.",
