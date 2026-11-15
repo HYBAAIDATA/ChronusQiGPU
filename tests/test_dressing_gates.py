@@ -112,6 +112,9 @@ def test_naming_requires_classification_and_classical_alias(tmp_path):
     write(tmp_path, "src/chronus/quantum/accidental.py", "class QuantumProcessor: pass\n")
     assert any("needs explicit classification" in x for x in quantum_naming.scan(tmp_path, p))
     (tmp_path / "src/chronus/quantum/accidental.py").unlink()
+    write(tmp_path, "src/chronus/quantum/new/model.py", "class QuantumProcessor: pass\n")
+    assert any("new/model.py" in x for x in quantum_naming.scan(tmp_path, p))
+    (tmp_path / "src/chronus/quantum/new/model.py").unlink()
     write(tmp_path, "src/chronus/intelligence/predictive_engine.py",
           "class QuantumStateEngine: pass\n")
     assert any("alias changed" in x for x in quantum_naming.scan(tmp_path, p))
