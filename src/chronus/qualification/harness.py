@@ -287,8 +287,17 @@ class QualificationHarness:
         return receipt_signer.sign(body)
 
 
-def verify_transcript_integrity(transcript: dict[str, Any]) -> bool:
-    """Tamper check: body hash must match AND the stored signature must verify."""
+def verify_transcript_integrity(
+    transcript: dict[str, Any],
+    *,
+    verifier: Callable[[bytes, str], bool] | None = None,
+) -> bool:
+    """Tamper check: body hash must match AND the stored signature must verify.
+
+    ``verifier(message, signature_hex)`` defaults to the process-local receipt
+    signer. Callers that passed a custom ``signer`` to ``qualify()`` must supply
+    the matching verifier here.
+    """
     body = {
         key: value
         for key, value in transcript.items()
@@ -299,6 +308,8 @@ def verify_transcript_integrity(transcript: dict[str, Any]) -> bool:
     signature = transcript.get("signature")
     if not isinstance(signature, str):
         return False
+    if verifier is not None:
+        return bool(verifier(_stable_json(body), signature))
     from chronus.security.receipt_signer import receipt_signer
 
     return receipt_signer.verify(_stable_json(body), signature)

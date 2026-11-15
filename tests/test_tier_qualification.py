@@ -218,6 +218,43 @@ class ForgeryAndPrecisionTests(unittest.TestCase):
         missing = {k: v for k, v in result.audit_transcript.items() if k != "signature"}
         self.assertFalse(verify_transcript_integrity(missing))
 
+    def test_custom_signer_verifies_with_matching_verifier(self) -> None:
+        from chronus.security.signers import Ed25519Signer
+
+        custom = Ed25519Signer()
+        result = QualificationHarness().qualify(
+            "LUCAS_PV_SCALING", seed=17, signer=custom.sign
+        )
+        self.assertFalse(verify_transcript_integrity(result.audit_transcript))
+        self.assertTrue(
+            verify_transcript_integrity(
+                result.audit_transcript, verifier=custom.verify
+            )
+        )
+
+    def test_tampered_recalled_transcript_suspends_attach(self) -> None:
+        from chronus.qualification.transcript_store import clear, remember
+        from chronus.service.models import WorkloadStatus
+        from chronus.service.routers.workloads import _attach_tier_fields
+
+        clear()
+        clean = QualificationHarness().qualify("LUCAS_PV_SCALING", seed=19)
+        tampered_audit = dict(clean.audit_transcript)
+        tampered_audit["signature"] = "00" * 64
+        tampered = type(clean)(
+            tier=clean.tier,
+            contract=clean.contract,
+            evidence_hash=clean.evidence_hash,
+            audit_transcript=tampered_audit,
+            public_view=clean.public_view,
+            economics=clean.economics,
+        )
+        remember(tampered)
+        fields = _attach_tier_fields("scaling.v1", status=WorkloadStatus.COMPLETED)
+        self.assertTrue(fields["tier_suspended"])
+        self.assertEqual(fields["tier"], Tier.SUSPENDED.value)
+        clear()
+
     def test_large_probe_residual_is_accurate(self) -> None:
         n = 500
         with localcontext() as ctx:
@@ -243,6 +280,22 @@ class ScalingResultSealTests(unittest.TestCase):
         self.assertEqual(find_banned_tokens(payload), [])
         self.assertEqual(sealed["result"]["family"], "scaling.v1")
         self.assertEqual(sealed["result"]["sequence_value"], str(lucas_recurrence(10)))
+
+    def test_already_sealed_adapter_result_keeps_index(self) -> None:
+        sealed_in = {
+            "backend": "adapter",
+            "result": {
+                "family": "scaling.v1",
+                "index": 10,
+                "sequence_value": "123",
+                "companion_value": "55",
+                "identity_verified": True,
+            },
+        }
+        sealed = externalize_scaling_result(sealed_in)
+        self.assertEqual(sealed["result"]["index"], 10)
+        self.assertEqual(sealed["result"]["sequence_value"], "123")
+        self.assertEqual(find_banned_tokens(json.dumps(sealed)), [])
 
     def test_envelope_declares_discrete_scope(self) -> None:
         result = QualificationHarness().qualify("LUCAS_PV_SCALING", seed=3)

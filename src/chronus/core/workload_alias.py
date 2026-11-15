@@ -111,12 +111,17 @@ def externalize_scaling_result(result: dict) -> dict:
     if not isinstance(payload, dict):
         return result
     representation = payload.get("representation")
-    index = representation.get("index") if isinstance(representation, dict) else None
+    nested_index = (
+        representation.get("index") if isinstance(representation, dict) else None
+    )
+    # Already-sealed adapter payloads carry index at the top level.
+    index = nested_index if nested_index is not None else payload.get("index")
     family = (
         representation.get("family") if isinstance(representation, dict) else None
     )
     already_sealed = (
         family == "scaling.v1"
+        or payload.get("family") == "scaling.v1"
         or "sequence_value" in payload
         or "companion_value" in payload
     )

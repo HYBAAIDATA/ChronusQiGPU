@@ -34,6 +34,7 @@ from chronus.core.workload_alias import (
     normalize_workload_type,
 )
 from chronus.qualification import QualificationHarness, Tier
+from chronus.qualification.harness import verify_transcript_integrity
 from chronus.qualification.transcript_store import remember as remember_transcript
 from chronus.qualification.transcript_store import recall_by_class
 from chronus.security.receipt_signer import receipt_signer
@@ -48,12 +49,32 @@ def _sealed_error_message(message: str) -> str:
     return message
 
 
+def _suspended_tier_fields(contract) -> dict:
+    economics = {
+        "tier": Tier.SUSPENDED.value,
+        "service_level": "envelope.suspended",
+        "escalation_threshold": "model_risk_alarm",
+        "review_budget_ccu": 0,
+        "relative_price_weight": 0.0,
+    }
+    return {
+        "tier": Tier.SUSPENDED.value,
+        "qualification_evidence_hash": contract.qualification_evidence_hash,
+        "envelope": contract.to_public_dict()["envelope"],
+        "tier_contract_version": contract.tier_contract_version,
+        "tier_suspended": True,
+        "metadata_tier_economics": economics,
+        "metadata_qualification_scope": "reference_model_class",
+    }
+
+
 def _attach_tier_fields(workload_type: object, *, status: WorkloadStatus) -> dict:
     """Attach class-level reference-model qualification for scaling.v1.
 
     This is explicitly *not* a claim that the selected execution backend was
     re-probed for this submission. Only attach on COMPLETED responses.
-    Prior transcripts for the class are re-verified; envelope breach suspends.
+    Prior transcripts for the class are integrity-checked and re-verified;
+    signature or envelope breach suspends.
     """
     if status != WorkloadStatus.COMPLETED:
         return {}
@@ -65,24 +86,20 @@ def _attach_tier_fields(workload_type: object, *, status: WorkloadStatus) -> dic
     harness = QualificationHarness()
     prior = recall_by_class(internal)
     if prior is not None:
+        if not verify_transcript_integrity(prior.audit_transcript):
+            from chronus.qualification.tiers import TIER_CONTRACT_VERSION, TierContract
+
+            suspended = TierContract(
+                tier=Tier.SUSPENDED,
+                tier_contract_version=TIER_CONTRACT_VERSION,
+                residual_bound_by_size=prior.contract.residual_bound_by_size,
+                qualification_evidence_hash=prior.evidence_hash,
+                suspended=True,
+            )
+            return _suspended_tier_fields(suspended)
         contract = harness.reverify_contract(prior)
         if contract.suspended:
-            economics = {
-                "tier": Tier.SUSPENDED.value,
-                "service_level": "envelope.suspended",
-                "escalation_threshold": "model_risk_alarm",
-                "review_budget_ccu": 0,
-                "relative_price_weight": 0.0,
-            }
-            return {
-                "tier": Tier.SUSPENDED.value,
-                "qualification_evidence_hash": contract.qualification_evidence_hash,
-                "envelope": contract.to_public_dict()["envelope"],
-                "tier_contract_version": contract.tier_contract_version,
-                "tier_suspended": True,
-                "metadata_tier_economics": economics,
-                "metadata_qualification_scope": "reference_model_class",
-            }
+            return _suspended_tier_fields(contract)
     result = harness.qualify(internal, seed=seed)
     remember_transcript(result)
     public = result.public_decision_fields()
