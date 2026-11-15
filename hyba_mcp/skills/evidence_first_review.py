@@ -3,7 +3,12 @@
 SKILL_ID = "review.evidence_first"
 TITLE = "Apply the mandatory evidence-first technical review procedure"
 SOURCE = "EUCLID engineering review procedure, required by AGENTS.md"
-INPUT_SCHEMA = {"type": "object", "properties": {}, "additionalProperties": False}
+INPUT_SCHEMA = {
+    "type": "object",
+    "properties": {},
+    "required": [],
+    "additionalProperties": False,
+}
 OUTPUT_SCHEMA = {
     "type": "object",
     "properties": {
