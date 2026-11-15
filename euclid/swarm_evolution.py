@@ -14,7 +14,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import json
-import math
 import sqlite3
 import threading
 import time
@@ -120,6 +119,8 @@ class SwarmMission:
         _positive(self.deadline_ns, "deadline_ns", 2**63 - 1)
         if type(self.tasks) is not tuple or not 1 <= len(self.tasks) <= MAX_TASKS:
             raise SwarmRefused("mission needs 1 to 32 tasks")
+        if any(type(t) is not SwarmTask for t in self.tasks):
+            raise SwarmRefused("mission requires validated SwarmTask instances")
         ids = {t.task_id for t in self.tasks}
         if len(ids) != len(self.tasks):
             raise SwarmRefused("duplicate task identifiers")
@@ -150,14 +151,17 @@ class SwarmJournal:
 
     def __init__(self, path: str | Path) -> None:
         self.path = str(path)
-        if self.path == ":memory:":
+        if not self.path or self.path == ":memory:":
             raise SwarmRefused("swarm journal must be durable")
         parent = Path(self.path).resolve().parent
         if not parent.is_dir():
             raise SwarmRefused("journal parent must exist")
         self._lock = threading.RLock()
         self._db = sqlite3.connect(self.path, timeout=10, check_same_thread=False, isolation_level=None)
-        self._db.execute("PRAGMA journal_mode=WAL")
+        mode = self._db.execute("PRAGMA journal_mode=WAL").fetchone()[0]
+        if mode.lower() != "wal":
+            self._db.close()
+            raise SwarmRefused("journal requires SQLite WAL mode")
         self._db.execute("PRAGMA synchronous=FULL")
         self._db.execute("CREATE TABLE IF NOT EXISTS missions (id TEXT PRIMARY KEY, digest TEXT NOT NULL, status TEXT NOT NULL)")
         self._db.execute("CREATE TABLE IF NOT EXISTS events (mission_id TEXT NOT NULL, seq INTEGER NOT NULL, previous TEXT NOT NULL, hash TEXT NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(mission_id,seq))")
