@@ -8,7 +8,6 @@ it is deliberately not used as the system of record here.
 from __future__ import annotations
 
 import hashlib
-import json
 import sqlite3
 import threading
 import time
