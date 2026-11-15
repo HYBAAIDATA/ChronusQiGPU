@@ -10,12 +10,14 @@ from euclid.capability_qualification import CapabilityQualificationRegistry
 from euclid.swarm_evolution import (
     LEADER_SKILLS, QualifiedAgent, SwarmActivator,
     SwarmJournal, SwarmMission, SwarmRefused, SwarmTask,
+    VerificationAttestation, verification_payload,
 )
 
 
 class Policy(CapabilityQualificationRegistry):
     def __init__(self):
-        super().__init__(trusted_verifiers={"test": Ed25519PrivateKey.generate().public_key()})
+        self.signer = Ed25519PrivateKey.generate()
+        super().__init__(trusted_verifiers={"test": self.signer.public_key()})
 
     def authorize(self, *, claim_id, source_revision, domain, task_scope, authority):
         if not claim_id.endswith("." + authority) or domain != "euclid.agent.skill":
@@ -23,6 +25,13 @@ class Policy(CapabilityQualificationRegistry):
         if source_revision != "c" * 40 or task_scope != "case":
             raise PermissionError("scope mismatch")
         return True
+
+    def attest(self, mission, item, result):
+        return VerificationAttestation(
+            "test", self.signer.sign(
+                verification_payload(mission, item, result)
+            ).hex(),
+        )
 
 
 class CommercialIntegration(unittest.TestCase):
@@ -38,8 +47,9 @@ class CommercialIntegration(unittest.TestCase):
                 {skill: identifier + "." + skill for skill in skills},
             )
         self.agents = [member("lead", LEADER_SKILLS), member("agent", {"task.run"})]
+        self.policy = Policy()
         self.activator = SwarmActivator(
-            qualification=Policy(), journal=self.journal, agents=self.agents,
+            qualification=self.policy, journal=self.journal, agents=self.agents,
             clock_ns=lambda: 1000,
         )
         self.mission = SwarmMission(
@@ -52,7 +62,7 @@ class CommercialIntegration(unittest.TestCase):
         result = CommercialTeamOrchestrator(cost_meter=lambda: 0.0).run_qualified_swarm(
             self.activator, self.mission,
             dispatch=lambda item: calls.append(item.task_id) or {"ok": True},
-            verify=lambda item, result: result == {"ok": True},
+            verify=self.policy.attest,
         )
         self.assertEqual(calls, ["work"])
         self.assertEqual(result["verified_tasks"], ["work"])
