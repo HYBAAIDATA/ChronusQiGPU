@@ -124,7 +124,7 @@ def _connect() -> sqlite3.Connection:
                 "CREATE TABLE IF NOT EXISTS api_rate_limits ("
                 "key TEXT PRIMARY KEY, window_start INTEGER NOT NULL, count INTEGER NOT NULL)"
             )
-                _INITIALIZED_DB.add(path)
+            _INITIALIZED_DB.add(path)
         return connection
     except Exception:
         connection.close()
