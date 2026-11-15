@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
 Chronus Production Qualification Manifest Generator (§5.3, F3.1-F3.18, H1).
-Executes all CI verification gates and generates a cryptographically signed PRODUCTION_QUALIFIED.json artifact.
+Records local CI check results; does not certify a production release.
 """
 
 import hashlib
-import hmac
 import json
 import os
 import shutil
@@ -20,7 +19,7 @@ if SRC_DIR not in sys.path:
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
-SECRET_BUILD_KEY = b"CHRONUS_PRODUCTION_QUALIFIED_HMAC_KEY_v36"
+
 
 
 def run_cmd(cmd: str) -> bool:
@@ -112,7 +111,8 @@ def main():
             pass
 
     manifest_data = {
-        "status": "PRODUCTION_QUALIFIED" if all_passed else "QUALIFICATION_FAILED",
+        "status": "NOT_QUALIFIED",
+        "local_ci_checks": "PASS" if all_passed else "FAIL",
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
         "gates": {
             "pytest": "PASS" if p_tests else "FAIL",
@@ -122,13 +122,13 @@ def main():
             "replay": "PASS" if p_replay else "FAIL",
             "meta_test_mutation": "PASS" if p_meta else "FAIL",
             "sovereign_difc_attestation": "PASS" if p_sovereign else "FAIL",
-            "mypy_strict": "PASS",
+            "mypy_strict": None,  # Not executed by this local script
             "sv_lint": sv_lint_status
         },
         "measurements": {
             "gatekeeper_p99_us": gatekeeper_p99_us,
-            "submit_rate_achieved_sec": 15,
-            "shares_local_dropped": 0,
+            "submit_rate_achieved_sec": None,  # No runtime measurement in this script
+            "shares_local_dropped": None,  # No runtime measurement in this script
             "blocks_found": blocks_found,
             "stale_share_rate": stale_share_rate
         },
@@ -138,29 +138,24 @@ def main():
             "lock_hash": lock_hash
         },
         "verification_procedure": {
-            "algorithm": "HMAC-SHA256",
-            "key_reference": "SECRET_BUILD_KEY (RFC 2104)",
-            "canonicalization": "json.dumps(manifest_data_without_signature, sort_keys=True).encode('utf-8')"
-        }
+            "algorithm": None,
+            "reason": "Local checks are not attested release qualification"
+        },
+        "signature": None
     }
-
-    # Compute HMAC-SHA256 signature over canonical manifest body
-    canonical_bytes = json.dumps(manifest_data, sort_keys=True).encode("utf-8")
-    sig = hmac.new(SECRET_BUILD_KEY, canonical_bytes, "sha256").hexdigest()
-    manifest_data["signature"] = sig
 
     manifest_path = os.path.join(REPO_ROOT, "PRODUCTION_QUALIFIED.json")
     with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(manifest_data, f, indent=2)
 
     print(f"Manifest written to {manifest_path}")
-    print(f"HMAC Signature: {sig}")
+    print("Production release qualification: NOT_QUALIFIED (local checks only)")
 
     if all_passed:
-        print("SYSTEM QUALIFICATION COMPLETED WITH 100% PASS RATE!")
+        print("Local CI checks passed; production qualification remains NOT_QUALIFIED.")
         sys.exit(0)
     else:
-        print("SYSTEM QUALIFICATION FAILED.")
+        print("Local CI checks failed; production qualification remains NOT_QUALIFIED.")
         sys.exit(1)
 
 
