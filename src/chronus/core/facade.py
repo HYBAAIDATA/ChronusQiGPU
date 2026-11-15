@@ -117,8 +117,12 @@ def _gate_canonical() -> GateResult:
 
 def _gate_purity() -> GateResult:
     try:
-        rc, findings = purity_gate.scan(Path(__file__).resolve().parents[3])
-        return GateResult("G4_PURITY", rc == 0, "; ".join(findings[:5]))
+        rc = purity_gate.main()
+        return GateResult(
+            "G4_PURITY",
+            rc == 0,
+            "scripts/ci/purity_gate.py" if rc == 0 else "purity gate reported violations",
+        )
     except Exception as exc:
         return GateResult("G4_PURITY", False, str(exc))
 
