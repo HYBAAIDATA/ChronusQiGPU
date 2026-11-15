@@ -1,0 +1,71 @@
+{
+  "schema": "chronus.smoke/1",
+  "target": "braiins",
+  "started": "20261115T221109",
+  "steps": [
+    {
+      "step": "tcp_connect",
+      "ok": true,
+      "detail": "8 ms",
+      "at_ms": 13363785
+    },
+    {
+      "step": "subscribe",
+      "ok": true,
+      "detail": "extranonce1= size=6",
+      "at_ms": 13363823
+    },
+    {
+      "step": "authorize",
+      "ok": true,
+      "detail": "accepted",
+      "at_ms": 13363843
+    },
+    {
+      "step": "job",
+      "ok": true,
+      "detail": "job_id=00 clean=True",
+      "at_ms": 13364691
+    }
+  ],
+  "jobs": [
+    "00"
+  ],
+  "set_difficulty": [
+    {
+      "value": 8192,
+      "phase": "wait_job"
+    }
+  ],
+  "submits": [],
+  "endpoint": "stratum+tcp://stratum.braiins.com:3333",
+  "user": "smoke.worker",
+  "tls": false,
+  "peer_loopback": false,
+  "selected_job": {
+    "job_id": "00",
+    "prevhash": "15eece37dd772ff20c81815aa34167af118285dc0001f14a0000000000000000",
+    "coinb1": "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff210396e40e0965010003c03b54000000",
+    "coinb2": "ee067cab0e2f736c7573682f00000000024abac112000000001976a9147c154ed1dc59609e3d26abb2df2ea3d587cd8c4188ac0000000000000000266a24aa21a9ed8e3b30868dafb45a2b1af4eafd7683dd23dbf3bd9ec085e77f014ef9f390790600000000",
+    "merkle_branch": [
+      "30c21219a4a7f456010aec84ddf958bd7c3d0c36eb741a5dc6b67db682f03bb2",
+      "57ccc92301caffe66d6c2777f8311289ce587240c4b218024289f43253463fec",
+      "70fcc3551f1ca769d01c355f51fe2f626e7fd87b1a575d0836ba45238039f065",
+      "ce95983b53a36ed1338a92aa3e432424130ce97b89447c54fad5c27ce5268b59",
+      "29a8abfcc687cb060febbed0fe0301faaa630a9f28423c2b0794c904223ca259",
+      "0900fe3d3084c7e267fd78d573ba440ecd8debc914627846a215cd8cb101704f",
+      "dafdd58daa73f7f0cfd5118da94f7d3aea9383319b9dc3d813366c3874a091d6",
+      "3f32cb561ef480fb6c3413b5bb9ad372c976ab3d7a0b305bf8415ca879ad4ffe",
+      "d815d965775d9a09b553297c61e5e2dca2f37b0e1364bb2eb38c58d0fec2b590",
+      "d6eeba34faafb3fbaa7ae11ae9c8ecade643160c86b967207c3308b09d42ff16",
+      "d0d6ae056b3e2b443883d4429945fe0560f4b004338e8e13de60240abdd2dbbc",
+      "ab60908134b15012fc611aa9f3c7564867911993511b678828816fde5925fc1d"
+    ],
+    "version": "20000000",
+    "nbits": "17021673",
+    "ntime": "6afa2df1",
+    "clean_jobs": true
+  },
+  "extranonce1": "",
+  "extranonce2_size": 6
+}

@@ -1,0 +1,7 @@
+warning: cleartext Stratum; use disposable worker credentials only
+  [ok  ] tcp_connect: 8 ms
+  [ok  ] subscribe: extranonce1= size=6
+  [ok  ] authorize: accepted
+  [ok  ] job: job_id=00 clean=True
+transcript: /workspace/evidence/smoke/braiins-20261115T221109.json
+exit 0
