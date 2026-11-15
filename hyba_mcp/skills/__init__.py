@@ -6,6 +6,7 @@ from importlib import import_module
 from typing import Any
 
 SKILL_MODULES = {
+    "review.evidence_first": "hyba_mcp.skills.evidence_first_review",
     "proof.emergence_verify": "hyba_mcp.skills.emergence_verify",
     "reasoning.causal_explain": "hyba_mcp.skills.causal_explain",
     "healing.propose_repair": "hyba_mcp.skills.propose_repair",
