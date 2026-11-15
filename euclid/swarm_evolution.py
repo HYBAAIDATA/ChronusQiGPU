@@ -304,6 +304,8 @@ class SwarmActivator:
         agents: Sequence[QualifiedAgent],
         clock_ns: Callable[[], int] = time.time_ns,
     ) -> None:
+        if not isinstance(qualification, CapabilityQualificationRegistry):
+            raise SwarmRefused("signed capability qualification registry required")
         self.qualification = qualification
         self.journal = journal
         self.clock_ns = clock_ns
