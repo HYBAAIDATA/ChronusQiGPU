@@ -14,7 +14,7 @@ from euclid.capability_qualification import (
 from euclid.swarm_curriculum import LeaderCurriculum, SkillCase, train_qualify_and_activate
 from euclid.swarm_evolution import (
     LEADER_SKILLS, QualifiedAgent, SwarmActivator, SwarmJournal, SwarmMission,
-    SwarmRefused, SwarmTask,
+    SwarmRefused, SwarmTask, VerificationAttestation, verification_payload,
 )
 
 REVISION = "d" * 40
@@ -92,13 +92,19 @@ class SignedQualificationIntegration(unittest.TestCase):
             agents=(self.leader, self.worker), clock_ns=lambda: 100,
         )
 
+    def attest(self, mission, task, output):
+        return VerificationAttestation(
+            "test-signer",
+            self.signer.sign(verification_payload(mission, task, output)).hex(),
+        )
+
     def test_real_signed_registry_authorizes_complete_dag(self):
         tasks = (SwarmTask("first", "worker", "task.run", 2),
                  SwarmTask("second", "worker", "task.run", 2, ("first",)))
         result = self.runtime.activate(
             SwarmMission("signed-1", "lead", "mission", 4, 200, tasks),
             dispatch=lambda task: {"task": task.task_id},
-            verify=lambda task, output: output["task"] == task.task_id,
+            verify=self.attest,
         )
         self.assertEqual(result["verified_tasks"], ["first", "second"])
         self.assertTrue(result["journal_verified"])
@@ -165,7 +171,7 @@ class SignedQualificationIntegration(unittest.TestCase):
             accept=lambda case, output: output["passed"] is True,
             certify=certify,
             dispatch=lambda task: events.append("dispatch") or {"task": task.task_id},
-            verify=lambda task, output: output["task"] == task.task_id,
+            verify=self.attest,
         )
         self.assertEqual(events, ["attestation", "dispatch"])
         self.assertEqual(result["swarm"]["status"], "completed")
@@ -244,7 +250,7 @@ class SignedQualificationIntegration(unittest.TestCase):
             accept=lambda *_: True,
             certify=certify,
             dispatch=lambda task: {"task": task.task_id},
-            verify=lambda task, output: output["task"] == task.task_id,
+            verify=self.attest,
         )
         self.assertEqual(
             result["training"]["outcome"], "READY_FOR_INDEPENDENT_ATTESTATION"
