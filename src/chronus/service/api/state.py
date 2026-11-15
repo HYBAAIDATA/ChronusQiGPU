@@ -250,7 +250,10 @@ def _interprocess_bootstrap_lock(path: str) -> Iterator[None]:
     This sidecar lock protects bootstrap only; SQLite transactions continue
     to coordinate normal concurrent writes. No distributed-SQLite claim.
     """
-    fd = os.open(path + ".bootstrap.lock", os.O_CREAT | os.O_RDWR, 0o600)
+    # Resolve aliases only for lock identity; the database cache key deliberately
+    # remains lexical so symlink retargeting is still detected and rejected.
+    lock_path = os.path.realpath(path) + ".bootstrap.lock"
+    fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
     try:
         if os.name == "nt":
             import msvcrt
