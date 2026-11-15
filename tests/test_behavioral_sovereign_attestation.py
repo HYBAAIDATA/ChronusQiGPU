@@ -4,7 +4,6 @@ Verifies the 6-pillar DIFC attestation, cryptographic seal integrity, and tamper
 """
 
 import hashlib
-import hmac
 import json
 import os
 import sys
