@@ -40,9 +40,16 @@ class TeamSessionResult:
 class CommercialTeamOrchestrator:
     """Manages multi-agent team sessions under commercial SLA constraints."""
 
-    def __init__(self, *, team_budget_usd: float = 1.0, max_team_latency_ms: float = 5000.0) -> None:
+    def __init__(
+        self, *, team_budget_usd: float = 1.0,
+        max_team_latency_ms: float = 5000.0,
+        cost_meter: Callable[[], float] | None = None,
+        clock: Callable[[], float] = time.perf_counter,
+    ) -> None:
         self.team_budget_usd = team_budget_usd
         self.max_team_latency_ms = max_team_latency_ms
+        self._cost_meter = cost_meter
+        self._clock = clock
         self.members: List[TeamMember] = [
             TeamMember(agent_id="euclid_lead", role=TeamRole.LEAD_PLANNER, priority=1),
             TeamMember(agent_id="al_haras_sentry", role=TeamRole.SECURITY_SENTRY, priority=1),
@@ -59,7 +66,39 @@ class CommercialTeamOrchestrator:
         from euclid.swarm_evolution import SwarmActivator, SwarmMission
         if not isinstance(activator, SwarmActivator) or not isinstance(mission, SwarmMission):
             raise TypeError("qualified EUCLID swarm activator and mission required")
-        return activator.activate(mission, dispatch=dispatch, verify=verify)
+        if self._cost_meter is None:
+            raise RuntimeError("measured commercial cost enforcement is unavailable")
+        started_at = self._clock()
+        starting_cost = self._cost_meter()
+        if not isinstance(starting_cost, (int, float)) or starting_cost < 0:
+            raise RuntimeError("commercial cost meter returned an invalid value")
+
+        def guard() -> None:
+            elapsed_ms = (self._clock() - started_at) * 1000.0
+            current_cost = self._cost_meter()
+            if not isinstance(current_cost, (int, float)) or current_cost < starting_cost:
+                raise RuntimeError("commercial cost meter returned an invalid value")
+            if current_cost - starting_cost > self.team_budget_usd:
+                raise RuntimeError("commercial team budget exceeded")
+            if elapsed_ms > self.max_team_latency_ms:
+                raise RuntimeError("commercial team latency limit exceeded")
+
+        def guarded_dispatch(task):
+            guard()
+            result = dispatch(task)
+            guard()
+            return result
+
+        def guarded_verify(task, result):
+            guard()
+            outcome = verify(task, result)
+            guard()
+            return outcome
+
+        guard()
+        return activator.activate(
+            mission, dispatch=guarded_dispatch, verify=guarded_verify
+        )
 
     def run_collaborative_task(
         self,
