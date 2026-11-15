@@ -87,6 +87,32 @@ class StratumV2PoolClient:
                 self._trigger_auto_failover(failover_pool)
                 await asyncio.sleep(1.0)
 
+    def _trigger_auto_failover(self, failover_pool: List[str]) -> None:
+        """
+        Select the next endpoint to connect to after a connection failure.
+
+        Backup endpoints are consumed from ``failover_pool`` in order. When
+        the pool is exhausted, the primary endpoint is retried and the pool
+        is refilled from the configured failover list, so rotation continues
+        indefinitely rather than stopping.
+
+        Parameters
+        ----------
+        failover_pool : list[str]
+            Mutable queue of backup endpoints still to be tried. Modified
+            in place.
+        """
+        if not failover_pool:
+            logger.error(
+                "All endpoints exhausted; retrying primary %s",
+                self.primary_endpoint,
+            )
+            self.active_endpoint = self.primary_endpoint
+            failover_pool.extend(self.failover_endpoints)
+            return
+        self.active_endpoint = failover_pool.pop(0)
+        logger.warning("Failing over to backup endpoint %s", self.active_endpoint)
+
     # ------------------------------------------------------------------
     # Transport stubs – concrete implementations provide real I/O.
     # ------------------------------------------------------------------
