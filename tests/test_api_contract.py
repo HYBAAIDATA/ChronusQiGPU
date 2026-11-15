@@ -152,6 +152,39 @@ def test_concurrent_sqlite_first_use_initializes_wal_once(tmp_path, monkeypatch)
     assert modes == ["wal"] * 8
 
 
+def test_sqlite_schema_reinitialized_after_database_file_replacement(
+    tmp_path, monkeypatch
+):
+    """An existing pathname is not proof of an initialized SQLite database."""
+    import sqlite3
+
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "sqlite")
+    database = tmp_path / "replaced.sqlite3"
+    monkeypatch.setenv("CHRONUS_API_DB_PATH", str(database))
+    with state.connection() as conn:
+        assert conn.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
+
+    fresh = tmp_path / "fresh.sqlite3"
+    with sqlite3.connect(fresh) as conn:
+        assert conn.execute(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table'"
+        ).fetchone()[0] == 0
+    fresh.replace(database)
+
+    state.write_record(
+        "workloads",
+        {"id": "after-replacement", "tenant_id": "acme", "state": "queued"},
+    )
+    assert state.read_record("workloads", "after-replacement")["state"] == "queued"
+    with state.connection() as conn:
+        assert conn.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
+        assert conn.execute(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' "
+            "AND name IN ('api_workloads', 'api_nodes', 'api_receipts', "
+            "'api_idempotency', 'api_rate_limits')"
+        ).fetchone()[0] == 5
+
+
 def test_same_key_different_body_is_409(client):
     _post(client, ALPHA)
     response = _post(client, ALPHA, body={**BODY, "gpu_count": 2})

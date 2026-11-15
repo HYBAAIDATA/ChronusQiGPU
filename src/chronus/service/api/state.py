@@ -65,7 +65,7 @@ _MEMORY: dict[str, dict] = {
 }
 _RATE_HITS: dict[str, list[float]] = {}
 _MEMORY_LOCK = threading.RLock()
-# Schema setup is a first-use operation, never part of concurrent requests.
+# Re-check schema on each connection; serialize repairs to avoid DDL races.
 _SCHEMA_LOCK = threading.Lock()
 _INITIALIZED_DB: set[str] = set()
 
@@ -96,9 +96,21 @@ def _connect() -> sqlite3.Connection:
         # Set timeout before any schema / journal negotiation.
         connection.execute("PRAGMA busy_timeout=30000")
         with _SCHEMA_LOCK:
-            if path not in _INITIALIZED_DB:
-                mode = connection.execute("PRAGMA journal_mode").fetchone()[0]
-                if mode.lower() != "wal":
+            # The pathname is not a database identity: a file may be replaced
+            # while this process stays alive. Verify the schema on the opened
+            # connection even when this path was initialized previously.
+            mode = connection.execute("PRAGMA journal_mode").fetchone()[0].lower()
+            required = {f"api_{table}" for table in _TABLES}
+            required.update({"api_idempotency", "api_rate_limits"})
+            required.update({f"api_{table}_tenant_created" for table in _TABLES})
+            required.add("api_idempotency_expires")
+            present = {
+                row[0] for row in connection.execute(
+                    "SELECT name FROM sqlite_master WHERE type IN ('table', 'index')"
+                )
+            }
+            if path not in _INITIALIZED_DB or mode != "wal" or not required.issubset(present):
+                if mode != "wal":
                     connection.execute("PRAGMA journal_mode=WAL")
                 for table in _TABLES:
                     connection.execute(
