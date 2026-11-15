@@ -60,9 +60,9 @@ def header(extranonce1: str, params: list) -> bytes:
 
 def accept_share(extranonce1: str, params: list, target: int = TARGET) -> tuple[bool, list | None]:
     """Validate submit fields and apply the LE share predicate. Used by tests."""
-    if len(params) < 5:
+    if not isinstance(params, list) or len(params) != 5:
         return False, [20, "Malformed submit", None]
-    worker, job_id, en2, ntime, nonce = params[:5]
+    worker, job_id, en2, ntime, nonce = params
     if job_id != JOB_ID:
         return False, [21, "Job not found", None]
     if not isinstance(worker, str) or not worker:

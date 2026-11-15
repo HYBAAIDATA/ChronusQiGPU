@@ -76,6 +76,11 @@ class EndianSmokeTests(unittest.TestCase):
         self.assertFalse(ok)
         self.assertEqual(error[0], 21)
 
+        extra = list(params) + ["00000000"]
+        ok, error = accept_share(extranonce1, extra, soft)
+        self.assertFalse(ok)
+        self.assertEqual(error[0], 20)
+
     def test_parse_host_preserves_tls_and_rejects_unknown(self) -> None:
         host, port, tls = parse_host("stratum+ssl://pool.example:5555", 3333)
         self.assertEqual((host, port, tls), ("pool.example", 5555, True))
@@ -92,6 +97,31 @@ class EndianSmokeTests(unittest.TestCase):
                 with self.assertRaises(SystemExit) as raised:
                     main()
         self.assertEqual(raised.exception.code, 4)
+
+
+class TranscriptTests(unittest.TestCase):
+    def test_write_does_not_overwrite_same_stamp(self) -> None:
+        import tempfile
+        from pathlib import Path
+        from stratum_smoke import EVIDENCE, Transcript
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch("stratum_smoke.EVIDENCE", Path(tmp)):
+                first = Transcript("fake")
+                first.stamp = "20260101T000000"
+                first.data["started"] = first.stamp
+                first.step("a", True, "one")
+                path1 = first.write()
+                second = Transcript("fake")
+                second.stamp = "20260101T000000"
+                second.data["started"] = second.stamp
+                second.step("b", True, "two")
+                path2 = second.write()
+                self.assertNotEqual(path1, path2)
+                self.assertTrue(path1.exists())
+                self.assertTrue(path2.exists())
+                self.assertIn('"one"', path1.read_text(encoding="utf-8"))
+                self.assertIn('"two"', path2.read_text(encoding="utf-8"))
 
 
 class NotifyRetentionTests(unittest.TestCase):
@@ -138,6 +168,45 @@ class NotifyRetentionTests(unittest.TestCase):
                 self.assertTrue(reply.get("result") is True)
                 notify = await session.wait_for("mining.notify", timeout=1.0)
                 self.assertEqual(notify["params"][0], "early-job")
+            finally:
+                session.alive.clear()
+                session.pump.cancel()
+                try:
+                    await session.pump
+                except (asyncio.CancelledError, Exception):
+                    pass
+
+        asyncio.run(scenario())
+
+    def test_take_pending_keeps_latest_notify(self) -> None:
+        async def scenario() -> None:
+            reader = asyncio.StreamReader()
+
+            class W:
+                def write(self, _data):
+                    pass
+
+                async def drain(self):
+                    pass
+
+                def close(self):
+                    pass
+
+                async def wait_closed(self):
+                    pass
+
+            session = Session(reader, W(), Transcript("fake"))
+            try:
+                session.stash.extend(
+                    [
+                        {"method": "mining.notify", "params": ["old"] + ["00"] * 7 + [True]},
+                        {"method": "mining.set_difficulty", "params": [1]},
+                        {"method": "mining.notify", "params": ["new"] + ["00"] * 7 + [True]},
+                    ]
+                )
+                pending = session.take_pending("mining.notify")
+                self.assertEqual([m["params"][0] for m in pending], ["old", "new"])
+                self.assertEqual(session.stash[0]["method"], "mining.set_difficulty")
             finally:
                 session.alive.clear()
                 session.pump.cancel()

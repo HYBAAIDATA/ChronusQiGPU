@@ -65,9 +65,17 @@ class Transcript:
 
     def write(self) -> Path:
         EVIDENCE.mkdir(parents=True, exist_ok=True)
-        path = EVIDENCE / f"{self.data['target']}-{self.stamp}.json"
-        path.write_text(json.dumps(self.data, indent=2), encoding="utf-8")
-        return path
+        base = f"{self.data['target']}-{self.stamp}"
+        for suffix in range(0, 10_000):
+            name = f"{base}.json" if suffix == 0 else f"{base}-{suffix}.json"
+            path = EVIDENCE / name
+            try:
+                with path.open("x", encoding="utf-8") as handle:
+                    handle.write(json.dumps(self.data, indent=2))
+                return path
+            except FileExistsError:
+                continue
+        raise RuntimeError(f"could not allocate a unique transcript under {EVIDENCE}")
 
 
 def parse_host(host: str, port: int, scheme: str = "stratum+tcp") -> tuple[str, int, bool]:
@@ -367,6 +375,33 @@ class Session:
             if message.get("method"):
                 self.stash.append(message)
 
+    def take_pending(self, method: str) -> list[dict]:
+        """Drain already-queued messages of ``method`` (stash + queue), preserving order."""
+        taken: list[dict] = []
+        kept: list[dict] = []
+        for message in self.stash:
+            if message.get("method") == method:
+                taken.append(message)
+            else:
+                kept.append(message)
+        self.stash = kept
+        while True:
+            try:
+                message = self.queue.get_nowait()
+            except asyncio.QueueEmpty:
+                break
+            if message is None:
+                self.queue.put_nowait(None)
+                break
+            if isinstance(message, dict) and "_pump_error" in message:
+                self.queue.put_nowait(message)
+                break
+            if isinstance(message, dict) and message.get("method") == method:
+                taken.append(message)
+            elif isinstance(message, dict) and message.get("method"):
+                self.stash.append(message)
+        return taken
+
     async def close(self) -> None:
         self.pump.cancel()
         self.writer.close()
@@ -442,6 +477,10 @@ async def smoke(args, tx: Transcript) -> int:
         except asyncio.TimeoutError:
             tx.step("job", False, f"no mining.notify within {args.job_timeout}s")
             return 2
+        # Prefer the latest already-queued notify (e.g. clean_jobs replacement before auth ended).
+        pending = session.take_pending("mining.notify")
+        if pending:
+            notify = pending[-1]
         params = notify.get("params")
         if not isinstance(params, list) or len(params) < 9:
             tx.step("job", False, "malformed mining.notify")
@@ -449,7 +488,12 @@ async def smoke(args, tx: Transcript) -> int:
         job = dict(zip(
             ("job_id", "prevhash", "coinb1", "coinb2", "merkle_branch", "version",
              "nbits", "ntime", "clean_jobs"), params))
-        tx.step("job", True, f"job_id={job['job_id']} clean={job['clean_jobs']}")
+        tx.step(
+            "job",
+            True,
+            f"job_id={job['job_id']} clean={job['clean_jobs']}"
+            + (f" (selected latest of {1 + len(pending)})" if pending else ""),
+        )
 
         if not args.submit_share:
             return 0
@@ -463,6 +507,7 @@ async def smoke(args, tx: Transcript) -> int:
         tx.data["extranonce2"] = extranonce2
 
         session.phase = "search"
+        # Baseline after current-job selection so pre-auth replacements are not false mid-search changes.
         jobs_before = len(tx.data["jobs"])
         diff_before = len(tx.data["set_difficulty"])
         deadline = time.monotonic() + args.share_seconds
