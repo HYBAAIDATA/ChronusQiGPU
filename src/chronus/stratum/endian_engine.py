@@ -163,7 +163,7 @@ class StratumSession:
 
     extranonce1: bytes
     extranonce2_size: int
-    difficulty: float = 1.0
+    difficulty: Fraction = Fraction(1)
 
     @property
     def target(self) -> int:

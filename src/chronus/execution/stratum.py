@@ -8,6 +8,7 @@ a second implementation of either concern.
 from __future__ import annotations
 
 import asyncio
+from fractions import Fraction
 
 from chronus.stratum.endian_engine import (
     DIFF1_TARGET,
@@ -49,7 +50,7 @@ class StratumV1Client:
         self.gateway = StratumGateway(host, port, user, password)
         self._delivered_jobs: set[tuple[str, int]] = set()
 
-    def _registered_job(self) -> tuple[StratumJob, float] | None:
+    def _registered_job(self) -> tuple[StratumJob, Fraction] | None:
         """Return work consumed during the handshake before reading again."""
         for job_id in self.gateway.job_history:
             job = self.gateway.jobs.get(job_id)
@@ -64,7 +65,7 @@ class StratumV1Client:
                 job["merkle_branches"], job["version_hex"], job["nbits_hex"],
                 job["ntime_hex"], True,
             ]
-            return StratumJob.from_notify(params), float(job["difficulty"])
+            return StratumJob.from_notify(params), job["difficulty"]
         return None
 
     async def connect(self) -> StratumSession:
@@ -77,7 +78,7 @@ class StratumV1Client:
         return StratumSession(
             extranonce1=bytes.fromhex(self.gateway.extranonce1_hex),
             extranonce2_size=self.gateway.extranonce2_size,
-            difficulty=float(self.gateway.current_difficulty),
+            difficulty=self.gateway.current_difficulty,
         )
 
     async def next_job(self) -> tuple[StratumJob, float]:
