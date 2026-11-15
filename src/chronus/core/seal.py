@@ -70,11 +70,14 @@ def is_external_surface(rel_path: str) -> bool:
 
 
 def scrub_dict_strings(payload: dict, *, context: str = "api payload") -> dict:
-    """Recursively assert string leaves are sealed; returns the same dict."""
+    """Recursively assert string keys and leaves are sealed; returns the same dict."""
     def walk(node, path: str) -> None:
         if isinstance(node, dict):
             for key, value in node.items():
-                walk(value, f"{path}.{key}" if path else str(key))
+                key_path = f"{path}.{key}" if path else str(key)
+                if isinstance(key, str):
+                    assert_sealed(key, context=f"{context}:{key_path}")
+                walk(value, key_path)
         elif isinstance(node, list):
             for index, value in enumerate(node):
                 walk(value, f"{path}[{index}]")

@@ -248,6 +248,30 @@ class ScalingResultSealTests(unittest.TestCase):
         result = QualificationHarness().qualify("LUCAS_PV_SCALING", seed=3)
         self.assertEqual(result.public_view["envelope"]["scope"], "discrete_probe_sizes")
 
+    def test_inventory_workloads_are_externalized(self) -> None:
+        from chronus.execution import execution_router
+        from chronus.execution.qigpu import QiGPUOrchestrator
+
+        inventory = QiGPUOrchestrator(execution_router).inventory()
+        payload = json.dumps(inventory)
+        self.assertEqual(find_banned_tokens(payload), [])
+        workloads = {
+            name
+            for surface in inventory["surfaces"]
+            for name in surface["workloads"]
+        }
+        self.assertIn("scaling.v1", workloads)
+        self.assertNotIn("LUCAS_PV_SCALING", workloads)
+
+    def test_al_haras_self_tests_are_sealed(self) -> None:
+        from chronus.security.al_haras.topological_os import public_self_tests
+
+        sealed = public_self_tests()
+        payload = json.dumps(sealed)
+        self.assertEqual(find_banned_tokens(payload), [])
+        self.assertIn("sequence_identity_exact", sealed)
+        self.assertNotIn("binet_lucas_identity_exact", sealed)
+
 
 class InternalIdentityTests(unittest.TestCase):
     def test_lucas_fibonacci_cross_check(self) -> None:
