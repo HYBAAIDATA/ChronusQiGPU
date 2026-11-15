@@ -40,6 +40,7 @@ jobs:
             tests/test_qualification.py \
             tests/test_attested_evaluator.py \
             tests/test_product_gates.py \
+            tests/test_release_gate.py \
             tests/test_chronus_suite.py \
             --junitxml=junit.xml
 
