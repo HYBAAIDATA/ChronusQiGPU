@@ -4,7 +4,9 @@ import hashlib
 from dataclasses import asdict, dataclass, replace
 from typing import Any
 from chronus.security.canonical import canonical_bytes
-from chronus.security.signers import Ed25519Signer
+from cryptography.exceptions import InvalidSignature
+
+from chronus.crypto.signers import Ed25519Signer, verify as verify_signature
 
 @dataclass(frozen=True)
 class Receipt:
@@ -63,8 +65,9 @@ class ReceiptLog:
             receipt = replace(signed.receipt, **tamper) if tamper else signed.receipt
             if receipt.digest() != signed.digest:
                 return False
-            return Ed25519Signer.verify(bytes.fromhex(signed.digest), signed.signature, public_key)
-        except (ValueError, TypeError, KeyError):
+            verify_signature("Ed25519", public_key, bytes.fromhex(signed.digest), signed.signature)
+            return True
+        except (ValueError, TypeError, KeyError, InvalidSignature):
             return False
 
     def verify_chain(self, public_key: bytes) -> tuple[bool, str]:
