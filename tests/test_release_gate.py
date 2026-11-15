@@ -12,6 +12,10 @@ def valid_verdict():
     return {
         "status": "PASS", "blockers": [],
         "attestation_verified": True, "test_suite_pass": True,
+        "post_quantum_signer": "ML-DSA-65",
+        "post_quantum_signer_verified": True,
+        "key_provider": "azure-managed-hsm",
+        "key_provider_verified": True,
         "gates": {gate: "PASS" for gate in MANDATORY},
         "claims": {claim: "supported" for claim in CLAIM_GATES},
     }
@@ -24,6 +28,10 @@ def test_mandatory_gates_are_enforced_without_waivers():
         {"blockers": ["ML-DSA-65 unavailable"]},
         {"attestation_verified": False},
         {"test_suite_pass": False},
+        {"post_quantum_signer": "UNAVAILABLE"},
+        {"post_quantum_signer_verified": False},
+        {"key_provider": "local-memory"},
+        {"key_provider_verified": False},
         {"gates": {}},
         {"claims": {"CO-001": "held"}},
         {"claims": {"CO-001": "supported"}},
