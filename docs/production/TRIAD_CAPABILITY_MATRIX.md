@@ -9,6 +9,8 @@ This matrix maps the required product capabilities to the maintained source and 
 | Tensor runtime | CHRONUS | `src/chronus/tensor/` | Elevated | Current tensor regressions + equivalent-output checks |
 | Selective resident-state materialisation | CHRONUS | `tensor/folded_state.py` | Elevated | Partial-read regression + full round-trip digest |
 | Physical OpenCL tensor execution | CHRONUS | `tensor/opencl_backend.py`, `kernels/tensor_ops.cl` | Implemented; device evidence open | Identified GPU, driver/kernel binding, parity, repeated timing |
+| Physical CUDA tensor execution | CHRONUS | `tensor/cuda_backend.py` | Implemented; device evidence open | Identified NVIDIA GPU, runtime/driver, parity, repeated timing |
+| Physical Metal tensor execution | CHRONUS | `tensor/metal_backend.py` | Implemented; device evidence open | Identified Apple GPU, MLX/Metal binding, parity, repeated timing |
 | Profiled hybrid routing | CHRONUS | `tensor/geodesic.py` | Elevated | Verified timing profiles; no unverified route selection |
 | Measured energy comparison | CHRONUS | `tensor/geodesic.py::EnergyModel` | Elevated | Same-workload measured joules from named environment |
 | Versioned representation transform | OVID | `ovid/transform.py` | Elevated | Round-trip/digest/version tests |
