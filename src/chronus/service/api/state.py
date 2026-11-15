@@ -111,6 +111,21 @@ def _connect() -> sqlite3.Connection:
                     "recovery verification required before serving requests"
                 )
             if prior_identity is None:
+                # A fresh process has no cached identity. An existing database
+                # with missing required schema must not be silently recreated
+                # empty; only a brand-new (schema-free) file may be bootstrapped.
+                existing = {
+                    row[0]
+                    for row in connection.execute(
+                        "SELECT name FROM sqlite_master "
+                        "WHERE type IN ('table', 'index')"
+                    )
+                }
+                if existing and not _SCHEMA_OBJECTS.issubset(existing):
+                    raise RuntimeError(
+                        "SQLite schema missing from existing database; "
+                        "recovery verification required before serving requests"
+                    )
                 mode = connection.execute("PRAGMA journal_mode").fetchone()[0]
                 if mode.lower() != "wal":
                     connection.execute("PRAGMA journal_mode=WAL")
