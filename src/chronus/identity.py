@@ -116,10 +116,16 @@ class Face:
     changed_keys: tuple[str, ...]
 
 
+def _segment(key: str) -> str:
+    """Escape path separators so a key named a.b is not nested a then b."""
+    return key.replace("\\", "\\\\").replace(".", "\\.")
+
+
 def _changed(before: dict, after: dict, prefix: str = "") -> tuple[str, ...]:
     changed: list[str] = []
     for key in sorted(set(before) | set(after)):
-        path = f"{prefix}.{key}" if prefix else key
+        segment = _segment(key)
+        path = f"{prefix}.{segment}" if prefix else segment
         if (key in before) != (key in after):
             changed.append(path)
             continue

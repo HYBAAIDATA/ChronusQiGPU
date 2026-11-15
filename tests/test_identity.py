@@ -106,6 +106,19 @@ def test_ovid_names_dotted_paths_and_presence():
     assert faces[2].changed_keys == ("result.lucas",)
 
 
+def test_dotted_key_is_not_a_nested_path():
+    top = assert_ovid(
+        {"a.b": 1},
+        [Transformation("edit:top", lambda record: {**record, "a.b": 2}, False)],
+    )
+    nested = assert_ovid(
+        {"a": {"b": 1}},
+        [Transformation("edit:nested", lambda record: {"a": {"b": 2}}, False)],
+    )
+    assert top[0].changed_keys == ("a\\.b",)
+    assert nested[0].changed_keys == ("a.b",)
+
+
 def test_ovid_snapshots_an_in_place_edit():
     record = {"amount": 1250.0, "nested": {"x": 0}}
     original = copy.deepcopy(record)
