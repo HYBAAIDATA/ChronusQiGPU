@@ -1,0 +1,9 @@
+{
+  "correction": "P1 finite tensor network",
+  "source_sha256": "6ee20c1d4672084c07b7d957829112038d9e3099b9632d3a3faf358d0f8f3211",
+  "tests_passed": 83,
+  "implementation_statement_coverage_percent": 97.62,
+  "implementation_branch_coverage_percent": 91.92,
+  "scope": "Exact finite copy-isometry/CNOT network at 4, 8 and 16 sites; exact reduced density matrices.",
+  "finding": "Entropy log(2) does not match the c=1 CFT reference for 2- and 4-site blocks. This network does not demonstrate critical CFT scaling or scrambling."
+}

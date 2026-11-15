@@ -63,7 +63,7 @@ class TenantProfile(BaseModel):
     o1_structural_memory_gb: int = 256
     kms_provider: str = "AWS_KMS"
     kms_key_arn: Optional[str] = None
-    al_haras_kms_status: str = "KMS_BOUND_CUSTOMER_CUSTODY"
+    al_haras_kms_status: str = "NOT_BOUND"
     ovid_namespace: Optional[str] = None
     console_access_url: Optional[str] = None
 

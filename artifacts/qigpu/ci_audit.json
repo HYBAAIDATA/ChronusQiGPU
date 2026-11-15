@@ -1,0 +1,17 @@
+{
+  "class_touched_counts": {
+    "TestAdversarial": 42,
+    "TestEdge": 50,
+    "TestEndToEnd": 64,
+    "TestIntegration": 46,
+    "TestInvariant": 47,
+    "TestProperty": 43,
+    "TestUnit": 77
+  },
+  "finding": "All identified public functions were touched in unit tests, but touch is not comprehensive behavioral coverage; other classes and cross-module composition remain incomplete. GitHub Actions status was not accessible.",
+  "per_function_coverage_sha256": "dee3b94124acf7e41550223d831581d1d57ad208cac1da50eed1f94ca5422ed8",
+  "public_functions": 77,
+  "seven_class_audit_sha256": "7007b49d4681de0324444050ec5c1a32f1f9414426397dde5457730fdded0457",
+  "source_sha256": "966c9b2aaa33840ef5c6772cbb115324bb656392c4814fec10208bc967d65743",
+  "tests_passed": 165
+}

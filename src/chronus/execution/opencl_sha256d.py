@@ -58,9 +58,7 @@ class OpenCLSha256dMinerBackend:
             device = platform.get_devices()[self.device_index]
             self._ctx = cl.Context([device])
             self._queue = cl.CommandQueue(self._ctx)
-            self._program = cl.Program(
-                self._ctx, _KERNEL_PATH.read_text()
-            ).build()
+            self._program = cl.Program(self._ctx, _KERNEL_PATH.read_text()).build()
             self._device_info = {
                 "device_name": device.name.strip(),
                 "device_type": cl.device_type.to_string(device.type),
@@ -108,9 +106,7 @@ class OpenCLSha256dMinerBackend:
         target_words = [(target >> (32 * i)) & 0xFFFFFFFF for i in range(8)]
         return midstate, tail, target_words
 
-    def search(
-        self, header: bytes, start: int, stop: int, target: int
-    ) -> List[int]:
+    def search(self, header: bytes, start: int, stop: int, target: int) -> List[int]:
         """Search [start, stop) on the OpenCL device; return matching nonces."""
         if not self._available:
             raise HardwareUnavailableError(
@@ -132,22 +128,22 @@ class OpenCLSha256dMinerBackend:
         )
         count_host = bytearray(4)
         count = cl.Buffer(
-            self._ctx, cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR, hostbuf=bytes(count_host)
+            self._ctx,
+            cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR,
+            hostbuf=bytes(count_host),
         )
 
         kernel = self._program.sha256d_search
         kernel.set_args(
-            *[cl.types.uint(v) for v in midstate],
-            *[cl.types.uint(v) for v in tail],
-            cl.types.uint(start),
-            *[cl.types.uint(v) for v in target_words],
+            *[cl.cltypes.uint(v) for v in midstate],
+            *[cl.cltypes.uint(v) for v in tail],
+            cl.cltypes.uint(start),
+            *[cl.cltypes.uint(v) for v in target_words],
             found,
             count,
-            cl.types.uint(self.max_reported),
+            cl.cltypes.uint(self.max_reported),
         )
-        cl.enqueue_nd_range_kernel(
-            self._queue, kernel, (width,), None
-        ).wait()
+        cl.enqueue_nd_range_kernel(self._queue, kernel, (width,), None).wait()
 
         import numpy as np
 

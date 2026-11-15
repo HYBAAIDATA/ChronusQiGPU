@@ -1,0 +1,2604 @@
+"""
+QiGPU Master Tour de Force Quantum Acceleration System
+=============================================================================
+Universal Pure Mathematical Substrate & Substrate-Agnostic Execution Engine
+Bridging all theoretical paradigms, structural proofs, empirical baselines,
+hardware synthesizable targets, and formal refusal boundaries into one unified,
+Experimental mathematical prototype; not a production system.
+
+WORK IN PROGRESS: Exact finite models and checks have bounded scope. Critical
+CFT scaling, general backend equivalence, full HQEC and physical-device
+performance are not established. Do not rely on this file for production.
+
+Substrate: Parameterized Cyclotomic Integer Ring Z[zeta_p] & Fraction Field Q(zeta_p)
+Some exact operations coexist with floating-point and unverified example code. See findings below.
+=============================================================================
+"""
+
+import os
+import sys
+import time
+import json
+import math
+import hashlib
+import unittest
+import itertools
+from functools import lru_cache
+from fractions import Fraction
+from typing import Tuple, List, Dict, Any, Optional, Union
+
+# =====================================================================
+# 1. PARAMETERIZED CYCLOTOMIC ARITHMETIC SUBSTRATE: Z[zeta_p]
+# =====================================================================
+
+class RingError(Exception):
+    """Raised when an operation violates exact ring arithmetic or leaves the ring."""
+    pass
+
+def is_prime(n: int) -> bool:
+    """Deterministic primality test for small moduli."""
+    if type(n) is not int or n < 2:
+        return False
+    if n in (2, 3):
+        return True
+    if n % 2 == 0 or n % 3 == 0:
+        return False
+    i = 5
+    w = 2
+    while i * i <= n:
+        if n % i == 0:
+            return False
+        i += w
+        w = 6 - w
+    return True
+
+def legendre_symbol(a: int, p: int) -> int:
+    """Computes the Legendre symbol (a/p) via Euler's criterion."""
+    if type(a) is not int or type(p) is not int or not is_prime(p) or p==2:
+        raise RingError("Legendre symbol requires an integer and an odd prime")
+    a = a % p
+    if a == 0:
+        return 0
+    val = pow(a, (p - 1) // 2, p)
+    return -1 if val == p - 1 else val
+
+class CyclotomicRing:
+    """
+    Exact parameterized cyclotomic integer ring Z[zeta_p] for prime p.
+    Degree phi(p) = p - 1.
+    Coefficients stored as canonical p-tuple modulo Phi_p(zeta) = sum_{k=0}^{p-1} zeta^k = 0.
+    Canonical reduction strategy: c_i = raw_i - raw_{p-1}, enforcing c_{p-1} = 0.
+    """
+    __slots__ = ('p', 'v')
+
+    def __init__(self, p: int, coeffs: Union[int, Tuple[int, ...], List[int]]):
+        if type(p) is not int or not is_prime(p):
+            raise RingError(f"Modulus p={p} must be a prime integer.")
+        self.p = p
+
+        if isinstance(coeffs, float):
+            raise RingError("Floating-point values strictly forbidden in exact cyclotomic ring arithmetic.")
+        elif type(coeffs) is int:
+            raw = [coeffs] + [0] * (p - 1)
+        elif isinstance(coeffs, (tuple, list)):
+            for c in coeffs:
+                if isinstance(c, float):
+                    raise RingError("Floating-point values strictly forbidden in exact cyclotomic ring arithmetic.")
+                if type(c) is not int:
+                    raise RingError(f"Coefficient {c} is not an integer.")
+            if len(coeffs) == p - 1:
+                raw = [int(c) for c in coeffs] + [0]
+            elif len(coeffs) == p:
+                raw = [int(c) for c in coeffs]
+            else:
+                raise RingError(f"Coefficients length must be {p-1} or {p}, got {len(coeffs)}")
+        else:
+            raise RingError(f"Invalid coefficient type: {type(coeffs)}")
+
+        c_last = raw[p - 1]
+        self.v = tuple(c - c_last for c in raw)
+
+    @classmethod
+    def zero(cls, p: int) -> 'CyclotomicRing':
+        return cls(p, [0] * p)
+
+    @classmethod
+    def one(cls, p: int) -> 'CyclotomicRing':
+        raw = [0] * p
+        raw[0] = 1
+        return cls(p, raw)
+
+    @classmethod
+    def zeta(cls, p: int, power: int = 1) -> 'CyclotomicRing':
+        if type(p) is not int or not is_prime(p) or type(power) is not int: raise RingError("Expected prime modulus and integer exponent")
+        raw = [0] * p
+        raw[power % p] = 1
+        return cls(p, raw)
+
+    @classmethod
+    def embed_rational(cls, p: int, n: int) -> 'CyclotomicRing':
+        if not isinstance(n, int):
+            raise RingError(f"Rational embedding requires integer, got {type(n)}")
+        raw = [0] * p
+        raw[0] = n
+        return cls(p, raw)
+
+    @classmethod
+    def gauss_sum(cls, p: int) -> 'CyclotomicRing':
+        """
+        Quadratic Gauss sum g = sum_{a=1}^{p-1} (a/p) zeta^a.
+        Satisfies g^2 = (-1)^{(p-1)/2} * p in Z[zeta_p].
+        """
+        raw = [0] * p
+        for a in range(1, p):
+            raw[a] = legendre_symbol(a, p)
+        return cls(p, raw)
+
+    def is_zero(self) -> bool:
+        return all(c == 0 for c in self.v)
+
+    def is_one(self) -> bool:
+        return self.v[0] == 1 and all(c == 0 for c in self.v[1:])
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, CyclotomicRing):
+            if isinstance(other, int):
+                other = CyclotomicRing.embed_rational(self.p, other)
+            else:
+                return False
+        if self.p != other.p:
+            return False
+        return self.v == other.v
+
+    def __hash__(self) -> int:
+        return hash((self.p, self.v))
+
+    def __add__(self, other) -> 'CyclotomicRing':
+        if isinstance(other, int):
+            other = CyclotomicRing.embed_rational(self.p, other)
+        elif not isinstance(other, CyclotomicRing) or self.p != other.p:
+            raise RingError(f"Cannot add CyclotomicRing(p={self.p}) and {other}")
+        return CyclotomicRing(self.p, tuple(a + b for a, b in zip(self.v, other.v)))
+
+    def __radd__(self, other) -> 'CyclotomicRing':
+        return self.__add__(other)
+
+    def __sub__(self, other) -> 'CyclotomicRing':
+        if isinstance(other, int):
+            other = CyclotomicRing.embed_rational(self.p, other)
+        elif not isinstance(other, CyclotomicRing) or self.p != other.p:
+            raise RingError(f"Cannot subtract {other} from CyclotomicRing(p={self.p})")
+        return CyclotomicRing(self.p, tuple(a - b for a, b in zip(self.v, other.v)))
+
+    def __rsub__(self, other) -> 'CyclotomicRing':
+        return CyclotomicRing.embed_rational(self.p, other).__sub__(self)
+
+    def __neg__(self) -> 'CyclotomicRing':
+        return CyclotomicRing(self.p, tuple(-a for a in self.v))
+
+    def __mul__(self, other) -> 'CyclotomicRing':
+        if isinstance(other, int):
+            return CyclotomicRing(self.p, tuple(a * other for a in self.v))
+        elif not isinstance(other, CyclotomicRing) or self.p != other.p:
+            raise RingError(f"Cannot multiply CyclotomicRing(p={self.p}) by {other}")
+
+        p = self.p
+        res = [0] * p
+        for i in range(p):
+            if self.v[i] == 0:
+                continue
+            for j in range(p):
+                res[(i + j) % p] += self.v[i] * other.v[j]
+        return CyclotomicRing(p, tuple(res))
+
+    def __rmul__(self, other) -> 'CyclotomicRing':
+        return self.__mul__(other)
+
+    def __pow__(self, power: int) -> 'CyclotomicRing':
+        if not isinstance(power, int):
+            raise RingError("Power exponent must be an integer.")
+        if power < 0:
+            return self.inv() ** (-power)
+        res = CyclotomicRing.one(self.p)
+        base = self
+        while power > 0:
+            if power % 2 == 1:
+                res = res * base
+            base = base * base
+            power //= 2
+        return res
+
+    def sigma(self, k: int) -> 'CyclotomicRing':
+        """Galois automorphism sigma_k: zeta -> zeta^k for k in (Z/pZ)*."""
+        if type(k) is not int or k % self.p == 0:
+            raise RingError("Galois automorphism index must be an integer not divisible by p.")
+        p = self.p
+        res = [0] * p
+        for i in range(p):
+            res[(i * k) % p] += self.v[i]
+        return CyclotomicRing(p, tuple(res))
+
+    def conj(self) -> 'CyclotomicRing':
+        """Complex conjugation: sigma_{p-1}: zeta -> zeta^{-1}."""
+        return self.sigma(self.p - 1)
+
+    def norm(self) -> int:
+        """Algebraic norm N(alpha) = prod_{k=1}^{p-1} sigma_k(alpha) in Z."""
+        prod = CyclotomicRing.one(self.p)
+        for k in range(1, self.p):
+            prod = prod * self.sigma(k)
+        if any(c != 0 for c in prod.v[1:]):
+            raise RingError(f"Norm calculation produced non-rational element: {prod}")
+        return prod.v[0]
+
+    def inv(self) -> 'CyclotomicRing':
+        """Multiplicative unit inverse in Z[zeta_p] (defined iff norm is +/- 1)."""
+        N = self.norm()
+        if N not in (1, -1):
+            raise RingError(f"Element {self.v} with norm {N} is not an algebraic unit in Z[zeta_{self.p}].")
+        cofactor = CyclotomicRing.one(self.p)
+        for k in range(2, self.p):
+            cofactor = cofactor * self.sigma(k)
+        return cofactor if N == 1 else -cofactor
+
+    def __repr__(self) -> str:
+        return f"Z{self.p}{self.v[:self.p-1]}"
+
+
+class MatrixRing:
+    """Exact matrix algebra over CyclotomicRing Z[zeta_p]."""
+    __slots__ = ('p', 'rows', 'cols', 'data')
+
+    def __init__(self, p: int, rows: int, cols: int, data=None):
+        if type(p) is not int or not is_prime(p): raise RingError("Matrix modulus must be prime")
+        if type(rows) is not int or type(cols) is not int or rows < 0 or cols < 0: raise RingError("Matrix dimensions must be nonnegative integers")
+        self.p = p
+        self.rows = rows
+        self.cols = cols
+        if data is None:
+            self.data = [[CyclotomicRing.zero(p) for _ in range(cols)] for _ in range(rows)]
+        else:
+            if not isinstance(data,(list,tuple)) or len(data) != rows or any(not isinstance(r,(list,tuple)) or len(r) != cols for r in data):
+                raise RingError("Matrix shape mismatch with input data.")
+            if any(isinstance(x,CyclotomicRing) and x.p!=p for row in data for x in row): raise RingError("Matrix entry ring mismatch")
+            self.data = [
+                [x if isinstance(x, CyclotomicRing) else CyclotomicRing(p, x) for x in row]
+                for row in data
+            ]
+
+    @classmethod
+    def identity(cls, p: int, n: int) -> 'MatrixRing':
+        mat = cls(p, n, n)
+        one = CyclotomicRing.one(p)
+        for i in range(n):
+            mat.data[i][i] = one
+        return mat
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, MatrixRing) or self.p != other.p or self.rows != other.rows or self.cols != other.cols:
+            return False
+        for i in range(self.rows):
+            for j in range(self.cols):
+                if self.data[i][j] != other.data[i][j]:
+                    return False
+        return True
+
+    def __add__(self, other: 'MatrixRing') -> 'MatrixRing':
+        if not isinstance(other, MatrixRing) or self.p != other.p or self.rows != other.rows or self.cols != other.cols:
+            raise RingError("Incompatible matrix dimensions for addition.")
+        res = MatrixRing(self.p, self.rows, self.cols)
+        for i in range(self.rows):
+            for j in range(self.cols):
+                res.data[i][j] = self.data[i][j] + other.data[i][j]
+        return res
+
+    def __sub__(self, other: 'MatrixRing') -> 'MatrixRing':
+        if not isinstance(other, MatrixRing) or self.p != other.p or self.rows != other.rows or self.cols != other.cols:
+            raise RingError("Incompatible matrix dimensions for subtraction.")
+        res = MatrixRing(self.p, self.rows, self.cols)
+        for i in range(self.rows):
+            for j in range(self.cols):
+                res.data[i][j] = self.data[i][j] - other.data[i][j]
+        return res
+
+    def __mul__(self, other: Union['MatrixRing', CyclotomicRing, int]) -> 'MatrixRing':
+        if isinstance(other, (CyclotomicRing, int)):
+            s = other if isinstance(other, CyclotomicRing) else CyclotomicRing.embed_rational(self.p, other)
+            res = MatrixRing(self.p, self.rows, self.cols)
+            for i in range(self.rows):
+                for j in range(self.cols):
+                    res.data[i][j] = self.data[i][j] * s
+            return res
+        elif isinstance(other, MatrixRing):
+            if self.p != other.p or self.cols != other.rows:
+                raise RingError(f"Matrix dimension mismatch: ({self.rows}x{self.cols}) * ({other.rows}x{other.cols})")
+            res = MatrixRing(self.p, self.rows, other.cols)
+            for i in range(self.rows):
+                for k in range(self.cols):
+                    if self.data[i][k].is_zero():
+                        continue
+                    for j in range(other.cols):
+                        res.data[i][j] = res.data[i][j] + self.data[i][k] * other.data[k][j]
+            return res
+        else:
+            raise RingError(f"Unsupported multiplication with {type(other)}")
+
+    def __rmul__(self, other: Union[CyclotomicRing, int]) -> 'MatrixRing':
+        return self.__mul__(other)
+
+    def transpose(self) -> 'MatrixRing':
+        res = MatrixRing(self.p, self.cols, self.rows)
+        for i in range(self.rows):
+            for j in range(self.cols):
+                res.data[j][i] = self.data[i][j]
+        return res
+
+    def dagger(self) -> 'MatrixRing':
+        """Conjugate transpose."""
+        res = MatrixRing(self.p, self.cols, self.rows)
+        for i in range(self.rows):
+            for j in range(self.cols):
+                res.data[j][i] = self.data[i][j].conj()
+        return res
+
+    def kron(self, other: 'MatrixRing') -> 'MatrixRing':
+        """Kronecker tensor product."""
+        if not isinstance(other, MatrixRing) or self.p != other.p:
+            raise RingError("Kronecker product requires MatrixRing with same prime modulus.")
+        res = MatrixRing(self.p, self.rows * other.rows, self.cols * other.cols)
+        for i1 in range(self.rows):
+            for j1 in range(self.cols):
+                val1 = self.data[i1][j1]
+                if val1.is_zero():
+                    continue
+                for i2 in range(other.rows):
+                    for j2 in range(other.cols):
+                        res.data[i1 * other.rows + i2][j1 * other.cols + j2] = val1 * other.data[i2][j2]
+        return res
+
+
+# =====================================================================
+# 2. GENERAL ALGEBRAIC NUMBER FIELDS: Q[x]/(P(x))
+# =====================================================================
+
+class GeneralAlgebraicNumberField:
+    """
+    Exact Q[x]/(P(x)) arithmetic for a monic polynomial supplied by the caller.
+    Irreducibility is not checked. The quotient is a field only if P is
+    irreducible; floats are not accepted. The name is retained for compatibility.
+    """
+    __slots__ = ('poly_min', 'coeffs', 'deg')
+
+    def __init__(self, poly_min: List[Union[int, Fraction]], coeffs: List[Union[int, Fraction]]):
+        if not isinstance(poly_min,(list,tuple)) or len(poly_min)<2 or not isinstance(coeffs,(list,tuple)):
+            raise RingError("Expected a nonconstant polynomial and coefficient sequence")
+        if any(not isinstance(x,(int,Fraction)) or isinstance(x,bool) for x in list(poly_min)+list(coeffs)):
+            raise RingError("Polynomial coefficients must be exact integers or fractions")
+        self.poly_min = [Fraction(c) for c in poly_min]
+        if self.poly_min[-1]!=1: raise RingError("Polynomial must be monic")
+        self.deg = len(self.poly_min) - 1
+        raw = [Fraction(c) for c in coeffs]
+        if len(raw) < self.deg:
+            raw = raw + [Fraction(0)] * (self.deg - len(raw))
+        elif len(raw) > self.deg:
+            raw = self._poly_reduce(raw, self.poly_min)
+        raw += [Fraction(0)] * max(0,self.deg-len(raw))
+        self.coeffs = tuple(raw[:self.deg])
+
+    @staticmethod
+    def _poly_reduce(num: List[Fraction], den: List[Fraction]) -> List[Fraction]:
+        r = list(num)
+        d_len = len(den)
+        while len(r) >= d_len and any(c != 0 for c in r):
+            if r[-1] == 0:
+                r.pop()
+                continue
+            factor = r[-1] / den[-1]
+            pos = len(r) - d_len
+            for i in range(d_len):
+                r[pos + i] -= factor * den[i]
+            while r and r[-1] == 0:
+                r.pop()
+        return r if r else [Fraction(0)]
+
+    def __add__(self, other: 'GeneralAlgebraicNumberField') -> 'GeneralAlgebraicNumberField':
+        if not isinstance(other,GeneralAlgebraicNumberField) or self.poly_min!=other.poly_min: raise RingError("Polynomial quotient mismatch")
+        new_c = [a + b for a, b in zip(self.coeffs, other.coeffs)]
+        return GeneralAlgebraicNumberField(list(self.poly_min), new_c)
+
+    def __sub__(self, other: 'GeneralAlgebraicNumberField') -> 'GeneralAlgebraicNumberField':
+        if not isinstance(other,GeneralAlgebraicNumberField) or self.poly_min!=other.poly_min: raise RingError("Polynomial quotient mismatch")
+        new_c = [a - b for a, b in zip(self.coeffs, other.coeffs)]
+        return GeneralAlgebraicNumberField(list(self.poly_min), new_c)
+
+    def __mul__(self, other: 'GeneralAlgebraicNumberField') -> 'GeneralAlgebraicNumberField':
+        if not isinstance(other,GeneralAlgebraicNumberField) or self.poly_min!=other.poly_min: raise RingError("Polynomial quotient mismatch")
+        deg_res = 2 * self.deg
+        res = [Fraction(0)] * deg_res
+        for i in range(self.deg):
+            for j in range(self.deg):
+                res[i + j] += self.coeffs[i] * other.coeffs[j]
+        reduced = self._poly_reduce(res, list(self.poly_min))
+        return GeneralAlgebraicNumberField(list(self.poly_min), reduced)
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, GeneralAlgebraicNumberField):
+            return False
+        return self.coeffs == other.coeffs and self.poly_min == other.poly_min
+
+    @classmethod
+    def make_golden_ratio(cls) -> Tuple['GeneralAlgebraicNumberField', 'GeneralAlgebraicNumberField']:
+        """Builds Q(sqrt(5)) with P(x) = x^2 - 5 and defines phi = 1/2 + 1/2 * sqrt(5)."""
+        poly_sqrt5 = [-5, 0, 1]
+        phi = cls(poly_sqrt5, [Fraction(1, 2), Fraction(1, 2)])
+        one = cls(poly_sqrt5, [Fraction(1), Fraction(0)])
+        return phi, one
+
+
+# =====================================================================
+# 3. GEOMETRIC FOLDING OPERATOR: PULVINI OVER Z[zeta_p]
+# =====================================================================
+
+class PulviniRingOperator:
+    """
+    PULVINI geometric folding operator over Z[zeta_p].
+    For p=5: exact golden ratio weights w1' = sqrt(5)-1, w2' = 3-sqrt(5).
+    For p=7: records formal finding that golden ratio phi is not in Q(zeta_7).
+    """
+    @classmethod
+    def get_p5_weights(cls) -> Tuple[CyclotomicRing, CyclotomicRing, CyclotomicRing]:
+        g5 = CyclotomicRing.gauss_sum(5)
+        w1 = g5 - CyclotomicRing.one(5)
+        w2 = CyclotomicRing.embed_rational(5, 3) - g5
+        norm_factor = (w1 * w1) + (w2 * w2)
+        return w1, w2, norm_factor
+
+    @classmethod
+    def get_unscaled_p5_weights(cls):
+        """Golden weights are algebraic integers, despite their half expressions.
+
+        phi=-(zeta^2+zeta^3), a=phi-1, b=2-phi. Their norm factor
+        a^2+b^2 is a nonunit; general inversion therefore uses Q(zeta_5).
+        """
+        z=CyclotomicRing.zeta(5);phi=-(z**2+z**3)
+        a=phi-CyclotomicRing.one(5);b=CyclotomicRing(5,2)-phi
+        return a,b,a*a+b*b
+
+    @classmethod
+    def fold_unscaled_pair_p5(cls,x1,x2):
+        if any(not isinstance(x,CyclotomicRing) or x.p!=5 for x in (x1,x2)):
+            raise RingError("Expected two Z[zeta_5] elements")
+        a,b,_=cls.get_unscaled_p5_weights()
+        return a*x1+b*x2,b*x1-a*x2
+
+    @classmethod
+    def unfold_unscaled_pair_p5(cls,folded,kernel):
+        if any(not isinstance(x,CyclotomicRing) or x.p!=5 for x in (folded,kernel)):
+            raise RingError("Expected two Z[zeta_5] elements")
+        a,b,n=cls.get_unscaled_p5_weights()
+        return (CyclotomicField5(a*folded+b*kernel)/n,
+                CyclotomicField5(b*folded-a*kernel)/n)
+
+    @classmethod
+    def fold_pair_p5(cls, x1: CyclotomicRing, x2: CyclotomicRing) -> Tuple[CyclotomicRing, CyclotomicRing]:
+        w1, w2, _ = cls.get_p5_weights()
+        folded = (w1 * x1) + (w2 * x2)
+        kernel = (w2 * x1) - (w1 * x2)
+        return folded, kernel
+
+    @classmethod
+    def unfold_pair_p5(cls, folded: CyclotomicRing, kernel: CyclotomicRing) -> Tuple[CyclotomicRing, CyclotomicRing, CyclotomicRing]:
+        w1, w2, norm_factor = cls.get_p5_weights()
+        rec_x1 = (folded * w1) + (kernel * w2)
+        rec_x2 = (folded * w2) - (kernel * w1)
+        return rec_x1, rec_x2, norm_factor
+
+    @classmethod
+    def fold_vector_p5(cls, vec: List[CyclotomicRing]) -> Dict[str, Any]:
+        if not isinstance(vec,(list,tuple)) or any(not isinstance(x,CyclotomicRing) or x.p!=5 for x in vec):
+            raise RingError("Expected a sequence of Z[zeta_5] elements")
+        original=len(vec);vec=list(vec);n=original
+        if n % 2 != 0:
+            vec = vec + [CyclotomicRing.zero(5)]
+            n += 1
+        folded_list = []
+        kernel_list = []
+        for i in range(0, n, 2):
+            f, k = cls.fold_pair_p5(vec[i], vec[i+1])
+            folded_list.append(f)
+            kernel_list.append(k)
+        return {
+            "folded": folded_list,
+            "kernels": kernel_list,
+            "original_elements": original,
+            "padded_elements": n,
+            "total_stored_elements": len(folded_list) + len(kernel_list),
+            "net_compression_ratio": original / n if n else None,
+            "note": "Both folded and kernel elements are stored; odd inputs add one padded element."
+        }
+
+    @classmethod
+    def unfold_vector_p5(cls, folded: List[CyclotomicRing], kernels: List[CyclotomicRing]) -> List[Tuple[CyclotomicRing, CyclotomicRing]]:
+        if not isinstance(folded,(list,tuple)) or not isinstance(kernels,(list,tuple)) or len(folded)!=len(kernels):
+            raise RingError("Folded and kernel sequences must have equal lengths")
+        if any(not isinstance(x,CyclotomicRing) or x.p!=5 for x in list(folded)+list(kernels)):
+            raise RingError("Expected Z[zeta_5] elements")
+        recovered = []
+        for f, k in zip(folded, kernels):
+            rx1, rx2, _ = cls.unfold_pair_p5(f, k)
+            recovered.append((rx1, rx2))
+        return recovered
+
+    @classmethod
+    def p5_weights_finding(cls) -> str:
+        return (
+            "The PULVINI fold over Z[zeta_5] uses the scaled weights w1' = sqrt(5) - 1, w2' = 3 - sqrt(5), "
+            "which are the golden-ratio weights multiplied by 2. The roundtrip recovers the input scaled "
+            "by the norm factor w1'^2 + w2'^2 = 20 - 8*sqrt(5). The unscaled weights are also in Z[zeta_5]: phi=-(zeta^2+zeta^3), w1=phi-1, w2=2-phi. Their squared norm is a nonunit; arbitrary inversion uses Q(zeta_5)."
+        )
+
+    @classmethod
+    def p7_obstruction_record(cls) -> Dict[str, Any]:
+        return {
+            "prime": 7,
+            "quadratic_subfield": "Q(sqrt(-7))",
+            "golden_ratio_subfield": "Q(sqrt(5))",
+            "obstruction": "sqrt(5) is not in Q(zeta_7). The golden ratio phi is absent in Z[zeta_7].",
+            "finding": "The golden ratio is not in Z[zeta_7]; the analog over Z[zeta_7] uses the quadratic subfield Q(sqrt(-7)), which is a different operator."
+        }
+
+
+# =====================================================================
+# 4. FUNCTORIAL CATEGORICAL COMPILER (ZX FUSION & YANG-BAXTER)
+# =====================================================================
+
+class MorphismRing:
+    """Morphism in a dagger-compact category over Z[zeta_p]."""
+    __slots__ = ('p', 'dim_in', 'dim_out', 'matrix')
+
+    def __init__(self, p: int, dim_in: int, dim_out: int, matrix: MatrixRing):
+        if not isinstance(matrix,MatrixRing) or matrix.p!=p or matrix.rows != dim_out or matrix.cols != dim_in:
+            raise RingError("Morphism dimension or ring mismatch.")
+        self.p = p
+        self.dim_in = dim_in
+        self.dim_out = dim_out
+        self.matrix = matrix
+
+    @classmethod
+    def identity(cls, p: int, dim: int) -> 'MorphismRing':
+        return cls(p, dim, dim, MatrixRing.identity(p, dim))
+
+    def dagger(self) -> 'MorphismRing':
+        return MorphismRing(self.p, self.dim_out, self.dim_in, self.matrix.dagger())
+
+    def compose(self, other: 'MorphismRing') -> 'MorphismRing':
+        if self.dim_in != other.dim_out or self.p != other.p:
+            raise RingError("Composition dimension/ring mismatch.")
+        return MorphismRing(self.p, other.dim_in, self.dim_out, self.matrix * other.matrix)
+
+    def tensor(self, other: 'MorphismRing') -> 'MorphismRing':
+        if self.p != other.p:
+            raise RingError("Tensor ring mismatch.")
+        return MorphismRing(self.p, self.dim_in * other.dim_in, self.dim_out * other.dim_out, self.matrix.kron(other.matrix))
+
+    def is_identity(self) -> bool:
+        if self.dim_in != self.dim_out:
+            return False
+        return self.matrix == MatrixRing.identity(self.p, self.dim_in)
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, MorphismRing):
+            return False
+        return self.p == other.p and self.dim_in == other.dim_in and self.dim_out == other.dim_out and self.matrix == other.matrix
+
+
+class FunctorialCategoricalCompiler:
+    """Dagger-compact category axioms, ZX spider fusion, and QASM/QIR IR compilation."""
+    @staticmethod
+    def verify_dagger_compact_axioms(f: MorphismRing, g: MorphismRing) -> Dict[str, bool]:
+        involution = (f.dagger().dagger() == f)
+        comp = f.compose(g).dagger() == (g.dagger().compose(f.dagger()))
+        u_u = f.dagger().compose(f).is_identity()
+        return {
+            "involution": involution,
+            "dagger_composition": comp,
+            "unitary_elimination": u_u
+        }
+
+    @staticmethod
+    def zx_spider_fusion(p: int, k1: int, k2: int) -> bool:
+        """Verifies Z_alpha o Z_beta == Z_{alpha+beta mod p}."""
+        z1 = MatrixRing(p, 2, 2, [[CyclotomicRing.one(p), CyclotomicRing.zero(p)], [CyclotomicRing.zero(p), CyclotomicRing.zeta(p, k1)]])
+        z2 = MatrixRing(p, 2, 2, [[CyclotomicRing.one(p), CyclotomicRing.zero(p)], [CyclotomicRing.zero(p), CyclotomicRing.zeta(p, k2)]])
+        fused = MatrixRing(p, 2, 2, [[CyclotomicRing.one(p), CyclotomicRing.zero(p)], [CyclotomicRing.zero(p), CyclotomicRing.zeta(p, (k1 + k2) % p)]])
+        return (z1 * z2) == fused
+
+    @staticmethod
+    def R_matrix(p: int, q: CyclotomicRing) -> MatrixRing:
+        diff = q - q.inv()
+        zero = CyclotomicRing.zero(p)
+        one = CyclotomicRing.one(p)
+        data = [
+            [q,    zero, zero, zero],
+            [zero, diff, one,  zero],
+            [zero, one,  zero, zero],
+            [zero, zero, zero, q   ]
+        ]
+        return MatrixRing(p, 4, 4, data)
+
+    @classmethod
+    def verify_yang_baxter_all_roots(cls, p: int) -> Dict[int, bool]:
+        """Verifies Yang-Baxter for ALL q that are p-th roots of unity (q = zeta^m)."""
+        I2 = MatrixRing.identity(p, 2)
+        results = {}
+        for m in range(1, p):
+            q = CyclotomicRing.zeta(p, m)
+            R = cls.R_matrix(p, q)
+            R12 = R.kron(I2)
+            R23 = I2.kron(R)
+            lhs = R12 * R23 * R12
+            rhs = R23 * R12 * R23
+            results[m] = (lhs == rhs)
+        return results
+
+    @staticmethod
+    def compile_qasm_ir(circuit_ir: List[Tuple[str, int, Any]]) -> List[Tuple[str, int, Any]]:
+        """Applies ZX spider fusion to adjacent single-qubit rotations."""
+        fused = []
+        for inst, target, arg in circuit_ir:
+            if fused and fused[-1][0] == "RZ" and inst == "RZ" and fused[-1][1] == target:
+                k1 = fused[-1][2]
+                k2 = arg
+                fused[-1] = ("RZ", target, (k1 + k2) % 5)
+            elif fused and fused[-1][0] == "X" and inst == "X" and fused[-1][1] == target:
+                fused.pop()
+            else:
+                fused.append((inst, target, arg))
+        return fused
+
+    @staticmethod
+    def get_lean4_specification_reference() -> str:
+        return "qigpu_dagger_compact_proof.lean"
+
+
+# =====================================================================
+# 5. INFOGEO QFIM QUOTIENT & RIEMANNIAN GEODESIC STEPPING
+# =====================================================================
+
+class CyclotomicField5:
+    """Elements of Q(zeta_5), represented by exact rational coefficients."""
+    def __init__(self, value):
+        if isinstance(value, CyclotomicField5):
+            values=list(value.coefficients)
+        elif isinstance(value, CyclotomicRing):
+            if value.p != 5: raise RingError("Expected zeta_5 element")
+            values=list(value.v)
+        elif isinstance(value,(int,Fraction)) and not isinstance(value,bool):
+            values=[value,0,0,0,0]
+        elif isinstance(value,(tuple,list)) and len(value) in (4,5):
+            values=list(value)+([0] if len(value)==4 else [])
+        else: raise RingError("Expected exact field coefficients")
+        if any(not isinstance(x,(int,Fraction)) or isinstance(x,bool) for x in values):
+            raise RingError("Inexact field coefficient")
+        values=[Fraction(x) for x in values]
+        self.coefficients=tuple(x-values[4] for x in values)
+    def __eq__(self,other):
+        try: return self.coefficients==CyclotomicField5(other).coefficients
+        except (RingError,TypeError): return False
+    def __add__(self,other):
+        rhs=CyclotomicField5(other)
+        return CyclotomicField5([x+y for x,y in zip(self.coefficients,rhs.coefficients)])
+    __radd__=__add__
+    def __neg__(self): return CyclotomicField5([-x for x in self.coefficients])
+    def __sub__(self,other): return self + -CyclotomicField5(other)
+    def __rsub__(self,other): return CyclotomicField5(other)-self
+    def __mul__(self,other):
+        rhs=CyclotomicField5(other); out=[Fraction(0)]*5
+        for i,x in enumerate(self.coefficients):
+            for j,y in enumerate(rhs.coefficients): out[(i+j)%5]+=x*y
+        return CyclotomicField5(out)
+    __rmul__=__mul__
+    def sigma(self,k):
+        if type(k) is not int or k%5==0: raise RingError("Invalid field automorphism")
+        out=[Fraction(0)]*5
+        for i,x in enumerate(self.coefficients): out[(i*k)%5]+=x
+        return CyclotomicField5(out)
+    def inverse(self):
+        if self==0: raise RingError("Zero cannot be inverted")
+        numerator=CyclotomicField5(1)
+        for k in (2,3,4): numerator*=self.sigma(k)
+        norm=self*numerator
+        if any(norm.coefficients[1:]) or norm.coefficients[0]==0: raise RingError("Invalid norm")
+        return CyclotomicField5([x/norm.coefficients[0] for x in numerator.coefficients])
+    def __truediv__(self,other): return self*CyclotomicField5(other).inverse()
+    def __rtruediv__(self,other): return CyclotomicField5(other)/self
+    def is_real(self): return self==self.sigma(4)
+
+
+class InfoGeoQFIMEngine:
+    """QFIM quotient and exact-field discrete geodesic step."""
+    @staticmethod
+    def polynomial_ansatz(p: int, a: CyclotomicRing) -> Tuple[List[CyclotomicRing], List[CyclotomicRing]]:
+        psi = [CyclotomicRing.one(p), a, a * a]
+        dpsi = [CyclotomicRing.zero(p), CyclotomicRing.one(p), CyclotomicRing.embed_rational(p, 2) * a]
+        return psi, dpsi
+
+    @staticmethod
+    def inner_product(v1: List[CyclotomicRing], v2: List[CyclotomicRing]) -> CyclotomicRing:
+        if not isinstance(v1,(list,tuple)) or not isinstance(v2,(list,tuple)) or not v1 or len(v1)!=len(v2):
+            raise RingError("Inner product requires nonempty vectors of equal length")
+        if not isinstance(v1[0],CyclotomicRing): raise RingError("Expected ring elements")
+        if any(not isinstance(x,CyclotomicRing) or x.p!=v1[0].p for x in list(v1)+list(v2)):
+            raise RingError("Inner-product ring mismatch")
+        acc = CyclotomicRing.zero(v1[0].p)
+        for a, b in zip(v1, v2):
+            acc = acc + a.conj() * b
+        return acc
+
+    @classmethod
+    def compute_polynomial_qfim(cls, p: int = 5, a: Optional[CyclotomicRing] = None) -> Dict[str, Any]:
+        if a is None:
+            a = CyclotomicRing.zeta(p)
+        psi, dpsi = cls.polynomial_ansatz(p, a)
+        d_d = cls.inner_product(dpsi, dpsi)
+        d_p = cls.inner_product(dpsi, psi)
+        p_d = cls.inner_product(psi, dpsi)
+        p_p = cls.inner_product(psi, psi)
+        num = CyclotomicRing.embed_rational(p, 4) * (d_d * p_p - d_p * p_d)
+        den_sq = p_p * p_p
+
+        # Remove common integer content without discarding nonconstant denominator terms.
+        if den_sq.is_zero(): raise RingError("Zero QFIM denominator")
+        common=0
+        for x in num.v+den_sq.v: common=math.gcd(common,abs(x))
+        common=max(common,1)
+        reduced_num=tuple(x//common for x in num.v)
+        den=tuple(x//common for x in den_sq.v)
+        reduced_den=den[0] if not any(den[1:]) else den
+        return {"prime":p,"qfim_numerator_ring":num.v,"qfim_denominator_ring":den_sq.v,
+                "reduced_numerator":reduced_num,"reduced_denominator":reduced_den,
+                "qfim_quotient_string":f"{reduced_num} / {reduced_den}",
+                "denominator_norm":den_sq.norm(),
+                "finding":"Common integer content removed; algebraic lowest terms not established."}
+
+    @staticmethod
+    def step_geodesic_stereographic(u,v,du,dv,dt):
+        """Exact-field second-order step on the round sphere in stereographic coordinates.
+
+        The arithmetic is exact in the real subfield of Q(zeta_5); this finite
+        Taylor step approximates, rather than solves, the continuous trajectory.
+        """
+        u,v,du,dv,dt=[CyclotomicField5(x) for x in (u,v,du,dv,dt)]
+        if not all(x.is_real() for x in (u,v,du,dv,dt)): raise RingError("Coordinates and time must be real")
+        radius=1+u*u+v*v
+        if radius==0: raise RingError("Invalid stereographic metric")
+        dot=u*du+v*dv; speed=du*du+dv*dv
+        au=2*(2*dot*du-speed*u)/radius; av=2*(2*dot*dv-speed*v)/radius
+        half=CyclotomicField5(Fraction(1,2))
+        return (u+du*dt+half*au*dt*dt,v+dv*dt+half*av*dt*dt,du+au*dt,dv+av*dt)
+
+
+# =====================================================================
+# 6. TOPOLOGICAL INVARIANTS, ANYONS & EXACT SIMPLICIAL HQEC
+# =====================================================================
+
+class TopologicalAnyonHomologicalEngine:
+    """Non-Abelian anyon braiding over Q(zeta_5) and exact simplicial homological quantum error correction."""
+    @staticmethod
+    def _fusion(a,b):
+        if a==0: return [b]
+        if b==0: return [a]
+        return [0,1]
+    @classmethod
+    def _states(cls,tree,labels):
+        if isinstance(tree,int): return [{tree:labels[tree]}]
+        result=[]
+        for left,right in itertools.product(cls._states(tree[0],labels),cls._states(tree[1],labels)):
+            for total in cls._fusion(left[tree[0]],right[tree[1]]): result.append({**left,**right,tree:total})
+        return result
+    @classmethod
+    def _associate(cls,old,new,a,b,c,total,labels,f):
+        left=[x for x in cls._states(old,labels) if x[old]==total]
+        right=[x for x in cls._states(new,labels) if x[new]==total]
+        zero,one=CyclotomicRing.zero(5),CyclotomicRing.one(5); result=[]
+        for out in right:
+            row=[]
+            for inp in left:
+                if any(inp[k]!=out[k] for k in set(inp)&set(out)) or inp[((a,b),c)]!=out[(a,(b,c))]: row.append(zero);continue
+                types=(inp[a],inp[b],inp[c],inp[((a,b),c)])
+                row.append(f.data[out[(b,c)]][inp[(a,b)]] if types==(1,1,1,1) else one)
+            result.append(row)
+        return result
+    @classmethod
+    def _braid(cls,old,new,a,b,total,labels,r):
+        left=[x for x in cls._states(old,labels) if x[old]==total]
+        right=[x for x in cls._states(new,labels) if x[new]==total]
+        zero,one=CyclotomicRing.zero(5),CyclotomicRing.one(5);result=[]
+        for out in right:
+            row=[]
+            for inp in left:
+                if any(inp[k]!=out[k] for k in set(inp)&set(out)) or inp[(a,b)]!=out[(b,a)]: row.append(zero);continue
+                channel=inp[(a,b)];row.append(r.data[channel][channel] if inp[a]==inp[b]==1 else one)
+            result.append(row)
+        return result
+    @staticmethod
+    def _compose(a,b):
+        zero=CyclotomicRing.zero(5)
+        return [[sum((a[i][k]*b[k][j] for k in range(len(b))),zero) for j in range(len(b[0]))] for i in range(len(a))]
+    @classmethod
+    def verify_pentagon(cls,f=None):
+        f=FibonacciBraidModel.matrices()[0] if f is None else f
+        if not isinstance(f,MatrixRing) or f.p!=5 or f.rows!=2 or f.cols!=2: raise RingError("Expected 2x2 F over Z[zeta_5]")
+        t0=(((0,1),2),3);t1=((0,(1,2)),3);t2=(0,((1,2),3));t3=(0,(1,(2,3)));t4=((0,1),(2,3));count=0
+        for labels in itertools.product((0,1),repeat=4):
+            for total in (0,1):
+                if not any(x[t0]==total for x in cls._states(t0,labels)): continue
+                transform=lambda old,new,a,b,c:cls._associate(old,new,a,b,c,total,labels,f)
+                x=cls._compose(transform(t2,t3,1,2,3),cls._compose(transform(t1,t2,0,(1,2),3),transform(t0,t1,0,1,2)))
+                y=cls._compose(transform(t4,t3,0,1,(2,3)),transform(t0,t4,(0,1),2,3));count+=1
+                if x!=y:return {'verified':False,'cases_checked':count,'labels':labels,'total':total}
+        return {'verified':True,'cases_checked':count}
+    @classmethod
+    def verify_hexagons(cls,r=None,f=None):
+        if f is None or r is None:
+            default_f,default_r=FibonacciBraidModel.matrices()
+            f=default_f if f is None else f
+            r=default_r if r is None else r
+        if not isinstance(f,MatrixRing) or f.p!=5 or f.rows!=2 or f.cols!=2: raise RingError("Expected 2x2 F over Z[zeta_5]")
+        if not isinstance(r,MatrixRing) or r.p!=5 or r.rows!=2 or r.cols!=2: raise RingError("Expected 2x2 R over Z[zeta_5]")
+        if not r.data[0][1].is_zero() or not r.data[1][0].is_zero(): raise RingError("R must be diagonal")
+        if f*f!=MatrixRing.identity(5,2): raise RingError("F inverse not established")
+        def chain(ops):
+            out=ops[0]
+            for m in ops[1:]:out=cls._compose(m,out)
+            return out
+        count=0
+        for labels in itertools.product((0,1),repeat=3):
+            for total in (0,1):
+                a,b,c=0,1,2;t0=(a,(b,c));t1=((a,b),c);t2=((b,a),c);t3=(b,(a,c));t4=(b,(c,a));t5=((b,c),a)
+                if not any(x[t0]==total for x in cls._states(t0,labels)):continue
+                A=lambda old,new,x,y,z:cls._associate(old,new,x,y,z,total,labels,f)
+                B=lambda old,new,x,y:cls._braid(old,new,x,y,total,labels,r)
+                first=chain([A(t1,t0,a,b,c),B(t1,t2,a,b),A(t2,t3,b,a,c),B(t3,t4,a,c),A(t5,t4,b,c,a)])
+                s0=((a,b),c);s1=(a,(b,c));s2=(a,(c,b));s3=((a,c),b);s4=((c,a),b);s5=(c,(a,b))
+                second=chain([A(s0,s1,a,b,c),B(s1,s2,b,c),A(s3,s2,a,c,b),B(s3,s4,a,c),A(s4,s5,c,a,b)])
+                count+=1
+                if first!=B(t0,t5,a,(b,c)) or second!=B(s0,s5,(a,b),c):return {'verified':False,'cases_checked':count,'labels':labels,'total':total}
+        return {'verified':True,'cases_checked':count,'diagrams_per_case':2}
+    @staticmethod
+    def alexander_polynomial(strands,word):
+        """Small closed braids via unreduced Burau; coefficients ascending, up to +/- t^k."""
+        if type(strands) is not int or not 2<=strands<=4:raise RingError("Expected 2 to 4 strands")
+        if not isinstance(word,(list,tuple)) or len(word)>64:raise RingError("Expected word of at most 64 crossings")
+        if any(type(g) is not int or not 1<=abs(g)<strands for g in word):raise RingError("Invalid braid generator")
+        def add(a,b):
+            out=a.copy()
+            for k,v in b.items():out[k]=out.get(k,0)+v
+            return {k:v for k,v in out.items() if v}
+        def neg(a):return {k:-v for k,v in a.items()}
+        def mul(a,b):
+            out={}
+            for i,x in a.items():
+                for j,y in b.items():out[i+j]=out.get(i+j,0)+x*y
+            return {k:v for k,v in out.items() if v}
+        def total(parts):
+            out={}
+            for item in parts:out=add(out,item)
+            return out
+        one={0:1};matrix=[[one.copy() if i==j else {} for j in range(strands)] for i in range(strands)]
+        for g in word:
+            op=[[one.copy() if i==j else {} for j in range(strands)] for i in range(strands)];i=abs(g)-1
+            if g>0:op[i][i],op[i][i+1],op[i+1][i],op[i+1][i+1]={0:1,1:-1},{1:1},{0:1},{}
+            else:op[i][i],op[i][i+1],op[i+1][i],op[i+1][i+1]={},{0:1},{-1:1},{0:1,-1:-1}
+            matrix=[[total(mul(matrix[i][k],op[k][j]) for k in range(strands)) for j in range(strands)] for i in range(strands)]
+        n=strands-1; minor=[[add(one if i==j else {},neg(matrix[i][j])) for j in range(n)] for i in range(n)];det={}
+        for perm in itertools.permutations(range(n)):
+            inv=sum(perm[i]>perm[j] for i in range(n) for j in range(i+1,n));term=one
+            for i,j in enumerate(perm):term=mul(term,minor[i][j])
+            det=add(det,neg(term) if inv%2 else term)
+        if not det:return []
+        lo,hi=min(det),max(det);sign=1 if det[lo]>0 else -1
+        return [sign*det.get(i,0) for i in range(lo,hi+1)]
+
+    @staticmethod
+    def _rank_q(matrix):
+        if not matrix:return 0
+        a=[[Fraction(v) for v in row] for row in matrix];rows=len(a);cols=len(a[0]);rank=0
+        for col in range(cols):
+            pivot=next((i for i in range(rank,rows) if a[i][col]),None)
+            if pivot is None:continue
+            a[rank],a[pivot]=a[pivot],a[rank];v=a[rank][col];a[rank]=[x/v for x in a[rank]]
+            for i in range(rows):
+                if i!=rank and a[i][col]:
+                    k=a[i][col];a[i]=[x-k*y for x,y in zip(a[i],a[rank])]
+            rank+=1
+            if rank==rows:break
+        return rank
+
+    @classmethod
+    def analyze_simplicial_complex(cls,vertices,edges,faces,face_coefficients):
+        """Compute integer boundaries/syndrome and rational Betti numbers.
+
+        Simplices have ascending vertex order. Homology is over Q; this does
+        not compute torsion, decoding performance or an operational QEC code.
+        """
+        if not isinstance(vertices,(list,tuple)) or any(type(x) is not int for x in vertices) or len(set(vertices))!=len(vertices) or len(vertices)>32:
+            raise RingError("Expected at most 32 unique integer vertices")
+        if not isinstance(edges,(list,tuple)) or not isinstance(faces,(list,tuple)) or len(edges)>128 or len(faces)>128:
+            raise RingError("Expected bounded edge and face sequences")
+        def canonical(items,size):
+            if any(not isinstance(item,(tuple,list)) or len(item)!=size or any(type(v) is not int or v not in vertices for v in item) or list(item)!=sorted(set(item)) for item in items):
+                raise RingError("Simplices must contain distinct listed vertices in ascending order")
+            result=[tuple(item) for item in items]
+            if len(set(result))!=len(result):raise RingError("Duplicate simplex")
+            return result
+        edges=canonical(edges,2);faces=canonical(faces,3)
+        if not isinstance(face_coefficients,(tuple,list)) or len(face_coefficients)!=len(faces) or any(type(x) is not int for x in face_coefficients):
+            raise RingError("Expected an integer coefficient per face")
+        vertex_index={v:i for i,v in enumerate(vertices)};edge_index={e:i for i,e in enumerate(edges)}
+        d1=[[0]*len(edges) for _ in vertices];d2=[[0]*len(faces) for _ in edges]
+        for j,(u,v) in enumerate(edges):d1[vertex_index[u]][j]=-1;d1[vertex_index[v]][j]=1
+        for j,(u,v,w) in enumerate(faces):
+            for edge,sign in (((v,w),1),((u,w),-1),((u,v),1)):
+                if edge not in edge_index:raise RingError("Face boundary edge is missing")
+                d2[edge_index[edge]][j]=sign
+        chain_zero=all(sum(d1[i][k]*d2[k][j] for k in range(len(edges)))==0 for i in range(len(vertices)) for j in range(len(faces)))
+        rank1=cls._rank_q(d1);rank2=cls._rank_q(d2)
+        error=[sum(row[j]*face_coefficients[j] for j in range(len(faces))) for row in d2]
+        syndrome=[sum(row[j]*error[j] for j in range(len(edges))) for row in d1]
+        return {"d1":d1,"d2":d2,"boundary_squared_zero":chain_zero,"ranks":[rank1,rank2],
+                "betti_over_q":[len(vertices)-rank1,len(edges)-rank1-rank2,len(faces)-rank2],
+                "boundary_error":error,"syndrome":syndrome}
+
+    @classmethod
+    def verify_exact_hqec(cls) -> Dict[str, Any]:
+        vertices=[0,1,2,3];edges=list(itertools.combinations(vertices,2));faces=list(itertools.combinations(vertices,3))
+        result=cls.analyze_simplicial_complex(vertices,edges,faces,[1,-1,2,0])
+        return {"simplicial_complex":"Tetrahedral 2-chain complex",
+                "simplicial_boundary_d_squared_zero":result['boundary_squared_zero'],
+                "example_boundary_error":result['boundary_error'],"example_syndrome":result['syndrome'],
+                "betti_over_q":result['betti_over_q'],
+                "finding":"Integer boundary and example syndrome checked; Betti numbers over Q, not torsion or a general error-correction guarantee."}
+
+
+class ExactSpinHamiltonians:
+    """Exact two-site isotropic XXX Hamiltonian and discrete cyclotomic evolution.
+
+    H=X tensor X + Y tensor Y + Z tensor Z. Although Y alone needs i,
+    Y tensor Y = -J tensor J for the integer J=iY. At t=2*pi*k/5
+    with hbar=1, the two eigenphases lie in Q(zeta_5). Arbitrary times,
+    larger systems, and physical-device implementations are not claimed.
+    """
+    @staticmethod
+    def xxx_two_site(p=5):
+        x=MatrixRing(p,2,2,[[0,1],[1,0]])
+        j=MatrixRing(p,2,2,[[0,1],[-1,0]])
+        z=MatrixRing(p,2,2,[[1,0],[0,-1]])
+        return x.kron(x)-j.kron(j)+z.kron(z)
+
+    @staticmethod
+    def evolve_discrete_5(state,steps):
+        if not isinstance(state,(tuple,list)) or len(state)!=4 or type(steps) is not int:
+            raise RingError("Expected four exact amplitudes and an integer step")
+        vector=[CyclotomicField5(v) for v in state]
+        h=ExactSpinHamiltonians.xxx_two_site(5)
+        acted=[sum((CyclotomicField5(h.data[i][j])*vector[j] for j in range(4)),CyclotomicField5(0)) for i in range(4)]
+        # Eigenprojectors P_triplet=(3I+H)/4 and P_singlet=(I-H)/4.
+        phase_triplet=CyclotomicField5(CyclotomicRing.zeta(5,-steps))
+        phase_singlet=CyclotomicField5(CyclotomicRing.zeta(5,3*steps))
+        return [(phase_triplet*(3*v+hv)+phase_singlet*(v-hv))/4 for v,hv in zip(vector,acted)]
+
+
+# =====================================================================
+# 7. GENERALIZED MPS TENSOR ENGINE & QUANTUM GRAM KERNEL
+# =====================================================================
+
+class TensorMPSRingEngine:
+    """Generalized exact N-site, d-dimension tensor network MPS contraction and truncation ledger."""
+    @staticmethod
+    def contract_mps(p: int, cores: List[Any], chi: int = 2) -> Tuple[List[CyclotomicRing], CyclotomicRing, List[CyclotomicRing]]:
+        if type(p) is not int or not is_prime(p): raise RingError("Expected prime modulus")
+        if type(chi) is not int or chi<1: raise RingError("Bond cutoff must be a positive integer")
+        if not isinstance(cores,(list,tuple)): raise RingError("Expected a sequence of cores")
+        N = len(cores)
+        if N == 0:
+            return [], CyclotomicRing.zero(p), []
+        previous=1;d_phys=None
+        for core in cores:
+            if not isinstance(core,(list,tuple)) or len(core)!=previous or not core:
+                raise RingError("MPS bond dimensions do not match")
+            if not all(isinstance(row,(list,tuple)) and len(row)>0 for row in core): raise RingError("Invalid MPS physical axis")
+            if d_phys is None:d_phys=len(core[0])
+            if any(len(row)!=d_phys for row in core): raise RingError("MPS physical dimensions must be equal")
+            first=core[0][0]
+            if not isinstance(first,(list,tuple)) or not first: raise RingError("Invalid MPS output bond")
+            following=len(first)
+            for row in core:
+                for physical in row:
+                    if not isinstance(physical,(list,tuple)) or len(physical)!=following: raise RingError("Ragged MPS core")
+                    if any(not isinstance(v,CyclotomicRing) or v.p!=p for v in physical): raise RingError("MPS core entries must belong to the requested ring")
+            previous=following
+        if previous!=1: raise RingError("MPS final bond dimension must be one")
+
+        d_phys = len(cores[0][0])
+        total_dim = d_phys ** N
+        zero = CyclotomicRing.zero(p)
+
+        kept_accum = {}
+        disc_accum = {}
+
+        D1 = len(cores[0][0][0])
+        for i0 in range(d_phys):
+            for b1 in range(D1):
+                val = cores[0][0][i0][b1]
+                if val.is_zero():
+                    continue
+                tup = ((i0,), b1)
+                if b1 < chi:
+                    kept_accum[tup] = val
+                else:
+                    disc_accum[tup] = val
+
+        for k in range(1, N):
+            next_kept = {}
+            next_disc = {}
+            D_next = len(cores[k][0][0])
+            d_k = len(cores[k][0])
+
+            all_keys = set(kept_accum.keys()) | set(disc_accum.keys())
+            for (prefix, b_k) in all_keys:
+                vk = kept_accum.get((prefix, b_k), zero)
+                vd = disc_accum.get((prefix, b_k), zero)
+
+                for ik in range(d_k):
+                    for b_next in range(D_next):
+                        t_elem = cores[k][b_k][ik][b_next]
+                        if t_elem.is_zero():
+                            continue
+
+                        val_k = vk * t_elem if not vk.is_zero() else zero
+                        val_d = vd * t_elem if not vd.is_zero() else zero
+
+                        is_under = (b_next < chi) if (k < N - 1) else True
+                        new_prefix = prefix + (ik,)
+                        new_key = (new_prefix, b_next)
+
+                        if is_under:
+                            if not val_k.is_zero():
+                                next_kept[new_key] = next_kept.get(new_key, zero) + val_k
+                            if not val_d.is_zero():
+                                next_disc[new_key] = next_disc.get(new_key, zero) + val_d
+                        else:
+                            tot = val_k + val_d
+                            if not tot.is_zero():
+                                next_disc[new_key] = next_disc.get(new_key, zero) + tot
+
+            kept_accum = next_kept
+            disc_accum = next_disc
+
+        reconstructed = [zero for _ in range(total_dim)]
+        discarded_tail = [zero for _ in range(total_dim)]
+        tail_norm = zero
+
+        for (prefix, _), val in kept_accum.items():
+            idx = 0
+            for ik in prefix:
+                idx = idx * d_phys + ik
+            reconstructed[idx] = val
+
+        for (prefix, _), val in disc_accum.items():
+            idx = 0
+            for ik in prefix:
+                idx = idx * d_phys + ik
+            discarded_tail[idx] = val
+            tail_norm = tail_norm + val.conj() * val
+
+        return reconstructed, tail_norm, discarded_tail
+
+    @classmethod
+    def get_ghz3_cores(cls, p: int):
+        one = CyclotomicRing.one(p)
+        zero = CyclotomicRing.zero(p)
+        A1 = [[[one, zero], [zero, one]]]
+        A2 = [[[one, zero], [zero, zero]], [[zero, zero], [zero, one]]]
+        A3 = [[[one], [zero]], [[zero], [one]]]
+        return A1, A2, A3
+
+
+class QuantumKernelRingEngine:
+    """Exact discrete root-of-unity Quantum Kernel over Z[zeta_p]."""
+    @staticmethod
+    def feature_map(p: int, x: List[int]) -> List[CyclotomicRing]:
+        if not isinstance(x,(list,tuple)) or any(type(val) is not int for val in x):
+            raise RingError("Feature coordinates must be exact integers")
+        state = [CyclotomicRing.one(p)]
+        for val in x:
+            qubit = [CyclotomicRing.one(p), CyclotomicRing.zeta(p, val % p)]
+            new_state = []
+            for s in state:
+                for q in qubit:
+                    new_state.append(s * q)
+            state = new_state
+        return state
+
+    @classmethod
+    def compute_gram_matrix(cls, p: int, feature_vectors: List[List[CyclotomicRing]]) -> List[List[CyclotomicRing]]:
+        if not isinstance(feature_vectors,(list,tuple)): raise RingError("Expected a sequence of feature vectors")
+        if not feature_vectors:
+            return []
+        if not isinstance(feature_vectors[0],(list,tuple)) or not feature_vectors[0]: raise RingError("Expected nonempty vectors")
+        dim=len(feature_vectors[0])
+        if any(not isinstance(v,(list,tuple)) or len(v)!=dim or any(not isinstance(x,CyclotomicRing) or x.p!=p for x in v) for v in feature_vectors):
+            raise RingError("Feature vectors must have equal dimensions and belong to the requested ring")
+        m = len(feature_vectors)
+        gram = [[CyclotomicRing.zero(p) for _ in range(m)] for _ in range(m)]
+        for i in range(m):
+            for j in range(m):
+                inner = CyclotomicRing.zero(p)
+                for k in range(dim):
+                    inner = inner + feature_vectors[i][k].conj() * feature_vectors[j][k]
+                gram[i][j] = inner * inner.conj()
+        return gram
+
+
+# =====================================================================
+# 8. HOLOGRAPHIC AdS3/CFT2 MERA & BLACK HOLE SCRAMBLING BOUNDS
+# =====================================================================
+
+class HolographicMERAEngine:
+    """Finite binary isometry/CNOT network, not a calibrated critical MERA.
+
+    Copy isometries expand a two-term top state and cross-boundary CNOT gates
+    are unitary disentanglers. Amplitudes contract exactly; density matrices
+    use Q(zeta_5). Entropy logarithms are reported symbolically and numerically.
+    """
+    @staticmethod
+    def contract(sites):
+        if type(sites) is not int or sites not in (4,8,16): raise RingError("Supported sizes are 4, 8, 16")
+        one,zero=CyclotomicRing.one(5),CyclotomicRing.zero(5)
+        state={(0,):one,(1,):one}; n=1
+        while n<sites:
+            expanded={}
+            for bits,amplitude in state.items():
+                key=tuple(c for bit in bits for c in (bit,bit))
+                expanded[key]=expanded.get(key,zero)+amplitude
+            n*=2
+            for control in range(1,n-1,2):
+                updated={}
+                for bits,amplitude in expanded.items():
+                    out=list(bits);out[control+1]^=out[control];key=tuple(out)
+                    updated[key]=updated.get(key,zero)+amplitude
+                expanded=updated
+            state=expanded
+        return state
+    @staticmethod
+    def causal_cone(sites,block):
+        if type(sites) is not int or sites not in (4,8,16) or type(block) is not int or not 1<=block<=sites:
+            raise RingError("Invalid network size or interval")
+        support=set(range(block));layers=[];n=sites
+        while n>1:
+            for control in reversed(range(1,n-1,2)):
+                if control in support or control+1 in support: support.update((control,control+1))
+            layers.append(sorted(support));support={i//2 for i in support};n//=2
+        layers.append(sorted(support));return layers
+    @classmethod
+    def reduced_state(cls,sites,block):
+        cls.causal_cone(sites,block);state=cls.contract(sites)
+        norm=sum((x*x.conj() for x in state.values()),CyclotomicRing.zero(5))
+        if norm.is_zero(): raise RingError("Cannot normalize zero state")
+        rho={}
+        for bits,a in state.items():
+            for other,b in state.items():
+                if bits[block:]!=other[block:]: continue
+                key=(bits[:block],other[:block])
+                rho[key]=rho.get(key,CyclotomicField5(0))+CyclotomicField5(a*b.conj())/CyclotomicField5(norm)
+        return rho
+    @classmethod
+    def entropy_report(cls,sites,block):
+        rho=cls.reduced_state(sites,block)
+        purity=sum((v*rho.get((j,i),CyclotomicField5(0)) for (i,j),v in rho.items()),CyclotomicField5(0))
+        trace=sum((v for (i,j),v in rho.items() if i==j),CyclotomicField5(0))
+        if purity==1: symbolic,numeric='0',0.0
+        elif purity==Fraction(1,2): symbolic,numeric='log(2)',math.log(2)
+        else: raise RingError("Uncharacterized spectrum")
+        reference=math.log(block)/3
+        return {"sites":sites,"block_size":block,"trace":[str(c) for c in trace.coefficients[:4]],
+                "purity":[str(c) for c in purity.coefficients[:4]],"entropy_symbolic":symbolic,
+                "entropy_approx_nats":numeric,"cft_c1_reference_nats":reference,
+                "cft_matches":math.isclose(numeric,reference,abs_tol=1e-10,rel_tol=1e-10),
+                "causal_cone":cls.causal_cone(sites,block),
+                "finding":"Exact finite network contraction; not calibrated for CFT scaling. Logarithms are not ring-valued."}
+
+
+# =====================================================================
+# 9. PACKED BITSTREAM PROTOCOL (0.8889 PACKING RATIO)
+# =====================================================================
+
+class PackedBitstreamProtocol:
+    """Canonical nine-bit radix-5 encoding; expands bytes before padding."""
+    @staticmethod
+    def encode(payload: bytes) -> bytes:
+        if not isinstance(payload, bytes):
+            raise ValueError("payload must be bytes")
+        accumulator = count = 0
+        out = bytearray()
+        for value in payload:
+            q, r = divmod(value, 5)
+            accumulator = (accumulator << 9) | (q << 3) | r
+            count += 9
+            while count >= 8:
+                count -= 8
+                out.append((accumulator >> count) & 255)
+                accumulator &= (1 << count) - 1
+        if count:
+            out.append(accumulator << (8 - count))
+        return bytes(out)
+
+    @staticmethod
+    def decode(packed: bytes, original_len: int) -> bytes:
+        if not isinstance(packed, bytes) or type(original_len) is not int or original_len < 0:
+            raise ValueError("expected bytes and a nonnegative integer length")
+        if len(packed) != (9 * original_len + 7) // 8:
+            raise ValueError("packed length does not match original length")
+        accumulator = count = index = 0
+        out = bytearray()
+        for _ in range(original_len):
+            while count < 9:
+                accumulator = (accumulator << 8) | packed[index]
+                count += 8
+                index += 1
+            count -= 9
+            token = (accumulator >> count) & 511
+            accumulator &= (1 << count) - 1
+            q, r = token >> 3, token & 7
+            value = 5 * q + r
+            if r > 4 or value > 255:
+                raise ValueError("noncanonical radix-5 token")
+            out.append(value)
+        if accumulator:
+            raise ValueError("nonzero padding")
+        return bytes(out)
+
+
+# =====================================================================
+# 10. REALISATION BENCHMARKS: C1, C2, C4 & UNIVERSAL BACKENDS
+# =====================================================================
+
+class TensorSystemRealisation:
+    """Time an exact MPS contraction and measure a separate fold drift sweep."""
+    @classmethod
+    def run_benchmark(cls) -> Dict[str, Any]:
+        p = 5
+        A1, A2, A3 = TensorMPSRingEngine.get_ghz3_cores(p)
+
+        t0 = time.perf_counter()
+        rec_exact, tail_norm, _ = TensorMPSRingEngine.contract_mps(p, [A1, A2, A3], chi=2)
+        t_exact = time.perf_counter() - t0
+
+        # Drift sweep across recursive fold depths
+        tol = 1e-12
+        depth_failure = None
+        w1_float = (math.sqrt(5) - 1.0)
+        w2_float = (3.0 - math.sqrt(5))
+        w1_ring, w2_ring, _ = PulviniRingOperator.get_p5_weights()
+
+        x1_ring = CyclotomicRing.embed_rational(p, 5)
+        x2_ring = CyclotomicRing.embed_rational(p, 2)
+        cur_ring = (x1_ring, x2_ring)
+        cur_float = (5.0, 2.0)
+
+        for depth in range(1, 33):
+            f_ring, k_ring = PulviniRingOperator.fold_pair_p5(cur_ring[0], cur_ring[1])
+            cur_ring = (f_ring, k_ring)
+
+            f_float = w1_float * cur_float[0] + w2_float * cur_float[1]
+            k_float = w2_float * cur_float[0] - w1_float * cur_float[1]
+            cur_float = (f_float, k_float)
+
+            ring_to_float0 = sum(cur_ring[0].v[k] * math.cos(2*math.pi*k/5) for k in range(5))
+            rel_drift = abs(ring_to_float0 - cur_float[0]) / max(1.0, abs(cur_float[0]))
+            if rel_drift > tol and depth_failure is None:
+                depth_failure = depth
+
+        return {
+            "workload": "GHZ3 Multi-Site MPS Contraction & Fold Drift Sweep",
+            "exact_time_sec": t_exact,
+            "fp_baseline_finding": "No floating-point MPS contraction was timed.",
+            "float64_tolerance_1e12_exceeded_depth": depth_failure,
+            "chi2_tail_norm": tail_norm.v,
+            "status": "NOMINAL_EXACT"
+        }
+
+
+class DataSystemRealisation:
+    """C2: Real 1024-byte payload bit-for-bit verified roundtrip & packed bitstream ledger."""
+    @classmethod
+    def run_benchmark(cls, num_bytes: int = 1024) -> Dict[str, Any]:
+        if type(num_bytes) is not int or num_bytes < 0:
+            raise ValueError("num_bytes must be a nonnegative integer")
+        p = 5
+        payload = bytes([(i * 37 + 13) % 256 for i in range(num_bytes)])
+
+        t0 = time.perf_counter()
+        ring_encoded = []
+        for b in payload:
+            q = b // 5
+            r = b % 5
+            elem = CyclotomicRing(p, [q, r, 0, 0, 0])
+            ring_encoded.append(elem)
+        t_enc = time.perf_counter() - t0
+
+        t1 = time.perf_counter()
+        decoded_bytes = bytearray()
+        for elem in ring_encoded:
+            q, r = elem.v[:2]
+            decoded_bytes.append(q * 5 + r)
+        t_dec = time.perf_counter() - t1
+
+        bit_for_bit = (bytes(decoded_bytes) == payload)
+
+        packed = PackedBitstreamProtocol.encode(payload)
+        packed_dec = PackedBitstreamProtocol.decode(packed, len(payload))
+        packed_bit_for_bit = (packed_dec == payload)
+
+        return {
+            "payload_bytes": num_bytes,
+            "bit_for_bit_roundtrip": bit_for_bit,
+            "packed_bitstream_ratio": len(payload) / len(packed) if packed else None,
+            "packing_finding": "Nine encoded bits per input byte before byte padding; no memory saving or storage baseline measured.",
+            "packed_bit_for_bit": packed_bit_for_bit,
+            "encode_time_sec": t_enc,
+            "decode_time_sec": t_dec
+        }
+
+
+class CrossParadigmComposition:
+    """Check one concrete categorical, MPS and kernel example."""
+    @classmethod
+    def run_composition_test(cls) -> Dict[str, Any]:
+        p = 5
+        # 1. State vector |Phi> = |00> + |11>
+        zero = CyclotomicRing.zero(p)
+        one = CyclotomicRing.one(p)
+        phi_state = [one, zero, zero, one]
+
+        # 2. Categorical unitary morphism U = Z(zeta) kron I
+        z_gate = MatrixRing(p, 2, 2, [[one, zero], [zero, CyclotomicRing.zeta(p, 1)]])
+        i_gate = MatrixRing.identity(p, 2)
+        u_morphism = z_gate.kron(i_gate)
+
+        evolved_state = [zero for _ in range(4)]
+        for r in range(4):
+            for c in range(4):
+                evolved_state[r] = evolved_state[r] + u_morphism.data[r][c] * phi_state[c]
+
+        # 3. Contract through exact MPS
+        A1 = [[[one, zero], [zero, CyclotomicRing.zeta(p, 1)]]]
+        A2 = [[[one], [zero]], [[zero], [one]]]
+        rec_mps, tail, _ = TensorMPSRingEngine.contract_mps(p, [A1, A2], chi=2)
+
+        # 4. Kernel Gram Matrix
+        gram = QuantumKernelRingEngine.compute_gram_matrix(p, [evolved_state])
+        diag_val = gram[0][0].v[0]
+
+        return {
+            "composition_pipeline": "Categorical Unitary -> MPS Contraction -> Kernel Gram Matrix",
+            "schmidt_rank_finding": "Schmidt rank not computed.",
+            "mps_reconstruction_exact": (rec_mps[:4] == evolved_state),
+            "tail_norm_zero": tail.is_zero(),
+            "gram_diagonal_matches_norm_squared": (diag_val == 4),
+            "status": "COMPOSITION_VERIFIED" if rec_mps[:4] == evolved_state and tail.is_zero() and diag_val == 4 else "COMPOSITION_FAILED"
+        }
+
+
+# Execution models. Only software matrix-vector multiplication is general.
+class IBackend:
+    def execute_state_evolution(self, state, gate):
+        raise NotImplementedError
+
+
+class NativeSoftwareBackend(IBackend):
+    """Exact software matrix-vector multiplication; no SIMD claim."""
+    def execute_state_evolution(self, state, gate):
+        if not isinstance(gate, MatrixRing) or not isinstance(state, (tuple, list)):
+            raise RingError("Expected a matrix and state vector")
+        if len(state) != gate.cols:
+            raise RingError("State length does not match matrix columns")
+        if len(gate.data) != gate.rows or any(len(row) != gate.cols for row in gate.data):
+            raise RingError("Invalid matrix shape")
+        if any(not isinstance(x, CyclotomicRing) or x.p != gate.p for x in state):
+            raise RingError("State entries must belong to the matrix ring")
+        if any(not isinstance(x, CyclotomicRing) or x.p != gate.p for row in gate.data for x in row):
+            raise RingError("Matrix entries must belong to the matrix ring")
+        result = []
+        for row in gate.data:
+            total = CyclotomicRing.zero(gate.p)
+            for element, amplitude in zip(row, state):
+                total = total + element * amplitude
+            result.append(total)
+        return result
+
+
+class PhotonicMZIModel:
+    """Two-mode H diag(phase_a,phase_b) H/2 with fifth/tenth roots; no hardware."""
+    @staticmethod
+    def execute(state, phase_a, phase_b, phase_order=5):
+        if not isinstance(state,(list,tuple)) or len(state)!=2: raise RingError("Expected two amplitudes")
+        if type(phase_a) is not int or type(phase_b) is not int: raise RingError("Phases must be integer exponents")
+        if type(phase_order) is not int or phase_order not in (5,10): raise RingError("Phase order must be 5 or 10")
+        x,y=(CyclotomicField5(v) for v in state); z=CyclotomicRing.zeta(5);root=z if phase_order==5 else -z
+        u=CyclotomicField5(root**phase_a)*(x+y); v=CyclotomicField5(root**phase_b)*(x-y)
+        return [(u+v)/2,(u-v)/2]
+
+
+class RydbergDiagonalModel:
+    """Two-atom diagonal Hamiltonian with fifth/tenth-root phases; no physical device."""
+    @staticmethod
+    def execute(state, detuning, interaction, phase_order=5, global_phase=0):
+        if not isinstance(state,(list,tuple)) or len(state)!=4: raise RingError("Expected four amplitudes")
+        if any(not isinstance(v,CyclotomicRing) or v.p!=5 for v in state): raise RingError("Expected Z[zeta_5] amplitudes")
+        if any(type(x) is not int for x in (detuning,interaction,global_phase)): raise RingError("Phase steps must be integers")
+        if type(phase_order) is not int or phase_order not in (5,10): raise RingError("Phase order must be 5 or 10")
+        phases=(0,detuning,detuning,2*detuning+interaction); z=CyclotomicRing.zeta(5);root=z if phase_order==5 else -z
+        return [amplitude*root**(global_phase-phase) for amplitude,phase in zip(state,phases)]
+
+
+class FibonacciBraidModel:
+    """Three tau anyons with total charge tau, in a non-unitary gauge.
+
+    Fusion dimension and R phases are solved in a fixed gauge under explicit
+    tenth-root and coherence constraints. No physical anyon hardware is claimed.
+    """
+    @staticmethod
+    @lru_cache(maxsize=1)
+    def _derive_coefficients():
+        """Solve the bounded root-of-unity coherence problem, exactly.
+
+        Fusion with tau has Perron dimension phi satisfying d*d=d+1.
+        We fix the usual nonunitary gauge F=[[a,1],[a,-a]], a=1/d,
+        then test all tenth-root diagonal phase pairs against the braid
+        equation and both complete simple-label hexagons. Lexicographic
+        ordering selects one of the two conjugate coherent solutions.
+        This is not a search over arbitrary field-valued category data.
+        """
+        z=CyclotomicRing.zeta(5)
+        one,zero=CyclotomicRing.one(5),CyclotomicRing.zero(5)
+        dimension=-(z**2+z**3)
+        if dimension*dimension != dimension+one: raise RingError("Invalid fusion dimension")
+        a=dimension.inv()
+        f=MatrixRing(5,2,2,[[a,one],[a,-a]])
+        if not TopologicalAnyonHomologicalEngine.verify_pentagon(f)['verified']:
+            raise RingError("Chosen F gauge fails pentagon")
+        phases=[sign*z**k for sign in (1,-1) for k in range(5)]
+        choices=[]
+        for r0,r1 in itertools.product(phases,repeat=2):
+            r=MatrixRing(5,2,2,[[r0,zero],[zero,r1]])
+            x=f*r*f
+            if r*x*r!=x*r*x: continue
+            if TopologicalAnyonHomologicalEngine.verify_hexagons(r,f)['verified']:
+                choices.append((r0.v,r1.v))
+        choices.sort()
+        if len(choices)!=2: raise RingError("Expected two conjugate coherent solutions")
+        return dimension.v,a.v,tuple(choices)
+
+    @staticmethod
+    def derive_fusion_data():
+        dimension,a,choices=FibonacciBraidModel._derive_coefficients()
+        return {"dimension":dimension,"inverse_dimension":a,
+                "phase_candidates":100,"coherent_phase_pairs":choices,
+                "selected_pair":choices[0],
+                "finding":"Exact search over tenth-root phases in a fixed nonunitary gauge; orientation selected lexicographically, not a physical hardware result."}
+
+    @staticmethod
+    def matrices():
+        data=FibonacciBraidModel.derive_fusion_data()
+        one,zero=CyclotomicRing.one(5),CyclotomicRing.zero(5)
+        a=CyclotomicRing(5,data["inverse_dimension"])
+        r0,r1=(CyclotomicRing(5,v) for v in data["selected_pair"])
+        return MatrixRing(5,2,2,[[a,one],[a,-a]]),MatrixRing(5,2,2,[[r0,zero],[zero,r1]])
+
+    @staticmethod
+    def execute(state, word):
+        if not isinstance(state, (tuple, list)) or len(state) != 2:
+            raise RingError("A two-component fusion state is required")
+        if any(not isinstance(x, CyclotomicRing) or x.p != 5 for x in state):
+            raise RingError("Fusion amplitudes must be in Z[zeta_5]")
+        if not isinstance(word, (list, tuple)) or any(type(g) is not int or g not in (-2, -1, 1, 2) for g in word):
+            raise RingError("Braid generators must be -2, -1, 1 or 2")
+        f,r = FibonacciBraidModel.matrices()
+        a=f.data[0][0]
+        r0,r1=r.data[0][0],r.data[1][1]
+        x, y = state
+        for g in word:
+            if abs(g) == 2:
+                x, y = a*x + y, a*x - a*y
+            d0, d1 = (r0, r1) if g > 0 else (r0.inv(), r1.inv())
+            x, y = d0*x, d1*y
+            if abs(g) == 2:
+                x, y = a*x + y, a*x - a*y
+        return [x, y]
+
+
+def _compare_braid_generator_models(state, power):
+    """Compare sigma_1^power on a 2D state using four bounded simulations.
+
+    Optical encoding/decoding is the exact H basis change; its two factors
+    combine to the normalized Hadamard transformations without adjoining
+    sqrt(2). Atomic logical states are |00>,|01>. These are algebraic
+    simulations, not hardware measurements or arbitrary-gate decompositions.
+    """
+    if not isinstance(state,(tuple,list)) or len(state)!=2 or any(not isinstance(x,CyclotomicRing) or x.p!=5 for x in state):
+        raise RingError("Expected a two-component Z[zeta_5] state")
+    if type(power) is not int: raise RingError("Expected integer braid power")
+    z=CyclotomicRing.zeta(5);root=-z;zero=CyclotomicRing.zero(5)
+    # Coherence search selects R_1=diag(root^8,root^9).
+    matrix=MatrixRing(5,2,2,[[root**(8*power),zero],[zero,root**(9*power)]])
+    software=NativeSoftwareBackend().execute_state_evolution(state,matrix)
+    braid=FibonacciBraidModel.execute(state,[1 if power>=0 else -1]*abs(power))
+    x,y=state
+    optical_modes=PhotonicMZIModel.execute([x+y,x-y],8*power,9*power,phase_order=10)
+    optical=[(optical_modes[0]+optical_modes[1])/2,(optical_modes[0]-optical_modes[1])/2]
+    atomic=RydbergDiagonalModel.execute([x,y,zero,zero],-power,0,phase_order=10,global_phase=8*power)[:2]
+    return {'software':software,'braid':braid,'optical':optical,'atomic':atomic,
+            'equal':software==braid==atomic and optical==[CyclotomicField5(v) for v in software]}
+
+
+# =====================================================================
+# 11. HARDWARE MULTIPLIER TIMING MODEL & REFUSAL SURFACE
+# =====================================================================
+
+class HardwareMultiplierTree:
+    """S4: Labeled Wallace tree delay model targeting TSMC N7 FinFET library."""
+    @classmethod
+    def evaluate_timing(cls, p: int = 5, target_freq_ghz: float = 2.5) -> Dict[str, Any]:
+        d = p - 1
+        num_mults = d * d
+        tree_depth = math.ceil(math.log2(max(1, d))) + 2
+        clock_period_ns = 1.0 / target_freq_ghz
+        est_critical_path_ns = 0.12 * tree_depth + 0.35
+        return {
+            "prime": p,
+            "degree_phi_p": d,
+            "word_multipliers_128bit": num_mults,
+            "tree_reduction_depth": tree_depth,
+            "target_frequency_ghz": target_freq_ghz,
+            "estimated_critical_path_ns": est_critical_path_ns,
+            "clock_period_ns": clock_period_ns,
+            "single_cycle_timing_met": (est_critical_path_ns <= clock_period_ns),
+            "classification": "model, not measurement",
+            "synthesizable_rtl_target": "qigpu_cyclotomic_mult_tree.v (TSMC N7 FinFET)",
+            "finding": "Hardware timing is a Wallace-tree model; measurement requires physical ASIC synthesis via Yosys + OpenROAD/OpenSTA."
+        }
+
+
+class RefusalSurface:
+    """Formal domain boundaries, non-claims, and measured wall-clock negative crossover."""
+    @classmethod
+    def measured_kernel_crossover(cls) -> Dict[str, Any]:
+        results = []
+        d_classical = 64
+        m_samples = 10
+        for n in [2, 3, 4]:
+            p = 5
+            data = [[(i + j) % 5 for j in range(n)] for i in range(m_samples)]
+
+            t0 = time.perf_counter()
+            for _ in range(50):
+                for i in range(m_samples):
+                    for j in range(m_samples):
+                        _ = sum(data[i][k] * data[j][k] for k in range(n))
+            t_class = (time.perf_counter() - t0) / 50.0
+
+            t1 = time.perf_counter()
+            fvecs = [QuantumKernelRingEngine.feature_map(p, x) for x in data]
+            for _ in range(50):
+                _ = QuantumKernelRingEngine.compute_gram_matrix(p, fvecs)
+            t_quant = (time.perf_counter() - t1) / 50.0
+
+            ratio = t_quant / max(1e-12, t_class)
+            results.append({
+                "num_qubits": n,
+                "hilbert_dim": 2**n,
+                "classical_dim": d_classical,
+                "classical_wall_sec": t_class,
+                "quantum_exact_wall_sec": t_quant,
+                "ratio_quantum_to_classical": ratio,
+                "verdict": "classical loop faster" if ratio > 1.0 else "ring loop faster; quantum advantage not established"
+            })
+        return {
+            "datapoints": results,
+            "finding": "These Python timings compare different calculations, not equivalent workloads; no quantum advantage or physical quantum execution is established."
+        }
+
+    @classmethod
+    def formal_non_claims(cls) -> List[str]:
+        return [
+            "REFUSAL 1: No claim that quantum algorithms solve NP-complete or Millennium Prize problems in polynomial time.",
+            "REFUSAL 2: No universal quantum speedup or general acceleration is established.",
+            "REFUSAL 3: Generic continuous trigonometric and exponential values are not guaranteed cyclotomic; special values may be exact. sqrt(2) is not in Q(zeta_5).",
+            "REFUSAL 4: The individual Pauli Y operator requires i outside Q(zeta_5); that does not obstruct the real integer two-site XXX Hamiltonian. General real-time exponentiation is not implemented in the ring.",
+            "REFUSAL 5: PULVINI weights, scaled or unscaled, are ring-valued; the norm factor is a nonunit, so general inverse requires the fraction field. Keeping the kernel is not compression; odd vectors need padding.",
+            "REFUSAL 6: Python loop timings compare different workloads and cannot establish quantum advantage; the entangled feature map is not implemented.",
+            "REFUSAL 7: HardwareMultiplierTree is a model, not a physical hardware measurement; physical measurement requires ASIC foundry synthesis."
+        ]
+
+
+# =====================================================================
+# 12. SEVEN TEST CLASSES BATTERY (STRICT EXIT CODE 0)
+# =====================================================================
+
+class TestInvariant(unittest.TestCase):
+    def test_simplicial_tetrahedron_betti_and_syndrome(self):
+        r=TopologicalAnyonHomologicalEngine.verify_exact_hqec()
+        self.assertTrue(r['simplicial_boundary_d_squared_zero']);self.assertEqual(r['betti_over_q'],[1,0,1]);self.assertEqual(r['example_syndrome'],[0]*4)
+
+    def test_xxx_hamiltonian_has_exact_spectral_polynomial(self):
+        h=ExactSpinHamiltonians.xxx_two_site();i=MatrixRing.identity(5,4)
+        self.assertEqual((h-i)*(h+3*i),MatrixRing(5,4,4));self.assertEqual(h.dagger(),h)
+
+    def test_general_quotient_relation(self):
+        x=GeneralAlgebraicNumberField([-5,0,1],[0,1]);five=GeneralAlgebraicNumberField([-5,0,1],[5])
+        self.assertEqual(x*x,five)
+
+    def test_unscaled_golden_weight_identities(self):
+        a,b,n=PulviniRingOperator.get_unscaled_p5_weights();g=CyclotomicRing.gauss_sum(5)
+        self.assertEqual(2*a,g-1);self.assertEqual(2*b,3-g);self.assertEqual(n*(5+2*g),5);self.assertEqual(n.norm(),25)
+
+    def test_mps_bond_cutoff_conserves_kept_plus_discarded(self):
+        cores=TensorMPSRingEngine.get_ghz3_cores(5);full,_,_=TensorMPSRingEngine.contract_mps(5,cores,2)
+        kept,_,discarded=TensorMPSRingEngine.contract_mps(5,cores,1)
+        self.assertEqual([a+b for a,b in zip(kept,discarded)],full)
+
+    def test_inner_product_conjugate_symmetry(self):
+        z=CyclotomicRing.zeta(5);o=CyclotomicRing.one(5);u=[z,o];v=[o,z*z]
+        self.assertEqual(InfoGeoQFIMEngine.inner_product(u,v),InfoGeoQFIMEngine.inner_product(v,u).conj())
+
+    def test_nontrivial_model_comparison_across_generator_powers(self):
+        x=[CyclotomicRing(5,2),CyclotomicRing.zeta(5)]
+        for power in range(-5,6): self.assertTrue(_compare_braid_generator_models(x,power)['equal'])
+
+    def test_derived_fusion_dimension_and_inverse(self):
+        data=FibonacciBraidModel.derive_fusion_data()
+        d=CyclotomicRing(5,data['dimension']);a=CyclotomicRing(5,data['inverse_dimension']);one=CyclotomicRing.one(5)
+        self.assertEqual(d*d,d+one);self.assertEqual(d*a,one)
+        self.assertEqual(len(data['coherent_phase_pairs']),2)
+
+    def test_bitstream_full_alphabet_is_bijective(self):
+        payload = bytes(range(256))
+        packed = PackedBitstreamProtocol.encode(payload)
+        self.assertEqual(len(packed), 288)
+        self.assertEqual(PackedBitstreamProtocol.decode(packed, 256), payload)
+
+    def test_fibonacci_all_pentagons_and_hexagons(self):
+        c=TopologicalAnyonHomologicalEngine;self.assertTrue(c.verify_pentagon()['verified']);self.assertTrue(c.verify_hexagons()['verified'])
+
+    def test_mera_density_trace_one(self):
+        for n in (4,8,16): self.assertEqual(HolographicMERAEngine.entropy_report(n,n//2)['trace'],['1','0','0','0'])
+
+    def test_geodesic_zero_velocity_is_stationary(self):
+        out=InfoGeoQFIMEngine.step_geodesic_stereographic(1,2,0,0,Fraction(1,3))
+        self.assertEqual(out,tuple(map(CyclotomicField5,(1,2,0,0))))
+
+    def test_mzi_zero_phases_identity(self):
+        self.assertEqual(PhotonicMZIModel.execute([1,2],0,0),[CyclotomicField5(1),CyclotomicField5(2)])
+    def test_atom_forward_then_inverse(self):
+        x=[CyclotomicRing(5,i) for i in range(4)]
+        self.assertEqual(RydbergDiagonalModel.execute(RydbergDiagonalModel.execute(x,1,2),-1,-2),x)
+
+    def test_braid_relation(self):
+        x = [CyclotomicRing.one(5), CyclotomicRing.zeta(5)]
+        self.assertEqual(FibonacciBraidModel.execute(x,[1,2,1]), FibonacciBraidModel.execute(x,[2,1,2]))
+
+    def test_fundamental_ring_identities(self):
+        for p in [5, 7]:
+            z = CyclotomicRing.zeta(p)
+            self.assertTrue((z ** p).is_one())
+            g = CyclotomicRing.gauss_sum(p)
+            expected = 5 if p == 5 else -7
+            self.assertEqual((g * g).v[0], expected)
+
+    def test_dagger_invariants(self):
+        p = 5
+        m = MatrixRing(p, 2, 2, [[CyclotomicRing.zero(p), CyclotomicRing.zeta(p)], [CyclotomicRing.one(p), CyclotomicRing.zero(p)]])
+        morph = MorphismRing(p, 2, 2, m)
+        self.assertEqual(morph.dagger().dagger(), morph)
+
+    def test_exact_yang_baxter_all_roots(self):
+        for p in [5, 7]:
+            res = FunctorialCategoricalCompiler.verify_yang_baxter_all_roots(p)
+            self.assertTrue(all(res.values()))
+
+    def test_pulvini_zero_residual(self):
+        x1, x2 = CyclotomicRing.embed_rational(5, 13), CyclotomicRing.embed_rational(5, 7)
+        f, k = PulviniRingOperator.fold_pair_p5(x1, x2)
+        rx1, rx2, norm_fac = PulviniRingOperator.unfold_pair_p5(f, k)
+        self.assertEqual(rx1, norm_fac * x1)
+        self.assertEqual(rx2, norm_fac * x2)
+
+
+class TestProperty(unittest.TestCase):
+    def test_random_boundary_chains_have_zero_syndrome(self):
+        import random
+        rng=random.Random(188);vertices=list(range(4));edges=list(itertools.combinations(vertices,2));faces=list(itertools.combinations(vertices,3))
+        for _ in range(20):
+            r=TopologicalAnyonHomologicalEngine.analyze_simplicial_complex(vertices,edges,faces,[rng.randrange(-9,10) for _ in faces])
+            self.assertEqual(r['syndrome'],[0]*4);self.assertEqual(r['betti_over_q'],[1,0,1])
+
+    def test_xxx_discrete_evolution_group_law_and_norm(self):
+        state=[CyclotomicRing(5,n) for n in (1,2,3,4)]
+        for a,b in ((1,2),(-1,4),(0,0),(5,-7)):
+            evolved=ExactSpinHamiltonians.evolve_discrete_5(state,a)
+            self.assertEqual(ExactSpinHamiltonians.evolve_discrete_5(evolved,b),ExactSpinHamiltonians.evolve_discrete_5(state,a+b))
+            norm=sum((x.sigma(4)*x for x in evolved),CyclotomicField5(0));self.assertEqual(norm,30)
+
+    def test_general_quotient_distributivity(self):
+        for i in range(-3,4):
+            a=GeneralAlgebraicNumberField([-5,0,1],[i,1]);b=GeneralAlgebraicNumberField([-5,0,1],[2,i]);c=GeneralAlgebraicNumberField([-5,0,1],[1,-1])
+            self.assertEqual(a*(b+c),a*b+a*c)
+
+    def test_unscaled_fold_roundtrips_random_exact_inputs(self):
+        import random
+        rng=random.Random(146)
+        for _ in range(20):
+            x=[CyclotomicRing(5,[rng.randrange(-9,10) for _ in range(4)]) for _ in range(2)]
+            f,k=PulviniRingOperator.fold_unscaled_pair_p5(*x)
+            self.assertEqual(PulviniRingOperator.unfold_unscaled_pair_p5(f,k),tuple(CyclotomicField5(v) for v in x))
+
+    def test_legendre_multiplicativity(self):
+        for p in (5,7,11):
+            for a in range(p):
+                for b in range(p):self.assertEqual(legendre_symbol(a*b,p),legendre_symbol(a,p)*legendre_symbol(b,p))
+
+    def test_fold_records_padding_and_storage(self):
+        for n in range(8):
+            x=[CyclotomicRing(5,i) for i in range(n)];r=PulviniRingOperator.fold_vector_p5(x)
+            self.assertEqual(r['original_elements'],n);self.assertEqual(r['total_stored_elements'],n+n%2)
+            out=PulviniRingOperator.unfold_vector_p5(r['folded'],r['kernels']);scale=PulviniRingOperator.get_p5_weights()[2]
+            self.assertEqual([v for pair in out for v in pair][:n],[scale*v for v in x])
+
+    def test_nontrivial_model_comparison_for_random_inputs(self):
+        import random
+        r=random.Random(911)
+        for _ in range(12):
+            state=[CyclotomicRing(5,[r.randrange(-4,5) for _ in range(4)]) for _ in range(2)]
+            self.assertTrue(_compare_braid_generator_models(state,r.randrange(-4,5))['equal'])
+
+    def test_derived_solutions_are_conjugates(self):
+        choices=FibonacciBraidModel.derive_fusion_data()['coherent_phase_pairs']
+        self.assertEqual(tuple(CyclotomicRing(5,x).conj().v for x in choices[0]),choices[1])
+
+    def test_bitstream_random_payloads_and_padding(self):
+        import random
+        rng = random.Random(712)
+        for size in range(65):
+            payload = bytes(rng.randrange(256) for _ in range(size))
+            packed = PackedBitstreamProtocol.encode(payload)
+            self.assertEqual(len(packed), (9 * size + 7) // 8)
+            self.assertEqual(PackedBitstreamProtocol.decode(packed, size), payload)
+
+    def test_braid_polynomial_cancels_inverse_pairs(self):
+        fn=TopologicalAnyonHomologicalEngine.alexander_polynomial
+        for word in ([1,2],[1,-2,1],[-1,2,1,2]):self.assertEqual(fn(3,word),fn(3,word+[1,-1]))
+
+    def test_network_amplitude_norm_preserved(self):
+        for n in (4,8,16):
+            v=HolographicMERAEngine.contract(n)
+            self.assertEqual(sum((x*x.conj() for x in v.values()),CyclotomicRing.zero(5)),CyclotomicRing(5,2))
+
+    def test_geodesic_zero_time_identity(self):
+        for n in range(-3,4):
+            out=InfoGeoQFIMEngine.step_geodesic_stereographic(n,1,2,3,0)
+            self.assertEqual(out,tuple(map(CyclotomicField5,(n,1,2,3))))
+    def test_qfim_denominator_not_discarded(self):
+        q=InfoGeoQFIMEngine.compute_polynomial_qfim(5,CyclotomicRing.one(5)+CyclotomicRing.zeta(5))
+        self.assertIsInstance(q['reduced_denominator'],tuple)
+        self.assertEqual(CyclotomicRing(5,q['qfim_numerator_ring'])*CyclotomicRing(5,q['reduced_denominator']),CyclotomicRing(5,q['reduced_numerator'])*CyclotomicRing(5,q['qfim_denominator_ring']))
+
+    def test_optical_linearity(self):
+        for i in range(-3,4):
+            a=PhotonicMZIModel.execute([i,1],1,2); b=PhotonicMZIModel.execute([1,2],1,2); c=PhotonicMZIModel.execute([i+1,3],1,2)
+            self.assertEqual(c,[x+y for x,y in zip(a,b)])
+
+    def test_braid_inverse_multiple_states(self):
+        for i in range(8):
+            x=[CyclotomicRing(5,i),CyclotomicRing(5,-i)]
+            self.assertEqual(FibonacciBraidModel.execute(x,[1,2,-2,-1]),x)
+    def test_packing_all_bytes(self):
+        b=bytes(range(256));self.assertEqual(PackedBitstreamProtocol.decode(PackedBitstreamProtocol.encode(b),len(b)),b)
+
+    def test_inverse_braids(self):
+        x = [CyclotomicRing.one(5), CyclotomicRing.zeta(5)]
+        for word in ([1,2],[-1,2,1],[2,2,-1,2]):
+            self.assertEqual(FibonacciBraidModel.execute(x,word+[-g for g in reversed(word)]),x)
+
+    def test_ring_commutativity_and_canonical_reduction(self):
+        a = CyclotomicRing.zeta(5, 2) + CyclotomicRing.embed_rational(5, 3)
+        b = CyclotomicRing.zeta(5, 4) - CyclotomicRing.embed_rational(5, 1)
+        self.assertEqual(a + b, b + a)
+        self.assertEqual(a * b, b * a)
+        canon = CyclotomicRing(5, (1, 2, 3, 4, 0))
+        self.assertEqual(canon.v, (1, 2, 3, 4, 0))
+
+    def test_zx_spider_fusion(self):
+        self.assertTrue(FunctorialCategoricalCompiler.zx_spider_fusion(5, 1, 3))
+        self.assertTrue(FunctorialCategoricalCompiler.zx_spider_fusion(7, 2, 4))
+
+    def test_general_number_field_golden_ratio(self):
+        phi, one = GeneralAlgebraicNumberField.make_golden_ratio()
+        self.assertEqual(phi * phi, phi + one)
+
+
+class TestAdversarial(unittest.TestCase):
+    def test_simplicial_complex_rejects_malformed_inputs(self):
+        f=TopologicalAnyonHomologicalEngine.analyze_simplicial_complex
+        for v,e,t,c in (([0,0],[],[],[]),([0,1],[(1,0)],[],[]),([0,1,2],[(0,1)],[(0,1,2)],[1]),([0,1],[(0,1),(0,1)],[],[]),([0],[],[],[0]),([0],[],[],[True])):
+            with self.subTest(v=v,e=e,t=t),self.assertRaises(RingError):f(v,e,t,c)
+
+    def test_xxx_rejects_invalid_states_and_steps(self):
+        for state,step in (([0]*3,1),([0,0,0,0.5],1),([0]*4,1.5),([0]*4,True)):
+            with self.assertRaises(RingError):ExactSpinHamiltonians.evolve_discrete_5(state,step)
+        with self.assertRaises(RingError):ExactSpinHamiltonians.xxx_two_site(4)
+
+    def test_general_quotient_rejects_inexact_and_incompatible(self):
+        for poly,coeffs in (([],[]),([1],[]),([1,2],[1]),([-5,0,1],[0.5]),([1.0,1],[1]),([-5,0,1],[True])):
+            with self.subTest(poly=poly,coeffs=coeffs),self.assertRaises(RingError):GeneralAlgebraicNumberField(poly,coeffs)
+        a=GeneralAlgebraicNumberField([-5,0,1],[1]);b=GeneralAlgebraicNumberField([-7,0,1],[1])
+        for op in (lambda:a+b,lambda:a-b,lambda:a*b):
+            with self.assertRaises(RingError):op()
+
+    def test_unscaled_fold_rejects_wrong_rings_and_floats(self):
+        one=CyclotomicRing.one(5)
+        for pair in ((one,CyclotomicRing.one(7)),(one,0.5),(1,one)):
+            with self.assertRaises(RingError):PulviniRingOperator.fold_unscaled_pair_p5(*pair)
+            with self.assertRaises(RingError):PulviniRingOperator.unfold_unscaled_pair_p5(*pair)
+
+    def test_mps_and_ring_malformed_inputs_are_rejected(self):
+        one=CyclotomicRing.one(5)
+        for p in (5.0,True,4):
+            with self.assertRaises(RingError):CyclotomicRing(p,1)
+        with self.assertRaises(RingError):CyclotomicRing(5,[True,0,0,0])
+        with self.assertRaises(RingError):CyclotomicRing.zeta(5,1.5)
+        with self.assertRaises(RingError):one.sigma(1.5)
+        with self.assertRaises(RingError):legendre_symbol(1,4)
+        for cores in ([[[[one,one]]]], [[[[one]]],[[[one,one]]]], [[[[CyclotomicRing.one(7)]]]]):
+            with self.subTest(cores=cores),self.assertRaises(RingError):TensorMPSRingEngine.contract_mps(5,cores)
+
+    def test_reject_mismatched_ring_and_inexact_vectors(self):
+        one=CyclotomicRing.one(5)
+        with self.assertRaises(RingError):MatrixRing(5,1,1,[[CyclotomicRing.one(7)]])
+        with self.assertRaises(RingError):MorphismRing(5,1,1,MatrixRing.identity(7,1))
+        with self.assertRaises(RingError):InfoGeoQFIMEngine.inner_product([one],[one,one])
+        with self.assertRaises(RingError):QuantumKernelRingEngine.feature_map(5,[0.5])
+        with self.assertRaises(RingError):QuantumKernelRingEngine.compute_gram_matrix(5,[[one],[one,one]])
+        with self.assertRaises(RingError):PulviniRingOperator.unfold_vector_p5([one],[])
+        with self.assertRaises(RingError):PulviniRingOperator.fold_vector_p5([1])
+
+    def test_models_reject_invalid_phase_order(self):
+        one=CyclotomicRing.one(5)
+        with self.assertRaises(RingError): PhotonicMZIModel.execute([one,one],0,1,phase_order=6)
+        with self.assertRaises(RingError): RydbergDiagonalModel.execute([one]*4,0,0,phase_order=True)
+        with self.assertRaises(RingError): _compare_braid_generator_models([one,one],1.5)
+
+    def test_derived_hexagon_rejects_wrong_phase(self):
+        f,r=FibonacciBraidModel.matrices(); r.data[0][0]=CyclotomicRing.one(5)
+        self.assertFalse(TopologicalAnyonHomologicalEngine.verify_hexagons(r,f)['verified'])
+        with self.assertRaises(RingError): TopologicalAnyonHomologicalEngine.verify_hexagons(r,MatrixRing.identity(7,2))
+
+    def test_bitstream_rejects_malformed(self):
+        for data, n in ((b"", 1), (b"\x00", 0), (b"\x02\x80", 1), (b"\xff\x80", 1), (b"\x00\x01", 1)):
+            with self.subTest(data=data, n=n), self.assertRaises(ValueError):
+                PackedBitstreamProtocol.decode(data, n)
+        for n in (-1, True, 1.5):
+            with self.assertRaises(ValueError): PackedBitstreamProtocol.decode(b"", n)
+        with self.assertRaises(ValueError): PackedBitstreamProtocol.encode("not bytes")
+
+    def test_category_wrong_f_and_r_fail(self):
+        c=TopologicalAnyonHomologicalEngine;self.assertFalse(c.verify_pentagon(MatrixRing.identity(5,2))['verified']);self.assertFalse(c.verify_hexagons(MatrixRing.identity(5,2))['verified'])
+    def test_alexander_rejects_bad_braids(self):
+        for n,w in ((1,[]),(5,[]),(3,[0]),(3,[3]),(2,[1]*65)):
+            with self.subTest(n=n,w=w),self.assertRaises(RingError):TopologicalAnyonHomologicalEngine.alexander_polynomial(n,w)
+
+    def test_tensor_network_rejects_invalid_intervals(self):
+        for n,b in ((0,1),(4,0),(8,9),(True,1)):
+            with self.subTest(n=n,b=b),self.assertRaises(RingError):HolographicMERAEngine.reduced_state(n,b)
+
+    def test_geodesic_rejects_inexact_and_complex_values(self):
+        with self.assertRaises(RingError): InfoGeoQFIMEngine.step_geodesic_stereographic(0.5,0,1,0,1)
+        with self.assertRaises(RingError): InfoGeoQFIMEngine.step_geodesic_stereographic(CyclotomicRing.zeta(5),0,1,0,1)
+
+    def test_model_input_validation(self):
+        with self.assertRaises(RingError): PhotonicMZIModel.execute([0],0,0)
+        with self.assertRaises(RingError): PhotonicMZIModel.execute([0,0],0.5,0)
+        with self.assertRaises(RingError): RydbergDiagonalModel.execute([CyclotomicRing.one(7)]*4,0,0)
+        with self.assertRaises(RingError): RydbergDiagonalModel.execute([CyclotomicRing.one(5)]*4,True,0)
+
+    def test_backend_rejects_non_matrix(self):
+        with self.assertRaises(RingError): NativeSoftwareBackend().execute_state_evolution([],None)
+    def test_backend_rejects_state_size(self):
+        with self.assertRaises(RingError): NativeSoftwareBackend().execute_state_evolution([],MatrixRing.identity(5,1))
+    def test_backend_rejects_mutated_matrix_shape(self):
+        m=MatrixRing.identity(5,1);m.data=[]
+        with self.assertRaises(RingError): NativeSoftwareBackend().execute_state_evolution([CyclotomicRing.one(5)],m)
+    def test_backend_rejects_mutated_matrix_ring(self):
+        m=MatrixRing.identity(5,1);m.data[0][0]=CyclotomicRing.one(7)
+        with self.assertRaises(RingError): NativeSoftwareBackend().execute_state_evolution([CyclotomicRing.one(5)],m)
+    def test_braid_rejects_bad_state_length(self):
+        with self.assertRaises(RingError): FibonacciBraidModel.execute([],[])
+    def test_braid_rejects_bad_state_ring(self):
+        with self.assertRaises(RingError): FibonacciBraidModel.execute([CyclotomicRing.one(7)]*2,[])
+    def test_ring_rejects_invalid_coefficients(self):
+        for value in ([0,0], [0,0,0,0,'bad'], 'bad'):
+            with self.subTest(value=value),self.assertRaises(RingError): CyclotomicRing(5,value)
+    def test_ring_rejects_invalid_exponent(self):
+        with self.assertRaises(RingError): _=CyclotomicRing.one(5)**0.5
+    def test_ring_rejects_invalid_automorphism(self):
+        with self.assertRaises(RingError): CyclotomicRing.one(5).sigma(5)
+    def test_ring_rejects_mixed_operations(self):
+        a,b=CyclotomicRing.one(5),CyclotomicRing.one(7)
+        for op in (lambda:a+b,lambda:a-b,lambda:a*b):
+            with self.assertRaises(RingError): op()
+    def test_matrix_rejects_bad_shape(self):
+        with self.assertRaises(RingError): MatrixRing(5,2,2,[[1]])
+    def test_matrix_rejects_ring_mismatch(self):
+        a,b=MatrixRing.identity(5,2),MatrixRing.identity(7,2)
+        for op in (lambda:a+b,lambda:a-b,lambda:a*b,lambda:a.kron(b)):
+            with self.assertRaises(RingError): op()
+    def test_morphism_rejects_dimension_mismatch(self):
+        with self.assertRaises(RingError): MorphismRing(5,1,2,MatrixRing.identity(5,2))
+    def test_morphism_rejects_mixed_composition(self):
+        a,b=MorphismRing.identity(5,1),MorphismRing.identity(7,1)
+        for op in (lambda:a.compose(b),lambda:a.tensor(b)):
+            with self.assertRaises(RingError): op()
+
+    def test_braid_rejects_invalid_input(self):
+        for word in ([0],[3],[True],[1.0],"1"):
+            with self.subTest(word=word), self.assertRaises(RingError):
+                FibonacciBraidModel.execute([CyclotomicRing.one(5)]*2,word)
+        with self.assertRaises(RingError):
+            NativeSoftwareBackend().execute_state_evolution([CyclotomicRing.one(7)],MatrixRing.identity(5,1))
+
+    def test_rejection_of_floats_and_non_primes(self):
+        with self.assertRaises(RingError):
+            CyclotomicRing(5, 3.14159)
+        with self.assertRaises(RingError):
+            CyclotomicRing(5, (1.0, 0, 0, 0, 0))
+        with self.assertRaises(RingError):
+            CyclotomicRing(6, (1, 0, 0, 0, 0, 0))
+
+    def test_non_unit_inversion_rejection(self):
+        non_unit = CyclotomicRing.embed_rational(5, 2)
+        with self.assertRaises(RingError):
+            non_unit.inv()
+
+
+class TestEdge(unittest.TestCase):
+    def test_empty_complex_and_unfilled_triangle(self):
+        f=TopologicalAnyonHomologicalEngine.analyze_simplicial_complex
+        self.assertEqual(f([],[],[],[])['betti_over_q'],[0,0,0])
+        self.assertEqual(f([0,1,2],[(0,1),(0,2),(1,2)],[],[])['betti_over_q'],[1,1,0])
+
+    def test_xxx_zero_time_and_zero_state(self):
+        self.assertEqual(ExactSpinHamiltonians.evolve_discrete_5([1,0,0,0],0),list(map(CyclotomicField5,[1,0,0,0])))
+        self.assertEqual(ExactSpinHamiltonians.evolve_discrete_5([0]*4,-1),[CyclotomicField5(0)]*4)
+
+    def test_reducible_quotient_has_zero_divisors(self):
+        a=GeneralAlgebraicNumberField([-1,0,1],[-1,1]);b=GeneralAlgebraicNumberField([-1,0,1],[1,1]);z=GeneralAlgebraicNumberField([-1,0,1],[])
+        self.assertNotEqual(a,z);self.assertNotEqual(b,z);self.assertEqual(a*b,z)
+
+    def test_unscaled_zero_input_and_nonunit_norm(self):
+        zero=CyclotomicRing.zero(5);f,k=PulviniRingOperator.fold_unscaled_pair_p5(zero,zero)
+        self.assertEqual((f,k),(zero,zero));self.assertEqual(PulviniRingOperator.unfold_unscaled_pair_p5(f,k),(CyclotomicField5(0),CyclotomicField5(0)))
+        with self.assertRaises(RingError):PulviniRingOperator.get_unscaled_p5_weights()[2].inv()
+
+    def test_mps_empty_and_cutoff_edges(self):
+        self.assertEqual(TensorMPSRingEngine.contract_mps(5,[],1),([],CyclotomicRing.zero(5),[]))
+        for cutoff in (0,-1,True):
+            with self.assertRaises(RingError):TensorMPSRingEngine.contract_mps(5,[],cutoff)
+
+    def test_empty_fold_and_empty_gram(self):
+        r=PulviniRingOperator.fold_vector_p5([]);self.assertEqual(r['original_elements'],0);self.assertIsNone(r['net_compression_ratio'])
+        self.assertEqual(PulviniRingOperator.unfold_vector_p5([],[]),[])
+        self.assertEqual(QuantumKernelRingEngine.compute_gram_matrix(5,[]),[])
+        with self.assertRaises(RingError):InfoGeoQFIMEngine.inner_product([],[])
+        with self.assertRaises(RingError):MatrixRing(5,-1,2)
+
+    def test_nontrivial_comparison_zero_state_and_identity(self):
+        z=CyclotomicRing.zero(5);o=CyclotomicRing.one(5)
+        self.assertTrue(_compare_braid_generator_models([z,z],1)['equal'])
+        self.assertEqual(_compare_braid_generator_models([o,z],0)['software'],[o,z])
+
+    def test_derived_zero_braid_is_identity(self):
+        zero=CyclotomicRing.zero(5)
+        self.assertEqual(FibonacciBraidModel.execute([zero,zero],[]),[zero,zero])
+
+    def test_bitstream_boundary_bytes(self):
+        for value in (0, 1, 4, 5, 254, 255):
+            packed = PackedBitstreamProtocol.encode(bytes([value]))
+            self.assertEqual(PackedBitstreamProtocol.decode(packed, 1), bytes([value]))
+        self.assertIsNone(DataSystemRealisation.run_benchmark(0)["packed_bitstream_ratio"])
+
+    def test_empty_braid_is_split_unlink(self):
+        self.assertEqual(TopologicalAnyonHomologicalEngine.alexander_polynomial(2,[]),[])
+    def test_category_rejects_bad_shapes(self):
+        with self.assertRaises(RingError):TopologicalAnyonHomologicalEngine.verify_pentagon(MatrixRing.identity(7,2))
+        with self.assertRaises(RingError):TopologicalAnyonHomologicalEngine.verify_hexagons(MatrixRing(5,2,2,[[1,1],[0,1]]))
+
+    def test_entire_network_state_is_pure(self):
+        self.assertEqual(HolographicMERAEngine.entropy_report(4,4)['entropy_symbolic'],'0')
+
+    def test_geodesic_origin(self):
+        x=InfoGeoQFIMEngine.step_geodesic_stereographic(0,0,1,0,Fraction(1,10))
+        self.assertEqual(x[0],Fraction(1,10));self.assertEqual(x[2],1)
+
+    def test_model_zero_states(self):
+        self.assertEqual(PhotonicMZIModel.execute([0,0],3,4),[CyclotomicField5(0)]*2)
+        self.assertEqual(RydbergDiagonalModel.execute([CyclotomicRing.zero(5)]*4,4,3),[CyclotomicRing.zero(5)]*4)
+
+    def test_empty_matrix(self):
+        self.assertEqual(NativeSoftwareBackend().execute_state_evolution([],MatrixRing(5,0,0)),[])
+    def test_empty_gram(self):
+        self.assertEqual(QuantumKernelRingEngine.compute_gram_matrix(5,[]),[])
+    def test_empty_packed_stream(self):
+        self.assertEqual(PackedBitstreamProtocol.decode(PackedBitstreamProtocol.encode(b""),0),b"")
+    def test_ring_negative_exponent(self):
+        self.assertEqual(CyclotomicRing.zeta(5)**-1,CyclotomicRing.zeta(5,4))
+    def test_odd_fold_vector(self):
+        r=PulviniRingOperator.fold_vector_p5([CyclotomicRing.one(5)])
+        self.assertEqual(r['original_elements'],1); self.assertEqual(r['padded_elements'],2)
+    def test_non_square_morphism_not_identity(self):
+        self.assertFalse(MorphismRing(5,1,2,MatrixRing(5,2,1)).is_identity())
+
+    def test_empty_braid_and_rectangular_backend(self):
+        x=[CyclotomicRing.one(5),CyclotomicRing.zeta(5)]
+        self.assertEqual(FibonacciBraidModel.execute(x,[]),x)
+        self.assertEqual(NativeSoftwareBackend().execute_state_evolution(x,MatrixRing(5,1,2,[[1,1]])),[x[0]+x[1]])
+
+    def test_zero_and_one_elements(self):
+        for p in [5, 7]:
+            z = CyclotomicRing.zero(p)
+            o = CyclotomicRing.one(p)
+            self.assertTrue(z.is_zero())
+            self.assertTrue(o.is_one())
+            self.assertEqual(z + o, o)
+            self.assertEqual(z * o, z)
+
+    def test_mps_truncated_chi1(self):
+        p = 5
+        A1, A2, A3 = TensorMPSRingEngine.get_ghz3_cores(p)
+        _, tail, _ = TensorMPSRingEngine.contract_mps(p, [A1, A2, A3], chi=1)
+        self.assertEqual(tail.v[0], 1)
+
+
+class TestUnit(unittest.TestCase):
+    def test_filled_triangle_boundary_and_betti(self):
+        r=TopologicalAnyonHomologicalEngine.analyze_simplicial_complex([0,1,2],[(0,1),(0,2),(1,2)],[(0,1,2)],[2])
+        self.assertEqual(r['boundary_error'],[2,-2,2]);self.assertEqual(r['syndrome'],[0,0,0]);self.assertEqual(r['betti_over_q'],[1,0,0])
+
+    def test_xxx_exact_matrix_entries(self):
+        h=ExactSpinHamiltonians.xxx_two_site()
+        expected=[[1,0,0,0],[0,-1,2,0],[0,2,-1,0],[0,0,0,1]]
+        self.assertEqual(h,MatrixRing(5,4,4,expected))
+        z=CyclotomicField5(CyclotomicRing.zeta(5))
+        self.assertEqual(ExactSpinHamiltonians.evolve_discrete_5([1,0,0,0],1),[z.inverse(),CyclotomicField5(0),CyclotomicField5(0),CyclotomicField5(0)])
+
+    def test_quotient_reduces_exact_rationals(self):
+        x=GeneralAlgebraicNumberField([-5,0,1],[Fraction(1,2),Fraction(1,2)])
+        self.assertEqual(x*x,x+GeneralAlgebraicNumberField([-5,0,1],[1]))
+
+    def test_unscaled_fifth_root_coefficients(self):
+        a,b,n=PulviniRingOperator.get_unscaled_p5_weights()
+        self.assertEqual(a.v,(-1,0,-1,-1,0));self.assertEqual(b.v,(2,0,1,1,0));self.assertEqual(n.v,(7,0,4,4,0))
+        one=CyclotomicRing.one(5);f,k=PulviniRingOperator.fold_unscaled_pair_p5(one,one)
+        self.assertEqual(PulviniRingOperator.unfold_unscaled_pair_p5(f,k),(CyclotomicField5(1),CyclotomicField5(1)))
+
+    def test_single_site_mps_unit(self):
+        one=CyclotomicRing.one(5);zero=CyclotomicRing.zero(5)
+        state,tail,discarded=TensorMPSRingEngine.contract_mps(5,[[[[one],[zero]]]])
+        self.assertEqual(state,[one,zero]);self.assertEqual(tail,zero);self.assertEqual(discarded,[zero,zero])
+
+    def test_ring_gauss_norm_and_inverse_units(self):
+        z=CyclotomicRing.zeta(5);g=CyclotomicRing.gauss_sum(5)
+        self.assertEqual(legendre_symbol(1,5),1);self.assertEqual(legendre_symbol(2,5),-1)
+        self.assertTrue(CyclotomicRing.one(5).is_one());self.assertEqual(g*g,5)
+        self.assertEqual(z.norm(),1);self.assertEqual(z*z.inv(),1)
+        with self.assertRaises(RingError):CyclotomicRing(5,2).inv()
+
+    def test_pulvini_pair_and_vector_units(self):
+        one=CyclotomicRing.one(5);two=CyclotomicRing(5,2)
+        w1,w2,scale=PulviniRingOperator.get_p5_weights();self.assertEqual(scale,w1*w1+w2*w2)
+        folded,kernel=PulviniRingOperator.fold_pair_p5(one,two)
+        a,b,n=PulviniRingOperator.unfold_pair_p5(folded,kernel)
+        self.assertEqual((a,b,n),(scale,2*scale,scale))
+        v=PulviniRingOperator.fold_vector_p5([one,two]);self.assertEqual(PulviniRingOperator.unfold_vector_p5(v['folded'],v['kernels']),[(scale,2*scale)])
+        self.assertIn('scaled',PulviniRingOperator.p5_weights_finding())
+        self.assertIn('different operator',PulviniRingOperator.p7_obstruction_record()['finding'])
+
+    def test_compiler_zx_and_yang_baxter_units(self):
+        self.assertTrue(FunctorialCategoricalCompiler.zx_spider_fusion(5,2,4))
+        z=CyclotomicRing.zeta(5);r=FunctorialCategoricalCompiler.R_matrix(5,z)
+        self.assertEqual((r.rows,r.cols),(4,4));self.assertEqual(r.data[0][0],z)
+        checks=FunctorialCategoricalCompiler.verify_yang_baxter_all_roots(5)
+        self.assertEqual(set(checks),{1,2,3,4});self.assertTrue(all(checks.values()))
+        self.assertIsNotNone(FunctorialCategoricalCompiler.get_lean4_specification_reference())
+
+    def test_qfim_and_exact_real_field_units(self):
+        one=CyclotomicRing.one(5);psi,dpsi=InfoGeoQFIMEngine.polynomial_ansatz(5,one)
+        self.assertEqual(psi,[one,one,one]);self.assertEqual(dpsi,[CyclotomicRing.zero(5),one,2*one])
+        self.assertEqual(InfoGeoQFIMEngine.inner_product(psi,psi),3)
+        q=InfoGeoQFIMEngine.compute_polynomial_qfim();self.assertEqual(q['reduced_numerator'],(8,0,0,0,0));self.assertEqual(q['reduced_denominator'],3)
+        self.assertTrue(CyclotomicField5(1).is_real());self.assertFalse(CyclotomicField5(CyclotomicRing.zeta(5)).is_real())
+
+    def test_fibonacci_coherence_units(self):
+        self.assertTrue(TopologicalAnyonHomologicalEngine.verify_pentagon()['verified'])
+        self.assertTrue(TopologicalAnyonHomologicalEngine.verify_hexagons()['verified'])
+        one=CyclotomicRing.one(5);state=[one,one]
+        self.assertEqual(FibonacciBraidModel.execute(FibonacciBraidModel.execute(state,[1]),[-1]),state)
+
+    def test_mps_contraction_unit(self):
+        cores=TensorMPSRingEngine.get_ghz3_cores(5);state,tail,discarded=TensorMPSRingEngine.contract_mps(5,cores,2)
+        self.assertEqual([v.v[0] for v in state],[1,0,0,0,0,0,0,1]);self.assertTrue(tail.is_zero());self.assertTrue(all(v.is_zero() for v in discarded))
+
+    def test_software_and_abstract_backend_unit(self):
+        one=CyclotomicRing.one(5)
+        with self.assertRaises(NotImplementedError):IBackend().execute_state_evolution([one],MatrixRing.identity(5,1))
+        self.assertEqual(NativeSoftwareBackend().execute_state_evolution([one],MatrixRing(5,1,1,[[2]])),[2*one])
+
+    def test_timing_and_non_claims_are_qualified(self):
+        report=HardwareMultiplierTree.evaluate_timing()
+        self.assertEqual(report['classification'],'model, not measurement')
+        refusals=RefusalSurface.formal_non_claims();self.assertEqual(len(refusals),7);self.assertIn('No universal quantum speedup',refusals[1])
+
+    def test_measured_benchmarks_do_not_claim_speedup(self):
+        tensor=TensorSystemRealisation.run_benchmark();self.assertEqual(tensor['fp_baseline_finding'],'No floating-point MPS contraction was timed.')
+        comp=CrossParadigmComposition.run_composition_test();self.assertTrue(comp['mps_reconstruction_exact']);self.assertIn('not computed',comp['schmidt_rank_finding'])
+        comparison=RefusalSurface.measured_kernel_crossover();self.assertIn('no quantum advantage',comparison['finding'])
+
+    def test_manifest_hash_and_refusals_unit(self):
+        m=run_master_system();digest=m.pop('manifest_sha256')
+        self.assertEqual(digest,hashlib.sha256(json.dumps(m,sort_keys=True,indent=2).encode()).hexdigest())
+        self.assertEqual(len(m['modules']['refusal_surface']['formal_non_claims']),7)
+
+    def test_kernel_feature_map_is_exact_and_deterministic(self):
+        z=CyclotomicRing.zeta(5);self.assertEqual(QuantumKernelRingEngine.feature_map(5,[1]),[CyclotomicRing.one(5),z])
+        self.assertEqual(QuantumKernelRingEngine.compute_gram_matrix(5,[[CyclotomicRing.one(5)]])[0][0],CyclotomicRing.one(5))
+
+    def test_tenth_root_phase_options(self):
+        z=CyclotomicRing.zeta(5);o=CyclotomicRing.one(5);n=CyclotomicRing.zero(5)
+        out=RydbergDiagonalModel.execute([o,o,n,n],-1,0,phase_order=10,global_phase=8)
+        self.assertEqual(out[:2],[z**3,-z**4])
+        self.assertEqual(PhotonicMZIModel.execute([o,n],8,8,phase_order=10),[CyclotomicField5(z**3),CyclotomicField5(0)])
+
+    def test_fusion_phase_search_selects_documented_solution(self):
+        data=FibonacciBraidModel.derive_fusion_data();z=CyclotomicRing.zeta(5)
+        self.assertEqual(data['phase_candidates'],100)
+        self.assertEqual(data['selected_pair'],((z**3).v,(-(z**4)).v))
+
+    def test_packed_known_vector_and_report(self):
+        self.assertEqual(PackedBitstreamProtocol.encode(bytes([5])), b"\x04\x00")
+        report = DataSystemRealisation.run_benchmark(256)
+        self.assertTrue(report["bit_for_bit_roundtrip"])
+        self.assertEqual(report["packed_bitstream_ratio"], 8 / 9)
+        self.assertNotIn("memory_saving_factor", report)
+        self.assertIn("no memory saving", report["packing_finding"])
+
+    def test_trefoil_and_mirror_alexander(self):
+        fn=TopologicalAnyonHomologicalEngine.alexander_polynomial
+        self.assertEqual(fn(2,[1,1,1]),[1,-1,1]);self.assertEqual(fn(2,[-1,-1,-1]),[1,-1,1])
+
+    def test_network_causal_cone_reaches_top(self):
+        self.assertEqual(HolographicMERAEngine.causal_cone(8,2)[-1],[0])
+    def test_network_reference_mismatch_is_reported(self):
+        self.assertFalse(HolographicMERAEngine.entropy_report(4,2)['cft_matches'])
+
+    def test_geodesic_known_exact_step(self):
+        out=InfoGeoQFIMEngine.step_geodesic_stereographic(1,0,1,0,Fraction(1,10))
+        self.assertEqual(out,tuple(map(CyclotomicField5,(Fraction(221,200),0,Fraction(11,10),0))))
+    def test_field_polynomial_reduction_has_padded_basis(self):
+        self.assertEqual(GeneralAlgebraicNumberField([-5,0,1],[0,0,1]),GeneralAlgebraicNumberField([-5,0,1],[5]))
+
+    def test_field_inverse_and_exactness(self):
+        z=CyclotomicField5(CyclotomicRing.zeta(5)); self.assertEqual((1+z)*(1+z).inverse(),1)
+        with self.assertRaises(RingError): CyclotomicField5(0).inverse()
+        with self.assertRaises(RingError): CyclotomicField5(0.5)
+    def test_mzi_equal_phase(self):
+        z=CyclotomicField5(CyclotomicRing.zeta(5))
+        self.assertEqual(PhotonicMZIModel.execute([1,0],1,1),[z,CyclotomicField5(0)])
+
+    def test_ring_scalar_operations(self):
+        a=CyclotomicRing.one(5)
+        self.assertEqual(2+a,3);self.assertEqual(2-a,1);self.assertEqual(2*a,2)
+    def test_ring_equality_and_hash(self):
+        a=CyclotomicRing.one(5)
+        self.assertFalse(a=='bad');self.assertFalse(a==CyclotomicRing.one(7));self.assertEqual(hash(a),hash(CyclotomicRing.one(5)))
+    def test_ring_repr(self):
+        self.assertIsInstance(repr(CyclotomicRing.one(5)),str)
+    def test_matrix_arithmetic(self):
+        a=MatrixRing.identity(5,2);z=MatrixRing(5,2,2)
+        self.assertEqual(a+z,a);self.assertEqual(a-a,z);self.assertEqual(a*2,2*a)
+    def test_matrix_equality(self):
+        a=MatrixRing.identity(5,1)
+        self.assertFalse(a=='bad');self.assertNotEqual(a,MatrixRing(5,1,1))
+    def test_morphism_identity(self):
+        a=MorphismRing.identity(5,2)
+        self.assertTrue(a.is_identity());self.assertEqual(a.compose(a),a);self.assertTrue(a.tensor(a).is_identity())
+    def test_dagger_axioms(self):
+        a=MorphismRing.identity(5,2)
+        self.assertTrue(all(FunctorialCategoricalCompiler.verify_dagger_compact_axioms(a,a).values()))
+    def test_ir_rotation_fusion(self):
+        self.assertEqual(FunctorialCategoricalCompiler.compile_qasm_ir([('RZ',0,1),('RZ',0,2)]),[('RZ',0,3)])
+    def test_ir_pauli_cancellation(self):
+        self.assertEqual(FunctorialCategoricalCompiler.compile_qasm_ir([('X',0,None),('X',0,None)]),[])
+    def test_field_subtraction(self):
+        phi,one=GeneralAlgebraicNumberField.make_golden_ratio()
+        self.assertEqual(phi-one+one,phi)
+
+    def test_fusion_associator_involution(self):
+        f,_ = FibonacciBraidModel.matrices()
+        self.assertEqual(f*f,MatrixRing.identity(5,2))
+
+    def test_simplicial_hqec(self):
+        hqec = TopologicalAnyonHomologicalEngine.verify_exact_hqec()
+        self.assertTrue(hqec["simplicial_boundary_d_squared_zero"])
+
+    def test_matrix_operations(self):
+        p = 5
+        I = MatrixRing.identity(p, 2)
+        self.assertEqual(I * I, I)
+        self.assertEqual(I.dagger(), I)
+        self.assertEqual(I.transpose(), I)
+
+
+class TestIntegration(unittest.TestCase):
+    def test_disconnected_faces_preserve_independent_homology(self):
+        r=TopologicalAnyonHomologicalEngine.analyze_simplicial_complex([0,1,2,3,4,5],[(0,1),(0,2),(1,2),(3,4),(3,5),(4,5)],[(0,1,2),(3,4,5)],[1,-1])
+        self.assertEqual(r['betti_over_q'],[2,0,0]);self.assertEqual(r['syndrome'],[0]*6)
+
+    def test_xxx_acts_on_exact_mps_state(self):
+        one=CyclotomicRing.one(5);zero=CyclotomicRing.zero(5);cores=[[[[one,zero],[zero,one]]],[[[one],[zero]],[[zero],[one]]]]
+        state,_,_=TensorMPSRingEngine.contract_mps(5,cores,2);out=ExactSpinHamiltonians.evolve_discrete_5(state,1)
+        phase=CyclotomicField5(CyclotomicRing.zeta(5,-1));self.assertEqual(out,[phase,CyclotomicField5(0),CyclotomicField5(0),phase])
+
+    def test_golden_number_field_matches_cyclotomic_norm(self):
+        phi,one=GeneralAlgebraicNumberField.make_golden_ratio();self.assertEqual(phi*phi,phi+one)
+        a,b,_=PulviniRingOperator.get_unscaled_p5_weights();self.assertEqual(a+b,1)
+
+    def test_unscaled_weights_match_legacy_scaled_operator(self):
+        x=CyclotomicRing(5,3);y=CyclotomicRing.zeta(5);f,k=PulviniRingOperator.fold_unscaled_pair_p5(x,y)
+        old_f,old_k=PulviniRingOperator.fold_pair_p5(x,y);self.assertEqual((2*f,2*k),(old_f,old_k))
+
+    def test_exact_mps_to_kernel_and_backend(self):
+        cores=TensorMPSRingEngine.get_ghz3_cores(5);state,_,_=TensorMPSRingEngine.contract_mps(5,cores,2)
+        state=NativeSoftwareBackend().execute_state_evolution(state,MatrixRing.identity(5,8))
+        self.assertEqual(QuantumKernelRingEngine.compute_gram_matrix(5,[state])[0][0],CyclotomicRing(5,4))
+
+    def test_feature_gram_and_pulvini_roundtrip(self):
+        state=QuantumKernelRingEngine.feature_map(5,[1,2]);fold=PulviniRingOperator.fold_vector_p5(state)
+        recovered=[v for pair in PulviniRingOperator.unfold_vector_p5(fold['folded'],fold['kernels']) for v in pair]
+        scale=PulviniRingOperator.get_p5_weights()[2]
+        self.assertEqual(recovered,[scale*x for x in state])
+        self.assertEqual(QuantumKernelRingEngine.compute_gram_matrix(5,[state])[0][0],CyclotomicRing(5,16))
+
+    def test_sigma_one_is_not_a_global_phase(self):
+        one=CyclotomicRing.one(5);result=_compare_braid_generator_models([one,one],1)
+        self.assertTrue(result['equal']);self.assertNotEqual(result['software'][0],result['software'][1])
+
+    def test_both_derived_phase_solutions_obey_coherence(self):
+        f,_=FibonacciBraidModel.matrices();zero=CyclotomicRing.zero(5)
+        for p0,p1 in FibonacciBraidModel.derive_fusion_data()['coherent_phase_pairs']:
+            r=MatrixRing(5,2,2,[[CyclotomicRing(5,p0),zero],[zero,CyclotomicRing(5,p1)]])
+            self.assertTrue(TopologicalAnyonHomologicalEngine.verify_hexagons(r,f)['verified'])
+
+    def test_packed_ring_backend_roundtrip(self):
+        payload = bytes(range(16))
+        data = PackedBitstreamProtocol.decode(PackedBitstreamProtocol.encode(payload), len(payload))
+        state = [CyclotomicRing(5, [b // 5, b % 5, 0, 0, 0]) for b in data]
+        out = NativeSoftwareBackend().execute_state_evolution(state, MatrixRing.identity(5, len(state)))
+        self.assertEqual(bytes(5 * e.v[0] + e.v[1] for e in out), payload)
+
+    def test_category_f_r_coherence_with_braid_relation(self):
+        f,r=FibonacciBraidModel.matrices();x=f*r*f
+        self.assertTrue(TopologicalAnyonHomologicalEngine.verify_pentagon(f)['verified']);self.assertEqual(r*x*r,x*r*x)
+
+    def test_network_full_density_matches_pure_state(self):
+        rho=HolographicMERAEngine.reduced_state(4,4)
+        self.assertEqual(len(rho),4)
+        self.assertEqual(sum((v for (i,j),v in rho.items() if i==j),CyclotomicField5(0)),1)
+
+    def test_geodesic_real_cyclotomic_input(self):
+        z=CyclotomicRing.zeta(5);u=z+z.conj()
+        self.assertTrue(all(x.is_real() for x in InfoGeoQFIMEngine.step_geodesic_stereographic(u,0,1,0,Fraction(1,4))))
+
+    def test_four_models_agree_on_bounded_common_action(self):
+        z=CyclotomicRing.zeta(5);o=CyclotomicRing.one(5);n=CyclotomicRing.zero(5);state=[o,CyclotomicRing(5,3)]
+        ref=NativeSoftwareBackend().execute_state_evolution(state,MatrixRing(5,2,2,[[z,n],[n,z]]))
+        self.assertEqual(FibonacciBraidModel.execute(state,[1,2]*3),ref)
+        self.assertEqual(RydbergDiagonalModel.execute([n,*state,n],-1,0)[1:3],ref)
+        self.assertEqual(PhotonicMZIModel.execute(state,1,1),[CyclotomicField5(v) for v in ref])
+
+    def test_vector_fold_and_unfold(self):
+        x=[CyclotomicRing(5,n) for n in (2,4,6,8)]
+        a=PulviniRingOperator.fold_vector_p5(x); out=PulviniRingOperator.unfold_vector_p5(a['folded'],a['kernels'])
+        norm=PulviniRingOperator.get_p5_weights()[2]
+        self.assertEqual([v for pair in out for v in pair],[norm*v for v in x])
+    def test_ring_matrix_fusion(self):
+        self.assertTrue(FunctorialCategoricalCompiler.zx_spider_fusion(5,2,4))
+
+    def test_software_identity_on_braid_output(self):
+        x=[CyclotomicRing.one(5),CyclotomicRing.zeta(5)]
+        y=FibonacciBraidModel.execute(x,[1,2])
+        self.assertEqual(NativeSoftwareBackend().execute_state_evolution(y,MatrixRing.identity(5,2)),y)
+
+    def test_cross_paradigm_composition(self):
+        res = CrossParadigmComposition.run_composition_test()
+        self.assertEqual(res["status"], "COMPOSITION_VERIFIED")
+        self.assertIn("not computed", res["schmidt_rank_finding"])
+        self.assertTrue(res["mps_reconstruction_exact"])
+
+    def test_braid_and_software_matrix_agree_on_generator(self):
+        f, r = FibonacciBraidModel.matrices()
+        state = [CyclotomicRing.one(5), CyclotomicRing.zeta(5)]
+        self.assertEqual(FibonacciBraidModel.execute(state, [2]),
+                         NativeSoftwareBackend().execute_state_evolution(state, f*r*f))
+
+
+class TestEndToEnd(unittest.TestCase):
+    def test_manifest_exposes_computed_homology_and_syndrome(self):
+        r=run_master_system()['modules']['topological_anyons_and_hqec']
+        self.assertEqual(r['betti_over_q'],[1,0,1]);self.assertEqual(r['example_syndrome'],[0]*4)
+
+    def test_xxx_from_packed_payload_to_exact_evolution(self):
+        payload=PackedBitstreamProtocol.decode(PackedBitstreamProtocol.encode(bytes([1,0,0,0])),4)
+        out=ExactSpinHamiltonians.evolve_discrete_5(list(payload),1)
+        self.assertEqual(out[0],CyclotomicField5(CyclotomicRing.zeta(5,-1)))
+        self.assertTrue(run_master_system()['modules']['exact_spin_hamiltonian']['minimal_polynomial_verified'])
+
+    def test_manifest_discloses_irreducibility_assumption(self):
+        self.assertIn('not tested for irreducibility',run_master_system()['modules']['general_algebraic_fields']['quotient_finding'])
+
+    def test_unscaled_payload_fold_and_manifest(self):
+        encoded=PackedBitstreamProtocol.encode(b'AB');data=PackedBitstreamProtocol.decode(encoded,2)
+        x,y=(CyclotomicRing(5,b) for b in data);f,k=PulviniRingOperator.fold_unscaled_pair_p5(x,y)
+        self.assertEqual(PulviniRingOperator.unfold_unscaled_pair_p5(f,k),(CyclotomicField5(x),CyclotomicField5(y)))
+        self.assertEqual(run_master_system()['modules']['pulvini_geometry']['unscaled_norm_algebraic_norm'],25)
+
+    def test_encoded_byte_controls_exact_mps_measurement(self):
+        payload=bytes([1]);decoded=PackedBitstreamProtocol.decode(PackedBitstreamProtocol.encode(payload),1)[0]
+        one=CyclotomicRing.one(5);zero=CyclotomicRing.zero(5);core=[[[zero],[one]]] if decoded else [[[one],[zero]]]
+        state,_,_=TensorMPSRingEngine.contract_mps(5,[core]);state=NativeSoftwareBackend().execute_state_evolution(state,MatrixRing.identity(5,2))
+        self.assertEqual(state,[zero,one]);self.assertEqual(InfoGeoQFIMEngine.inner_product(state,state),one)
+
+    def test_bitstream_to_exact_kernel_measurement(self):
+        payload=bytes([1,2]);decoded=PackedBitstreamProtocol.decode(PackedBitstreamProtocol.encode(payload),len(payload))
+        state=QuantumKernelRingEngine.feature_map(5,list(decoded))
+        result=NativeSoftwareBackend().execute_state_evolution(state,MatrixRing.identity(5,len(state)))
+        self.assertEqual(QuantumKernelRingEngine.compute_gram_matrix(5,[result])[0][0],CyclotomicRing(5,16))
+
+    def test_manifest_nontrivial_generator_scope(self):
+        item=run_master_system()['modules']['nontrivial_generator_comparison']
+        self.assertTrue(item['equal']);self.assertIn('not arbitrary gates',item['scope'])
+
+    def test_manifest_contains_derived_category_search(self):
+        d=run_master_system()['modules']['topological_anyons_and_hqec']['fusion_category_derivation']
+        self.assertEqual(d['phase_candidates'],100);self.assertEqual(len(d['coherent_phase_pairs']),2)
+
+    def test_manifest_packing_is_measured_not_saving_claim(self):
+        data = run_master_system()["modules"]["data_system_realisation"]
+        self.assertTrue(data["bit_for_bit_roundtrip"])
+        self.assertTrue(data["packed_bit_for_bit"])
+        self.assertNotIn("memory_saving_factor", data)
+        self.assertEqual(data["packed_bitstream_ratio"], 8 / 9)
+
+    def test_anyon_manifest_coherence_and_polynomial(self):
+        r=run_master_system()['modules']['topological_anyons_and_hqec'];self.assertTrue(r['pentagon']['verified']);self.assertTrue(r['hexagons']['verified']);self.assertEqual(r['trefoil_alexander'],[1,-1,1])
+
+    def test_manifest_uses_network_contraction(self):
+        r=run_master_system()['modules']['holographic_mera'];self.assertEqual([x['sites'] for x in r['reports']],[4,8,16]);self.assertTrue(any(not x['cft_matches'] for x in r['reports']))
+
+    def test_geodesic_manifest_exact_example(self):
+        r=run_master_system()['modules']['infogeo_qfim'];self.assertEqual(r['discrete_step_coefficients'][0][0],'221/200');self.assertIn('approximates',r['finding'])
+
+    def test_manifest_describes_bounded_comparison(self):
+        r=run_master_system()["modules"]["restricted_model_comparison"]
+        self.assertTrue(r["equal"]); self.assertIn("one operation only",r["scope"])
+
+    def test_manifest_does_not_claim_universal_hardware_identity(self):
+        m=run_master_system()["modules"]
+        self.assertNotIn("universal_backend_identity",m)
+        self.assertIn("not established",m["execution_models"]["cross_backend_identity"])
+
+    def test_master_acceleration_manifest(self):
+        manifest = run_master_system()
+        self.assertIn("manifest_sha256", manifest)
+        self.assertTrue(manifest["modules"]["cross_paradigm_composition"]["composition_verified"])
+        self.assertAlmostEqual(manifest["modules"]["data_system_realisation"]["packed_bitstream_ratio"], 0.8889, places=3)
+        self.assertEqual(len(manifest["modules"]["refusal_surface"]["formal_non_claims"]), 7)
+
+
+# =====================================================================
+# 13. MASTER RUNNER & CRYPTOGRAPHIC MANIFEST EMITTER
+# =====================================================================
+
+def run_master_system() -> Dict[str, Any]:
+    manifest = {
+        "system_name": "QiGPU experimental mathematical prototype",
+        "posture": "Bounded exact mathematical models; no universal execution or physical hardware claim",
+        "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "modules": {}
+    }
+
+    # 1. Arithmetic Substrate
+    g5 = CyclotomicRing.gauss_sum(5)
+    g7 = CyclotomicRing.gauss_sum(7)
+    manifest["modules"]["arithmetic_substrate"] = {
+        "p5_gauss_sum_squared": (g5 * g5).v[0],
+        "p7_gauss_sum_squared": (g7 * g7).v[0],
+        "parameterized_primes_verified": [5, 7],
+        "ring_exactness": "Exact integer arithmetic for implemented cyclotomic operations; not a proof of every operation."
+    }
+
+    # 2. General Algebraic Number Fields
+    phi, one = GeneralAlgebraicNumberField.make_golden_ratio()
+    manifest["modules"]["general_algebraic_fields"] = {
+        "golden_ratio_field": "Q(sqrt(5))",
+        "quotient_finding": "Arbitrary input polynomials are not tested for irreducibility; a reducible quotient need not be a field.",
+        "phi_squared_equals_phi_plus_one": (phi * phi == phi + one),
+        "precision": "100% Exact Rational Fraction"
+    }
+
+    # 3. PULVINI Geometry
+    x1, x2 = CyclotomicRing.embed_rational(5, 5), CyclotomicRing.embed_rational(5, 2)
+    f, k = PulviniRingOperator.fold_pair_p5(x1, x2)
+    rx1, rx2, norm_fac = PulviniRingOperator.unfold_pair_p5(f, k)
+    manifest["modules"]["pulvini_geometry"] = {
+        "exact_roundtrip_zero_residual": (rx1 == norm_fac * x1 and rx2 == norm_fac * x2),
+        "norm_scaling_factor": norm_fac.v,
+        "weights_finding": PulviniRingOperator.p5_weights_finding(),
+        "unscaled_weights": [v.v for v in PulviniRingOperator.get_unscaled_p5_weights()],
+        "unscaled_norm_algebraic_norm": PulviniRingOperator.get_unscaled_p5_weights()[2].norm(),
+        "p7_obstruction": PulviniRingOperator.p7_obstruction_record()
+    }
+
+    # 4. Functorial Categorical Compiler
+    yb_p5 = FunctorialCategoricalCompiler.verify_yang_baxter_all_roots(5)
+    yb_p7 = FunctorialCategoricalCompiler.verify_yang_baxter_all_roots(7)
+    manifest["modules"]["categorical_compiler"] = {
+        "yang_baxter_all_roots_p5": all(yb_p5.values()),
+        "yang_baxter_all_roots_p7": all(yb_p7.values()),
+        "zx_spider_fusion": FunctorialCategoricalCompiler.zx_spider_fusion(5, 2, 3),
+        "lean4_spec_reference": FunctorialCategoricalCompiler.get_lean4_specification_reference()
+    }
+
+    # 5. InfoGeo QFIM & Geodesics
+    qfim = InfoGeoQFIMEngine.compute_polynomial_qfim(5)
+    step=InfoGeoQFIMEngine.step_geodesic_stereographic(1,0,1,0,Fraction(1,10))
+    manifest["modules"]["infogeo_qfim"] = {
+        "reduced_quotient": qfim["qfim_quotient_string"],
+        "discrete_step_coefficients": [[str(c) for c in x.coefficients[:4]] for x in step],
+        "finding": "Exact field arithmetic; finite Taylor integration approximates continuous flow."
+    }
+
+    # 6. Coherence for the specified gauge and a bounded closed-braid example.
+    hqec=TopologicalAnyonHomologicalEngine.verify_exact_hqec()
+    manifest["modules"]["topological_anyons_and_hqec"]={
+        "fusion_category_derivation":FibonacciBraidModel.derive_fusion_data(),
+        "pentagon":TopologicalAnyonHomologicalEngine.verify_pentagon(),
+        "hexagons":TopologicalAnyonHomologicalEngine.verify_hexagons(),
+        "trefoil_alexander":TopologicalAnyonHomologicalEngine.alexander_polynomial(2,[1,1,1]),
+        "boundary_squared_zero":hqec['simplicial_boundary_d_squared_zero'],
+        "example_boundary_error":hqec['example_boundary_error'],
+        "example_syndrome":hqec['example_syndrome'],
+        "betti_over_q":hqec['betti_over_q'],
+        "finding":"Fusion dimension and a fixed F gauge with R phases solved over tenth roots; no physical device or general error-correction guarantee."
+    }
+
+    h=ExactSpinHamiltonians.xxx_two_site();identity4=MatrixRing.identity(5,4)
+    manifest["modules"]["exact_spin_hamiltonian"]={
+        "hamiltonian":"two-site XXX: XX+YY+ZZ",
+        "minimal_polynomial_verified":(h-identity4)*(h+3*identity4)==MatrixRing(5,4,4),
+        "evolution":"Q(zeta_5) at t=2*pi*k/5, hbar=1; exact spectral projectors",
+        "finding":"No arbitrary-time evolution, larger-system implementation or physical hardware claim."}
+
+    # 7. Explicit finite tensor-network measurements, not substituted formulas.
+    manifest["modules"]["holographic_mera"]={
+        "reports":[HolographicMERAEngine.entropy_report(n,n//2) for n in (4,8,16)],
+        "finding":"Finite network contracted; critical CFT scaling, RT and scrambling are not established."
+    }
+
+    # 8. Realisations (C1, C2, C4)
+    manifest["modules"]["tensor_system_realisation"] = TensorSystemRealisation.run_benchmark()
+    manifest["modules"]["data_system_realisation"] = DataSystemRealisation.run_benchmark(1024)
+    comp = CrossParadigmComposition.run_composition_test()
+    manifest["modules"]["cross_paradigm_composition"] = {
+        "composition_verified": (comp["status"] == "COMPOSITION_VERIFIED"),
+        "details": comp
+    }
+
+    # 9. Only the software backend and a bounded algebraic braid model exist.
+    f, r = FibonacciBraidModel.matrices()
+    sigma2 = f*r*f
+    manifest["modules"]["execution_models"] = {
+        "software": "exact matrix-vector multiplication",
+        "braid_scope": "three tau anyons, total tau; non-unitary gauge",
+        "braid_relation_example": r*sigma2*r == sigma2*r*sigma2,
+        "photonic": "two-mode discrete-phase MZI simulation only; general decomposition and physical device not implemented",
+        "rydberg": "two-atom diagonal Hamiltonian at discrete phases only; no driven or physical-device evolution",
+        "cross_backend_identity": "not established; no physical hardware was tested"
+    }
+
+    # One common operation, not a proof of universal cross-model equivalence.
+    one,zero,z=CyclotomicRing.one(5),CyclotomicRing.zero(5),CyclotomicRing.zeta(5)
+    logical=[one,CyclotomicRing(5,2)]
+    software=NativeSoftwareBackend().execute_state_evolution(logical,MatrixRing(5,2,2,[[z,zero],[zero,z]]))
+    braid=FibonacciBraidModel.execute(logical,[1,2]*3)
+    optical=PhotonicMZIModel.execute(logical,1,1)
+    atomic=RydbergDiagonalModel.execute([zero,*logical,zero],-1,0)[1:3]
+    manifest["modules"]["restricted_model_comparison"]={
+        "operation":"global zeta phase; Rydberg logical single-excitation subspace",
+        "equal":braid==software and atomic==software and optical==[CyclotomicField5(x) for x in software],
+        "scope":"one operation only; no arbitrary-unitary equivalence or physical-device measurement"
+    }
+
+    nontrivial=_compare_braid_generator_models(logical,1)
+    manifest["modules"]["nontrivial_generator_comparison"]={
+        "operation":"sigma_1, with distinct fusion-channel phases",
+        "equal":nontrivial['equal'],
+        "scope":"two-dimensional logical subspace; algebraic simulations, not arbitrary gates or physical hardware"}
+
+    # 10. Hardware Multiplier & Refusal Surface
+    manifest["modules"]["hardware_multiplier_timing"] = HardwareMultiplierTree.evaluate_timing(5, 2.5)
+    manifest["modules"]["refusal_surface"] = {
+        "formal_non_claims": RefusalSurface.formal_non_claims(),
+        "measured_crossover_benchmarks": RefusalSurface.measured_kernel_crossover()
+    }
+
+    # Hashed Manifest Digest
+    raw_json = json.dumps(manifest, sort_keys=True, indent=2)
+    manifest["manifest_sha256"] = hashlib.sha256(raw_json.encode('utf-8')).hexdigest()
+    return manifest
+
+
+if __name__ == '__main__':
+    suite = unittest.TestSuite()
+    loader = unittest.TestLoader()
+    suite.addTests(loader.loadTestsFromTestCase(TestInvariant))
+    suite.addTests(loader.loadTestsFromTestCase(TestProperty))
+    suite.addTests(loader.loadTestsFromTestCase(TestAdversarial))
+    suite.addTests(loader.loadTestsFromTestCase(TestEdge))
+    suite.addTests(loader.loadTestsFromTestCase(TestUnit))
+    suite.addTests(loader.loadTestsFromTestCase(TestIntegration))
+    suite.addTests(loader.loadTestsFromTestCase(TestEndToEnd))
+
+    runner = unittest.TextTestRunner(verbosity=1)
+    result = runner.run(suite)
+
+    if len(result.failures) > 0 or len(result.errors) > 0:
+        sys.exit(1)
+
+    manifest = run_master_system()
+    # The internal digest covers the object before that digest was added; the
+    # filename hash covers the actual complete file bytes.
+    data = json.dumps(manifest, sort_keys=True, indent=2).encode("utf-8")
+    sha = hashlib.sha256(data).hexdigest()
+    os.makedirs("artifacts/qigpu", exist_ok=True)
+    with open(f"artifacts/qigpu/manifest_{sha}.json", "wb") as f:
+        f.write(data)
+
+    print("==================================================================")
+    print("      QiGPU MASTER TOUR DE FORCE ACCELERATION SYSTEM              ")
+    print("   Substrate: Parameterized Cyclotomic Ring Z[zeta_p] (Exact)     ")
+    print("==================================================================")
+    print(f"[*] Arithmetic: p=5 Gauss^2={manifest['modules']['arithmetic_substrate']['p5_gauss_sum_squared']}, p=7 Gauss^2={manifest['modules']['arithmetic_substrate']['p7_gauss_sum_squared']}")
+    print(f"[*] General Number Field Q(sqrt(5)) phi^2 == phi+1: {manifest['modules']['general_algebraic_fields']['phi_squared_equals_phi_plus_one']}")
+    print(f"[*] PULVINI Exact Zero-Residual Roundtrip: {manifest['modules']['pulvini_geometry']['exact_roundtrip_zero_residual']}")
+    print(f"[*] Yang-Baxter Verified (All Roots in Z5 & Z7): {manifest['modules']['categorical_compiler']['yang_baxter_all_roots_p5'] and manifest['modules']['categorical_compiler']['yang_baxter_all_roots_p7']}")
+    print(f"[*] InfoGeo QFIM Quotient in Q(zeta_5): {manifest['modules']['infogeo_qfim']['reduced_quotient']}")
+    print("[*] Fibonacci coherence: exact checks of chosen data; physical hardware unverified")
+    print(f"[*] Exact Simplicial HQEC (d1 o d2 == 0): {manifest['modules']['topological_anyons_and_hqec']['boundary_squared_zero']}")
+    print(f"[*] Float64 Drift Tolerance 1e-12 Exceeded at Depth: {manifest['modules']['tensor_system_realisation']['float64_tolerance_1e12_exceeded_depth']}")
+    print(f"[*] Packed Bitstream Ratio: {manifest['modules']['data_system_realisation']['packed_bitstream_ratio']:.4f} (Roundtrip: {manifest['modules']['data_system_realisation']['packed_bit_for_bit']})")
+    print(f"[*] Cross-Paradigm Composition Verified: {manifest['modules']['cross_paradigm_composition']['composition_verified']}")
+    print("[*] Execution: exact software and bounded braid model; hardware identity not established")
+    print(f"[*] Seven Test Classes Status: {result.testsRun} tests run, {len(result.failures)} failures, {len(result.errors)} errors (Strict Exit Code 0)")
+    print("==================================================================")
+    print(f"[Manifest Hashed] SHA-256: {sha}")
+    print("==================================================================")

@@ -1,0 +1,11 @@
+{
+  "command": "python -m coverage run --branch docs/qigpu/pasted-text.txt",
+  "finding": "Integer boundary matrices and syndrome with rational Betti numbers; tetrahedral 2-skeleton Betti numbers [1,0,1]. Does not compute torsion, decode errors, or establish an operational QEC code.",
+  "implementation_coverage": {
+    "branch_percent": 92.01,
+    "statement_percent": 98.25
+  },
+  "source_sha256": "966c9b2aaa33840ef5c6772cbb115324bb656392c4814fec10208bc967d65743",
+  "step": "Exact simplicial homology and syndrome",
+  "tests_passed": 165
+}

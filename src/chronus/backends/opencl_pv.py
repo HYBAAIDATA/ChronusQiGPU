@@ -22,7 +22,7 @@ from chronus.backends.lattice_workload import (
 from chronus.config import runtime_bounds
 from chronus.core.scaling import planck_ladder
 
-KERNEL_SHA256 = "c285c78ab1e2bc1d54dce4b92fc4cd7c75539b084fc91bee02ed7b425690c346"
+KERNEL_SHA256 = "bd4df7b38981f894acaa165a623cd49da0e71f0d78d24a189749875eab288acc"
 
 
 def validate_fixed_width(values: list[PhiElement], factor: PhiElement) -> None:
@@ -51,7 +51,7 @@ class OpenCLPVBackend:
     def backend_id(self) -> str:
         return self.name
 
-    def __init__(self) -> None:
+    def __init__(self, device=None) -> None:
         try:
             import numpy as np
             import pyopencl as cl
@@ -75,7 +75,9 @@ class OpenCLPVBackend:
             ]
             if not devices:
                 raise HardwareUnavailableError("No OpenCL GPU device is available")
-            self.device = devices[0]
+            if device is not None and device not in devices:
+                raise HardwareUnavailableError("Selected device is not an available OpenCL GPU")
+            self.device = devices[0] if device is None else device
             self.context = cl.Context([self.device])
             self.queue = cl.CommandQueue(self.context)
             self.program = cl.Program(self.context, source.decode("utf-8")).build()
@@ -235,6 +237,33 @@ class OpenCLPVBackend:
             "executed_128_bit": int(np.count_nonzero(status == 1)),
             "executed_256_bit": int(np.count_nonzero(status == 3)),
         }
+
+    def dispatch_field_scale(self, values, index: int):
+        """Apply a structural PV scale on this device, with exact host parity."""
+        from chronus.backends.pv_field import validate_pairs, scale_pairs
+        from chronus.core.scaling import PVScale
+
+        pairs = validate_pairs(values)
+        c, d = PVScale(index).field_factor()
+        if not pairs:
+            return []
+        cl, np = self._cl, self._np
+        source = np.array(pairs, dtype=np.uint16)
+        output = np.empty_like(source)
+        try:
+            flags = cl.mem_flags
+            d_in = cl.Buffer(self.context, flags.READ_ONLY | flags.COPY_HOST_PTR, hostbuf=source)
+            d_out = cl.Buffer(self.context, flags.WRITE_ONLY, size=output.nbytes)
+            kernel = cl.Kernel(self.program, "pv_field_scale")
+            kernel(self.queue, (len(pairs),), None, d_in, d_out, np.uint32(c), np.uint32(d))
+            cl.enqueue_copy(self.queue, output, d_out)
+            self.queue.finish()
+        except cl.Error as exc:
+            raise HardwareUnavailableError("OpenCL field scaling failed") from exc
+        results = [tuple(map(int, row)) for row in output]
+        if results != scale_pairs(pairs, index):
+            raise ParityVerificationError("OpenCL field scale parity failed")
+        return results
 
     def dispatch_pv_fold(
         self, values: list[PhiElement], order: int

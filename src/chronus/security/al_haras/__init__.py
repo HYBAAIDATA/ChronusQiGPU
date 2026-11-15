@@ -1,15 +1,29 @@
 """
-AL HARAS Topological Quantum Immunity Swarm & OS Package.
+AL HARAS — HYBA Security.
 
-"Speak friend and enter or you shall not pass."
+Motto from the product notes: "Speak friend and enter or you shall not pass."
 "We are not building a bigger lock. We are removing the door, changing the topology."
 
-Frontier 1: Autonomous Swarm Resilience & Tactical Edge Mesh (Pentagon / JADC2)
-Frontier 2: Sovereign Post-Quantum Cryptographic Substrate (GCHQ / NCSC / NSA)
-Frontier 3: Strategic Hyperscale Simulation Without Silicon Bottlenecks (DARPA / Labs)
-Frontier 4: Self-Healing Critical National Infrastructure (NATO CNI Defense)
+What the package computes (see docs/security/AL_HARAS_NOTES_RECONCILIATION.md):
+exact cellular-sheaf consistency checks with residual location and repair,
+Reed-Solomon trace repair over GF(257), an exactly certified Paley expander,
+exact Fibonacci braid relations over Z[zeta_5], an elliptic-curve payload
+fingerprint, and decision receipts signed with both Ed25519 and ML-DSA-87
+(FIPS 204). Older module names that use
+gauge-theory or "Millennium" vocabulary are kept for compatibility; their
+docstrings state the mechanism actually implemented. Nothing in this package
+establishes certification, deployment, or hardware behaviour.
 """
 
+from chronus.security.al_haras import (
+    braids,
+    expander,
+    fingerprint,
+    golden,
+    reed_solomon,
+)
+from chronus.security.al_haras.receipts import ReceiptSigner, signed_receipt
+from chronus.security.al_haras.sheaf import GraphSheaf, SheafError, analyse_states
 from chronus.security.al_haras.engine import (
     CyclotomicZ5,
     CellularSheafCohomology,
@@ -144,6 +158,16 @@ from chronus.security.al_haras.millennium_unification import (
 )
 
 __all__ = [
+    "braids",
+    "expander",
+    "fingerprint",
+    "golden",
+    "reed_solomon",
+    "ReceiptSigner",
+    "signed_receipt",
+    "GraphSheaf",
+    "SheafError",
+    "analyse_states",
     "CyclotomicZ5",
     "CellularSheafCohomology",
     "DSW4DInstantonMonopoleHealer",

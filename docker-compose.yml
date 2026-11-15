@@ -1,10 +1,13 @@
 services:
   api:
+    image: chronus-api:local
+    pull_policy: never
     build:
       context: .
       dockerfile: Dockerfile
+      target: api-runtime
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:18000:8000"
     environment:
       CHRONUS_WORKLOAD_DB_PATH: /var/lib/chronus/workloads.sqlite3
       CHRONUS_TENANT_TOKENS: ${CHRONUS_TENANT_TOKENS:-{}}
@@ -25,11 +28,13 @@ services:
       - no-new-privileges:true
 
   web:
+    image: chronus-web:local
+    pull_policy: never
     build:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:13000:3000"
     environment:
       CHRONUS_BACKEND_URL: http://api:8000
       PORT: "3000"
@@ -50,6 +55,20 @@ services:
       retries: 3
     security_opt:
       - no-new-privileges:true
+
+  miner:
+    image: chronus-miner:local
+    pull_policy: never
+    profiles: [miner]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: miner-runtime
+    env_file:
+      - .env
+    environment:
+      MINING_MAX_SECONDS: ${MINING_MAX_SECONDS:-}
+    restart: "no"
 
 volumes:
   chronus_data:

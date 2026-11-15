@@ -40,6 +40,11 @@ class Cyclotomic5:
     c2: int
     c3: int
 
+    def __post_init__(self) -> None:
+        # Python type annotations alone do not enforce the integer ring.
+        if any(type(c) is not int for c in (self.c0, self.c1, self.c2, self.c3)):
+            raise TypeError("Cyclotomic5 coefficients must be integers")
+
     @classmethod
     def zero(cls) -> "Cyclotomic5":
         return cls(0, 0, 0, 0)
@@ -106,12 +111,16 @@ class Cyclotomic5:
         return Cyclotomic5(raw[0], raw[1], raw[2], raw[3])
 
     def to_f257_phi(self) -> "F257Phi":
-        """Projects Z[zeta_5] to F_257[phi]."""
-        # In F_257[phi], zeta_5 + zeta_5^4 = phi - 1, zeta_5^2 + zeta_5^3 = -phi.
-        # Since phi = (0, 0, -1, -1), evaluating directly gives:
-        # c0 + c1*zeta + c2*zeta^2 + c3*zeta^3
-        # In particular, for elements in Q(sqrt(5)), they project cleanly to a + b*phi.
-        return F257Phi(self.c0 % P, 0) + F257Phi(0, 1) * F257Phi((-self.c2) % P, 0)
+        """Reduce an element of Z[phi] to F_257[phi].
+
+        Reject non-real cyclotomic elements: this quadratic target cannot
+        represent a fifth root of unity. The fixed subring has c1=0 and
+        c2=c3 in this basis; phi=-(zeta^2+zeta^3).
+        """
+        if self.c1 != 0 or self.c2 != self.c3:
+            raise ValueError("only elements of Z[phi] can be reduced to F257Phi")
+        return F257Phi(self.c0, -self.c2)
+
 
 
 # ---------------------------------------------------------------------------

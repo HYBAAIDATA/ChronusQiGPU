@@ -1,0 +1,45 @@
+TLC2 Version 2026.11.06.222357 (rev: d8fb231)
+Warning: Please run the Java VM, which executes TLC with a throughput optimized garbage collector, by passing the "-XX:+UseParallelGC" property.
+(Use the -nowarning option to disable this warning.)
+Running breadth-first search Model-Checking with fp 23 and seed -3193353749161931450 with 1 worker on 2 cores with 1024MB heap and 64MB offheap memory [pid: 607] (Linux 6.18.56 amd64, Amazon.com Inc. 25.0.4.1 64bit, MSBDiskFPSet, DiskStateQueue).
+Parsing file /data/chronus-work-orders/formal/models/lane_noninterference/LaneIsolation.tla
+Parsing file /tmp/tlc-12721721477908604285/Naturals.tla (jar:file:/data/tla2tools-1.8.0.jar!/tla2sany/StandardModules/Naturals.tla)
+Parsing file /tmp/tlc-12721721477908604285/_TLCTrace.tla (jar:file:/data/tla2tools-1.8.0.jar!/tla2sany/StandardModules/_TLCTrace.tla)
+Parsing file /tmp/tlc-12721721477908604285/TLC.tla (jar:file:/data/tla2tools-1.8.0.jar!/tla2sany/StandardModules/TLC.tla)
+Parsing file /tmp/tlc-12721721477908604285/TLCExt.tla (jar:file:/data/tla2tools-1.8.0.jar!/tla2sany/StandardModules/TLCExt.tla)
+Parsing file /tmp/tlc-12721721477908604285/Sequences.tla (jar:file:/data/tla2tools-1.8.0.jar!/tla2sany/StandardModules/Sequences.tla)
+Parsing file /tmp/tlc-12721721477908604285/FiniteSets.tla (jar:file:/data/tla2tools-1.8.0.jar!/tla2sany/StandardModules/FiniteSets.tla)
+Parsing file /tmp/tlc-12721721477908604285/Integers.tla (jar:file:/data/tla2tools-1.8.0.jar!/tla2sany/StandardModules/Integers.tla)
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module Integers
+Semantic processing of module TLCExt
+Semantic processing of module _TLCTrace
+Semantic processing of module LaneIsolation
+Linting of module TLCExt
+Linting of module _TLCTrace
+Linting of module LaneIsolation
+Starting... (2026-11-09 22:28:47)
+Computing initial states...
+Computed 2 initial states...
+Finished computing initial states: 4 distinct states generated at 2026-11-09 22:28:47.
+Error: Invariant LowEqual is violated.
+Error: The behavior up to this point is:
+State 1: <Initial predicate>
+/\ highA = 0
+/\ lowA = 0
+/\ highB = 1
+/\ lowB = 0
+
+State 2: <Next line 11, col 11 to line 13, col 39 of module LaneIsolation>
+/\ highA = 0
+/\ lowA = 0
+/\ highB = 1
+/\ lowB = 1
+
+7 states generated, 6 distinct states found, 3 states left on queue.
+The depth of the complete state graph search is 2.
+Finished in 00s at (2026-11-09 22:28:47)
+Trace exploration spec path: ./LaneIsolation_TTrace_1794263327.tla

@@ -17,7 +17,7 @@ class OpenCLAcceleratorBackend:
     name = "opencl-hardware-accelerator"
     execution_mode = "PHYSICAL_HARDWARE_EXECUTION"
     runtime_classification = "PHYSICAL_HARDWARE_EXECUTION"
-    supported_workloads = frozenset({"PV_LATTICE_FOLD"})
+    supported_workloads = frozenset({"PV_LATTICE_FOLD", "EXACT_PHASE_SEARCH"})
 
     def __init__(self, max_device_memory_bytes: int = 8 * 1024 * 1024 * 1024) -> None:
         self.max_device_memory_bytes = max_device_memory_bytes
@@ -36,6 +36,24 @@ class OpenCLAcceleratorBackend:
             "max_memory_bytes": self.max_device_memory_bytes,
             "available": self._available,
         }
+
+    def probe_silicon(self) -> Dict[str, Any]:
+        if not self._available:
+            return {
+                "device_name": "None",
+                "available": False,
+                "unified_memory_reported": True,
+                "host_unified_memory": True,
+            }
+        try:
+            from chronus.backends.opencl_pv import OpenCLPVBackend
+            return OpenCLPVBackend().probe_silicon()
+        except Exception as e:
+            return {
+                "device_name": "OpenCL-Unavailable",
+                "error": str(e),
+                "available": False,
+            }
 
     def execute(self, payload: bytes, workload_type: str) -> Dict[str, Any]:
         if not self._available:

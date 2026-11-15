@@ -1,10 +1,14 @@
 """Key Management Service (KMS) provider interface and implementations.
 
-Provides secure key management abstractions for cryptographic signing:
+Provides key management abstractions for cryptographic signing:
 - KMSKeyProvider interface
-- LocalMemoryKeyProvider (development & testing fallback)
-- CloudKMSProvider (AWS KMS / Azure Key Vault HSM abstraction)
-- VaultKMSProvider (HashiCorp Vault Transit secrets engine)
+- LocalMemoryKeyProvider: keys in this process's memory (development and tests)
+- CloudKMSProvider, VaultKMSProvider, PKCS11HSMKeyProvider: interfaces for AWS
+  KMS / Azure Key Vault / GCP KMS, HashiCorp Vault Transit and PKCS#11 HSMs.
+  Their remote calls are NOT implemented: every operation runs on an in-process
+  LocalMemoryKeyProvider. Each provider reports this through ``custody_mode``
+  and ``customer_held``, and AL HARAS custody bindings derive their status
+  from those attributes (see docs/claim-audit.md).
 
 Zero floating point; compliant with CI purity gate.
 """
@@ -28,6 +32,11 @@ ENVELOPE_MAGIC = b"CKMS1"
 
 class KMSKeyProvider(ABC):
     """Abstract Key Management Service provider interface."""
+
+    #: Where private keys actually live for this provider.
+    custody_mode: str = "local_process_memory"
+    #: True only when private keys stay in customer-controlled KMS/HSM hardware.
+    customer_held: bool = False
 
     @abstractmethod
     def get_public_key(self, key_id: str) -> bytes:
@@ -174,11 +183,13 @@ class LocalMemoryKeyProvider(KMSKeyProvider):
 
 
 class CloudKMSProvider(KMSKeyProvider):
-    """Cloud Hardware Security Module (KMS) provider abstraction.
+    """Cloud KMS provider interface (AWS KMS, Azure Key Vault, GCP Cloud KMS).
 
-    Supports AWS KMS, Azure Key Vault, and GCP Cloud KMS. Private keys
-    remain inside the Cloud HSM boundary; signing is performed remotely.
+    Remote KMS calls are not implemented: keys are generated and used by an
+    in-process LocalMemoryKeyProvider, so ``customer_held`` is False.
     """
+
+    custody_mode = "local_process_memory (remote cloud KMS calls not implemented)"
 
     def __init__(
         self,
@@ -218,7 +229,9 @@ class CloudKMSProvider(KMSKeyProvider):
 
 
 class VaultKMSProvider(KMSKeyProvider):
-    """HashiCorp Vault Transit secrets engine provider."""
+    """HashiCorp Vault Transit interface; Vault calls are not implemented (in-process keys)."""
+
+    custody_mode = "local_process_memory (HashiCorp Vault calls not implemented)"
 
     def __init__(
         self, vault_addr: Optional[str] = None, token: Optional[str] = None
@@ -240,11 +253,14 @@ class VaultKMSProvider(KMSKeyProvider):
 
 
 class PKCS11HSMKeyProvider(KMSKeyProvider):
-    """PKCS#11 Hardware Security Module (HSM) key custody provider.
+    """PKCS#11 HSM interface.
 
-    Provides zero-trust customer-held HSM slot/token key binding without
-    extracting private key material outside the cryptographic boundary.
+    No PKCS#11 module is loaded: keys are generated and used by an in-process
+    LocalMemoryKeyProvider, so ``customer_held`` is False. ``module_path`` and
+    ``slot_id`` are recorded for a future integration only.
     """
+
+    custody_mode = "local_process_memory (PKCS#11 module not loaded)"
 
     def __init__(
         self,
@@ -281,32 +297,48 @@ SUPPORTED_CUSTOMER_KMS_PROVIDERS = frozenset(
 )
 
 
+CUSTODY_STATUS_CUSTOMER_HELD = "KMS_BOUND_CUSTOMER_CUSTODY"
+CUSTODY_STATUS_LOCAL = "LOCAL_KEY_NOT_CUSTOMER_HELD"
+
+
 @dataclass(frozen=True)
 class CustomerKMSBinding:
-    """Immutable AL HARAS customer-held KMS key custody binding record."""
+    """AL HARAS key-binding record; its status is derived from where the key actually lives."""
 
     tenant_id: str
     kms_provider: str
     kms_key_arn: str
-    pkcs11_slot_uri: str
+    pkcs11_slot_uri: Optional[str]
     public_key_fingerprint_sha256: str
     binding_attestation_hex: str
-    status: str = "KMS_BOUND_CUSTOMER_CUSTODY"
+    status: str = CUSTODY_STATUS_LOCAL
+    custody_mode: str = "local_process_memory"
+    customer_held: bool = False
+    kms_key_arn_source: str = "supplied"
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "tenant_id": self.tenant_id,
             "kms_provider": self.kms_provider,
             "kms_key_arn": self.kms_key_arn,
+            "kms_key_arn_source": self.kms_key_arn_source,
             "pkcs11_slot_uri": self.pkcs11_slot_uri,
             "public_key_fingerprint_sha256": self.public_key_fingerprint_sha256,
             "binding_attestation_hex": self.binding_attestation_hex,
             "status": self.status,
+            "custody_mode": self.custody_mode,
+            "customer_held": self.customer_held,
         }
 
 
 class ALHarasKMSCustodyManager:
-    """Thread-safe AL HARAS customer-held KMS ingestion and attestation registry."""
+    """Thread-safe AL HARAS key-binding registry.
+
+    A binding records the tenant's provider and key reference and a signature
+    over them. Its ``status`` is ``KMS_BOUND_CUSTOMER_CUSTODY`` only when the
+    provider reports ``customer_held``; with today's providers it is
+    ``LOCAL_KEY_NOT_CUSTOMER_HELD`` and no PKCS#11 URI is issued.
+    """
 
     def __init__(self) -> None:
         self._lock = threading.RLock()
@@ -318,8 +350,9 @@ class ALHarasKMSCustodyManager:
         tenant_id: str,
         kms_provider: str,
         kms_key_arn: str,
+        kms_key_arn_source: str = "supplied",
     ) -> CustomerKMSBinding:
-        """Bind a tenant's cloud KMS / HSM key ARN via PKCS#11 custody interfaces."""
+        """Record a tenant's key reference; the status states where the key really lives."""
         if not tenant_id or not tenant_id.strip():
             raise ValueError("tenant_id must be non-empty")
         normalized_provider = (kms_provider or "AWS_KMS").strip().upper()
@@ -344,14 +377,10 @@ class ALHarasKMSCustodyManager:
             attestation_sig = provider.sign(
                 scoped_key_id, attestation_payload, algorithm="Ed25519"
             )
-            slot_digest = hashlib.sha256(
-                f"{tenant_id}:{cleaned_arn}".encode("utf-8")
-            ).hexdigest()[:12]
-            pkcs11_uri = (
-                f"pkcs11:model=AL-HARAS-HSM;manufacturer=Chronus;"
-                f"token={normalized_provider};id={slot_digest};type=private"
-            )
-
+            customer_held = bool(getattr(provider, "customer_held", False))
+            # A PKCS#11 URI is issued only for a key that really sits in a
+            # customer-held token; no such provider is implemented yet.
+            pkcs11_uri: Optional[str] = None
             binding = CustomerKMSBinding(
                 tenant_id=tenant_id,
                 kms_provider=normalized_provider,
@@ -359,7 +388,10 @@ class ALHarasKMSCustodyManager:
                 pkcs11_slot_uri=pkcs11_uri,
                 public_key_fingerprint_sha256=fingerprint,
                 binding_attestation_hex=attestation_sig.hex(),
-                status="KMS_BOUND_CUSTOMER_CUSTODY",
+                status=CUSTODY_STATUS_CUSTOMER_HELD if customer_held else CUSTODY_STATUS_LOCAL,
+                custody_mode=str(getattr(provider, "custody_mode", "unknown")),
+                customer_held=customer_held,
+                kms_key_arn_source=kms_key_arn_source,
             )
             self._bindings[tenant_id] = binding
             self._providers[tenant_id] = provider
@@ -398,7 +430,11 @@ class ALHarasKMSCustodyManager:
         kms_provider: str = "AWS_KMS",
         kms_key_arn: Optional[str] = None,
     ) -> CustomerKMSBinding:
-        """Ensure customer-held KMS / PKCS#11 HSM custody binding is active."""
+        """Return the tenant's binding, creating one if needed.
+
+        Without a supplied key reference a placeholder reference is generated
+        and recorded as such (``kms_key_arn_source = "placeholder"``).
+        """
         with self._lock:
             existing = self._bindings.get(tenant_id)
             if existing is not None:
@@ -410,6 +446,7 @@ class ALHarasKMSCustodyManager:
                 tenant_id=tenant_id,
                 kms_provider=kms_provider,
                 kms_key_arn=resolved_arn,
+                kms_key_arn_source="supplied" if kms_key_arn else "placeholder",
             )
 
     def encrypt_for_tenant(
@@ -420,7 +457,7 @@ class ALHarasKMSCustodyManager:
         kms_provider: str = "AWS_KMS",
         kms_key_arn: Optional[str] = None,
     ) -> bytes:
-        """Encrypt client bytes into a KMS/PKCS#11 envelope purely in RAM."""
+        """Encrypt client bytes into an AES-GCM envelope in RAM under the tenant's bound key."""
         with self._lock:
             binding = self.ensure_binding(tenant_id, kms_provider, kms_key_arn)
             provider = self._providers[tenant_id]
@@ -437,9 +474,10 @@ class ALHarasKMSCustodyManager:
         kms_provider: str = "AWS_KMS",
         kms_key_arn: Optional[str] = None,
     ) -> Tuple[bytes, Dict[str, Any]]:
-        """Decrypt a client stream in-memory on demand via Cloud KMS / PKCS#11 HSM.
+        """Decrypt a client stream in memory under the tenant's bound key.
 
-        Chronus never writes unencrypted raw client data to persistent disks.
+        This function performs no file I/O. Where the key lives is reported in
+        the audit record (``custody_status``, ``custody_mode``).
         """
         with self._lock:
             binding = self.ensure_binding(tenant_id, kms_provider, kms_key_arn)
@@ -456,6 +494,8 @@ class ALHarasKMSCustodyManager:
                 "decrypted_in_memory": True,
                 "persistent_disk_bytes_written": 0,
                 "custody_status": binding.status,
+                "custody_mode": binding.custody_mode,
+                "customer_held": binding.customer_held,
             }
             return plaintext, audit
 

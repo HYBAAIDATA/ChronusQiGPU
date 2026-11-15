@@ -1,0 +1,4 @@
+Baseline: 8fddfd17eb776a95e0eec1d1514dd48290c905b4
+Notion import report: https://app.notion.com/p/413afc1782e881ab9056ec0019730b39
+Import report says 34 pages could not be imported, including the root Dockerfile. The imported Dockerfile page is empty: https://app.notion.com/p/413afc1782e881808615e39aa434827f
+A complete file-tree comparison has not been performed. The import cannot be certified identical. The ZIP source itself was not provided for a byte-for-byte diff. Full repository clone via unauthenticated git failed; see git-clone.log. GitHub MCP remains available for individual file reads and commits.

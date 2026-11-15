@@ -1,0 +1,18 @@
+test_braid_relation (test_cyclotomic_projection_review.RingRegressions.test_braid_relation) ... ok
+test_invalid_coefficients (test_cyclotomic_projection_review.RingRegressions.test_invalid_coefficients) ... ok
+test_nonreal_projection_refused (test_cyclotomic_projection_review.RingRegressions.test_nonreal_projection_refused) ... ok
+test_projection_examples (test_cyclotomic_projection_review.RingRegressions.test_projection_examples) ... ok
+test_projection_preserves_operations_on_quadratic_subring (test_cyclotomic_projection_review.RingRegressions.test_projection_preserves_operations_on_quadratic_subring) ... ok
+test_root_and_phi_identities (test_cyclotomic_projection_review.RingRegressions.test_root_and_phi_identities) ... ok
+test_seeded_sample_ring_associativity (test_cyclotomic_projection_review.RingRegressions.test_seeded_sample_ring_associativity) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.258s
+
+OK
+Name                                          Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------------
+src/chronus/quantum/geometric_polychoron.py     233    118    49%   72, 83, 144, 148, 157, 163, 166, 177, 180-185, 188, 208-254, 259-301, 306-311, 341-366, 422-433, 454-461, 466-472, 477-494
+---------------------------------------------------------------------------
+TOTAL                                           233    118    49%
+Coverage failure: total of 49 is less than fail-under=90

@@ -3,8 +3,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Activity,
-  AlertCircle,
-  Binary,
   CheckCircle2,
   Cpu,
   Gauge,
@@ -13,12 +11,8 @@ import {
   RotateCcw,
   Shield,
   Sliders,
-  Sparkles,
   Zap,
-  Flame,
   Wind,
-  DollarSign,
-  TrendingUp,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { StatusPill } from '@/components/console/status-pill';
@@ -64,10 +58,6 @@ export default function MiningDashboardPage() {
   const [difficultyShiftPct, setDifficultyShiftPct] = useState<number>(4.5);
   const [curtailmentRule, setCurtailmentRule] = useState<'DYNAMIC_RESONANT' | 'CONTINUOUS' | 'AGGRESSIVE'>('DYNAMIC_RESONANT');
 
-  // Mode 4: Topological (Sheaf Cohomology H^1 & 1-Cycle DSW Monopole)
-  const [anomalyInjected, setAnomalyInjected] = useState<boolean>(false);
-  const [dswHealed, setDswHealed] = useState<boolean>(false);
-
   // Mode 5: Geometric (11D 600-Cell Polytope & F_257 Galois Oracle)
   const [activeVertexIdx, setActiveVertexIdx] = useState<number>(42);
   const [targetChannel, setTargetChannel] = useState<number>(14);
@@ -75,19 +65,13 @@ export default function MiningDashboardPage() {
   const [testNonceInput, setTestNonceInput] = useState<number>(479);
   const [oracleCollapsed, setOracleCollapsed] = useState<boolean>(true);
 
-  // Mode 6: Patroclus Gateway & 600 Myrmidon Searchers
-  const [activePhalanx, setActivePhalanx] = useState<number>(0);
-  const [simulationRunning, setSimulationRunning] = useState<boolean>(false);
-  const [simulationLogs, setSimulationLogs] = useState<string[]>([]);
-  const [simulationStatus, setSimulationStatus] = useState<string | null>(null);
-
   // Mode 7: Stealth & Hashrate Shaping
   const [maxConfiguredEhs, setMaxConfiguredEhs] = useState<number>(10.0);
   const [stealthActiveEhs, setStealthActiveEhs] = useState<number>(1.0);
   const [neverConsecutive, setNeverConsecutive] = useState<boolean>(true);
   const [persistentPresence, setPersistentPresence] = useState<boolean>(true);
-  const [lastMinedBlock, setLastMinedBlock] = useState<number>(850000);
-
+  // Patroclus Gateway state
+  const [activePhalanx, setActivePhalanx] = useState<number>(0);
   // Blockchain Resonance Horizon
   const [blockHistoryWindow, setBlockHistoryWindow] = useState<number>(256);
 
@@ -128,11 +112,10 @@ export default function MiningDashboardPage() {
   const mu = (U - 1 + P) % P;
   const beta = 120; // Exact Galois diffusion phase
 
-  // Blockchain Resonance Metric R_block & Hashrate Boost
-  const h1Obstruction = anomalyInjected && !dswHealed;
-  const resonancePct = h1Obstruction ? 0.0 : 2.61;
-  const causalBoost = activeIntervention === 'UNDERVOLT_1_10V' ? 15.8 : (activeIntervention === 'FAN_100_PCT' ? 8.4 : 0.0);
-  const effectiveHashrate = isRunning ? Number((baseHashrate * (1 + resonancePct / 100) + causalBoost).toFixed(2)) : 0.0;
+  // No synthetic obstruction — system is in harmonic consensus
+  const h1Obstruction = false
+  const resonancePct = 0
+  const effectiveHashrate = isRunning ? Number(baseHashrate.toFixed(2)) : 0.0;
 
   // Admin Actions with API Integration
   async function handleToggleMining() {
@@ -184,57 +167,6 @@ export default function MiningDashboardPage() {
       await ChronusAPIClient.applyCausalIntervention(type);
     } catch {
       // Retain local state
-    }
-  }
-
-  async function handleInjectAnomaly() {
-    setAnomalyInjected(true);
-    setDswHealed(false);
-    try {
-      await ChronusAPIClient.injectMiningAnomaly();
-    } catch {
-      // Retain local state
-    }
-  }
-
-  async function handleHealAnomaly() {
-    setDswHealed(true);
-    setAnomalyInjected(false);
-    try {
-      await ChronusAPIClient.healMiningAnomaly();
-    } catch {
-      // Retain local state
-    }
-  }
-
-  async function handleRunSimulation() {
-    setSimulationRunning(true);
-    setSimulationLogs(['[Patroclus] Connecting to mock multi-pool sockets (ViaBTC, Braiins, NiceHash, CKPool)...']);
-    try {
-      await ChronusAPIClient.simulatePatroclusMining();
-      setSimulationStatus('SUCCESS: 100% Share Acceptance Across All 4 Pools');
-      setSimulationLogs([
-        '[Step 1] mining.configure: Negotiated Version-Rolling Mask=1fffe000',
-        '[Step 2] mining.subscribe: ExtraNonce1=a45b7889, ExtraNonce2_Size=4',
-        '[Step 3] mining.extranonce.subscribe: Result=True',
-        '[Step 4] mining.authorize: Worker "chronus_head_worker" (Diff Hint "d=131072")',
-        '[Step 5] mining.set_difficulty PUSH: Share Difficulty=1',
-        '[Step 6] mining.notify PUSH: Job ID received, PrevHash word-swapped (>8I -> <8I)',
-        '[Step 7] F_257 Galois Phase Matching: Alpha=17, Beta(M=1)=120',
-        '[Step 7] Myrmidon Swarm: Nonce 0x7c2bac1d isolated by Searcher #291 (Phalanx #4)',
-        '[GATEKEEPER] 3µs Local SHA-256d Gatekeeper Assertion: Hash <= Target (VERIFIED)',
-        '[STEALTH] Never Consecutive Blocks Rule verified for Block #850000',
-        '[Step 8] mining.submit (6-Param Wire Submit): Result=True (100% Accepted)',
-      ]);
-    } catch {
-      setSimulationStatus('Local Simulation Complete (Offline Fallback)');
-      setSimulationLogs([
-        '[Step 1-8] Patroclus Gateway 8-Step Handshake Verified',
-        '[GATEKEEPER] 3µs Local Gatekeeper: Nonce 0x7c2bac1d Hash <= Target (3µs verified)',
-        '[STEALTH] 1.0 EH/s active throttle maintained with persistent heartbeat presence',
-      ]);
-    } finally {
-      setSimulationRunning(false);
     }
   }
 
@@ -848,22 +780,6 @@ export default function MiningDashboardPage() {
                 The zeroth cohomology <span className="font-mono text-emerald-300">ker(L_ℱ) = H⁰(X; ℱ)</span> extracts unanimous multi-blade consensus.
                 The first cohomology <span className="font-mono text-rose-300">H¹(X; ℱ) = ker(δ¹)/im(δ⁰)</span> isolates split-brain forks and stratum poisoning.
               </p>
-              <div className="flex flex-wrap gap-3 pt-2">
-                <button
-                  onClick={handleInjectAnomaly}
-                  className="flex items-center gap-1.5 rounded-lg border border-rose-500/40 bg-rose-500/10 px-3.5 py-2 text-xs font-mono font-medium text-rose-300 hover:bg-rose-500/20"
-                >
-                  <AlertCircle className="h-3.5 w-3.5" />
-                  <span>Inject Reorg / Stratum Vortex</span>
-                </button>
-                <button
-                  onClick={handleHealAnomaly}
-                  className="flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-2 text-xs font-mono font-medium text-emerald-300 hover:bg-emerald-500/20"
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  <span>Execute 1-Cycle DSW Instanton Heal</span>
-                </button>
-              </div>
             </div>
 
             {/* 72-Blade Stalk Matrix */}
@@ -1059,41 +975,9 @@ export default function MiningDashboardPage() {
                   ))}
                 </div>
               </div>
-
-              {/* Multi-Pool E2E Simulation Engine */}
-              <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 p-4 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-semibold text-white uppercase tracking-wider">
-                    Stratum Multi-Pool End-to-End Handshake &amp; Share Verification
-                  </span>
-                  <button
-                    onClick={handleRunSimulation}
-                    disabled={simulationRunning}
-                    className="flex items-center gap-2 rounded-md bg-amber-500/20 border border-amber-500/40 px-3 py-1.5 text-xs font-mono font-semibold text-amber-300 hover:bg-amber-500/30 disabled:opacity-50"
-                  >
-                    <Play className="h-3.5 w-3.5" />
-                    <span>{simulationRunning ? 'Running 4-Pool Handshake...' : 'Run Master E2E Simulation'}</span>
-                  </button>
-                </div>
-
-                {simulationStatus && (
-                  <div className="rounded border border-emerald-500/30 bg-emerald-500/10 p-2 text-xs font-mono text-emerald-300">
-                    {simulationStatus}
-                  </div>
-                )}
-
-                {simulationLogs.length > 0 && (
-                  <div className="rounded border border-neutral-800 bg-neutral-950 p-3 max-h-40 overflow-y-auto space-y-1 font-mono text-[11px] text-neutral-300">
-                    {simulationLogs.map((log, idx) => (
-                      <div key={idx} className={log.includes('VERIFIED') || log.includes('Accepted') ? 'text-emerald-400' : 'text-neutral-300'}>
-                        {log}
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
-          </div>
+
         )}
 
         {/* Tab 7: Stealth & Hashrate Shaping */}
@@ -1111,7 +995,7 @@ export default function MiningDashboardPage() {
                 </div>
                 <div className="flex gap-2">
                   <span className="rounded bg-neutral-900 border border-neutral-800 px-2.5 py-1 text-[11px] font-mono text-neutral-300">
-                    Last Block Mined: <span className="text-emerald-400">#{lastMinedBlock}</span>
+                    Last Block Mined: <span className="text-neutral-400">not reported by the miner</span>
                   </span>
                   <span className="rounded bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 text-[11px] font-mono text-emerald-300">
                     IP Ban Rate: 0.00%

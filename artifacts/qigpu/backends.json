@@ -1,0 +1,11 @@
+{
+  "command": "python -m coverage run --branch docs/qigpu/pasted-text.txt",
+  "finding": "The four distinct bounded simulations agree on sigma_1 powers and tested states under explicit optical and atomic logical encodings. This is not a general arbitrary-unitary decomposition, not hardware execution and not universal backend equivalence.",
+  "implementation_coverage": {
+    "branch_percent": 92.56,
+    "statement_percent": 97.91
+  },
+  "source_sha256": "1f950d23c010e92b8306bfff11890359c2c3767750ff073f50a9172edda1b622",
+  "step": "P3 nontrivial braid-generator model comparison",
+  "tests_passed": 113
+}

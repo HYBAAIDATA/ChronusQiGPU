@@ -1,0 +1,79 @@
+﻿# One source of truth for capability claims. Served at /v1/capabilities and
+# enforced in CI. A claim cannot be `supported` without evidence and a reviewer.
+version: 1
+reviewed_at: 2026-11-14
+commit: 89aa8685
+
+claims:
+  - id: nonce-encoding
+    statement: "Header nonces serialise little-endian; submit sends big-endian hex."
+    disposition: supported
+    reviewer: leonn
+    evidence:
+      - kind: test
+        ref: src/chronus/execution/mining_selftest.py::nonce_encoding_roundtrip
+      - kind: test
+        ref: src/chronus/execution/mining_selftest.py::header_prefix_matches_engine
+    notes: "Local only. No pool-verified share vector yet."
+
+  - id: exact-fraction-gatekeeper
+    statement: "Difficulty-to-target uses exact rational arithmetic, not float division."
+    disposition: supported
+    reviewer: leonn
+    evidence:
+      - kind: test
+        ref: src/chronus/execution/mining_selftest.py::share_and_network_targets
+      - kind: source
+        ref: src/chronus/stratum/endian_engine.py::difficulty_to_target
+    notes: "Float and Fraction are asserted equal for 3/2."
+
+  - id: geometric-collapse
+    statement: "The geometric oracle reorders the nonce scan; it does not reduce the number of hashes."
+    disposition: supported
+    reviewer: leonn
+    evidence:
+      - kind: source
+        ref: src/chronus/execution/geometric_galois_miner.py
+      - kind: source
+        ref: src/chronus/execution/elevation.py
+    notes: "Framing correction: 2^1000 is the state space, not the nonce space."
+
+  - id: oracle-one-shot
+    statement: "The oracle collapses N=2^1000 candidates in one flip plus one diffusion step."
+    disposition: unverified
+    reviewer: null
+    evidence: []
+    notes: "No end-to-end measurement, no derivation committed."
+
+  - id: ramanujan-spectral-gap
+    statement: "Spectral mass gap Delta = 229.14 with lambda_2 <= 32.0624."
+    disposition: unverified
+    reviewer: null
+    evidence: []
+    notes: "Number stated without derivation or tolerance."
+
+  - id: opencl-pv-parity
+    statement: "OpenCL PV backend matches the exact Lucas/Fibonacci reference values."
+    disposition: supported
+    reviewer: leonn
+    evidence:
+      - kind: source
+        ref: src/chronus/backends/opencl_pv.py
+    notes: "Sequence values only. Says nothing about hashrate."
+
+  - id: quantum-advantage
+    statement: "Demonstrated quantum advantage."
+    disposition: withdrawn
+    reviewer: null
+    evidence: []
+
+blockers:
+  - id: reference-workloads
+    description: "Customer workload and reference target deployments"
+    status: open
+  - id: independent-pentest
+    description: "Control owners and independent penetration assessment"
+    status: open
+  - id: evidence-signing
+    description: "Conformant evidence signing and customer-reference claims"
+    status: open

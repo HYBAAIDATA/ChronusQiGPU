@@ -235,26 +235,99 @@ class PatroclusGateway:
         return {"id": 5, "method": "mining.submit", "params": params}
 
 # =====================================================================
-# 6. MOCK MULTI-POOL STRATUM SERVER (ViaBTC, Braiins, NiceHash, CKPool)
+# 6. LOCAL STRATUM TEST SERVER (Deterministic Protocol Verification Fixture)
+#
+# This is a fully-executable in-process TCP server used for deterministic
+# end-to-end protocol verification.  It is NOT a mock — it speaks real
+# Stratum V1 JSON-RPC over a real asyncio TCP socket and enforces the
+# complete 8-step handshake sequence (configure / subscribe /
+# extranonce.subscribe / authorize / set_difficulty / notify / submit).
+#
+# The Bitcoin Genesis Block #0 template is used as the work fixture so
+# that the sha256d gatekeeper check produces a provably valid result with
+# a known nonce (0x7c2bac1d = 2083236893) without requiring a live pool
+# connection.  Production mining uses chronus.execution.mining_entrypoint
+# with live pool credentials from environment variables.
 # =====================================================================
-class StratumMultiPoolServer:
+# Bitcoin block 0 coinbase transaction (public chain data). Its sha256d is the
+# genesis merkle root 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b.
+GENESIS_COINBASE_HEX = (
+    "01000000" "01" + "00" * 32 + "ffffffff" "4d"
+    "04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72"
+    "206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73"
+    "ffffffff" "01" "00f2052a01000000" "43"
+    "4104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f"
+    "4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac"
+    "00000000"
+)
+
+
+class LocalStratumTestServer:
+    """
+    In-process Stratum V1 TCP server for deterministic protocol verification.
+
+    Speaks real JSON-RPC over a real asyncio socket.  Implements the full
+    Stratum V1 wire protocol sequence used in production:
+      mining.configure  → negotiate ASICBoost version-rolling mask
+      mining.subscribe  → allocate ExtraNonce1 / ExtraNonce2_size
+      mining.extranonce.subscribe → enable ExtraNonce1 push updates
+      mining.authorize  → authenticate worker credentials
+      mining.set_difficulty PUSH → server pushes VARDIFF target
+      mining.notify PUSH → server pushes block work template
+      mining.submit → rebuild the header from the job and accept only shares
+                      whose sha256d meets the pushed difficulty
+
+    Uses Bitcoin Genesis Block #0 field values as a fixed verification
+    fixture so that sha256d(header) with nonce 0x7c2bac1d is guaranteed
+    to satisfy diff=1.  For live mining connect to a real pool via
+    chronus.execution.mining_entrypoint.
+    """
+
     def __init__(self, pool_name: str, port: int):
         self.pool_name = pool_name
         self.port = port
-        self.extranonce1 = "a45b7889"
+        # Block 0 has no pool extranonce1: coinb1 + extranonce2 + coinb2 must
+        # reproduce the genesis coinbase byte for byte.
+        self.extranonce1 = ""
         self.extranonce2_size = 4
         self.pool_mask = "1fffe000"
         self.current_job_id = f"job_{pool_name.lower().replace(' ', '_')}_9901"
-        
-        # Canonical Genesis Block #0 template parameters for deterministic verification
+
+        # Bitcoin Genesis Block #0 field values — fixed deterministic verification fixture.
+        # Using these produces a known-valid sha256d result with nonce 2083236893 (0x7c2bac1d).
         self.prevhash_stratum = "0000000000000000000000000000000000000000000000000000000000000000"
-        self.coinb1 = "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4d04ffff001d010b4d696e6564206279204368726f6e75730000000000000000"
-        self.coinb2 = "000000000100f2052a010000001976a9144d183f3608107572714a601f057c79e602410a8c88ac00000000"
+        self.coinb1 = GENESIS_COINBASE_HEX[:2]
+        self.coinb2 = GENESIS_COINBASE_HEX[2 + 2 * self.extranonce2_size:]
         self.merkle_branch = []
         self.version = "00000001"
         self.nbits = "1d00ffff"
         self.ntime = "495fab29"
+        self.share_difficulty = 1
         self.server = None
+
+    def validate_share(self, params: List[Any]) -> bool:
+        """Recompute the submitted header from the job; accept only a share meeting the difficulty."""
+        if not isinstance(params, list) or len(params) < 5:
+            return False
+        _worker, job_id, extranonce2_hex, ntime_hex, nonce_hex = params[:5]
+        if job_id != self.current_job_id or len(str(extranonce2_hex)) != self.extranonce2_size * 2:
+            return False
+        try:
+            mask = int(self.pool_mask, 16)
+            version_int = int(self.version, 16)
+            if len(params) > 5 and params[5] is not None:
+                version_int = (version_int & ~mask) | (int(params[5], 16) & mask)
+            merkle_root = compute_merkle_root(
+                self.coinb1, self.extranonce1, extranonce2_hex, self.coinb2, list(self.merkle_branch)
+            )
+            header = build_block_header(
+                version_int, swap_endian_words(self.prevhash_stratum), merkle_root,
+                ntime_hex, self.nbits, int(nonce_hex, 16)
+            )
+        except (TypeError, ValueError):
+            return False
+        is_valid, _block_hash, _hash_int, _target = check_share_difficulty_exact(header, self.share_difficulty)
+        return is_valid
 
     async def handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         try:
@@ -295,7 +368,7 @@ class StratumMultiPoolServer:
                     writer.write((json.dumps(res) + "\n").encode("utf-8"))
                     
                     # Push set_difficulty and notify
-                    diff_msg = {"id": None, "method": "mining.set_difficulty", "params": [1]}
+                    diff_msg = {"id": None, "method": "mining.set_difficulty", "params": [self.share_difficulty]}
                     writer.write((json.dumps(diff_msg) + "\n").encode("utf-8"))
                     
                     notify_msg = {
@@ -317,7 +390,12 @@ class StratumMultiPoolServer:
                     await writer.drain()
 
                 elif method == "mining.submit":
-                    res = {"id": req_id, "result": True, "error": None}
+                    accepted = self.validate_share(_params)
+                    res = {
+                        "id": req_id,
+                        "result": accepted,
+                        "error": None if accepted else [23, "Low difficulty share", None],
+                    }
                     writer.write((json.dumps(res) + "\n").encode("utf-8"))
                     await writer.drain()
 
@@ -335,13 +413,31 @@ class StratumMultiPoolServer:
             self.server.close()
             await self.server.wait_closed()
 
+
+StratumMultiPoolServer = LocalStratumTestServer
+
+
 # =====================================================================
-# 7. END-TO-END MASTER EXECUTION PIPELINE
+# 7. END-TO-END STRATUM PROTOCOL VERIFICATION PIPELINE
+#
+# Runs the full 8-step Stratum V1 handshake against four independent
+# LocalStratumTestServer instances (one per named pool slot) listening on
+# loopback ports.  Every exchange uses real asyncio TCP sockets and real
+# JSON-RPC — no monkey-patching, no in-memory stubs.
+#
+# This function is called from:
+#   - tests/test_patroclus_myrmidon_master.py  (CI: protocol correctness)
+#   - POST /v1/mining/admin/patroclus/simulate  (API: on-demand verification)
+#
+# For live production mining use chronus_live_miner.py or
+# src/chronus/execution/mining_entrypoint.py with real pool credentials
+# supplied via environment variables (MINING_VIABTC_HOST, etc.).
 # =====================================================================
 async def execute_master_end_to_end():
     logger.info("========================================================================")
-    logger.info("   CHRONUS MASTER ENGINE: END-TO-END STRATUM & CONTRACT RECONCILIATION ")
-    logger.info("   Target Pools: ViaBTC, Braiins Pool, NiceHash, CKPool                 ")
+    logger.info("   CHRONUS MASTER ENGINE: END-TO-END STRATUM PROTOCOL VERIFICATION     ")
+    logger.info("   Fixture Slots: ViaBTC, Braiins Pool, NiceHash, CKPool               ")
+    logger.info("   (Local loopback servers — for live mining use mining_entrypoint.py) ")
     logger.info("========================================================================")
 
     gateway = PatroclusGateway()
@@ -354,7 +450,7 @@ async def execute_master_end_to_end():
     ]
 
     for pool_name, port in pools:
-        server = StratumMultiPoolServer(pool_name, port)
+        server = LocalStratumTestServer(pool_name, port)
         await server.start()
         await asyncio.sleep(0.1)
 
@@ -405,25 +501,17 @@ async def execute_master_end_to_end():
         alpha, beta = F257GaloisOracle.compute_phases(M=1)
         logger.info(f"[Step 7] F_257 Galois Phase Matching: Alpha={alpha}, Beta(M=1)={beta}")
 
-        # Genesis Block #0 Merkle Root and parameters
+        # Genesis Block #0 Merkle Root — computed from coinbase transaction data
         prevhash_le = swap_endian_words(prevhash_stratum)
-        merkle_root_be = "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"
-        merkle_root_bytes = bytes.fromhex(merkle_root_be)[::-1]
         extranonce2_hex = format_extranonce2(1, extranonce2_size)
+        merkle_root_bytes = compute_merkle_root(coinb1, extranonce1, extranonce2_hex, coinb2, list(merkle_branch))
 
         # Apply Version Rolling
         final_ver_int, ver_bits_submit = roll_version(base_version, "1fffe000", 0x00000000)
 
-        # Myrmidon Swarm Slice Search (Genesis Nonce 2083236893 = 0x7c2bac1d)
+        # Candidate nonce search — verify the known valid Bitcoin Genesis nonce 2083236893 (0x7c2bac1d)
         target_nonce = 2083236893
-        winning_searcher = None
-        for s in gateway.searchers:
-            matched = s.search_slice(target_nonce)
-            if matched is not None:
-                winning_searcher = s
-                break
-
-        logger.info(f"[Step 7] Myrmidon Swarm: Nonce {hex(target_nonce)} isolated by Myrmidon Searcher #{winning_searcher.id} (Phalanx #{winning_searcher.phalanx_id})")
+        logger.info(f"[Step 7] Candidate nonce: {hex(target_nonce)} (Bitcoin Genesis Block #0 nonce)")
 
         # Step 8: 80-Byte Block Header Assembly & Gatekeeper Verification
         header_80b = build_block_header(final_ver_int, prevhash_le, merkle_root_bytes, ntime, nbits, target_nonce)
@@ -452,7 +540,8 @@ async def execute_master_end_to_end():
         logger.info(f"=== PASSED END-TO-END PIPELINE FOR {pool_name.upper()} ===")
 
     logger.info("\n========================================================================")
-    logger.info("   ALL DECISION CONTRACT POINTS & STRATUM HANDSHAKES PASSED 100% PERFECTLY!")
+    logger.info(f"   END-TO-END PIPELINE COMPLETE FOR {pool_name.upper()}")
+    logger.info(f"   Share accepted by pool: {bool(submit_res.get('result'))}")
     logger.info("========================================================================")
 
 if __name__ == "__main__":
