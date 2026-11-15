@@ -341,7 +341,26 @@ def _stage_brand_new_database(path: str) -> None:
             os.fsync(completed.fileno())
         # Same-directory hard link is create-if-absent and never replaces an
         # unexpected existing database, including a symlink/alias target.
-        os.link(temporary, path)
+        try:
+            os.link(temporary, path)
+        except OSError:
+            # On Windows, rename is no-replace: it raises if the target
+            # exists. Do not apply this fallback on POSIX, where os.rename
+            # could overwrite durable state.
+            if os.name != "nt":
+                raise
+            os.rename(temporary, path)
+        if os.name != "nt":
+            # A synced file is not a durable publication until its containing
+            # directory entry has also been committed to stable storage.
+            directory_fd = os.open(
+                str(Path(path).parent),
+                os.O_RDONLY | getattr(os, "O_DIRECTORY", 0),
+            )
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
     finally:
         for suffix in ("", "-wal", "-shm"):
             try:

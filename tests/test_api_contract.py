@@ -194,6 +194,35 @@ def test_parallel_processes_initialize_sqlite_atomically(tmp_path):
         ).fetchone()[0] == 5
 
 
+def test_staged_publication_fsyncs_directory(tmp_path, monkeypatch):
+    """POSIX publication must persist both data bytes and its directory entry."""
+    if os.name == "nt":
+        pytest.skip("Windows rename has separate no-replace semantics")
+    database = tmp_path / "persist.sqlite3"
+    observed = []
+    real_sync = os.fsync
+
+    def observed_fsync(fd):
+        observed.append(os.fstat(fd).st_mode)
+        return real_sync(fd)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(state.os, "fsync", observed_fsync)
+        state._stage_brand_new_database(str(database))
+    assert database.exists()
+    import stat
+    assert any(stat.S_ISREG(mode) for mode in observed)
+    assert any(stat.S_ISDIR(mode) for mode in observed)
+
+
+def test_existing_published_database_is_never_overwritten(tmp_path):
+    database = tmp_path / "existing.sqlite3"
+    database.write_bytes(b"existing-state-must-survive")
+    with pytest.raises(FileExistsError):
+        state._stage_brand_new_database(str(database))
+    assert database.read_bytes() == b"existing-state-must-survive"
+
+
 def test_interrupted_staging_never_publishes_incomplete_database(
     tmp_path, monkeypatch
 ):
