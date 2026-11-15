@@ -10,13 +10,7 @@ This module implements:
 
 from __future__ import annotations
 
-from chronus.core.enums import (
-    AdapterRole,
-    AdapterStatus,
-    EvidenceClass,
-    CapacityLabel,
-    TrustClass,
-)
+from chronus.core.enums import AdapterRole
 
 __all__ = [
     "role_from_consortium",
@@ -68,7 +62,7 @@ def role_adjacency(role: AdapterRole) -> set[AdapterRole]:
     """
     adjacency = {
         AdapterRole.DATA_INGEST: {AdapterRole.GENERAL, AdapterRole.VERIFICATION},
-        AdapterRole.TENSOR_COMPUTE: {AdapterRole.GENERAL, AdapterRole.AI_TRAINING},
+        AdapterRole.TENSOR_COMPUTE: {AdapterRole.GENERAL, AdapterRole.DATA_INGEST},
         AdapterRole.VERIFICATION: {AdapterRole.GENERAL, AdapterRole.DATA_INGEST},
         AdapterRole.PHOTONIC: {AdapterRole.GENERAL, AdapterRole.TENSOR_COMPUTE},
         AdapterRole.AI_TRAINING: {AdapterRole.TENSOR_COMPUTE, AdapterRole.GENERAL},

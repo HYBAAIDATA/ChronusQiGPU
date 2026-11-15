@@ -81,7 +81,7 @@ class StratumV1Client:
             difficulty=self.gateway.current_difficulty,
         )
 
-    async def next_job(self) -> tuple[StratumJob, float]:
+    async def next_job(self) -> tuple[StratumJob, Fraction]:
         registered = self._registered_job()
         if registered is not None:
             return registered
