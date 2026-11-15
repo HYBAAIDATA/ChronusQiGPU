@@ -67,7 +67,13 @@ _RATE_HITS: dict[str, list[float]] = {}
 _MEMORY_LOCK = threading.RLock()
 # Schema setup is a first-use operation, never part of concurrent requests.
 _SCHEMA_LOCK = threading.Lock()
-_INITIALIZED_DB: set[str] = set()
+# Guard against a live file replacement at an already-initialised path.
+_INITIALIZED_DB: dict[str, tuple[int, int]] = {}
+_SCHEMA_OBJECTS = frozenset(
+    {f"api_{name}" for name in _TABLES}
+    | {f"api_{name}_tenant_created" for name in _TABLES}
+    | {"api_idempotency", "api_idempotency_expires", "api_rate_limits"}
+)
 
 
 def backend() -> str:
@@ -96,7 +102,15 @@ def _connect() -> sqlite3.Connection:
         # Set timeout before any schema / journal negotiation.
         connection.execute("PRAGMA busy_timeout=30000")
         with _SCHEMA_LOCK:
-            if path not in _INITIALIZED_DB:
+            metadata = os.stat(path)
+            identity = (metadata.st_dev, metadata.st_ino)
+            prior_identity = _INITIALIZED_DB.get(path)
+            if prior_identity is not None and prior_identity != identity:
+                raise RuntimeError(
+                    "SQLite database replaced at an initialized path; "
+                    "recovery verification required before serving requests"
+                )
+            if prior_identity is None:
                 mode = connection.execute("PRAGMA journal_mode").fetchone()[0]
                 if mode.lower() != "wal":
                     connection.execute("PRAGMA journal_mode=WAL")
@@ -124,7 +138,20 @@ def _connect() -> sqlite3.Connection:
                     "CREATE TABLE IF NOT EXISTS api_rate_limits ("
                     "key TEXT PRIMARY KEY, window_start INTEGER NOT NULL, count INTEGER NOT NULL)"
                 )
-                _INITIALIZED_DB.add(path)
+                _INITIALIZED_DB[path] = identity
+            else:
+                objects = {
+                    row[0]
+                    for row in connection.execute(
+                        "SELECT name FROM sqlite_master "
+                        "WHERE type IN ('table', 'index')"
+                    )
+                }
+                if not _SCHEMA_OBJECTS.issubset(objects):
+                    raise RuntimeError(
+                        "SQLite schema changed after initialization; "
+                        "recovery verification required before serving requests"
+                    )
         return connection
     except Exception:
         connection.close()
