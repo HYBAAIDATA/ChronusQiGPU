@@ -71,3 +71,15 @@ def test_manifest_symlink_escape_is_never_trusted(tmp_path):
     _manifest(bundle, "module.py", b"escape")
     entry = _entry(source)
     assert _already_wired([entry], bundle) == ([], [entry])
+
+
+def test_manifest_self_referencing_symlink_is_not_reused(tmp_path):
+    source = tmp_path / "source.py"
+    source.write_bytes(b"self-loop")
+    bundle = tmp_path / "wired"
+    bundle.mkdir()
+    (bundle / "module.py").symlink_to("module.py")
+    _manifest(bundle, "module.py", b"self-loop")
+    entry = _entry(source)
+    assert _already_wired([entry], bundle) == ([], [entry])
+    assert build_wiring_plan([entry], bundle).canonical == [entry]
