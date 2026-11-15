@@ -1,0 +1,91 @@
+{
+  "schema": "chronus.dressing/1",
+  "categories": {
+    "heuristic": {
+      "paths": [
+        "src/chronus/**"
+      ],
+      "words": [
+        "heuristic",
+        "approx",
+        "approximate",
+        "approximately",
+        "estimate",
+        "estimated",
+        "rough",
+        "guess",
+        "best effort",
+        "near enough"
+      ],
+      "exempt": [
+        "src/chronus/service/**",
+        "src/chronus/api/**"
+      ]
+    },
+    "simulation": {
+      "paths": [
+        "src/chronus/**"
+      ],
+      "words": [
+        "simulat",
+        "synthetic",
+        "fake",
+        "stub",
+        "dummy",
+        "placeholder"
+      ],
+      "exempt": []
+    },
+    "quantum_claim": {
+      "paths": [
+        "src/chronus/**",
+        "docs/**"
+      ],
+      "words": [
+        "quantum advantage",
+        "quantum-native",
+        "QPU",
+        "quantum speedup",
+        "qubit-native"
+      ],
+      "exempt": [
+        "hardware/**",
+        "hw/**",
+        "formal/**"
+      ]
+    },
+    "exact_arithmetic": {
+      "paths": [
+        "src/chronus/**"
+      ],
+      "words": [
+        "float(",
+        "round(",
+        "1e-9",
+        "epsilon",
+        "tolerance",
+        "atol",
+        "rtol"
+      ],
+      "exempt": [
+        "src/chronus/service/**",
+        "src/chronus/api/**",
+        "src/chronus/console/**"
+      ]
+    }
+  },
+  "allow": [
+    {
+      "path": "src/chronus/execution/stratum.py",
+      "word": "float(",
+      "reason": "Pool difficulty is a wire-boundary decimal; exception requires conversion-semantics review",
+      "reviewer": "pending"
+    },
+    {
+      "path": "src/chronus/quantum/**",
+      "word": "QPU",
+      "reason": "Legacy finite-field algebra/statevector model only; no device execution",
+      "reviewer": "pending"
+    }
+  ]
+}
