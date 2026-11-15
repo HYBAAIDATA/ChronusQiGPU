@@ -276,3 +276,107 @@ class HybridGPU:
             "reason": None if available else "ACCELERATOR_UNAVAILABLE",
             "operation": operation,
         }
+
+
+@dataclass(frozen=True)
+class EnergyComparison:
+    baseline_joules: float
+    candidate_joules: float
+    delta_joules: float
+    reduction_fraction: float | None
+
+
+class EnergyModel:
+    """Evidence-only energy comparison from caller-supplied measurements.
+
+    No default savings percentage is embedded. The caller supplies measured
+    compute and movement energy for the same workload and environment.
+    """
+
+    @staticmethod
+    def compare(
+        *,
+        baseline_compute_joules: float,
+        baseline_movement_joules: float,
+        candidate_compute_joules: float,
+        candidate_movement_joules: float,
+    ) -> EnergyComparison:
+        values = (
+            baseline_compute_joules,
+            baseline_movement_joules,
+            candidate_compute_joules,
+            candidate_movement_joules,
+        )
+        if any((not math.isfinite(float(v)) or float(v) < 0.0) for v in values):
+            raise ValueError("energy inputs must be finite non-negative measurements")
+        baseline = float(baseline_compute_joules) + float(baseline_movement_joules)
+        candidate = float(candidate_compute_joules) + float(candidate_movement_joules)
+        reduction = None if baseline == 0.0 else (baseline - candidate) / baseline
+        return EnergyComparison(
+            baseline_joules=baseline,
+            candidate_joules=candidate,
+            delta_joules=baseline - candidate,
+            reduction_fraction=reduction,
+        )
+
+
+@dataclass(frozen=True)
+class BackendProfile:
+    operation: str
+    backend: str
+    size_class: int
+    elapsed_ns: int
+    verified: bool
+
+
+class ProfiledHybridRouter:
+    """Select the fastest verified observed route for an operation/size class."""
+
+    def __init__(self) -> None:
+        self._profiles: list[BackendProfile] = []
+
+    def record(
+        self,
+        *,
+        operation: str,
+        backend: str,
+        size_class: int,
+        elapsed_ns: int,
+        verified: bool,
+    ) -> BackendProfile:
+        if not operation or not backend:
+            raise ValueError("operation and backend are required")
+        if size_class < 0 or elapsed_ns <= 0:
+            raise ValueError("size_class must be non-negative and elapsed_ns positive")
+        profile = BackendProfile(
+            operation=operation.lower(),
+            backend=backend,
+            size_class=int(size_class),
+            elapsed_ns=int(elapsed_ns),
+            verified=bool(verified),
+        )
+        self._profiles.append(profile)
+        return profile
+
+    def select(self, operation: str, size_class: int) -> dict:
+        eligible = [
+            p
+            for p in self._profiles
+            if p.operation == operation.lower()
+            and p.size_class == int(size_class)
+            and p.verified
+        ]
+        if not eligible:
+            return {
+                "route": "numpy-reference",
+                "reason": "NO_VERIFIED_PROFILE",
+                "profiled": False,
+            }
+        best = min(eligible, key=lambda p: (p.elapsed_ns, p.backend))
+        return {
+            "route": best.backend,
+            "reason": "FASTEST_VERIFIED_OBSERVATION",
+            "profiled": True,
+            "elapsed_ns": best.elapsed_ns,
+            "size_class": best.size_class,
+        }
