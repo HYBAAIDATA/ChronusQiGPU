@@ -143,8 +143,15 @@ class SignedQualificationIntegration(unittest.TestCase):
         def certify(report):
             self.assertEqual(report["outcome"], "READY_FOR_INDEPENDENT_ATTESTATION")
             events.append("attestation")
-            for claim in self.claims.values():
-                fresh.promote(claim)
+            fresh.promote(self.claims[("worker", "task.run")])
+            for skill in sorted(LEADER_SKILLS):
+                claim = signed_claim(
+                    self.signer, "lead", skill,
+                    artifact_sha256=report["report_sha256"],
+                )
+                self.assertEqual(
+                    fresh.promote(claim).status, QualificationStatus.PROMOTED
+                )
         result = train_qualify_and_activate(
             self._test_curriculum(),
             SwarmMission("trained", "lead", "mission", 2, 200,
@@ -172,8 +179,11 @@ class SignedQualificationIntegration(unittest.TestCase):
             qualification=fresh, journal=self.journal,
             agents=(self.leader, self.worker), clock_ns=lambda: 100,
         )
+        # Pre-existing valid claims are deliberately unrelated to this new report.
+        for claim in self.claims.values():
+            fresh.promote(claim)
         dispatched = []
-        with self.assertRaises(SwarmRefused):
+        with self.assertRaisesRegex(SwarmRefused, "not bound"):
             train_qualify_and_activate(
                 self._test_curriculum(),
                 SwarmMission("unqualified", "lead", "mission", 2, 200,
@@ -187,6 +197,58 @@ class SignedQualificationIntegration(unittest.TestCase):
                 verify=lambda *_: True,
             )
         self.assertEqual(dispatched, [])
+
+
+    def test_cross_agent_claim_reuse_is_rejected(self):
+        intruder = QualifiedAgent(
+            "intruder", REVISION, "mission", ("task.run",),
+            {"task.run": self.claims[("worker", "task.run")].claim_id},
+        )
+        runtime = SwarmActivator(
+            qualification=self.registry, journal=self.journal,
+            agents=(self.leader, intruder), clock_ns=lambda: 100,
+        )
+        with self.assertRaisesRegex(SwarmRefused, "agent identity"):
+            runtime.activate(
+                SwarmMission("cross-agent", "lead", "mission", 2, 200,
+                             (SwarmTask("one", "intruder", "task.run", 2),)),
+                dispatch=lambda task: {"task": task.task_id},
+                verify=lambda *_: True,
+            )
+
+    def test_mutating_certifier_cannot_change_returned_training_report(self):
+        fresh = CapabilityQualificationRegistry(
+            trusted_verifiers={"test-signer": self.signer.public_key()}
+        )
+        runtime = SwarmActivator(
+            qualification=fresh, journal=self.journal,
+            agents=(self.leader, self.worker), clock_ns=lambda: 100,
+        )
+
+        def certify(report):
+            original_digest = report["report_sha256"]
+            report["outcome"] = "MUTATED"
+            fresh.promote(self.claims[("worker", "task.run")])
+            for skill in sorted(LEADER_SKILLS):
+                fresh.promote(signed_claim(
+                    self.signer, "lead", skill, artifact_sha256=original_digest
+                ))
+
+        result = train_qualify_and_activate(
+            self._test_curriculum(),
+            SwarmMission("mutating-certifier", "lead", "mission", 2, 200,
+                         (SwarmTask("one", "worker", "task.run", 2),)),
+            activator=runtime,
+            train=lambda _: {"checkpoint_id": "test-only", "sha256": "a" * 64},
+            evaluate=lambda *_: {"passed": True},
+            accept=lambda *_: True,
+            certify=certify,
+            dispatch=lambda task: {"task": task.task_id},
+            verify=lambda task, output: output["task"] == task.task_id,
+        )
+        self.assertEqual(
+            result["training"]["outcome"], "READY_FOR_INDEPENDENT_ATTESTATION"
+        )
 
     def test_evidence_signature_tampering_cannot_promote(self):
         fresh = CapabilityQualificationRegistry(
