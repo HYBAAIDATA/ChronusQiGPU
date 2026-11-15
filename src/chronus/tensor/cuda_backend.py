@@ -65,6 +65,7 @@ class CUDATensorBackend:
         self._cp = None
         self._module = None
         self._device = None
+        self._self_tested = False
 
     def _initialize(self) -> None:
         if self._module is not None:
@@ -90,6 +91,22 @@ class CUDATensorBackend:
         except Exception as exc:
             raise CUDATensorUnavailable("CUDA tensor kernel build failed") from exc
         self._cp, self._device, self._module = cp, device, module
+        try:
+            actual = self.execute(
+                "add",
+                np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32),
+                np.array([4.0, 3.0, 2.0, 1.0], dtype=np.float32),
+            )["output"]
+            if not np.array_equal(actual, np.array([5.0, 5.0, 5.0, 5.0], dtype=np.float32)):
+                raise CUDATensorUnavailable("CUDA tensor known-answer check failed")
+            self._self_tested = True
+        except Exception as exc:
+            self._module = None
+            self._device = None
+            self._cp = None
+            if isinstance(exc, CUDATensorUnavailable):
+                raise
+            raise CUDATensorUnavailable("CUDA tensor known-answer check failed") from exc
 
     def is_available(self) -> bool:
         try:
@@ -113,6 +130,7 @@ class CUDATensorBackend:
             "runtime_version": int(cp.cuda.runtime.runtimeGetVersion()),
             "driver_version": int(cp.cuda.runtime.driverGetVersion()),
             "measured": False,
+            "known_answer_self_test": "PASS" if self._self_tested else "NOT_RUN",
         }
 
     @staticmethod
