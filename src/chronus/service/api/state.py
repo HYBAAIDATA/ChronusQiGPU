@@ -134,6 +134,19 @@ def _schema_valid(conn: sqlite3.Connection) -> bool:
         actual = tuple(row[2] for row in conn.execute(pragma))
         if actual != expected:
             return False
+    # The API's secondary indexes must not acquire a UNIQUE or partial
+    # constraint, even when their names and indexed columns are unchanged.
+    for pragma, expected_name in (
+        ("PRAGMA index_list(api_workloads)", "api_workloads_tenant_created"),
+        ("PRAGMA index_list(api_nodes)", "api_nodes_tenant_created"),
+        ("PRAGMA index_list(api_receipts)", "api_receipts_tenant_created"),
+        ("PRAGMA index_list(api_idempotency)", "api_idempotency_expires"),
+    ):
+        attributes = {
+            row[1]: (row[2], row[3], row[4]) for row in conn.execute(pragma)
+        }
+        if attributes.get(expected_name) != (0, "c", 0):
+            return False
     return True
 
 
@@ -156,20 +169,19 @@ def database_path() -> str:
 
 
 def _connect() -> sqlite3.Connection:
-    path = database_path()
+    path = str(Path(database_path()).resolve())
     Path(path).parent.mkdir(parents=True, exist_ok=True)
-    # Detect an unexpected replacement while SQLite is opening the file.
-    # Path identity alone cannot substitute for independent durable custody.
-    try:
-        before_stat = os.stat(path)
-        before_identity = (before_stat.st_dev, before_stat.st_ino)
-    except FileNotFoundError:
-        before_identity = None
-    connection = sqlite3.connect(path, timeout=30.0, isolation_level=None)
-    try:
-        # Set timeout before any schema / journal negotiation.
-        connection.execute("PRAGMA busy_timeout=30000")
-        with _SCHEMA_LOCK:
+    # Serialize initial creation and validation, not just schema DDL.
+    # This prevents another thread seeing a partially bootstrapped database.
+    with _SCHEMA_LOCK:
+        try:
+            before_stat = os.stat(path)
+            before_identity = (before_stat.st_dev, before_stat.st_ino)
+        except FileNotFoundError:
+            before_identity = None
+        connection = sqlite3.connect(path, timeout=30.0, isolation_level=None)
+        try:
+            connection.execute("PRAGMA busy_timeout=30000")
             metadata = os.stat(path)
             identity = (metadata.st_dev, metadata.st_ino)
             if before_identity is not None and identity != before_identity:
@@ -237,10 +249,11 @@ def _connect() -> sqlite3.Connection:
                 raise RuntimeError(
                     "SQLite database replaced during initialization; recovery verification required"
                 )
-        return connection
-    except Exception:
-        connection.close()
-        raise
+            return connection
+        except Exception:
+            connection.close()
+            raise
+
 
 @contextmanager
 def connection() -> Iterator[sqlite3.Connection]:
