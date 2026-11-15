@@ -81,16 +81,25 @@ def fold_verified(data: np.ndarray, *, depth: int = 2,
     return state, receipt
 
 
-def unfold_verified(state: FoldState, *, tolerance: float = 1e-12) -> np.ndarray:
-    """Recover from a supplied state; validates chronology and finite output.
+def unfold_verified(state: FoldState, *, receipt: FoldEvidence) -> np.ndarray:
+    """Recover a fold state under a trusted receipt, detecting data corruption.
 
-    This does not authenticate the source. Use independent signed custody when
-    accepting untrusted artifacts; no mutable state should be trusted on its own.
+    The receipt is an integrity anchor, NOT a signature. Untrusted receipts
+    require independent THESEUS custody and AL HARAS authorization.
     """
-    if not math.isfinite(tolerance) or not 0 < tolerance <= 1e-6:
-        raise ValidationError("invalid tolerance")
+    if not isinstance(receipt, FoldEvidence) or receipt.schema != "chronus.pulvini.fold-evidence/1":
+        raise ValidationError("trusted fold receipt is required")
+    if receipt.normalization != state.normalization or receipt.depth != state.depth:
+        raise ValidationError("fold state/receipt metadata mismatch")
+    folded_bytes = int(state.folded.nbytes)
+    kernel_bytes = int(sum(k.nbytes for k in state.kernels))
+    if (folded_bytes != receipt.folded_bytes or kernel_bytes != receipt.kernel_bytes
+            or folded_bytes + kernel_bytes != receipt.retained_bytes):
+        raise ValidationError("fold state/receipt storage accounting mismatch")
     operator = PhiRecursiveOperator(normalization=state.normalization)
     restored = operator.unfold_recursive(state)
     if not np.all(np.isfinite(restored)):
         raise ValidationError("non-finite reconstruction")
+    if _digest(restored) != receipt.reconstruction_sha256:
+        raise ValidationError("reconstruction digest mismatch: state mutated or wrong receipt")
     return restored

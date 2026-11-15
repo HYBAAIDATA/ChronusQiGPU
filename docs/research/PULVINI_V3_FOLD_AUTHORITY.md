@@ -56,3 +56,7 @@ The CODEOWNERS file and fail-closed digest/contract CI are necessary but **not s
 - Admin/owner bypass is an explicit owner decision; never promise true immutability while the ruleset is absent.
 
 As of the initial intake, main was reported unprotected and no ruleset was listed. A reviewed repository-admin change must activate the ruleset. Do not treat text instructions alone as technical enforcement.
+
+## Trusted-receipt integrity gate
+
+The optional archive import is wrapped by fold_verified and unfold_verified. Unfold requires its FoldEvidence receipt: it validates mode, depth, retained-byte accounting and a SHA-256 digest of the reconstructed bytes. This catches unapproved same-length kernel tampering. Such a digest alone does NOT authenticate the receipt; use independent THESEUS custody and AL HARAS authorization at external trust boundaries. Strict byte hashes are host-output-specific and must not be mistaken for cross-hardware numerical equivalence.
