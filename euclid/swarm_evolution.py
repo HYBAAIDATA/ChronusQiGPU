@@ -12,6 +12,7 @@ their own authorization at the action boundary; this scheduler only reduces
 from __future__ import annotations
 
 from dataclasses import dataclass
+from copy import deepcopy
 import hashlib
 import json
 import sqlite3
@@ -346,7 +347,8 @@ class SwarmActivator:
                     if self.clock_ns() >= mission.deadline_ns:
                         raise SwarmRefused("mission deadline exceeded")
                     # Recheck at dispatch to make revocation effective mid-swarm.
-                    self._authorize(leader, "swarm.delegate", mission.scope)
+                    for leadership_skill in sorted(LEADER_SKILLS):
+                        self._authorize(leader, leadership_skill, mission.scope)
                     self._authorize(self.agents[task.agent_id], task.required_skill, mission.scope)
                     if consumed + task.budget_units > mission.budget_units:
                         raise SwarmRefused("mission budget exceeded")
@@ -355,18 +357,26 @@ class SwarmActivator:
                         "kind": "dispatch", "task": task.task_id, "agent": task.agent_id,
                         "reserved_units": task.budget_units, "spent_upper_bound": consumed,
                     })
+                    if self.clock_ns() >= mission.deadline_ns:
+                        raise SwarmRefused("mission deadline exceeded before dispatch")
                     result = dispatch(task)
                     if not isinstance(result, Mapping) or len(_canonical(dict(result))) > MAX_RESULT_BYTES:
                         raise SwarmRefused("unbounded or invalid worker result")
-                    if verify(task, result) is not True:
+                    self._authorize(leader, "swarm.verify", mission.scope)
+                    result_snapshot = json.loads(_canonical(dict(result)))
+                    if verify(task, deepcopy(result_snapshot)) is not True:
                         raise SwarmRefused("independent task verification refused")
+                    if self.clock_ns() >= mission.deadline_ns:
+                        raise SwarmRefused("mission deadline exceeded after verification")
                     self.journal.append(mission.mission_id, {
                         "kind": "verified", "task": task.task_id,
-                        "output_sha256": hashlib.sha256(_canonical(dict(result))).hexdigest(),
+                        "output_sha256": hashlib.sha256(_canonical(result_snapshot)).hexdigest(),
                     })
                     completed.add(task.task_id)
-                    outcomes[task.task_id] = dict(result)
+                    outcomes[task.task_id] = result_snapshot
                     del remaining[task.task_id]
+            if self.clock_ns() >= mission.deadline_ns:
+                raise SwarmRefused("mission deadline exceeded before completion")
             self.journal.append(mission.mission_id, {
                 "kind": "completed", "verified_tasks": sorted(completed),
                 "reserved_budget_units": consumed,
@@ -380,9 +390,13 @@ class SwarmActivator:
                 "outcomes": outcomes,
             }
         except BaseException:
-            self.journal.append(mission.mission_id, {
-                "kind": "failed", "verified_tasks": sorted(completed),
-                "reserved_budget_units": consumed,
-            })
-            self.journal.finish(mission.mission_id, "failed")
+            # Preserve the originating exception if the journal itself is unavailable.
+            try:
+                self.journal.append(mission.mission_id, {
+                    "kind": "failed", "verified_tasks": sorted(completed),
+                    "reserved_budget_units": consumed,
+                })
+                self.journal.finish(mission.mission_id, "failed")
+            except Exception:
+                pass
             raise
