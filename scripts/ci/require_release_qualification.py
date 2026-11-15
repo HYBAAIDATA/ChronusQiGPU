@@ -31,6 +31,19 @@ def check_verdict(verdict: dict) -> None:
         raise ReleaseBlocked("qualification evidence attestation is unverified")
     if verdict.get("test_suite_pass") is not True:
         raise ReleaseBlocked("qualification test suite is not verified PASS")
+    # Explicit independently attested signer and custody facts are required.
+    # A CO-SIGN gate label cannot by itself prove a conformant PQ signature
+    # algorithm or a managed, authorised key-custody provider.
+    if (
+        verdict.get("post_quantum_signer") != "ML-DSA-65"
+        or verdict.get("post_quantum_signer_verified") is not True
+    ):
+        raise ReleaseBlocked("independent ML-DSA-65 signer conformance unavailable")
+    if (
+        verdict.get("key_provider") != "azure-managed-hsm"
+        or verdict.get("key_provider_verified") is not True
+    ):
+        raise ReleaseBlocked("Azure managed key-provider custody not verified")
     gates = verdict.get("gates")
     if not isinstance(gates, dict) or any(gates.get(gate) != "PASS" for gate in MANDATORY):
         raise ReleaseBlocked("mandatory qualification gate is missing or not PASS")
