@@ -164,7 +164,7 @@ class SwarmJournal:
             self._db.close()
             raise SwarmRefused("journal requires SQLite WAL mode")
         self._db.execute("PRAGMA synchronous=FULL")
-        self._db.execute("CREATE TABLE IF NOT EXISTS missions (id TEXT PRIMARY KEY, digest TEXT NOT NULL, status TEXT NOT NULL, event_count INTEGER NOT NULL DEFAULT 0, event_head TEXT NOT NULL DEFAULT '')"
+        self._db.execute("CREATE TABLE IF NOT EXISTS missions (id TEXT PRIMARY KEY, digest TEXT NOT NULL, status TEXT NOT NULL, event_count INTEGER NOT NULL DEFAULT 0, event_head TEXT NOT NULL DEFAULT '')")
         self._db.execute("CREATE TABLE IF NOT EXISTS events (mission_id TEXT NOT NULL, seq INTEGER NOT NULL, previous TEXT NOT NULL, hash TEXT NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(mission_id,seq))")
 
     def close(self) -> None:
