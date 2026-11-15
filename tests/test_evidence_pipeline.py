@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from types import SimpleNamespace
 
@@ -81,3 +82,20 @@ def test_failed_attestation_does_not_pass_evaluation(tmp_path, monkeypatch):
     output = json.loads(verdict.read_text(encoding="utf-8"))
     assert output["attestation_verified"] is False
     assert set(output["claims"].values()) == {"held"}
+
+
+def test_facade_module_emits_unqualified_manifest(tmp_path):
+    """Executing the module actually emits local diagnostics and fails closed."""
+    completed = subprocess.run(
+        [sys.executable, "-m", "chronus.core.facade"],
+        cwd=tmp_path, capture_output=True, text=True, check=False,
+    )
+    assert completed.returncode == 1
+    output = json.loads(
+        (tmp_path / "manifests" / "qualification_manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert output["posture"] == "not_qualified"
+    assert output["gates_total"] == len(output["gates"])
+    assert output["blockers"]

@@ -92,6 +92,14 @@ def test_norm_proof_workload_via_native_backend():
             **proved,
             "response": [(proved["response"][0] + delta) % P, proved["response"][1]],
         }
+        if mutated["response"] == [0, 0]:
+            with pytest.raises(ValueError, match="field element must be non-zero"):
+                backend.execute(
+                    json.dumps({"operation": "verify", "proof": mutated}).encode(),
+                    "OVID_NORM_PROOF",
+                )
+            detected += 1
+            continue
         checked_tamper = backend.execute(
             json.dumps({"operation": "verify", "proof": mutated}).encode(),
             "OVID_NORM_PROOF",

@@ -395,6 +395,23 @@ def test_sqlite_schema_cookie_reset_cannot_hide_drift(tmp_path, monkeypatch):
     monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
 
 
+def test_sqlite_rejects_new_unexpected_unique_index(tmp_path, monkeypatch):
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "sqlite")
+    db_path = tmp_path / "api.sqlite3"
+    monkeypatch.setenv("CHRONUS_API_DB_PATH", str(db_path))
+    with state.connection():
+        pass
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            "CREATE UNIQUE INDEX api_workloads_unique_tenant "
+            "ON api_workloads (tenant_id)"
+        )
+    with pytest.raises(RuntimeError, match="schema changed"):
+        with state.connection():
+            pass
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
+
+
 def test_same_key_different_body_is_409(client):
     _post(client, ALPHA)
     response = _post(client, ALPHA, body={**BODY, "gpu_count": 2})

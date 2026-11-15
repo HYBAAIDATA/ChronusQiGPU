@@ -212,6 +212,16 @@ def _schema_valid(conn: sqlite3.Connection) -> bool:
         }
         if attributes.get(expected_name) != (0, "c", 0):
             return False
+        if any(
+            name != expected_name and values[1] != "pk"
+            for name, values in attributes.items()
+        ):
+            return False
+    if any(
+        row[3] != "pk"
+        for row in conn.execute("PRAGMA index_list(api_rate_limits)")
+    ):
+        return False
     return True
 
 
