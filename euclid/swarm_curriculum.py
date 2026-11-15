@@ -206,6 +206,29 @@ def train_qualify_and_activate(
     report = train_leadership(curriculum, train=train, evaluate=evaluate, accept=accept)
     if report["outcome"] != "READY_FOR_INDEPENDENT_ATTESTATION":
         raise SwarmRefused("leadership training acceptance not satisfied")
-    certify(report)  # Cannot bypass exact-scope signed registry authorization.
+    # The certifier receives a detached report and cannot mutate returned evidence.
+    certify(deepcopy(report))
+    payload = {key: value for key, value in report.items() if key != "report_sha256"}
+    if hashlib.sha256(_canonical(payload)).hexdigest() != report["report_sha256"]:
+        raise SwarmRefused("training report integrity check failed")
+
+    # Every promoted leadership claim used by this lifecycle must attest this
+    # exact report digest, preventing unrelated pre-existing claims from being reused.
+    for skill in sorted(LEADER_SKILLS):
+        claim_id = registered.capability_claims.get(skill)
+        claim = activator.qualification.active_claim(
+            claim_id=claim_id,
+            source_revision=registered.source_revision,
+            domain="euclid.agent.skill",
+            task_scope=mission.scope,
+        )
+        if claim is None or not any(
+            record.artifact_sha256 == report["report_sha256"]
+            for record in claim.evidence
+        ):
+            raise SwarmRefused(
+                "leadership qualification is not bound to this training report"
+            )
+
     result = activator.activate(mission, dispatch=dispatch, verify=verify)
     return {"training": report, "swarm": result}
