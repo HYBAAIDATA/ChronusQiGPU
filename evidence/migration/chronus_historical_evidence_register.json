@@ -1,0 +1,107 @@
+{
+  "schema": "hyba.evidence.migration/v1",
+  "policy": {
+    "historical_results_are_current_qualification": false,
+    "preserve_original_counts": true,
+    "rerun_on_current_release_commit": true,
+    "measured_device_results_are_device_and_workload_specific": true
+  },
+  "records": [
+    {
+      "id": "geodesic-tensor-extended-20260724",
+      "source_kind": "LIBRARY",
+      "source": "Pasted text(20261001-114855).txt / file_000000001ab08243991cdca74e99ff13",
+      "observed_at": "2026-07-24T04:25:00+01:00",
+      "capability": "Geodesic/Tensor extended runtime",
+      "historical_result": "115/115 tests passed (68 original + 47 extension) in 0.073s",
+      "artifact": "GEODESIC_TENSOR_ENGINE_EXTENDED_20260724.zip",
+      "sha256": "43d4d3a39fd13fb525bf3acf0b822af1ef55c6b801616aeb9bf326a76dcfa44b",
+      "migrated_to": [
+        "src/chronus/tensor/geodesic.py",
+        "src/chronus/tensor/folded_state.py",
+        "tests/test_geodesic_tensor_migration.py"
+      ],
+      "current_qualification": "MAPPED_TO_CURRENT_TESTS"
+    },
+    {
+      "id": "geodesic-tensor-completion-gate-20260724",
+      "source_kind": "LIBRARY",
+      "source": "Pasted text(20261001-114855).txt / file_000000001ab08243991cdca74e99ff13",
+      "observed_at": "2026-07-24T04:50:00+01:00",
+      "capability": "Historical complete tensor integration",
+      "historical_result": "61/61 integration operations; 110/110 property invariants; 12/12 operator checks; 122/122 unit/regression tests; 242/242 strict use-case assertions; 121/121 operator-gap checks",
+      "sha256": null,
+      "migrated_to": [
+        "tests/test_geodesic_tensor_migration.py",
+        "capabilities/triad_production_manifest.json"
+      ],
+      "current_qualification": "RERUN_REQUIRED"
+    },
+    {
+      "id": "enterprise-triad-custody-pr115",
+      "source_kind": "NOTION",
+      "source": "Notion 1315c7dc-5d80-4248-8b2e-6e2ad4252e5b",
+      "capability": "Chronus-THESEUS-OVID enterprise custody substrate",
+      "historical_result": "67 tests passed across enterprise distributed substrate, custody substrate, capability bridge and triad tests; historical production_ready remained false",
+      "sha256": null,
+      "migrated_to": [
+        "src/chronus/storage/durable.py",
+        "src/chronus/ovid/transform.py",
+        "src/chronus/triad.py",
+        "tests/test_triad_production.py"
+      ],
+      "current_qualification": "MAPPED_TO_CURRENT_TESTS"
+    },
+    {
+      "id": "virtual-igpu-acceptance-20261002",
+      "source_kind": "LIBRARY",
+      "source": "Pasted text(20261004-104936).txt / file_000000009f3881f4b853db2b165e8f56",
+      "capability": "Virtual iGPU software substrate",
+      "historical_result": "19 passed, 3 skipped; skipped gates were physical GPU/cloud/live-pool checks with explicit reasons",
+      "sha256": null,
+      "migrated_to": [
+        "src/chronus/fleet/",
+        "docs/fleet/FLEET.md"
+      ],
+      "current_qualification": "CURRENT_EVIDENCE_EXISTS"
+    },
+    {
+      "id": "igpu-eleven-layer-measurement",
+      "source_kind": "LIBRARY",
+      "source": "Pasted text(20261028-134937).txt / file_000000007a0081f49fe9b3fea8be4703",
+      "capability": "Eleven-layer virtual-iGPU measurement",
+      "historical_result": "30/30 measurement tests; 1,488/1,488 substrate tests; 16 stages available and 5 unavailable where host sensors were absent",
+      "sha256": null,
+      "migrated_to": [
+        "docs/fleet/FLEET.md",
+        "docs/production/TEST_AND_BENCHMARK_PROVENANCE.md"
+      ],
+      "current_qualification": "RERUN_REQUIRED"
+    },
+    {
+      "id": "uhd620-physical-history",
+      "source_kind": "LIBRARY",
+      "source": "Pasted text(20261003-150253).txt / file_00000000d3fc81f4b8dcb67c5ad0b56a",
+      "capability": "Intel UHD 620 OpenCL execution",
+      "historical_result": "Historical 2026-09-21 device record at commit 823cf39 reported opencl:gpu with 22.13–23.44 MH/s kernel and 16.86–18.96 MH/s wall; later post-#94 artifact required reconciliation",
+      "sha256": null,
+      "migrated_to": [
+        "docs/production/TEST_AND_BENCHMARK_PROVENANCE.md"
+      ],
+      "current_qualification": "RERUN_REQUIRED"
+    },
+    {
+      "id": "current-acceleration-evidence",
+      "source_kind": "GITHUB_HISTORY",
+      "source": "capabilities/acceleration_report.md and evidence/acceleration/",
+      "capability": "Current acceleration evidence corpus",
+      "historical_result": "Current repository contains source-bound tensor, codec and acceleration evidence plus explicit blockers",
+      "sha256": null,
+      "migrated_to": [
+        "capabilities/acceleration_report.md",
+        "evidence/acceleration/"
+      ],
+      "current_qualification": "CURRENT_EVIDENCE_EXISTS"
+    }
+  ]
+}
