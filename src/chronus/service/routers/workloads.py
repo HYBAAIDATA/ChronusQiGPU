@@ -68,20 +68,46 @@ def _suspended_tier_fields(contract) -> dict:
     }
 
 
-def _attach_tier_fields(workload_type: object, *, status: WorkloadStatus) -> dict:
-    """Attach class-level reference-model qualification for scaling.v1.
+# Include the submission index in reference-model probes when it is small
+# enough for exact Decimal residual measurement. Not a backend re-probe.
+_MAX_SUBMISSION_PROBE_INDEX = 256
 
-    This is explicitly *not* a claim that the selected execution backend was
-    re-probed for this submission. Only attach on COMPLETED responses.
-    Prior transcripts for the class are integrity-checked and re-verified;
-    signature or envelope breach suspends.
+
+def _scaling_index_from_result(result: object) -> int | None:
+    if not isinstance(result, dict):
+        return None
+    payload = result.get("result")
+    if not isinstance(payload, dict):
+        payload = result
+    index = payload.get("index")
+    if isinstance(index, int) and not isinstance(index, bool) and index >= 0:
+        return index
+    representation = payload.get("representation")
+    if isinstance(representation, dict):
+        nested = representation.get("index")
+        if isinstance(nested, int) and not isinstance(nested, bool) and nested >= 0:
+            return nested
+    return None
+
+
+def _attach_tier_fields(
+    workload_type: object,
+    *,
+    status: WorkloadStatus,
+    result: object = None,
+) -> dict:
+    """Attach reference-model qualification for scaling.v1.
+
+    Scope is still ``reference_model_class``: residuals come from the harness
+    model, not a re-probe of the selected execution backend. When the
+    submission index is available and within the probe budget, it is included
+    in the measured envelope so evidence tracks the customer's working size.
     """
     if status != WorkloadStatus.COMPLETED:
         return {}
     internal = normalize_workload_type(workload_type)
     if internal != INTERNAL_SCALING_WORKLOAD:
         return {}
-    # Deterministic seed from class name — same class ⇒ same evidence.
     seed = int(hashlib.sha256(b"qualify:" + internal.encode()).hexdigest()[:16], 16)
     harness = QualificationHarness()
     prior = recall_by_class(internal)
@@ -100,9 +126,20 @@ def _attach_tier_fields(workload_type: object, *, status: WorkloadStatus) -> dic
         contract = harness.reverify_contract(prior)
         if contract.suspended:
             return _suspended_tier_fields(contract)
-    result = harness.qualify(internal, seed=seed)
-    remember_transcript(result)
-    public = result.public_decision_fields()
+    from chronus.qualification.harness import _default_probe_sizes
+
+    sizes = _default_probe_sizes(seed)
+    submission_index = _scaling_index_from_result(result)
+    included_submission = False
+    if (
+        submission_index is not None
+        and submission_index <= _MAX_SUBMISSION_PROBE_INDEX
+    ):
+        sizes = tuple(sorted(set(sizes) | {submission_index}))
+        included_submission = True
+    qualified = harness.qualify(internal, seed=seed, sizes=sizes)
+    remember_transcript(qualified)
+    public = qualified.public_decision_fields()
     return {
         "tier": public["tier"],
         "qualification_evidence_hash": public["qualification_evidence_hash"],
@@ -111,6 +148,7 @@ def _attach_tier_fields(workload_type: object, *, status: WorkloadStatus) -> dic
         "tier_suspended": public["suspended"],
         "metadata_tier_economics": public["economics"],
         "metadata_qualification_scope": public["qualification_scope"],
+        "metadata_submission_index_probed": included_submission,
     }
 
 _workload_ed25519_signer = receipt_signer
@@ -299,14 +337,19 @@ async def submit_workload(
             ).model_dump(),
         ) from exc
 
-    tier_fields = _attach_tier_fields(request.workload_type, status=backend_status)
+    tier_fields = _attach_tier_fields(
+        request.workload_type, status=backend_status, result=result
+    )
     economics = tier_fields.pop("metadata_tier_economics", None)
     qualification_scope = tier_fields.pop("metadata_qualification_scope", None)
+    submission_index_probed = tier_fields.pop("metadata_submission_index_probed", None)
     metadata = dict(request.metadata or {})
     if economics is not None:
         metadata["tier_economics"] = economics
     if qualification_scope is not None:
         metadata["qualification_scope"] = qualification_scope
+    if submission_index_probed is not None:
+        metadata["submission_index_probed"] = submission_index_probed
     # Relative price weight is a multiplier on a measured/base CCU only.
     # Do not invent an absolute cost from the weight when no meter exists.
     if economics is not None and ccu_cost is not None:

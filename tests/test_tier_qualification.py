@@ -255,6 +255,24 @@ class ForgeryAndPrecisionTests(unittest.TestCase):
         self.assertEqual(fields["tier"], Tier.SUSPENDED.value)
         clear()
 
+    def test_attach_includes_submission_index_in_probes(self) -> None:
+        from chronus.qualification.transcript_store import clear
+        from chronus.service.models import WorkloadStatus
+        from chronus.service.routers.workloads import _attach_tier_fields
+
+        clear()
+        sealed = {
+            "backend": "python-math-reference",
+            "result": {"family": "scaling.v1", "index": 10, "sequence_value": "123"},
+        }
+        fields = _attach_tier_fields(
+            "scaling.v1", status=WorkloadStatus.COMPLETED, result=sealed
+        )
+        self.assertTrue(fields["metadata_submission_index_probed"])
+        sizes = [point["size"] for point in fields["envelope"]["residual_bound"]]
+        self.assertIn(10, sizes)
+        clear()
+
     def test_large_probe_residual_is_accurate(self) -> None:
         n = 500
         with localcontext() as ctx:
