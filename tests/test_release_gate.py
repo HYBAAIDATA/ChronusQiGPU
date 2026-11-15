@@ -2,6 +2,7 @@
 import pytest
 
 from chronus.core.qualification import MANDATORY
+from chronus.core.claims import CLAIM_GATES
 from scripts.ci.require_release_qualification import (
     ReleaseBlocked, check_verdict, select_run,
 )
@@ -12,7 +13,7 @@ def valid_verdict():
         "status": "PASS", "blockers": [],
         "attestation_verified": True, "test_suite_pass": True,
         "gates": {gate: "PASS" for gate in MANDATORY},
-        "claims": {"CO-001": "supported"},
+        "claims": {claim: "supported" for claim in CLAIM_GATES},
     }
 
 
@@ -25,6 +26,7 @@ def test_mandatory_gates_are_enforced_without_waivers():
         {"test_suite_pass": False},
         {"gates": {}},
         {"claims": {"CO-001": "held"}},
+        {"claims": {"CO-001": "supported"}},
     ):
         verdict = {**valid_verdict(), **change}
         with pytest.raises(ReleaseBlocked):
