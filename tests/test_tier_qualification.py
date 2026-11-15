@@ -7,11 +7,38 @@ import math
 import subprocess
 import sys
 import unittest
+from contextlib import contextmanager
 from decimal import Decimal, localcontext
 from pathlib import Path
+from typing import Iterator
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
+
+
+@contextmanager
+def _qualification_env(**overrides: str | None) -> Iterator[None]:
+    """Scoped env overrides that restore prior values on success or failure.
+
+    Pass ``None`` to temporarily unset a variable.
+    """
+    import os
+
+    missing = object()
+    prior = {key: os.environ.get(key, missing) for key in overrides}
+    try:
+        for key, value in overrides.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+        yield
+    finally:
+        for key, old in prior.items():
+            if old is missing:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = old  # type: ignore[arg-type]
 
 from chronus.core.seal import assert_sealed, find_banned_tokens  # noqa: E402
 from chronus.core.workload_alias import (  # noqa: E402
@@ -292,80 +319,82 @@ class ForgeryAndPrecisionTests(unittest.TestCase):
         clear()
 
     def test_suspended_class_stays_suspended_across_jobs(self) -> None:
-        import os
         import tempfile
 
         from chronus.qualification import transcript_store as store
+        from chronus.qualification.signing import reset_qualification_signer
         from chronus.service.models import WorkloadStatus
         from chronus.service.routers.workloads import _attach_tier_fields
 
         with tempfile.TemporaryDirectory() as tmp:
-            os.environ["CHRONUS_QUALIFICATION_DB_PATH"] = str(
-                Path(tmp) / "qualification.sqlite3"
-            )
-            store.clear()
-            harness = QualificationHarness()
-            tight = harness.qualify("LUCAS_PV_SCALING", seed=5)
-            from chronus.qualification.tiers import TIER_CONTRACT_VERSION, TierContract
+            db = str(Path(tmp) / "qualification.sqlite3")
+            with _qualification_env(CHRONUS_QUALIFICATION_DB_PATH=db):
+                reset_qualification_signer()
+                store.clear()
+                harness = QualificationHarness()
+                tight = harness.qualify("LUCAS_PV_SCALING", seed=5)
+                from chronus.qualification.tiers import TIER_CONTRACT_VERSION, TierContract
 
-            tightened = type(tight)(
-                tier=tight.tier,
-                contract=TierContract(
+                tightened = type(tight)(
                     tier=tight.tier,
-                    tier_contract_version=TIER_CONTRACT_VERSION,
-                    residual_bound_by_size=tuple(
-                        (size, format(Decimal(bound) * Decimal("1e-9"), "f"))
-                        for size, bound in tight.contract.residual_bound_by_size
+                    contract=TierContract(
+                        tier=tight.tier,
+                        tier_contract_version=TIER_CONTRACT_VERSION,
+                        residual_bound_by_size=tuple(
+                            (size, format(Decimal(bound) * Decimal("1e-9"), "f"))
+                            for size, bound in tight.contract.residual_bound_by_size
+                        ),
+                        qualification_evidence_hash=tight.evidence_hash,
+                        suspended=False,
                     ),
-                    qualification_evidence_hash=tight.evidence_hash,
-                    suspended=False,
-                ),
-                evidence_hash=tight.evidence_hash,
-                audit_transcript=tight.audit_transcript,
-                public_view=tight.public_view,
-                economics=tight.economics,
-            )
-            store.remember(tightened)
-            first = _attach_tier_fields("scaling.v1", status=WorkloadStatus.COMPLETED)
-            self.assertTrue(first["tier_suspended"])
-            suspended_hash = first["qualification_evidence_hash"]
-            second = _attach_tier_fields(
-                "scaling.v1",
-                status=WorkloadStatus.COMPLETED,
-                result={
-                    "result": {
-                        "family": "scaling.v1",
-                        "index": 10,
-                        "sequence_value": "123",
-                    }
-                },
-            )
-            self.assertTrue(second["tier_suspended"])
-            self.assertEqual(second["tier"], Tier.SUSPENDED.value)
-            # Shared-file visibility: a second "replica" reading the same DB
-            # still sees the sticky suspension.
-            again = store.recall_by_class("LUCAS_PV_SCALING")
-            self.assertIsNotNone(again)
-            self.assertTrue(again.contract.suspended)
-            cleared = store.clear_class("LUCAS_PV_SCALING")
-            self.assertIsNotNone(cleared)
-            self.assertEqual(cleared["preserved_evidence_hash"], suspended_hash)
-            self.assertIsNotNone(store.recall_by_hash(suspended_hash))
-            restored = _attach_tier_fields(
-                "scaling.v1",
-                status=WorkloadStatus.COMPLETED,
-                result={
-                    "result": {
-                        "family": "scaling.v1",
-                        "index": 10,
-                        "sequence_value": "123",
-                    }
-                },
-            )
-            self.assertFalse(restored.get("tier_suspended"))
-            self.assertNotEqual(restored["tier"], Tier.SUSPENDED.value)
-            store.clear()
-            os.environ.pop("CHRONUS_QUALIFICATION_DB_PATH", None)
+                    evidence_hash=tight.evidence_hash,
+                    audit_transcript=tight.audit_transcript,
+                    public_view=tight.public_view,
+                    economics=tight.economics,
+                )
+                store.remember(tightened)
+                first = _attach_tier_fields(
+                    "scaling.v1", status=WorkloadStatus.COMPLETED
+                )
+                self.assertTrue(first["tier_suspended"])
+                suspended_hash = first["qualification_evidence_hash"]
+                second = _attach_tier_fields(
+                    "scaling.v1",
+                    status=WorkloadStatus.COMPLETED,
+                    result={
+                        "result": {
+                            "family": "scaling.v1",
+                            "index": 10,
+                            "sequence_value": "123",
+                        }
+                    },
+                )
+                self.assertTrue(second["tier_suspended"])
+                self.assertEqual(second["tier"], Tier.SUSPENDED.value)
+                # Shared-file visibility: a second "replica" reading the same DB
+                # still sees the sticky suspension.
+                again = store.recall_by_class("LUCAS_PV_SCALING")
+                self.assertIsNotNone(again)
+                self.assertTrue(again.contract.suspended)
+                cleared = store.clear_class("LUCAS_PV_SCALING")
+                self.assertIsNotNone(cleared)
+                self.assertEqual(cleared["preserved_evidence_hash"], suspended_hash)
+                self.assertIsNotNone(store.recall_by_hash(suspended_hash))
+                restored = _attach_tier_fields(
+                    "scaling.v1",
+                    status=WorkloadStatus.COMPLETED,
+                    result={
+                        "result": {
+                            "family": "scaling.v1",
+                            "index": 10,
+                            "sequence_value": "123",
+                        }
+                    },
+                )
+                self.assertFalse(restored.get("tier_suspended"))
+                self.assertNotEqual(restored["tier"], Tier.SUSPENDED.value)
+                store.clear()
+            reset_qualification_signer()
 
     def test_reset_endpoint_requires_system_operator(self) -> None:
         from fastapi.testclient import TestClient
@@ -403,7 +432,6 @@ class ForgeryAndPrecisionTests(unittest.TestCase):
         self.assertEqual(result.contract.residual_bound_by_size[-1][0], 500)
 
     def test_persisted_transcript_verifies_after_signer_reload(self) -> None:
-        import os
         import tempfile
 
         from chronus.qualification import transcript_store as store
@@ -413,32 +441,32 @@ class ForgeryAndPrecisionTests(unittest.TestCase):
 
         seed_hex = "11" * 32
         with tempfile.TemporaryDirectory() as tmp:
-            os.environ["CHRONUS_QUALIFICATION_DB_PATH"] = str(
-                Path(tmp) / "qualification.sqlite3"
-            )
-            os.environ["CHRONUS_QUALIFICATION_SIGNING_SEED_HEX"] = seed_hex
-            reset_qualification_signer()
-            store.clear()
-            first = QualificationHarness().qualify("LUCAS_PV_SCALING", seed=21)
-            store.remember(first)
-            self.assertTrue(verify_transcript_integrity(first.audit_transcript))
-            self.assertIn("signing_key_id", first.audit_transcript)
-            # Simulate a restarted process / second replica: drop the cached
-            # signer and reload from the same durable seed.
-            reset_qualification_signer()
-            recalled = store.recall_by_class("LUCAS_PV_SCALING")
-            self.assertIsNotNone(recalled)
-            self.assertTrue(verify_transcript_integrity(recalled.audit_transcript))
-            fields = _attach_tier_fields("scaling.v1", status=WorkloadStatus.COMPLETED)
-            self.assertFalse(fields.get("tier_suspended", False))
-            self.assertNotEqual(fields["tier"], Tier.SUSPENDED.value)
-            store.clear()
-            os.environ.pop("CHRONUS_QUALIFICATION_DB_PATH", None)
-            os.environ.pop("CHRONUS_QUALIFICATION_SIGNING_SEED_HEX", None)
+            db = str(Path(tmp) / "qualification.sqlite3")
+            with _qualification_env(
+                CHRONUS_QUALIFICATION_DB_PATH=db,
+                CHRONUS_QUALIFICATION_SIGNING_SEED_HEX=seed_hex,
+            ):
+                reset_qualification_signer()
+                store.clear()
+                first = QualificationHarness().qualify("LUCAS_PV_SCALING", seed=21)
+                store.remember(first)
+                self.assertTrue(verify_transcript_integrity(first.audit_transcript))
+                self.assertIn("signing_key_id", first.audit_transcript)
+                # Simulate a restarted process / second replica: drop the cached
+                # signer and reload from the same durable seed.
+                reset_qualification_signer()
+                recalled = store.recall_by_class("LUCAS_PV_SCALING")
+                self.assertIsNotNone(recalled)
+                self.assertTrue(verify_transcript_integrity(recalled.audit_transcript))
+                fields = _attach_tier_fields(
+                    "scaling.v1", status=WorkloadStatus.COMPLETED
+                )
+                self.assertFalse(fields.get("tier_suspended", False))
+                self.assertNotEqual(fields["tier"], Tier.SUSPENDED.value)
+                store.clear()
             reset_qualification_signer()
 
     def test_seed_file_survives_signer_reload(self) -> None:
-        import os
         import tempfile
 
         from chronus.qualification.signing import (
@@ -447,19 +475,19 @@ class ForgeryAndPrecisionTests(unittest.TestCase):
         )
 
         with tempfile.TemporaryDirectory() as tmp:
-            os.environ["CHRONUS_QUALIFICATION_DB_PATH"] = str(
-                Path(tmp) / "qualification.sqlite3"
-            )
-            os.environ.pop("CHRONUS_QUALIFICATION_SIGNING_SEED_HEX", None)
-            reset_qualification_signer()
-            a = get_qualification_signer()
-            key_id = a.key_id
-            signed = a.sign(b"qualification-roundtrip")
-            reset_qualification_signer()
-            b = get_qualification_signer()
-            self.assertEqual(b.key_id, key_id)
-            self.assertTrue(b.verify(b"qualification-roundtrip", signed))
-            os.environ.pop("CHRONUS_QUALIFICATION_DB_PATH", None)
+            db = str(Path(tmp) / "qualification.sqlite3")
+            with _qualification_env(
+                CHRONUS_QUALIFICATION_DB_PATH=db,
+                CHRONUS_QUALIFICATION_SIGNING_SEED_HEX=None,
+            ):
+                reset_qualification_signer()
+                a = get_qualification_signer()
+                key_id = a.key_id
+                signed = a.sign(b"qualification-roundtrip")
+                reset_qualification_signer()
+                b = get_qualification_signer()
+                self.assertEqual(b.key_id, key_id)
+                self.assertTrue(b.verify(b"qualification-roundtrip", signed))
             reset_qualification_signer()
 
     def test_seed_file_rejects_symlink_and_incomplete(self) -> None:
@@ -473,40 +501,43 @@ class ForgeryAndPrecisionTests(unittest.TestCase):
         )
 
         with tempfile.TemporaryDirectory() as tmp:
-            os.environ["CHRONUS_QUALIFICATION_DB_PATH"] = str(
-                Path(tmp) / "qualification.sqlite3"
-            )
-            os.environ.pop("CHRONUS_QUALIFICATION_SIGNING_SEED_HEX", None)
-            reset_qualification_signer()
-            seed_path = _seed_file_path()
-            seed_path.parent.mkdir(parents=True, exist_ok=True)
-            target = Path(tmp) / "attacker.seed"
-            target.write_text("aa" * 32, encoding="ascii")
-            os.symlink(str(target), str(seed_path))
-            with self.assertRaises(ValueError):
-                get_qualification_signer()
-            seed_path.unlink()
-            reset_qualification_signer()
-            # Incomplete / empty seed left by a crashed writer must fail closed.
-            fd = os.open(str(seed_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-            os.close(fd)
-            with self.assertRaises(ValueError):
-                get_qualification_signer()
-            seed_path.unlink()
-            reset_qualification_signer()
-            # Group/world-readable seed is refused.
-            fd = os.open(str(seed_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
-            try:
-                os.write(fd, ("bb" * 32).encode("ascii"))
-            finally:
+            db = str(Path(tmp) / "qualification.sqlite3")
+            with _qualification_env(
+                CHRONUS_QUALIFICATION_DB_PATH=db,
+                CHRONUS_QUALIFICATION_SIGNING_SEED_HEX=None,
+            ):
+                reset_qualification_signer()
+                seed_path = _seed_file_path()
+                seed_path.parent.mkdir(parents=True, exist_ok=True)
+                target = Path(tmp) / "attacker.seed"
+                target.write_text("aa" * 32, encoding="ascii")
+                os.symlink(str(target), str(seed_path))
+                with self.assertRaises(ValueError):
+                    get_qualification_signer()
+                seed_path.unlink()
+                reset_qualification_signer()
+                # Incomplete / empty seed left by a crashed writer must fail closed.
+                fd = os.open(
+                    str(seed_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600
+                )
                 os.close(fd)
-            with self.assertRaises(ValueError):
-                get_qualification_signer()
-            os.environ.pop("CHRONUS_QUALIFICATION_DB_PATH", None)
+                with self.assertRaises(ValueError):
+                    get_qualification_signer()
+                seed_path.unlink()
+                reset_qualification_signer()
+                # Group/world-readable seed is refused.
+                fd = os.open(
+                    str(seed_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644
+                )
+                try:
+                    os.write(fd, ("bb" * 32).encode("ascii"))
+                finally:
+                    os.close(fd)
+                with self.assertRaises(ValueError):
+                    get_qualification_signer()
             reset_qualification_signer()
 
     def test_concurrent_seed_publish_converges(self) -> None:
-        import os
         import tempfile
         import threading
 
@@ -516,113 +547,159 @@ class ForgeryAndPrecisionTests(unittest.TestCase):
         )
 
         with tempfile.TemporaryDirectory() as tmp:
-            os.environ["CHRONUS_QUALIFICATION_DB_PATH"] = str(
-                Path(tmp) / "qualification.sqlite3"
-            )
-            os.environ.pop("CHRONUS_QUALIFICATION_SIGNING_SEED_HEX", None)
+            db = str(Path(tmp) / "qualification.sqlite3")
+            with _qualification_env(
+                CHRONUS_QUALIFICATION_DB_PATH=db,
+                CHRONUS_QUALIFICATION_SIGNING_SEED_HEX=None,
+            ):
+                reset_qualification_signer()
+                barrier = threading.Barrier(2)
+                results: list[str] = []
+                errors: list[BaseException] = []
+
+                def worker() -> None:
+                    try:
+                        barrier.wait(timeout=5)
+                        reset_qualification_signer()
+                        results.append(get_qualification_signer().key_id)
+                    except BaseException as exc:  # noqa: BLE001 — collect for assert
+                        errors.append(exc)
+
+                threads = [threading.Thread(target=worker) for _ in range(2)]
+                for thread in threads:
+                    thread.start()
+                for thread in threads:
+                    thread.join(timeout=10)
+                self.assertEqual(errors, [])
+                self.assertEqual(len(results), 2)
+                self.assertEqual(results[0], results[1])
             reset_qualification_signer()
-            barrier = threading.Barrier(2)
-            results: list[str] = []
-            errors: list[BaseException] = []
 
-            def worker() -> None:
-                try:
-                    barrier.wait(timeout=5)
-                    reset_qualification_signer()
-                    results.append(get_qualification_signer().key_id)
-                except BaseException as exc:  # noqa: BLE001 — collect for assert
-                    errors.append(exc)
+    def test_remember_does_not_let_clean_replace_suspension(self) -> None:
+        import tempfile
 
-            threads = [threading.Thread(target=worker) for _ in range(2)]
-            for thread in threads:
-                thread.start()
-            for thread in threads:
-                thread.join(timeout=10)
-            self.assertEqual(errors, [])
-            self.assertEqual(len(results), 2)
-            self.assertEqual(results[0], results[1])
-            os.environ.pop("CHRONUS_QUALIFICATION_DB_PATH", None)
+        from chronus.qualification import transcript_store as store
+        from chronus.qualification.signing import reset_qualification_signer
+        from chronus.qualification.tiers import TIER_CONTRACT_VERSION, TierContract
+
+        with tempfile.TemporaryDirectory() as tmp:
+            db = str(Path(tmp) / "qualification.sqlite3")
+            with _qualification_env(CHRONUS_QUALIFICATION_DB_PATH=db):
+                reset_qualification_signer()
+                store.clear()
+                clean = QualificationHarness().qualify("LUCAS_PV_SCALING", seed=11)
+                suspended = type(clean)(
+                    tier=Tier.SUSPENDED,
+                    contract=TierContract(
+                        tier=Tier.SUSPENDED,
+                        tier_contract_version=TIER_CONTRACT_VERSION,
+                        residual_bound_by_size=clean.contract.residual_bound_by_size,
+                        qualification_evidence_hash=clean.evidence_hash,
+                        suspended=True,
+                    ),
+                    evidence_hash=clean.evidence_hash + "susp",
+                    audit_transcript={
+                        **clean.audit_transcript,
+                        "tier": Tier.SUSPENDED.value,
+                        "suspended": True,
+                        "evidence_hash": clean.evidence_hash + "susp",
+                    },
+                    public_view=clean.public_view,
+                    economics=clean.economics,
+                )
+                self.assertTrue(store.remember(suspended))
+                later_clean = QualificationHarness().qualify(
+                    "LUCAS_PV_SCALING", seed=12
+                )
+                self.assertFalse(store.remember(later_clean))
+                remaining = store.recall_by_class("LUCAS_PV_SCALING")
+                self.assertIsNotNone(remaining)
+                self.assertTrue(remaining.contract.suspended)
+                self.assertEqual(remaining.evidence_hash, suspended.evidence_hash)
+                # Transcript for the clean result is still retained by hash.
+                self.assertIsNotNone(store.recall_by_hash(later_clean.evidence_hash))
+                store.clear()
             reset_qualification_signer()
 
     def test_clear_class_does_not_erase_replaced_suspension(self) -> None:
-        import os
         import tempfile
         from contextlib import contextmanager
         from unittest.mock import patch
 
         from chronus.qualification import transcript_store as store
+        from chronus.qualification.signing import reset_qualification_signer
         from chronus.qualification.tiers import TIER_CONTRACT_VERSION, TierContract
 
         with tempfile.TemporaryDirectory() as tmp:
-            os.environ["CHRONUS_QUALIFICATION_DB_PATH"] = str(
-                Path(tmp) / "qualification.sqlite3"
-            )
-            store.clear()
-            earlier = QualificationHarness().qualify("LUCAS_PV_SCALING", seed=7)
-            store.remember(earlier)
-            later = QualificationHarness().qualify(
-                "LUCAS_PV_SCALING", seed=8, degrade=True
-            )
-            suspended = type(later)(
-                tier=Tier.SUSPENDED,
-                contract=TierContract(
+            db = str(Path(tmp) / "qualification.sqlite3")
+            with _qualification_env(CHRONUS_QUALIFICATION_DB_PATH=db):
+                reset_qualification_signer()
+                store.clear()
+                earlier = QualificationHarness().qualify("LUCAS_PV_SCALING", seed=7)
+                store.remember(earlier)
+                later = QualificationHarness().qualify(
+                    "LUCAS_PV_SCALING", seed=8, degrade=True
+                )
+                suspended = type(later)(
                     tier=Tier.SUSPENDED,
-                    tier_contract_version=TIER_CONTRACT_VERSION,
-                    residual_bound_by_size=later.contract.residual_bound_by_size,
-                    qualification_evidence_hash=later.evidence_hash,
-                    suspended=True,
-                ),
-                evidence_hash=later.evidence_hash,
-                audit_transcript={
-                    **later.audit_transcript,
-                    "tier": Tier.SUSPENDED.value,
-                    "suspended": True,
-                },
-                public_view=later.public_view,
-                economics=later.economics,
-            )
-            newer_json = store._serialize_result(suspended)
-            original_connect = store._connect
+                    contract=TierContract(
+                        tier=Tier.SUSPENDED,
+                        tier_contract_version=TIER_CONTRACT_VERSION,
+                        residual_bound_by_size=later.contract.residual_bound_by_size,
+                        qualification_evidence_hash=later.evidence_hash,
+                        suspended=True,
+                    ),
+                    evidence_hash=later.evidence_hash,
+                    audit_transcript={
+                        **later.audit_transcript,
+                        "tier": Tier.SUSPENDED.value,
+                        "suspended": True,
+                    },
+                    public_view=later.public_view,
+                    economics=later.economics,
+                )
+                newer_json = store._serialize_result(suspended)
+                original_connect = store._connect
 
-            class _ConnProxy:
-                def __init__(self, conn: object) -> None:
-                    self._conn = conn
+                class _ConnProxy:
+                    def __init__(self, conn: object) -> None:
+                        self._conn = conn
 
-                def execute(self, sql, params=()):
-                    if (
-                        isinstance(sql, str)
-                        and "DELETE FROM class_state" in sql
-                        and "result_json" in sql
-                    ):
-                        self._conn.execute(
-                            """
-                            INSERT INTO class_state (workload_class, result_json)
-                            VALUES (?, ?)
-                            ON CONFLICT(workload_class) DO UPDATE SET
-                                result_json=excluded.result_json
-                            """,
-                            ("LUCAS_PV_SCALING", newer_json),
-                        )
-                    return self._conn.execute(sql, params)
+                    def execute(self, sql, params=()):
+                        if (
+                            isinstance(sql, str)
+                            and "DELETE FROM class_state" in sql
+                            and "result_json" in sql
+                        ):
+                            self._conn.execute(
+                                """
+                                INSERT INTO class_state (workload_class, result_json)
+                                VALUES (?, ?)
+                                ON CONFLICT(workload_class) DO UPDATE SET
+                                    result_json=excluded.result_json
+                                """,
+                                ("LUCAS_PV_SCALING", newer_json),
+                            )
+                        return self._conn.execute(sql, params)
 
-                def __getattr__(self, name: str):
-                    return getattr(self._conn, name)
+                    def __getattr__(self, name: str):
+                        return getattr(self._conn, name)
 
-            @contextmanager
-            def inject_replace(*, exclusive: bool = False):
-                with original_connect(exclusive=exclusive) as connection:
-                    yield _ConnProxy(connection)
+                @contextmanager
+                def inject_replace(*, exclusive: bool = False):
+                    with original_connect(exclusive=exclusive) as connection:
+                        yield _ConnProxy(connection)
 
-            with patch.object(store, "_connect", inject_replace):
-                outcome = store.clear_class("LUCAS_PV_SCALING")
-            self.assertIsNotNone(outcome)
-            self.assertFalse(outcome["cleared"])
-            remaining = store.recall_by_class("LUCAS_PV_SCALING")
-            self.assertIsNotNone(remaining)
-            self.assertEqual(remaining.evidence_hash, later.evidence_hash)
-            self.assertTrue(remaining.contract.suspended)
-            store.clear()
-            os.environ.pop("CHRONUS_QUALIFICATION_DB_PATH", None)
+                with patch.object(store, "_connect", inject_replace):
+                    outcome = store.clear_class("LUCAS_PV_SCALING")
+                self.assertIsNotNone(outcome)
+                self.assertFalse(outcome["cleared"])
+                remaining = store.recall_by_class("LUCAS_PV_SCALING")
+                self.assertIsNotNone(remaining)
+                self.assertEqual(remaining.evidence_hash, later.evidence_hash)
+                self.assertTrue(remaining.contract.suspended)
+                store.clear()
+            reset_qualification_signer()
 
 
 class ScalingResultSealTests(unittest.TestCase):

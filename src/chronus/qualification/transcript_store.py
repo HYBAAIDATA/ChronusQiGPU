@@ -2,11 +2,14 @@
 
 Backed by SQLite so API replicas that share the database file observe the same
 suspension/reset state. Process restart retains evidence under the configured
-path. Set ``CHRONUS_QUALIFICATION_DB_PATH`` to override the default location.
+path. Transcript signatures use the durable qualification signer (see
+``chronus.qualification.signing``), not the process-local API receipt key.
+Set ``CHRONUS_QUALIFICATION_DB_PATH`` to override the default location.
 
 Writers use ``BEGIN IMMEDIATE`` so reset and remember serialize across
-processes; ``clear_class`` deletes only the exact row it read so a concurrent
-suspension cannot be wiped by a stale reset.
+processes. ``remember`` never lets a clean result replace a stored suspension;
+``clear_class`` deletes only the exact row it read so a concurrent suspension
+cannot be wiped by a stale reset.
 """
 
 from __future__ import annotations
@@ -114,13 +117,28 @@ def _deserialize_result(raw: str) -> QualificationResult:
     )
 
 
-def remember(result: QualificationResult) -> None:
-    """Persist the latest qualification result for its class and evidence hash."""
+def _is_suspended_result(result: QualificationResult) -> bool:
+    return bool(result.contract.suspended or result.tier == Tier.SUSPENDED)
+
+
+def remember(result: QualificationResult) -> bool:
+    """Persist the qualification transcript and, when allowed, the class row.
+
+    Always stores the audit transcript by evidence hash. The class row is
+    updated inside the same exclusive write transaction unless a sticky
+    suspension is already stored and the incoming result is not suspended —
+    that prevents a later clean qualify from clearing a concurrent suspension
+    without an operator reset.
+
+    Returns True when the class row was written/updated.
+    """
     workload_class = str(result.audit_transcript.get("workload_class", ""))
     serialized = _serialize_result(result)
     transcript_json = json.dumps(
         result.audit_transcript, sort_keys=True, separators=(",", ":")
     )
+    incoming_suspended = _is_suspended_result(result)
+    class_updated = False
     with _LOCK:
         with _connect(exclusive=True) as connection:
             connection.execute(
@@ -132,6 +150,14 @@ def remember(result: QualificationResult) -> None:
                 """,
                 (result.evidence_hash, transcript_json),
             )
+            row = connection.execute(
+                "SELECT result_json FROM class_state WHERE workload_class = ?",
+                (workload_class,),
+            ).fetchone()
+            if row is not None and not incoming_suspended:
+                existing = _deserialize_result(row[0])
+                if _is_suspended_result(existing):
+                    return False
             connection.execute(
                 """
                 INSERT INTO class_state (workload_class, result_json)
@@ -141,6 +167,8 @@ def remember(result: QualificationResult) -> None:
                 """,
                 (workload_class, serialized),
             )
+            class_updated = True
+    return class_updated
 
 
 def recall_by_class(workload_class: str) -> QualificationResult | None:
