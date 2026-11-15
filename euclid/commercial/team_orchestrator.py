@@ -89,9 +89,9 @@ class CommercialTeamOrchestrator:
             guard()
             return result
 
-        def guarded_verify(task, result):
+        def guarded_verify(active_mission, task, result):
             guard()
-            outcome = verify(task, result)
+            outcome = verify(active_mission, task, result)
             guard()
             return outcome
 
