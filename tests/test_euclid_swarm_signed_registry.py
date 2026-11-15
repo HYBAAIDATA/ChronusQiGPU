@@ -76,6 +76,7 @@ class SignedQualificationIntegration(unittest.TestCase):
             claim = signed_claim(self.signer, skill)
             self.claims[skill] = claim
             self.assertEqual(self.registry.promote(claim).status, QualificationStatus.PROMOTED)
+
         def agent(name, skills):
             return QualifiedAgent(
                 name, REVISION, "mission", tuple(sorted(skills)),
@@ -135,6 +136,7 @@ class SignedQualificationIntegration(unittest.TestCase):
             agents=(self.leader, self.worker), clock_ns=lambda: 100,
         )
         events = []
+
         def certify(report):
             self.assertEqual(report["outcome"], "READY_FOR_INDEPENDENT_ATTESTATION")
             events.append("attestation")
