@@ -30,10 +30,7 @@ def build(xml_path: Path, out: Path) -> int:
     }
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(data, indent=2, sort_keys=True)+"\n")
-    # Successful evidence collection is not the same as production qualification.
-    # Keep explicit UNQUALIFIED status for any failed or skipped test; the workflow
-    # independently enforces pytest success and the evaluator holds all claims.
-    return 0
+    return 0 if data["status"]=="PASS" else 1
 
 def main() -> int:
     p=argparse.ArgumentParser()
