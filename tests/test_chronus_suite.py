@@ -23,6 +23,9 @@ class TestChronusMasterSuite(unittest.TestCase):
         self.assertLessEqual(
             res["release_gates_passed"], res["total_release_gates_evaluated"]
         )
+        self.assertEqual(res["total_release_gates_evaluated"], 5)
+        self.assertEqual(len(res["gates"]), 5)
+        self.assertTrue(any(not gate["passed"] for gate in res["gates"]))
         self.assertIsNone(res["total_invariants_evaluated"])
         self.assertIsNone(res["invariants_passed"])
         self.assertIn("UNAVAILABLE", res["invariant_summary"])
