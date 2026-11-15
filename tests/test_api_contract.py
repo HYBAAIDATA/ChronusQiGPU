@@ -380,6 +380,21 @@ def test_sqlite_schema_validation_cached_until_cookie_changes(
     monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
 
 
+def test_sqlite_schema_cookie_reset_cannot_hide_drift(tmp_path, monkeypatch):
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "sqlite")
+    db_path = tmp_path / "api.sqlite3"
+    monkeypatch.setenv("CHRONUS_API_DB_PATH", str(db_path))
+    with state.connection() as conn:
+        original_version = conn.execute("PRAGMA schema_version").fetchone()[0]
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("DROP TABLE api_rate_limits")
+        conn.execute(f"PRAGMA schema_version = {original_version}")
+    with pytest.raises(RuntimeError, match="schema changed"):
+        with state.connection():
+            pass
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
+
+
 def test_same_key_different_body_is_409(client):
     _post(client, ALPHA)
     response = _post(client, ALPHA, body={**BODY, "gpu_count": 2})

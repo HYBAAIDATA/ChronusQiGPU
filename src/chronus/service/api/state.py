@@ -71,6 +71,7 @@ _SCHEMA_LOCK = threading.Lock()
 _INITIALIZED_DB: dict[str, tuple[int, int]] = {}
 # Full schema validation is repeated only when SQLite's schema cookie changes.
 _VALIDATED_SCHEMA_VERSION: dict[str, int] = {}
+_VALIDATED_SCHEMA_SIGNATURE: dict[str, tuple] = {}
 _SCHEMA_OBJECTS = frozenset(
     {f"api_{name}" for name in _TABLES}
     | {f"api_{name}_tenant_created" for name in _TABLES}
@@ -149,6 +150,18 @@ _SCHEMA_SQL = {
         "key TEXT PRIMARY KEY, window_start INTEGER NOT NULL, count INTEGER NOT NULL)"
     ),
 }
+
+
+def _schema_signature(conn: sqlite3.Connection) -> tuple:
+    """Compact snapshot of service-owned DDL and triggers for drift detection."""
+    return tuple(
+        tuple(row)
+        for row in conn.execute(
+            "SELECT type, name, tbl_name, sql FROM sqlite_master "
+            "WHERE name LIKE 'api_%' OR tbl_name LIKE 'api_%' "
+            "ORDER BY type, name"
+        )
+    )
 
 
 def _schema_valid(conn: sqlite3.Connection) -> bool:
@@ -246,13 +259,18 @@ def _open_existing_database(path: str, expected_identity: tuple[int, int]) -> sq
                 "SQLite journal mode changed; recovery verification required"
             )
         schema_version = connection.execute("PRAGMA schema_version").fetchone()[0]
-        if _VALIDATED_SCHEMA_VERSION.get(path) != schema_version:
+        signature = _schema_signature(connection)
+        if (
+            _VALIDATED_SCHEMA_VERSION.get(path) != schema_version
+            or _VALIDATED_SCHEMA_SIGNATURE.get(path) != signature
+        ):
             if not _schema_valid(connection):
                 raise RuntimeError(
                     "SQLite schema changed after initialization; "
                     "recovery verification required before serving requests"
                 )
             _VALIDATED_SCHEMA_VERSION[path] = schema_version
+            _VALIDATED_SCHEMA_SIGNATURE[path] = signature
         final = os.stat(path)
         if (final.st_dev, final.st_ino) != expected_identity:
             raise RuntimeError(
@@ -341,6 +359,7 @@ def _connect() -> sqlite3.Connection:
             _VALIDATED_SCHEMA_VERSION[path] = connection.execute(
                 "PRAGMA schema_version"
             ).fetchone()[0]
+            _VALIDATED_SCHEMA_SIGNATURE[path] = _schema_signature(connection)
             return connection
         except Exception:
             connection.close()
