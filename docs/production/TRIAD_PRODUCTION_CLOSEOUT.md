@@ -50,9 +50,9 @@ The July Geodesic/Tensor capabilities have been reconciled into maintained Chron
 - `EnergyModel`: compares only caller-supplied measured energy values; no built-in savings claim;
 - `ProfiledHybridRouter`: selects only from verified observed route timings;
 - `FoldedInferencePilot`: materialises only requested weight rows and reports actual bytes touched;
-- `OpenCLTensorBackend`: physical GPU-only OpenCL route with no implicit CPU fallback.
+- `OpenCLTensorBackend`, `CUDATensorBackend` and `MetalTensorBackend`: explicit physical routes with no implicit CPU fallback. Each route becomes eligible only after device discovery, kernel readiness and a known-answer self-test.
 
-The OpenCL route is implemented code, not current hardware evidence. A device-specific run is required before a physical performance claim.
+The physical routes are implemented code, not current performance evidence. A device-specific run is required before any physical performance claim.
 
 ## 3. Production admission
 
@@ -66,7 +66,9 @@ The mandatory gates are:
 - `FN-CLAIMS`
 - `FN-CUSTODY`
 
-`src/chronus/core/facade.py` now delegates to the evidence-based qualification contract. `scripts/ci/manifest.py` produces local software evidence only and no longer embeds a signing key or awards production status. `scripts/ci/evaluate_attested.py` requires exact commit/run identity, verified GitHub artifact attestations, and an independently attested product-gate document.
+`src/chronus/core/facade.py` now delegates to the evidence-based qualification contract. `scripts/ci/manifest.py` produces local software evidence only and no longer embeds a signing key or awards production status. `scripts/ci/build_product_gates.py` directly executes the five software-base product verifiers. The qualification workflow independently attests both the bounded test evidence and product-gate evidence; `scripts/ci/evaluate_attested.py` binds them to the same commit/run and produces an attested profile verdict.
+
+Publication is independently fail-closed. `scripts/ci/require_release_qualification.py` requires a successful full `CI` push run and a successful qualification push run for the exact release commit on `main`, then re-verifies the qualification verdict attestation before the release workflow builds anything.
 
 A vendor name cannot satisfy custody. The `FN-CUSTODY` gate must contain the actual verified custody evidence required by the selected deployment profile.
 
@@ -84,7 +86,14 @@ Historical passes are not silently carried forward as current release evidence. 
 Focused current regressions added by this close-out:
 
 ```bash
-python -m pytest   tests/test_triad_production.py   tests/test_triad_capability_manifest.py   tests/test_geodesic_tensor_migration.py -q
+python -m pytest -q \
+  tests/test_triad_production.py \
+  tests/test_triad_capability_manifest.py \
+  tests/test_geodesic_tensor_migration.py \
+  tests/test_qualification.py \
+  tests/test_attested_evaluator.py \
+  tests/test_product_gates.py \
+  tests/test_release_gate.py
 ```
 
 The full repository suite, package build, security scans, CodeQL, frontend build and existing qualification workflows remain required on the exact close-out commit.
@@ -102,6 +111,9 @@ A capability may be implemented and software-verified while a physical backend o
 - Capability contract: `capabilities/triad_production_manifest.json`
 - Historical migration register: `evidence/migration/chronus_historical_evidence_register.json`
 - Current qualification contract: `src/chronus/core/qualification.py`
+- Product-gate builder: `scripts/ci/build_product_gates.py`
 - Current evidence evaluator: `scripts/ci/evaluate_attested.py`
+- Release verifier: `scripts/ci/require_release_qualification.py`
+- Deployment profile contract: `capabilities/deployment_profiles.json`
 - Current fleet contract: `docs/fleet/FLEET.md`
 - Current acceleration evidence: `capabilities/acceleration_report.md`
