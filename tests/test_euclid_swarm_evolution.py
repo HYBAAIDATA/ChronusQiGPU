@@ -6,7 +6,6 @@ unpromoted leaders in the integration gate below.
 """
 from __future__ import annotations
 
-from dataclasses import replace
 from pathlib import Path
 import sqlite3
 import tempfile
@@ -158,6 +157,7 @@ class SwarmTests(unittest.TestCase):
 
     def test_deadline_during_execution(self):
         count = 0
+
         def ticking():
             nonlocal count
             count += 1
