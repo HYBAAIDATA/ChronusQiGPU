@@ -13,6 +13,7 @@ import tempfile
 from pathlib import Path
 
 from chronus.core.qualification import MANDATORY
+from chronus.core.claims import CLAIM_GATES
 
 _WORKFLOW = ".github/workflows/chronus-evidence-qualification.yml"
 
@@ -34,8 +35,8 @@ def check_verdict(verdict: dict) -> None:
     if not isinstance(gates, dict) or any(gates.get(gate) != "PASS" for gate in MANDATORY):
         raise ReleaseBlocked("mandatory qualification gate is missing or not PASS")
     claims = verdict.get("claims")
-    if not isinstance(claims, dict) or not claims or any(
-        value != "supported" for value in claims.values()
+    if not isinstance(claims, dict) or set(claims) != set(CLAIM_GATES) or any(
+        claims[claim] != "supported" for claim in CLAIM_GATES
     ):
         raise ReleaseBlocked("qualification claims are not independently supported")
 
