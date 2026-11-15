@@ -341,7 +341,7 @@ def _already_wired(entries: List[FileEntry], output_dir: Path) -> Tuple[List[Fil
                         and _hash_file(target) == entry.sha256
                     ):
                         wired_set.add(rel_path)
-                except (OSError, ValueError):
+                except (OSError, ValueError, RuntimeError):
                     continue
     return (
         [e for e in entries if e.rel_path in wired_set],
