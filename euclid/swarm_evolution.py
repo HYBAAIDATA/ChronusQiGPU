@@ -164,8 +164,25 @@ class SwarmJournal:
             self._db.close()
             raise SwarmRefused("journal requires SQLite WAL mode")
         self._db.execute("PRAGMA synchronous=FULL")
-        self._db.execute("CREATE TABLE IF NOT EXISTS missions (id TEXT PRIMARY KEY, digest TEXT NOT NULL, status TEXT NOT NULL, event_count INTEGER NOT NULL DEFAULT 0, event_head TEXT NOT NULL DEFAULT '')"
-        self._db.execute("CREATE TABLE IF NOT EXISTS events (mission_id TEXT NOT NULL, seq INTEGER NOT NULL, previous TEXT NOT NULL, hash TEXT NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(mission_id,seq))")
+        self._db.execute(
+            "CREATE TABLE IF NOT EXISTS missions ("
+            "id TEXT PRIMARY KEY, digest TEXT NOT NULL, status TEXT NOT NULL, "
+            "event_count INTEGER NOT NULL DEFAULT 0, event_head TEXT NOT NULL DEFAULT '')"
+        )
+        columns = {row[1] for row in self._db.execute("PRAGMA table_info(missions)")}
+        if "event_count" not in columns:
+            self._db.execute(
+                "ALTER TABLE missions ADD COLUMN event_count INTEGER NOT NULL DEFAULT 0"
+            )
+        if "event_head" not in columns:
+            self._db.execute(
+                "ALTER TABLE missions ADD COLUMN event_head TEXT NOT NULL DEFAULT ''"
+            )
+        self._db.execute(
+            "CREATE TABLE IF NOT EXISTS events (mission_id TEXT NOT NULL, "
+            "seq INTEGER NOT NULL, previous TEXT NOT NULL, hash TEXT NOT NULL, "
+            "payload TEXT NOT NULL, PRIMARY KEY(mission_id,seq))"
+        )
 
     def close(self) -> None:
         with self._lock:
@@ -206,6 +223,11 @@ class SwarmJournal:
         with self._lock:
             self._db.execute("BEGIN IMMEDIATE")
             try:
+                mission_row = self._db.execute(
+                    "SELECT status FROM missions WHERE id=?", (mission_id,)
+                ).fetchone()
+                if mission_row is None or mission_row[0] != "running":
+                    raise SwarmRefused("mission is not in running state")
                 previous_row = self._db.execute(
                     "SELECT seq,hash FROM events WHERE mission_id=? ORDER BY seq DESC LIMIT 1",
                     (mission_id,),
@@ -295,6 +317,8 @@ class SwarmActivator:
         claim_id = agent.capability_claims.get(skill)
         if not claim_id:
             raise SwarmRefused("missing acquired skill certificate")
+        if claim_id != f"{agent.agent_id}.{skill}":
+            raise SwarmRefused("qualification claim is not bound to the agent identity")
         try:
             self.qualification.authorize(
                 claim_id=claim_id, source_revision=agent.source_revision,
