@@ -356,6 +356,30 @@ def test_sqlite_steady_state_connections_do_not_take_bootstrap_lock(
     monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
 
 
+def test_sqlite_schema_validation_cached_until_cookie_changes(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "sqlite")
+    db_path = tmp_path / "api.sqlite3"
+    monkeypatch.setenv("CHRONUS_API_DB_PATH", str(db_path))
+    with state.connection():
+        pass
+    # Regular connections must not redo a full catalogue scan.
+    with monkeypatch.context() as patch:
+        def unexpectedly_validate(_connection):
+            raise AssertionError("unmodified schema must use the validated cookie")
+        patch.setattr(state, "_schema_valid", unexpectedly_validate)
+        with state.connection() as conn:
+            assert conn.execute("SELECT 1").fetchone()[0] == 1
+    # Any SQLite DDL changes the schema cookie and requires re-validation.
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("DROP TABLE api_rate_limits")
+    with pytest.raises(RuntimeError, match="schema changed"):
+        with state.connection():
+            pass
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
+
+
 def test_same_key_different_body_is_409(client):
     _post(client, ALPHA)
     response = _post(client, ALPHA, body={**BODY, "gpu_count": 2})

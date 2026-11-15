@@ -69,6 +69,8 @@ _MEMORY_LOCK = threading.RLock()
 _SCHEMA_LOCK = threading.Lock()
 # Guard against a live file replacement at an already-initialised path.
 _INITIALIZED_DB: dict[str, tuple[int, int]] = {}
+# Full schema validation is repeated only when SQLite's schema cookie changes.
+_VALIDATED_SCHEMA_VERSION: dict[str, int] = {}
 _SCHEMA_OBJECTS = frozenset(
     {f"api_{name}" for name in _TABLES}
     | {f"api_{name}_tenant_created" for name in _TABLES}
@@ -243,11 +245,14 @@ def _open_existing_database(path: str, expected_identity: tuple[int, int]) -> sq
             raise RuntimeError(
                 "SQLite journal mode changed; recovery verification required"
             )
-        if not _schema_valid(connection):
-            raise RuntimeError(
-                "SQLite schema changed after initialization; "
-                "recovery verification required before serving requests"
-            )
+        schema_version = connection.execute("PRAGMA schema_version").fetchone()[0]
+        if _VALIDATED_SCHEMA_VERSION.get(path) != schema_version:
+            if not _schema_valid(connection):
+                raise RuntimeError(
+                    "SQLite schema changed after initialization; "
+                    "recovery verification required before serving requests"
+                )
+            _VALIDATED_SCHEMA_VERSION[path] = schema_version
         final = os.stat(path)
         if (final.st_dev, final.st_ino) != expected_identity:
             raise RuntimeError(
@@ -333,6 +338,9 @@ def _connect() -> sqlite3.Connection:
                     "SQLite database replaced during initialization; recovery verification required"
                 )
             _INITIALIZED_DB[path] = identity
+            _VALIDATED_SCHEMA_VERSION[path] = connection.execute(
+                "PRAGMA schema_version"
+            ).fetchone()[0]
             return connection
         except Exception:
             connection.close()
