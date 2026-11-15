@@ -215,6 +215,22 @@ class SwarmTests(unittest.TestCase):
         db.close()
         self.assertFalse(self.journal.verify("run"))
 
+
+    def test_completed_mission_rejects_post_terminal_append(self):
+        self.activator.activate(mission(), dispatch=self.dispatch, verify=self.verify)
+        with self.assertRaisesRegex(SwarmRefused, "running state"):
+            self.journal.append("run", {"kind": "completed"})
+        self.assertTrue(self.journal.verify("run"))
+
+    def test_truncated_terminal_chain_is_rejected(self):
+        self.activator.activate(mission(), dispatch=self.dispatch, verify=self.verify)
+        db = sqlite3.connect(self.path)
+        db.execute("DELETE FROM events WHERE mission_id=? AND seq=(SELECT MAX(seq) FROM events WHERE mission_id=?)",
+                   ("run", "run"))
+        db.commit()
+        db.close()
+        self.assertFalse(self.journal.verify("run"))
+
     def test_invalid_result_is_rejected(self):
         with self.assertRaises(SwarmRefused):
             self.activator.activate(mission(), dispatch=lambda _: {"bad": float("nan")},
