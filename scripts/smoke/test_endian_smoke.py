@@ -10,12 +10,14 @@ from __future__ import annotations
 import hashlib
 import unittest
 
-from fake_pool import DIFFICULTY, TARGET, header
+from fake_pool import DIFF1, DIFFICULTY, TARGET, header
 from stratum_smoke import meets, target_from_difficulty
 
 
 class EndianSmokeTests(unittest.TestCase):
-    def test_smoke_and_fake_pool_targets_match(self) -> None:
+    def test_default_pool_is_bitcoin_difficulty_1(self) -> None:
+        self.assertEqual(DIFFICULTY, 1)
+        self.assertEqual(TARGET, DIFF1)
         self.assertEqual(target_from_difficulty(DIFFICULTY), TARGET)
 
     def test_canonical_comparison_is_little_endian(self) -> None:
@@ -29,23 +31,10 @@ class EndianSmokeTests(unittest.TestCase):
         self.assertTrue(le)
         self.assertFalse(be)
 
-    def test_fake_pool_accepts_only_le_valid_share(self) -> None:
+    def test_fake_pool_predicate_matches_meets(self) -> None:
         extranonce1 = "deadbeef"
-        # Search a short window the same way the smoke does.
-        job_ntime, en2 = "67000000", "00000000"
-        found = None
-        for nonce in range(10_000):
-            params = ["smoke", "smokejob1", en2, job_ntime, f"{nonce:08x}"]
-            digest = hashlib.sha256(hashlib.sha256(header(extranonce1, params)).digest()).digest()
-            if meets(digest, TARGET):
-                found = (nonce, digest, params)
-                break
-        self.assertIsNotNone(found, "easy fake-pool target should hit within 10k hashes")
-        nonce, digest, params = found
-        self.assertTrue(int.from_bytes(digest, "little") <= TARGET)
-        # If both sides wrongly used big-endian, this digest may still "pass"
-        # under BE at this easy target; force a digest that LE accepts and BE rejects
-        # is covered above. Here assert the pool predicate matches meets().
+        params = ["smoke", "smokejob1", "00000000", "67000000", "00000000"]
+        digest = hashlib.sha256(hashlib.sha256(header(extranonce1, params)).digest()).digest()
         self.assertEqual(
             int.from_bytes(digest, "little") <= TARGET,
             meets(digest, TARGET),

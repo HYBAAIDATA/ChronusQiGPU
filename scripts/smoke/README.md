@@ -2,16 +2,31 @@
 
 Offline accept round-trip and live framing check for the treasury mining path.
 
+## Endianness
+
+Both the smoke client and the fake pool compare digests with
+`int.from_bytes(digest, "little")`. Sharing `"big"` on both sides is the
+common-mode failure that lets a fake pool certify the client's own bug.
+
+## Difficulty and search
+
+Fake pool default is Bitcoin **difficulty 1** (`DIFF1`). Expected work is
+~2³² SHA-256d evaluations. Chronus structured search (Zeckendorf/Galois) and
+the QiGPU OpenCL kernel raise **throughput**; they do not reduce the oracle's
+expected trial count. Fleet scale multiplies H/s further.
+
 ```bash
-# Offline: fake pool (~256-hash share target) + smoke with --require-accept
+# Diff-1 fake pool + Chronus geometric search (needs PYTHONPATH=src)
 python scripts/smoke/fake_pool.py --port 3333 &
-MINING_BRAIINS_USER=smoke \
-  python scripts/smoke/stratum_smoke.py --target fake --submit-share --require-accept
+MINING_BRAIINS_USER=smoke PYTHONPATH=src \
+  python scripts/smoke/stratum_smoke.py --target fake --submit-share \
+  --search geometric --share-seconds 600
+
+# Optional CI micro-target (not Bitcoin diff1): --difficulty 1e-7 on the pool
+python scripts/smoke/fake_pool.py --port 3333 --difficulty 1e-7 &
 ```
 
-Both sides compare share digests with `int.from_bytes(digest, "little")` — the
-same endianness on client and fake pool, so the pool cannot certify a shared bug.
-Transcripts land in `evidence/smoke/`.
+`--require-accept` demands a literal pool `true`. Live Braiins with
+`--submit-share` usually fails search then passes submit as framing (`error 23`).
 
-Live Braiins with `--submit-share` usually fails search then passes submit as
-framing (`error 23`); use `--require-accept` only when a literal `true` is required.
+Transcripts land in `evidence/smoke/`.

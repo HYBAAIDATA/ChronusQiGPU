@@ -5,14 +5,20 @@ round trip. Writes a transcript that doubles as a reproducible fixture
 (job, extranonce1/2, target, nonce, header, digest).
 
 Share search targets the SET_DIFFICULTY target (diff1 / difficulty), not nbits —
-nbits is the network target and is ~1e12x harder than a pool share.
+nbits is the network target and is ~1e12x harder than a pool share. At Bitcoin
+difficulty 1 expect ~2^32 SHA-256d evaluations; use --search geometric|opencl
+(Chronus structured search / QiGPU Mode A) or scale via fleet for wall-clock.
+The schedule is a checked permutation over the nonce space — it raises
+throughput when backed by QiGPU/OpenCL/fleet; it does not change the SHA-256d
+oracle's expected trial count.
 
 Exit 0 smoke passed, 2 protocol failure, 3 endpoint unreachable, 4 config error.
 Against a live pool a submit usually returns error 23 "above target"; that is a
 pass for framing, so exit 2 only on a malformed or uncorrelated reply. Add
 --require-accept to demand a literal true.
 
-    python scripts/smoke/stratum_smoke.py --target fake --submit-share
+    PYTHONPATH=src python scripts/smoke/stratum_smoke.py --target fake \\
+        --submit-share --search geometric --share-seconds 600
     python scripts/smoke/stratum_smoke.py --target braiins --job-timeout 45
 """
 
@@ -117,6 +123,95 @@ def build_header(job: dict, extranonce1: str, extranonce2: str, nonce: int) -> b
 def meets(digest: bytes, target: int) -> bool:
     """Canonical comparison: the 256-bit number is the digest little-endian."""
     return int.from_bytes(digest, "little") <= target
+
+
+def _resolve_search(name: str) -> str:
+    if name != "auto":
+        return name
+    try:
+        from chronus.execution.opencl_sha256d import OpenCLSha256dMinerBackend
+
+        if OpenCLSha256dMinerBackend().is_available():
+            return "opencl"
+    except Exception:
+        pass
+    try:
+        from chronus.execution.geometric_galois_miner import GeometricGaloisMiner  # noqa: F401
+
+        return "geometric"
+    except Exception:
+        return "python"
+
+
+def search_share(
+    backend: str,
+    job: dict,
+    extranonce1: str,
+    extranonce2: str,
+    target: int,
+    deadline: float,
+) -> tuple[int | None, int, str]:
+    """Return (nonce_or_None, hashes_evaluated, backend_used)."""
+    backend = _resolve_search(backend)
+    header76 = build_header(job, extranonce1, extranonce2, 0)[:76]
+    hashes = 0
+
+    if backend == "opencl":
+        from chronus.execution.opencl_sha256d import OpenCLSha256dMinerBackend
+
+        miner = OpenCLSha256dMinerBackend()
+        if not miner.is_available():
+            raise RuntimeError(
+                "OpenCL search requested but unavailable "
+                "(set CHRONUS_ENABLE_OPENCL_MINER=1 on an OpenCL host)"
+            )
+        cursor = 0
+        batch = 1 << 20
+        while time.monotonic() < deadline and cursor < (1 << 32):
+            width = min(batch, (1 << 32) - cursor)
+            # Nonce field is supplied by the kernel's base_nonce (= start), not the header bytes.
+            header80 = header76 + b"\x00\x00\x00\x00"
+            hits = miner.search(header80, cursor, cursor + width, target)
+            hashes += width
+            if hits:
+                nonce = hits[0]
+                digest = hashlib.sha256(
+                    hashlib.sha256(header76 + nonce.to_bytes(4, "little")).digest()
+                ).digest()
+                if meets(digest, target):
+                    return nonce, hashes, backend
+            cursor += width
+        return None, hashes, backend
+
+    if backend == "geometric":
+        from chronus.execution.geometric_galois_miner import GeometricGaloisMiner
+
+        miner = GeometricGaloisMiner()
+        cursor = 0
+        batch = 1 << 16
+        while time.monotonic() < deadline and cursor < (1 << 32):
+            width = min(batch, (1 << 32) - cursor)
+            result = miner.solve_header_range(header76, target, cursor, width)
+            hashes += result.iterations_evaluated
+            if result.found:
+                if meets(result.header_hash, target):
+                    return result.nonce, hashes, backend
+            cursor = (cursor + result.iterations_evaluated) % (1 << 32)
+            if cursor == 0 and hashes >= (1 << 32):
+                break
+        return None, hashes, backend
+
+    # python: independent sequential reference (not the Chronus throughput claim)
+    nonce = 0
+    while time.monotonic() < deadline and nonce < (1 << 32):
+        digest = hashlib.sha256(
+            hashlib.sha256(header76 + nonce.to_bytes(4, "little")).digest()
+        ).digest()
+        hashes += 1
+        if meets(digest, target):
+            return nonce, hashes, "python"
+        nonce += 1
+    return None, hashes, "python"
 
 
 class Session:
@@ -251,17 +346,22 @@ async def smoke(args, tx: Transcript) -> int:
 
         session.phase = "search"
         deadline = time.monotonic() + args.share_seconds
-        nonce, found = 0, None
-        while time.monotonic() < deadline:
-            digest = hashlib.sha256(
-                hashlib.sha256(build_header(job, extranonce1, extranonce2, nonce)).digest()).digest()
-            if meets(digest, target):
-                found = nonce
-                break
-            nonce += 1
-        tx.step("search", found is not None,
-                f"nonce={found} hashes={nonce}" if found is not None
-                else f"no share in {args.share_seconds}s ({nonce} hashes, target {tx.data['target_source']})")
+        found, hashes, used = search_share(
+            args.search, job, extranonce1, extranonce2, target, deadline
+        )
+        tx.data["search_backend"] = used
+        tx.step(
+            "search",
+            found is not None,
+            (
+                f"backend={used} nonce={found} hashes={hashes}"
+                if found is not None
+                else (
+                    f"backend={used} no share in {args.share_seconds}s "
+                    f"({hashes} hashes, target {tx.data['target_source']})"
+                )
+            ),
+        )
 
         session.phase = "submit"
         submit_nonce = found if found is not None else 0
@@ -316,6 +416,13 @@ def main() -> int:
     parser.add_argument("--submit-share", action="store_true")
     parser.add_argument("--require-accept", action="store_true")
     parser.add_argument("--share-seconds", type=float, default=30.0)
+    parser.add_argument(
+        "--search",
+        choices=("auto", "geometric", "opencl", "python"),
+        default="auto",
+        help="Share search backend: Chronus geometric/Galois, OpenCL QiGPU kernel, "
+             "or pure-Python reference. auto prefers opencl then geometric.",
+    )
     parser.add_argument("--version-rolling", action="store_true")
     args = parser.parse_args()
 

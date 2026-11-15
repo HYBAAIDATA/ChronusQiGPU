@@ -1,9 +1,10 @@
 """scripts/smoke/fake_pool.py — local Stratum V1 pool for offline smoke.
 
-Share difficulty is ~2^-24 of Bitcoin diff1 via set_difficulty, so a share
-lands in ~256 hashes and the submit returns a literal true. nbits stays a
-harder network target. Canonical little-endian target comparison, matching a
-real pool (and the smoke client).
+Bitcoin difficulty 1 via set_difficulty (DIFF1). nbits stays a harder network
+target. Canonical little-endian target comparison, matching a real pool and
+the smoke client. Expected share work is ~2^32 SHA-256d evaluations — use the
+smoke's --search geometric|opencl path (Chronus structured search / QiGPU),
+or fleet scale, for wall-clock; the naive Python nonce loop is not the claim.
 
     python scripts/smoke/fake_pool.py --port 3333 --exit-after 1
 """
@@ -18,9 +19,8 @@ import sys
 
 NBITS = "207fffff"           # network target, deliberately harder than the share target
 DIFF1 = 0xFFFF << (8 * (0x1D - 3))
-# ~2^-24 of diff1 → expected ~256 SHA-256d tries under DIFF1 // difficulty.
-DIFFICULTY = 1 / (1 << 24)
-TARGET = int(DIFF1 // DIFFICULTY)
+DIFFICULTY = 1
+TARGET = DIFF1 // DIFFICULTY
 JOB_ID = "smokejob1"
 VERSION = "20000000"
 PREVHASH = "00" * 31 + "01"
@@ -41,7 +41,7 @@ def header(extranonce1: str, params: list) -> bytes:
             + int(nonce, 16).to_bytes(4, "little"))
 
 
-def make_handler(extranonce1: str):
+def make_handler(extranonce1: str, difficulty: float, target: int):
     async def handle(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         try:
             while True:
@@ -60,7 +60,7 @@ def make_handler(extranonce1: str):
                 elif method == "mining.authorize":
                     writer.write((json.dumps({"id": ident, "result": True, "error": None}) + "\n").encode())
                     for note in (
-                        {"id": None, "method": "mining.set_difficulty", "params": [DIFFICULTY]},
+                        {"id": None, "method": "mining.set_difficulty", "params": [difficulty]},
                         {"id": None, "method": "mining.notify",
                          "params": [JOB_ID, PREVHASH, COINB1, COINB2, [], VERSION,
                                     NBITS, "67000000", True]},
@@ -70,7 +70,7 @@ def make_handler(extranonce1: str):
                     continue
                 elif method == "mining.submit":
                     digest = hashlib.sha256(hashlib.sha256(header(extranonce1, params)).digest()).digest()
-                    ok = int.from_bytes(digest, "little") <= TARGET
+                    ok = int.from_bytes(digest, "little") <= target
                     reply = {"id": ident, "result": True if ok else False,
                              "error": None if ok else [23, "low difficulty share", None]}
                 else:
@@ -82,9 +82,18 @@ def make_handler(extranonce1: str):
     return handle
 
 
-async def serve(port: int, exit_after: int | None) -> None:
-    server = await asyncio.start_server(make_handler("deadbeef"), "127.0.0.1", port)
-    print(f"fake pool on 127.0.0.1:{port}", flush=True)
+async def serve(port: int, exit_after: float | None, difficulty: float) -> None:
+    if difficulty <= 0:
+        raise ValueError("difficulty must be positive")
+    target = int(DIFF1 // difficulty)
+    server = await asyncio.start_server(
+        make_handler("deadbeef", difficulty, target), "127.0.0.1", port
+    )
+    print(
+        f"fake pool on 127.0.0.1:{port} difficulty={difficulty} "
+        f"target_hex={target:064x} (LE compare)",
+        flush=True,
+    )
     if exit_after is None:
         async with server:
             await server.serve_forever()
@@ -96,9 +105,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=3333)
     parser.add_argument("--exit-after", type=float, default=None)
+    parser.add_argument(
+        "--difficulty",
+        type=float,
+        default=DIFFICULTY,
+        help="Bitcoin-style share difficulty (default 1 ≈ 2^32 expected hashes)",
+    )
     args = parser.parse_args()
     try:
-        asyncio.run(serve(args.port, args.exit_after))
+        asyncio.run(serve(args.port, args.exit_after, args.difficulty))
     except (KeyboardInterrupt, asyncio.TimeoutError):
         pass
     sys.exit(0)
