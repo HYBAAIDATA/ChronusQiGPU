@@ -39,6 +39,28 @@ def recall_by_hash(evidence_hash: str) -> dict[str, Any] | None:
         return copy.deepcopy(transcript) if transcript is not None else None
 
 
+def clear_class(workload_class: str) -> dict[str, Any] | None:
+    """Clear sticky class state after operator review.
+
+    Preserves the prior audit transcript under its evidence hash so suspension
+    evidence remains inspectable after the class is allowed to re-qualify.
+    """
+    with _LOCK:
+        prior = _BY_CLASS.pop(workload_class, None)
+        if prior is None:
+            return None
+        _BY_HASH.setdefault(
+            prior.evidence_hash, copy.deepcopy(prior.audit_transcript)
+        )
+        return {
+            "workload_class": workload_class,
+            "preserved_evidence_hash": prior.evidence_hash,
+            "was_suspended": bool(
+                prior.contract.suspended or prior.tier.value == "TIER_SUSPENDED"
+            ),
+        }
+
+
 def clear() -> None:
     """Test helper — drop all process-local transcripts."""
     with _LOCK:

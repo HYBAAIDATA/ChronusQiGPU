@@ -35,8 +35,10 @@ from chronus.core.workload_alias import (
 )
 from chronus.qualification import QualificationHarness, Tier
 from chronus.qualification.harness import verify_transcript_integrity
+from chronus.qualification.transcript_store import clear_class as clear_qualification_class
 from chronus.qualification.transcript_store import remember as remember_transcript
 from chronus.qualification.transcript_store import recall_by_class
+from chronus.qualification.transcript_store import recall_by_hash
 from chronus.security.receipt_signer import receipt_signer
 from chronus.storage.connectors import zero_copy_connector_manager
 from chronus.service.workload_store import get_workload_store
@@ -170,6 +172,42 @@ workload_store = get_workload_store()
 
 def workload_counts() -> tuple[int, int]:
     return workload_store.counts()
+
+
+@router.post(
+    "/qualification/reset",
+    summary="Reset sticky qualification suspension after operator review",
+    description=(
+        "Authenticated operator action: clear the sticky suspended state for "
+        "scaling.v1 so the next completed job may re-qualify. The prior "
+        "suspension transcript remains available by evidence hash."
+    ),
+)
+async def reset_qualification_suspension(
+    tenant_id: str = Depends(get_current_tenant),
+) -> dict:
+    """Clear sticky class suspension; preserve suspension evidence by hash."""
+    cleared = clear_qualification_class(INTERNAL_SCALING_WORKLOAD)
+    if cleared is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=ErrorResponse(
+                error="qualification_state_absent",
+                error_code="WL010",
+                message="No sticky qualification state is present for scaling.v1.",
+            ).model_dump(),
+        )
+    preserved = cleared["preserved_evidence_hash"]
+    transcript = recall_by_hash(preserved)
+    return {
+        "status": "reset",
+        "workload_type": "scaling.v1",
+        "preserved_evidence_hash": preserved,
+        "suspension_transcript_retained": transcript is not None,
+        "was_suspended": cleared["was_suspended"],
+        "operator_tenant": tenant_id,
+        "receipt_scope": "process-local",
+    }
 
 
 @router.post(
