@@ -234,7 +234,7 @@ class EuclidSkillExchange:
             if set(roles) != set(_roles_of(record.pattern, [])):
                 raise ValueError("skill role binding must match the qualified pattern")
             instructions = instantiate(record.pattern, roles, fill=args.get("fill", 1))
-            return {"owner": "EUCLID", "custody_binding": binding_id,
+            return self._bounded({"owner": "EUCLID", "custody_binding": binding_id,
                     "skill_id": record.skill_id, "semantic_digest": record.semantic,
                     "operators": [self._mechanism(m) for m in instructions],
                     "execution_performed": False, "authority_granted": False})
@@ -258,7 +258,7 @@ class EuclidSkillExchange:
             if len(encoded) > 8192:
                 raise RuntimeError("memory item exceeds bounded MCP context window")
             results.append(body)
-        return {"owner": "EUCLID", "custody_binding": binding_id,
+        return self._bounded({"owner": "EUCLID", "custody_binding": binding_id,
                 "memory": results, "recall_method": "EUCLID_STRUCTURAL_MEMORY",
                 "theoretical_context_window_increase": False,
                 "retraining_required_for_consumer": False})
