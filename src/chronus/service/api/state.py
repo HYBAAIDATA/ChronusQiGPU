@@ -67,7 +67,152 @@ _RATE_HITS: dict[str, list[float]] = {}
 _MEMORY_LOCK = threading.RLock()
 # Schema setup is a first-use operation, never part of concurrent requests.
 _SCHEMA_LOCK = threading.Lock()
-_INITIALIZED_DB: set[str] = set()
+# Guard against a live file replacement at an already-initialised path.
+_INITIALIZED_DB: dict[str, tuple[int, int]] = {}
+# Full schema validation is repeated only when SQLite's schema cookie changes.
+_VALIDATED_SCHEMA_VERSION: dict[str, int] = {}
+_VALIDATED_SCHEMA_SIGNATURE: dict[str, tuple] = {}
+_SCHEMA_OBJECTS = frozenset(
+    {f"api_{name}" for name in _TABLES}
+    | {f"api_{name}_tenant_created" for name in _TABLES}
+    | {"api_idempotency", "api_idempotency_expires", "api_rate_limits"}
+)
+_RECORD_LAYOUT = (
+    ("record_id", "TEXT", 0, 1),
+    ("tenant_id", "TEXT", 0, 0),
+    ("state", "TEXT", 0, 0),
+    ("created_at", "TEXT", 0, 0),
+    ("record_json", "TEXT", 1, 0),
+)
+_SCHEMA_LAYOUTS = {
+    "PRAGMA table_info(api_workloads)": _RECORD_LAYOUT,
+    "PRAGMA table_info(api_nodes)": _RECORD_LAYOUT,
+    "PRAGMA table_info(api_receipts)": _RECORD_LAYOUT,
+    "PRAGMA table_info(api_idempotency)": (
+        ("tenant_id", "TEXT", 1, 1),
+        ("key", "TEXT", 1, 2),
+        ("body_hash", "TEXT", 1, 0),
+        ("status", "INTEGER", 1, 0),
+        ("body_json", "TEXT", 1, 0),
+        ("headers_json", "TEXT", 1, 0),
+        ("expires", "REAL", 1, 0),
+    ),
+    "PRAGMA table_info(api_rate_limits)": (
+        ("key", "TEXT", 0, 1),
+        ("window_start", "INTEGER", 1, 0),
+        ("count", "INTEGER", 1, 0),
+    ),
+}
+_SCHEMA_INDEXES = {
+    "PRAGMA index_info(api_workloads_tenant_created)": (
+        "tenant_id", "created_at", "record_id"
+    ),
+    "PRAGMA index_info(api_nodes_tenant_created)": (
+        "tenant_id", "created_at", "record_id"
+    ),
+    "PRAGMA index_info(api_receipts_tenant_created)": (
+        "tenant_id", "created_at", "record_id"
+    ),
+    "PRAGMA index_info(api_idempotency_expires)": ("expires",),
+}
+
+
+# Compare the stored DDL to expected service-owned table and index contracts.
+# PRAGMA table_info alone cannot detect CHECK constraints or changed triggers.
+_SCHEMA_SQL = {
+    **{
+        f"api_{name}": (
+            f"CREATE TABLE api_{name} "
+            "(record_id TEXT PRIMARY KEY, tenant_id TEXT, state TEXT, "
+            "created_at TEXT, record_json TEXT NOT NULL)"
+        )
+        for name in _TABLES
+    },
+    **{
+        f"api_{name}_tenant_created": (
+            f"CREATE INDEX api_{name}_tenant_created "
+            f"ON api_{name} (tenant_id, created_at, record_id)"
+        )
+        for name in _TABLES
+    },
+    "api_idempotency": (
+        "CREATE TABLE api_idempotency ("
+        "tenant_id TEXT NOT NULL, key TEXT NOT NULL, body_hash TEXT NOT NULL, "
+        "status INTEGER NOT NULL, body_json TEXT NOT NULL, headers_json TEXT NOT NULL, "
+        "expires REAL NOT NULL, PRIMARY KEY (tenant_id, key))"
+    ),
+    "api_idempotency_expires": (
+        "CREATE INDEX api_idempotency_expires "
+        "ON api_idempotency (expires)"
+    ),
+    "api_rate_limits": (
+        "CREATE TABLE api_rate_limits ("
+        "key TEXT PRIMARY KEY, window_start INTEGER NOT NULL, count INTEGER NOT NULL)"
+    ),
+}
+
+
+def _schema_signature(conn: sqlite3.Connection) -> tuple:
+    """Compact snapshot of service-owned DDL and triggers for drift detection."""
+    return tuple(
+        tuple(row)
+        for row in conn.execute(
+            "SELECT type, name, tbl_name, sql FROM sqlite_master "
+            "WHERE name LIKE 'api_%' OR tbl_name LIKE 'api_%' "
+            "ORDER BY type, name"
+        )
+    )
+
+
+def _schema_valid(conn: sqlite3.Connection) -> bool:
+    """Validate the exact API schema, not just the names of its objects."""
+    objects = {
+        row[0] for row in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type IN ('table', 'index')"
+        )
+    }
+    if not _SCHEMA_OBJECTS.issubset(objects):
+        return False
+    entries = {
+        name: (table, sql)
+        for _, name, table, sql in conn.execute(
+            "SELECT type, name, tbl_name, sql FROM sqlite_master"
+        )
+    }
+    if any(entries.get(name, (None, None))[1] != sql for name, sql in _SCHEMA_SQL.items()):
+        return False
+    if any(
+        kind == "trigger" and table in _SCHEMA_SQL
+        for kind, _, table in conn.execute(
+            "SELECT type, name, tbl_name FROM sqlite_master WHERE type = 'trigger'"
+        )
+    ):
+        return False
+    for pragma, expected in _SCHEMA_LAYOUTS.items():
+        actual = tuple(
+            (row[1], row[2].upper(), row[3], row[5])
+            for row in conn.execute(pragma)
+        )
+        if actual != expected:
+            return False
+    for pragma, expected in _SCHEMA_INDEXES.items():
+        actual = tuple(row[2] for row in conn.execute(pragma))
+        if actual != expected:
+            return False
+    # The API's secondary indexes must not acquire a UNIQUE or partial
+    # constraint, even when their names and indexed columns are unchanged.
+    for pragma, expected_name in (
+        ("PRAGMA index_list(api_workloads)", "api_workloads_tenant_created"),
+        ("PRAGMA index_list(api_nodes)", "api_nodes_tenant_created"),
+        ("PRAGMA index_list(api_receipts)", "api_receipts_tenant_created"),
+        ("PRAGMA index_list(api_idempotency)", "api_idempotency_expires"),
+    ):
+        attributes = {
+            row[1]: (row[2], row[3], row[4]) for row in conn.execute(pragma)
+        }
+        if attributes.get(expected_name) != (0, "c", 0):
+            return False
+    return True
 
 
 def backend() -> str:
@@ -88,18 +233,94 @@ def database_path() -> str:
     return os.getenv("CHRONUS_API_DB_PATH", "data/chronus-api.sqlite3")
 
 
-def _connect() -> sqlite3.Connection:
-    path = database_path()
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
+def _open_existing_database(path: str, expected_identity: tuple[int, int]) -> sqlite3.Connection:
+    """Open a previously initialized database without serializing all requests."""
+    try:
+        before = os.stat(path)
+    except OSError as exc:
+        raise RuntimeError(
+            "SQLite database unavailable at initialized path; recovery verification required"
+        ) from exc
+    if (before.st_dev, before.st_ino) != expected_identity:
+        raise RuntimeError(
+            "SQLite database replaced at an initialized path; "
+            "recovery verification required before serving requests"
+        )
     connection = sqlite3.connect(path, timeout=30.0, isolation_level=None)
     try:
-        # Set timeout before any schema / journal negotiation.
         connection.execute("PRAGMA busy_timeout=30000")
-        with _SCHEMA_LOCK:
-            if path not in _INITIALIZED_DB:
-                mode = connection.execute("PRAGMA journal_mode").fetchone()[0]
-                if mode.lower() != "wal":
-                    connection.execute("PRAGMA journal_mode=WAL")
+        after = os.stat(path)
+        if (after.st_dev, after.st_ino) != expected_identity:
+            raise RuntimeError(
+                "SQLite database changed while opening; recovery verification required"
+            )
+        if connection.execute("PRAGMA journal_mode").fetchone()[0].lower() != "wal":
+            raise RuntimeError(
+                "SQLite journal mode changed; recovery verification required"
+            )
+        schema_version = connection.execute("PRAGMA schema_version").fetchone()[0]
+        signature = _schema_signature(connection)
+        if (
+            _VALIDATED_SCHEMA_VERSION.get(path) != schema_version
+            or _VALIDATED_SCHEMA_SIGNATURE.get(path) != signature
+        ):
+            if not _schema_valid(connection):
+                raise RuntimeError(
+                    "SQLite schema changed after initialization; "
+                    "recovery verification required before serving requests"
+                )
+            _VALIDATED_SCHEMA_VERSION[path] = schema_version
+            _VALIDATED_SCHEMA_SIGNATURE[path] = signature
+        final = os.stat(path)
+        if (final.st_dev, final.st_ino) != expected_identity:
+            raise RuntimeError(
+                "SQLite database replaced during validation; recovery verification required"
+            )
+        return connection
+    except Exception:
+        connection.close()
+        raise
+
+
+def _connect() -> sqlite3.Connection:
+    # Normalize lexical aliases without resolving the symlink target.
+    # A retargeted symlink must retain its cache key and fail identity checks.
+    path = os.path.abspath(os.path.normpath(database_path()))
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    prior_identity = _INITIALIZED_DB.get(path)
+    if prior_identity is not None:
+        return _open_existing_database(path, prior_identity)
+
+    # Lock only first-use startup. Recheck inside the lock so concurrent
+    # callers neither see incomplete DDL nor block steady-state requests.
+    with _SCHEMA_LOCK:
+        prior_identity = _INITIALIZED_DB.get(path)
+        if prior_identity is not None:
+            return _open_existing_database(path, prior_identity)
+        try:
+            before_stat = os.stat(path)
+            before_identity = (before_stat.st_dev, before_stat.st_ino)
+        except FileNotFoundError:
+            before_identity = None
+        connection = sqlite3.connect(path, timeout=30.0, isolation_level=None)
+        try:
+            connection.execute("PRAGMA busy_timeout=30000")
+            metadata = os.stat(path)
+            identity = (metadata.st_dev, metadata.st_ino)
+            if before_identity is not None and identity != before_identity:
+                raise RuntimeError(
+                    "SQLite database changed while opening; recovery verification required"
+                )
+            # An existing incomplete database must never be recreated on restart.
+            if before_identity is not None and not _schema_valid(connection):
+                raise RuntimeError(
+                    "SQLite schema missing or invalid in existing database; "
+                    "recovery verification required before serving requests"
+                )
+            mode = connection.execute("PRAGMA journal_mode").fetchone()[0]
+            if mode.lower() != "wal":
+                connection.execute("PRAGMA journal_mode=WAL")
+            if before_identity is None:
                 for table in _TABLES:
                     connection.execute(
                         f"CREATE TABLE IF NOT EXISTS api_{table} ("
@@ -124,11 +345,26 @@ def _connect() -> sqlite3.Connection:
                     "CREATE TABLE IF NOT EXISTS api_rate_limits ("
                     "key TEXT PRIMARY KEY, window_start INTEGER NOT NULL, count INTEGER NOT NULL)"
                 )
-                _INITIALIZED_DB.add(path)
-        return connection
-    except Exception:
-        connection.close()
-        raise
+            if not _schema_valid(connection):
+                raise RuntimeError(
+                    "SQLite schema invalid after initialization; "
+                    "recovery verification required before serving requests"
+                )
+            after_stat = os.stat(path)
+            if identity != (after_stat.st_dev, after_stat.st_ino):
+                raise RuntimeError(
+                    "SQLite database replaced during initialization; recovery verification required"
+                )
+            _INITIALIZED_DB[path] = identity
+            _VALIDATED_SCHEMA_VERSION[path] = connection.execute(
+                "PRAGMA schema_version"
+            ).fetchone()[0]
+            _VALIDATED_SCHEMA_SIGNATURE[path] = _schema_signature(connection)
+            return connection
+        except Exception:
+            connection.close()
+            raise
+
 
 @contextmanager
 def connection() -> Iterator[sqlite3.Connection]:
