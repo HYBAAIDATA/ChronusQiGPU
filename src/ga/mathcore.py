@@ -307,6 +307,10 @@ class RicciFlowOptimizer:
 
     def set_points(self, points, steps=0):
         self.graph = {}
+        # The lattice is planar, so the dimension follows the points that were
+        # supplied rather than the class default. A mismatch here would index
+        # past the end of each coordinate pair.
+        self.dim = len(points[0]) if len(points) else self.dim
         for i in range(len(points)):
             self.graph[i] = {}
         for i in range(len(points)):
@@ -696,13 +700,16 @@ RicciFlowOptimizer.__init__ = _ricci_init
 # --- Fix coordinates() to return a NumPy array of 2-D coordinates ---
 
 def _lattice_coordinates(self):
-    coords = []
-    for (idx, _value) in self._store.values():
-        x = (idx * GOLDEN_ANGLE) % (2 * math.pi)
-        y = idx * PHI
-        z = idx * 0.5
-        coords.append((x, y, z))
-    return np.array(coords) if coords else np.zeros((0, 3))
+    """Return the stored points as an (n, 2) array of golden coordinates.
+
+    The lattice is planar: ``golden_coordinate`` returns an (x, y) pair, so
+    the stored points must have two columns for the coordinates to be
+    stackable with a target point.
+    """
+    coords = [
+        self.golden_coordinate(idx) for idx, _value in self._store.values()
+    ]
+    return np.array(coords) if coords else np.zeros((0, 2))
 
 PhyllotaxisLattice.coordinates = _lattice_coordinates
 
