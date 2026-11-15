@@ -19,7 +19,8 @@ This matrix maps the required product capabilities to the maintained source and 
 | Journal continuity | THESEUS | `storage/durable.py` | Elevated | Hash-chain replay and fresh-open verification |
 | Triad composition | TRIAD | `triad.py` | Elevated | Transform → durable commit → restart → materialise |
 | Enterprise connectors | CHRONUS | `storage/connectors.py` | Maintained | Real provider integration evidence per connector |
-| Production admission | CHRONUS | `core/qualification.py`, `scripts/ci/evaluate_attested.py` | Hardened | Exact-commit test + product-gate attestations |
+| Software-base production admission | CHRONUS | `core/qualification.py`, `scripts/ci/build_product_gates.py`, `scripts/ci/evaluate_attested.py` | Implemented; execution evidence pending | Bounded test evidence + executable product gates, independently attested for same commit/run |
+| Release publication | CHRONUS | `scripts/ci/require_release_qualification.py`, `release.yml` | Fail-closed | Successful exact-commit `CI` + successful exact-commit attested qualification on `main` |
 | External key custody | security profile | `security/kms.py` interfaces | Not yet remotely implemented | Real customer-held provider operation + FN-CUSTODY PASS |
 | Multi-region durability | THESEUS deployment | Local durable path only | Not established by branch | Replication/failover/RTO/RPO evidence |
 | Current hardware performance | CHRONUS | backend-specific | Device-specific | Current device-bound benchmark artifacts |
@@ -29,6 +30,10 @@ This matrix maps the required product capabilities to the maintained source and 
 The historical Geodesic/Tensor system contained MetricTensor, EnergyModel, PhiGPU, HybridGPU, selective folded-state operation and OpenCL operations. The maintained branch restores or supersedes those surfaces without copying old architectural duplication.
 
 The former fixed energy percentage model has been strengthened: current `EnergyModel` accepts measured values only. The former heuristic hybrid path has been strengthened: current `ProfiledHybridRouter` uses verified route observations only. The selective materialisation test explicitly prevents the implementation from satisfying a partial-read request by calling the full reconstruction path.
+
+## Deployment profile boundary
+
+`capabilities/deployment_profiles.json` defines the package/deployment split. The `software-base` profile qualifies the distributable software and durable local TRIAD. Enterprise, sovereign and hyperscaler profiles inherit that release but require their own environment-bound evidence; they do not inherit external custody, HA, provider connectivity or physical-performance claims from the base package.
 
 ## Claim boundary
 
