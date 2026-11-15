@@ -77,9 +77,8 @@ trap cleanup EXIT
 
 login_server="$(az acr show --name "$registry" --query loginServer --output tsv)"
 if [[ "$build_images" == yes ]]; then
-  az acr credential show --name "$registry" --query username --output tsv > "$work/acr-user"
-  az acr credential show --name "$registry" --query 'passwords[0].value' --output tsv \
-    | docker login "$login_server" --username "$(cat "$work/acr-user")" --password-stdin
+  # Push with the signed-in Azure identity (needs AcrPush), not the registry admin password.
+  az acr login --name "$registry" --output none
   docker build --file "$repo_root/Dockerfile" --tag "$login_server/$api_repository:$image_tag" "$repo_root"
   docker build --file "$repo_root/frontend/Dockerfile" --tag "$login_server/$web_repository:$image_tag" "$repo_root/frontend"
   docker push "$login_server/$api_repository:$image_tag"

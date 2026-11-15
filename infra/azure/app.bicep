@@ -74,32 +74,29 @@ var webConsoleRule = empty(integrationSubnetId) ? [] : [
     vnetSubnetResourceId: integrationSubnetId
   }
 ]
-var registrySettings = [
+var registryPullSettings = [
   {
     name: 'DOCKER_REGISTRY_SERVER_URL'
     value: 'https://${registry.properties.loginServer}'
   }
-  {
-    name: 'DOCKER_REGISTRY_SERVER_USERNAME'
-    value: registry.listCredentials().username
-  }
-  {
-    name: 'DOCKER_REGISTRY_SERVER_PASSWORD'
-    value: registry.listCredentials().passwords[0].value
-  }
 ]
+var acrPullRoleId = '7f951dda-4ed3-4680-a7ca-43fe172d538d'
 
 resource api 'Microsoft.Web/sites@2023-12-01' = {
   name: apiAppName
   location: plan.location
   kind: 'app,linux,container'
   tags: tags
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
     serverFarmId: plan.id
     httpsOnly: true
     clientAffinityEnabled: false
     siteConfig: {
       linuxFxVersion: 'DOCKER|${registry.properties.loginServer}/${apiImageRepository}:${imageTag}'
+      acrUseManagedIdentityCreds: true
       alwaysOn: true
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
@@ -109,7 +106,7 @@ resource api 'Microsoft.Web/sites@2023-12-01' = {
       ipSecurityRestrictions: concat(webConsoleRule, allowRules)
       scmIpSecurityRestrictionsUseMain: false
       scmIpSecurityRestrictionsDefaultAction: 'Deny'
-      appSettings: concat(registrySettings, [
+      appSettings: concat(registryPullSettings, [
         {
           name: 'WEBSITES_PORT'
           value: '8000'
@@ -142,6 +139,9 @@ resource web 'Microsoft.Web/sites@2023-12-01' = {
   location: plan.location
   kind: 'app,linux,container'
   tags: tags
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
     serverFarmId: plan.id
     httpsOnly: true
@@ -149,6 +149,7 @@ resource web 'Microsoft.Web/sites@2023-12-01' = {
     virtualNetworkSubnetId: empty(integrationSubnetId) ? null : integrationSubnetId
     siteConfig: {
       linuxFxVersion: 'DOCKER|${registry.properties.loginServer}/${webImageRepository}:${imageTag}'
+      acrUseManagedIdentityCreds: true
       alwaysOn: true
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
@@ -159,7 +160,7 @@ resource web 'Microsoft.Web/sites@2023-12-01' = {
       ipSecurityRestrictions: allowRules
       scmIpSecurityRestrictionsUseMain: false
       scmIpSecurityRestrictionsDefaultAction: 'Deny'
-      appSettings: concat(registrySettings, [
+      appSettings: concat(registryPullSettings, [
         {
           name: 'WEBSITES_PORT'
           value: '3000'
@@ -183,6 +184,27 @@ resource web 'Microsoft.Web/sites@2023-12-01' = {
         }
       ])
     }
+  }
+}
+
+// Runtime image pulls use each app's managed identity with AcrPull, not the registry admin user.
+resource apiAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(registry.id, api.id, acrPullRoleId)
+  scope: registry
+  properties: {
+    principalId: api.identity.principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', acrPullRoleId)
+  }
+}
+
+resource webAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(registry.id, web.id, acrPullRoleId)
+  scope: registry
+  properties: {
+    principalId: web.identity.principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', acrPullRoleId)
   }
 }
 
