@@ -194,6 +194,28 @@ def test_parallel_processes_initialize_sqlite_atomically(tmp_path):
         ).fetchone()[0] == 5
 
 
+def test_interrupted_staging_never_publishes_incomplete_database(
+    tmp_path, monkeypatch
+):
+    """An invalid first-use schema may not become the durable published file."""
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "sqlite")
+    database = tmp_path / "interrupt.sqlite3"
+    monkeypatch.setenv("CHRONUS_API_DB_PATH", str(database))
+    with monkeypatch.context() as patch:
+        patch.setattr(
+            state, "_SCHEMA_SQL",
+            {**state._SCHEMA_SQL, "invalid": "CREATE TABLE"},
+        )
+        with pytest.raises(sqlite3.OperationalError):
+            with state.connection():
+                pass
+    assert not database.exists()
+    with state.connection() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM api_workloads").fetchone()[0] == 0
+    assert database.exists()
+    assert state._schema_valid(sqlite3.connect(database))
+
+
 def test_fresh_sqlite_bootstrap_is_serialized_across_processes(tmp_path):
     """Independent workers must never observe a partially created schema."""
     db_path = tmp_path / "multiprocess.sqlite3"

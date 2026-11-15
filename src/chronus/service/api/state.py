@@ -304,6 +304,52 @@ def _interprocess_bootstrap_lock(path: str) -> Iterator[None]:
         os.close(fd)
 
 
+
+def _stage_brand_new_database(path: str) -> None:
+    """Publish a complete first-use database atomically; never overwrite state.
+
+    If bootstrapping crashes, the published path stays absent instead of
+    containing an incomplete database that might be mistaken for custody.
+    """
+    import tempfile
+
+    fd, temporary = tempfile.mkstemp(
+        prefix=Path(path).name + ".bootstrap-", suffix=".sqlite3",
+        dir=str(Path(path).parent),
+    )
+    os.close(fd)
+    try:
+        staged = sqlite3.connect(temporary, timeout=30.0, isolation_level=None)
+        try:
+            staged.execute("PRAGMA busy_timeout=30000")
+            staged.execute("PRAGMA journal_mode=WAL")
+            staged.execute("BEGIN IMMEDIATE")
+            try:
+                for ddl in _SCHEMA_SQL.values():
+                    staged.execute(ddl)
+                if not _schema_valid(staged):
+                    raise RuntimeError("SQLite staged bootstrap schema invalid")
+                staged.commit()
+            except Exception:
+                staged.rollback()
+                raise
+        finally:
+            staged.close()
+        # WAL is checkpointed when the final connection closes. Sync before
+        # publishing so a crash cannot expose only half the schema.
+        with open(temporary, "rb") as completed:
+            os.fsync(completed.fileno())
+        # Same-directory hard link is create-if-absent and never replaces an
+        # unexpected existing database, including a symlink/alias target.
+        os.link(temporary, path)
+    finally:
+        for suffix in ("", "-wal", "-shm"):
+            try:
+                os.unlink(temporary + suffix)
+            except FileNotFoundError:
+                pass
+
+
 def _open_existing_database(path: str, expected_identity: tuple[int, int]) -> sqlite3.Connection:
     """Open a previously initialized database without serializing all requests."""
     try:
@@ -368,6 +414,12 @@ def _connect() -> sqlite3.Connection:
         prior_identity = _INITIALIZED_DB.get(path)
         if prior_identity is not None:
             return _open_existing_database(path, prior_identity)
+        # A missing database is built at a private temporary pathname and
+        # atomically published only after a complete verified schema commit.
+        if not os.path.lexists(path):
+            _stage_brand_new_database(path)
+        elif not os.path.exists(path):
+            raise RuntimeError("SQLite database path is a broken link; recovery required")
         try:
             before_stat = os.stat(path)
             before_identity = (before_stat.st_dev, before_stat.st_ino)
@@ -398,30 +450,7 @@ def _connect() -> sqlite3.Connection:
                         "recovery verification required before serving requests"
                     )
                 if before_identity is None:
-                    for table in _TABLES:
-                        connection.execute(
-                            f"CREATE TABLE IF NOT EXISTS api_{table} ("
-                            "record_id TEXT PRIMARY KEY, tenant_id TEXT, state TEXT, "
-                            "created_at TEXT, record_json TEXT NOT NULL)"
-                        )
-                        connection.execute(
-                            f"CREATE INDEX IF NOT EXISTS api_{table}_tenant_created "
-                            f"ON api_{table} (tenant_id, created_at, record_id)"
-                        )
-                    connection.execute(
-                        "CREATE TABLE IF NOT EXISTS api_idempotency ("
-                        "tenant_id TEXT NOT NULL, key TEXT NOT NULL, body_hash TEXT NOT NULL, "
-                        "status INTEGER NOT NULL, body_json TEXT NOT NULL, headers_json TEXT NOT NULL, "
-                        "expires REAL NOT NULL, PRIMARY KEY (tenant_id, key))"
-                    )
-                    connection.execute(
-                        "CREATE INDEX IF NOT EXISTS api_idempotency_expires "
-                        "ON api_idempotency (expires)"
-                    )
-                    connection.execute(
-                        "CREATE TABLE IF NOT EXISTS api_rate_limits ("
-                        "key TEXT PRIMARY KEY, window_start INTEGER NOT NULL, count INTEGER NOT NULL)"
-                    )
+                    raise RuntimeError("SQLite staged database vanished before validation")
                 if not _schema_valid(connection):
                     raise RuntimeError(
                         "SQLite schema invalid after initialization; "
