@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // Cloud Agent browsers open the dev server at 127.0.0.1. Without this,
+  // Next blocks that origin and the console never leaves its initial check.
+  allowedDevOrigins: ["127.0.0.1"],
   /* config options here */
   experimental: {
     // Enable experimental features if needed
