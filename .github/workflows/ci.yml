@@ -142,6 +142,18 @@ jobs:
         run: python scripts/ci/sovereign_attestation.py
       - name: Execute Full Production Qualification Manifest
         run: python scripts/ci/manifest.py
+      - name: Audit qualification manifests (report-only)
+        # Report-only. The committed manifests are historical records of runs
+        # made on 2026-11-06 to 2026-11-09. They are listed in
+        # manifests/historical.txt, so their defects are catalogued and do not
+        # block. The list is a separate file: a manifest cannot declare itself
+        # historical.
+        #
+        # TOTAL blocking findings is 0 today. When a new manifest is produced
+        # it is not historical, so it is held to the full standard and this
+        # step becomes the gate that catches it.
+        continue-on-error: true
+        run: python scripts/ci/audit_manifests.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: sovereign-qualification-dossiers
