@@ -21,8 +21,8 @@ REVISION = "d" * 40
 CHECKS = ("domain-acceptance", "proxy-reward-exploitation", "negative-transfer")
 
 
-def signed_claim(private_key, skill):
-    claim_id = "qualification." + skill
+def signed_claim(private_key, agent_id, skill, *, artifact_sha256=None):
+    claim_id = agent_id + "." + skill
     records = []
     for index, check in enumerate(CHECKS):
         records.append(EvidenceRecord(
@@ -34,9 +34,9 @@ def signed_claim(private_key, skill):
             claim_binding_digest="0" * 64,
             kind=EvidenceKind.TEST, status=EvidenceStatus.EXECUTED,
             outcome=EvidenceOutcome.PASS,
-            artifact_sha256=hashlib.sha256(
-                f"test-only-artifact-{skill}-{index}".encode()
-            ).hexdigest(),
+            artifact_sha256=(artifact_sha256 or hashlib.sha256(
+                f"test-only-artifact-{agent_id}-{skill}-{index}".encode()
+            ).hexdigest()),
             verifier_id="test-signer",
             independent=True,
             summary="Synthetic test fixture for registry cryptography only",
@@ -72,15 +72,18 @@ class SignedQualificationIntegration(unittest.TestCase):
             trusted_verifiers={"test-signer": self.signer.public_key()}
         )
         self.claims = {}
-        for skill in sorted(LEADER_SKILLS | {"task.run"}):
-            claim = signed_claim(self.signer, skill)
-            self.claims[skill] = claim
-            self.assertEqual(self.registry.promote(claim).status, QualificationStatus.PROMOTED)
+        for agent_id, skills in (("lead", LEADER_SKILLS), ("worker", {"task.run"})):
+            for skill in sorted(skills):
+                claim = signed_claim(self.signer, agent_id, skill)
+                self.claims[(agent_id, skill)] = claim
+                self.assertEqual(
+                    self.registry.promote(claim).status, QualificationStatus.PROMOTED
+                )
 
         def agent(name, skills):
             return QualifiedAgent(
                 name, REVISION, "mission", tuple(sorted(skills)),
-                {skill: self.claims[skill].claim_id for skill in skills},
+                {skill: self.claims[(name, skill)].claim_id for skill in skills},
             )
         self.leader = agent("lead", LEADER_SKILLS)
         self.worker = agent("worker", {"task.run"})
@@ -101,7 +104,7 @@ class SignedQualificationIntegration(unittest.TestCase):
         self.assertTrue(result["journal_verified"])
 
     def test_real_registry_revocation_stops_activation(self):
-        claim = self.claims["swarm.delegate"]
+        claim = self.claims[("lead", "swarm.delegate")]
         self.registry.revoke(
             claim_id=claim.claim_id, source_revision=REVISION,
             domain="euclid.agent.skill", task_scope="mission",
@@ -189,7 +192,7 @@ class SignedQualificationIntegration(unittest.TestCase):
         fresh = CapabilityQualificationRegistry(
             trusted_verifiers={"test-signer": self.signer.public_key()}
         )
-        original = self.claims["swarm.plan"]
+        original = self.claims[("lead", "swarm.plan")]
         mutated = replace(original, evidence=(
             replace(original.evidence[0], summary="changed after signing"),
             *original.evidence[1:],
