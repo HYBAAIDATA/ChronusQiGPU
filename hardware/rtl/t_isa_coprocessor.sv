@@ -1,10 +1,47 @@
 // =============================================================================
-//  AL HARAS TOPOLOGICAL INSTRUCTION SET ARCHITECTURE (T-ISA)
-//  HARDWARE COPROCESSOR SPECIFICATION & SYNTHESIZABLE RTL (SYSTEMVERILOG)
+//  AL HARAS T-ISA COPROCESSOR: UNVERIFIED RTL SKETCH (SYSTEMVERILOG)
 // =============================================================================
-//  Target: RISC-V RoCC (Rocket Custom Coprocessor) / Xilinx UltraScale+ / Intel Agilex
-//  "Speak friend and enter or you shall not pass."
-//  Zero-Door Architecture: Security enforced at clock-cycle & ALU gate level.
+//  Status: design sketch only. This file has not been simulated, linted,
+//  synthesised or timed in this repository's CI (the rtl-synthesis job covers
+//  hw/*.sv only) and has not run on any FPGA or ASIC. No device target, clock
+//  frequency or resource figure has been established.
+//
+//  Reference model: src/chronus/security/al_haras/hardware_t_isa.py. Its
+//  RTL_SEMANTICS table records, per funct7, whether this RTL computes the same
+//  function as the model. tests/test_al_haras_hardware_zk_formal_exact.py
+//  evaluates the T_CYCLO_MUL expressions below against the exact Z[zeta_5]
+//  product.
+//
+//  Timing by construction: one registered stage. A command accepted on a clock
+//  edge produces resp_valid on the next edge. This is a structural property of
+//  the sketch, not a measured latency.
+//
+//  What each funct7 does here:
+//    0x01 T_CYCLO_ADD      coefficient-wise add, 32-bit wrap            (= model)
+//    0x02 T_CYCLO_MUL      product mod Phi_5(x), 32-bit wrap            (= model)
+//    0x03 T_SHEAF_INSPECT  exception 4'hE iff rs1 != rs2               (= model)
+//    0x04 T_DSW_HEAL       register move rd <= rs2; no parity storage and
+//                          no error correction    (model: Reed-Solomon scrub)
+//    0x05 T_STARK_EVAL     returns the constant 1; evaluates nothing
+//                                                 (model: F_257 identity check)
+//    0x06 T_RICCI_INSPECT  exception 4'hC iff a0 < 0 (a sign test)      (= model)
+//    0x07 T_HODGE_PROJ     rd <= (a0, a1, 0, 0)                         (= model)
+//    0x08 T_ANOSOV_PURGE   cat map on the two low bytes of a0 only, results
+//                          truncated to 8 bits        (model: all coefficients)
+//    other funct7          illegal-instruction exception 4'h2
+//
+//  Known gaps (not addressed in this sketch):
+//    * No load path: the RoCC rs1/rs2 operand values are not ports, so the
+//      register file is only written with ALU results, and it is not reset.
+//    * cmd_opcode and cmd_funct3 are not decoded.
+//    * cmd_ready stays 1, so a response the host has not yet accepted
+//      (resp_valid && !resp_ready) is overwritten by the next command.
+//    * No memory interface: the egress gate of the Python model has no
+//      counterpart here.
+//  Corrected in this revision: the T_CYCLO_MUL reduction (the previous
+//  expressions did not compute the product mod Phi_5(x)), and the sheaf trap,
+//  which tested a 64-bit sum of squares that wraps to zero when every 32-bit
+//  difference equals -2^31.
 // =============================================================================
 
 `timescale 1ns / 1ps
@@ -12,7 +49,7 @@
 module t_isa_coprocessor #(
     parameter DATA_WIDTH       = 128, // 4 x 32-bit signed coefficients in Z[zeta_5]
     parameter REG_ADDR_WIDTH   = 5,   // 32 architectural cyclotomic registers
-    parameter PRIME_MODULUS    = 257  // Galois Field prime F_257
+    parameter PRIME_MODULUS    = 257  // F_257 (used by the cat map below)
 )(
     input  logic                     clk,
     input  logic                     rst_n,
@@ -20,9 +57,9 @@ module t_isa_coprocessor #(
     // RISC-V RoCC Command Interface
     input  logic                     cmd_valid,
     output logic                     cmd_ready,
-    input  logic [6:0]               cmd_opcode,    // Custom-0: 7'b0001011 (0x0B)
-    input  logic [2:0]               cmd_funct3,    // Sub-operation select
-    input  logic [6:0]               cmd_funct7,    // Extended microcode select
+    input  logic [6:0]               cmd_opcode,    // Custom-0: 7'b0001011 (0x0B); not decoded
+    input  logic [2:0]               cmd_funct3,    // not decoded
+    input  logic [6:0]               cmd_funct7,    // operation select
     input  logic [REG_ADDR_WIDTH-1:0] cmd_rs1,
     input  logic [REG_ADDR_WIDTH-1:0] cmd_rs2,
     input  logic [REG_ADDR_WIDTH-1:0] cmd_rd,
@@ -33,11 +70,11 @@ module t_isa_coprocessor #(
     output logic [DATA_WIDTH-1:0]    resp_data,
     output logic [REG_ADDR_WIDTH-1:0] resp_rd,
     output logic                     resp_exception,
-    output logic [3:0]               resp_exc_code  // 4'hE = Sheaf Obstruction Trap
+    output logic [3:0]               resp_exc_code  // 4'hE sheaf trap, 4'hC sign trap, 4'h2 illegal
 );
 
     // -------------------------------------------------------------------------
-    // T-ISA Funct7 Microcode Encoding (Custom-0 Opcode = 7'b0001011)
+    // T-ISA funct7 encoding (Custom-0 opcode = 7'b0001011)
     // -------------------------------------------------------------------------
     localparam [6:0] OPC_CYCLO_ADD    = 7'b0000001;
     localparam [6:0] OPC_CYCLO_MUL    = 7'b0000010;
@@ -49,8 +86,7 @@ module t_isa_coprocessor #(
     localparam [6:0] OPC_ANOSOV_PURGE = 7'b0001000;
 
     // -------------------------------------------------------------------------
-    // 32-Register Cyclotomic Register File: 32 x 128-bit
-    // Each register holds (c0, c1, c2, c3) mod (x^4 + x^3 + x^2 + x + 1)
+    // Register file: 32 x 128-bit, each (c0, c1, c2, c3) in Z[zeta_5]
     // -------------------------------------------------------------------------
     logic [DATA_WIDTH-1:0] regfile [0:(1<<REG_ADDR_WIDTH)-1];
 
@@ -70,7 +106,7 @@ module t_isa_coprocessor #(
     wire signed [31:0] b3 = rs2_data[127:96];
 
     // -------------------------------------------------------------------------
-    // Arithmetic Unit 1: Cyclotomic Addition (c = a + b)
+    // Unit 1: cyclotomic addition (c = a + b), 32-bit wrap per coefficient
     // -------------------------------------------------------------------------
     wire [DATA_WIDTH-1:0] cyclo_add_res = {
         (a3 + b3),
@@ -80,14 +116,16 @@ module t_isa_coprocessor #(
     };
 
     // -------------------------------------------------------------------------
-    // Arithmetic Unit 2: Cyclotomic Multiplication Modulo Phi_5(x)
-    // Phi_5(x) = x^4 + x^3 + x^2 + x + 1 => x^4 = -x^3 - x^2 - x - 1
+    // Unit 2: multiplication in Z[x]/(Phi_5(x)), Phi_5(x) = x^4 + x^3 + x^2 + x + 1
+    // With d_k = sum_{i+j=k} a_i*b_j and x^4 = -(1 + x + x^2 + x^3), x^5 = 1, x^6 = x:
+    //   c0 = d0 - d4 + d5,  c1 = d1 - d4 + d6,  c2 = d2 - d4,  c3 = d3 - d4
+    // Products are formed at 64 bits; each stored coefficient keeps the low 32
+    // bits (two's-complement wrap).
     // -------------------------------------------------------------------------
-    // Degree 6 polynomial expansion followed by exact quotient reduction:
-    wire signed [63:0] p0 = (a0*b0) - (a3*b1) - (a2*b2) - (a1*b3);
-    wire signed [63:0] p1 = (a1*b0) + (a0*b1) - (a3*b2) - (a2*b3) - (a3*b1);
-    wire signed [63:0] p2 = (a2*b0) + (a1*b1) + (a0*b2) - (a3*b3) - (a3*b2) - (a2*b3);
-    wire signed [63:0] p3 = (a3*b0) + (a2*b1) + (a1*b2) + (a0*b3) - (a3*b3);
+    wire signed [63:0] p0 = (a0*b0) - (a1*b3) - (a2*b2) - (a3*b1) + (a2*b3) + (a3*b2);
+    wire signed [63:0] p1 = (a0*b1) + (a1*b0) - (a1*b3) - (a2*b2) - (a3*b1) + (a3*b3);
+    wire signed [63:0] p2 = (a0*b2) + (a1*b1) + (a2*b0) - (a1*b3) - (a2*b2) - (a3*b1);
+    wire signed [63:0] p3 = (a0*b3) + (a1*b2) + (a2*b1) + (a3*b0) - (a1*b3) - (a2*b2) - (a3*b1);
 
     wire [DATA_WIDTH-1:0] cyclo_mul_res = {
         p3[31:0],
@@ -97,50 +135,49 @@ module t_isa_coprocessor #(
     };
 
     // -------------------------------------------------------------------------
-    // Topological Unit 3: Cellular Sheaf Laplacian Obstruction Inspector
-    // Evaluates delta_0 residual: ||rs1 - rs2||^2.
-    // If residual != 0, trips hardware trap (resp_exception = 1'b1).
+    // Unit 3: sheaf edge check. For the constant sheaf on the edge rs1 -> rs2 the
+    // coboundary is rs2 - rs1, which is zero iff the two registers are equal, so
+    // the trap tests equality directly. The response carries ||rs1 - rs2||^2
+    // mod 2^64 for information only: that sum can wrap to zero, so it is not
+    // used for the decision.
     // -------------------------------------------------------------------------
     wire signed [31:0] d0 = a0 - b0;
     wire signed [31:0] d1 = a1 - b1;
     wire signed [31:0] d2 = a2 - b2;
     wire signed [31:0] d3 = a3 - b3;
 
-    wire [63:0] sheaf_h1_norm_sq = (d0*d0) + (d1*d1) + (d2*d2) + (d3*d3);
-    wire sheaf_obstruction_detected = (sheaf_h1_norm_sq != 64'd0);
+    wire [63:0] sheaf_residual_norm_sq = (d0*d0) + (d1*d1) + (d2*d2) + (d3*d3);
+    wire sheaf_obstruction_detected = (rs1_data != rs2_data);
 
     // -------------------------------------------------------------------------
-    // Topological Unit 4: Donaldson-Seiberg-Witten (DSW) 1-Cycle Monopole Healer
-    // Instantly routes authentic ground-truth stalk (rs2) to destination (rd).
-    // Execution latency: Exactly 1 clock cycle.
+    // Unit 4: T_DSW_HEAL is only a register move here (rd <= rs2). This RTL
+    // stores no parity and detects or corrects nothing; the Reed-Solomon scrub
+    // exists only in the Python model.
     // -------------------------------------------------------------------------
-    wire [DATA_WIDTH-1:0] dsw_healed_data = rs2_data;
+    wire [DATA_WIDTH-1:0] dsw_move_data = rs2_data;
 
     // -------------------------------------------------------------------------
-    // Topological Unit 5: Ollivier-Ricci Curvature De-cloaking Inspector
-    // Evaluates discrete Ricci curvature neck indicator (a0 represents curvature).
-    // If a0 < 0, a bottleneck C2 channel is detected.
+    // Unit 5: sign test of a0 (traps when a0 < 0). The notes call this a
+    // Ricci-curvature indicator; no curvature is computed.
     // -------------------------------------------------------------------------
     wire ricci_anomaly_detected = (a0 < 32'sd0);
 
     // -------------------------------------------------------------------------
-    // Topological Unit 6: Hodge Orthogonal Subspace Projector
-    // P_exact: Projects input signal (rs1) into irrotational gradient subspace,
-    // zeroing out solenoidal covert channel timing leakage (a2, a3).
+    // Unit 6: coordinate projection keeping (a0, a1) and zeroing (a2, a3).
     // -------------------------------------------------------------------------
     wire [DATA_WIDTH-1:0] hodge_projected_data = {32'd0, 32'd0, a1, a0};
 
     // -------------------------------------------------------------------------
-    // Topological Unit 7: Anosov Ergodic Toral Hyperbolic Scrambler
-    // Arnold's cat map over F_257: (2*x + y, x + y) mod 257.
-    // Rapidly scatters key bytes into uniform maximum entropy in 1 clock cycle.
+    // Unit 7: Arnold cat map (2x + y, x + y) mod 257 on the two low bytes of a0
+    // (x = bits [7:0], y = bits [15:8]). Results keep 8 bits, so a value of 256
+    // is stored as 0. The map is a permutation, not an erasure.
     // -------------------------------------------------------------------------
     wire [15:0] cat_map_x = (16'd2 * rs1_data[7:0] + rs1_data[15:8]) % 16'd257;
     wire [15:0] cat_map_y = (rs1_data[7:0] + rs1_data[15:8]) % 16'd257;
     wire [DATA_WIDTH-1:0] anosov_purged_data = {96'd0, 8'd0, cat_map_y[7:0], 8'd0, cat_map_x[7:0]};
 
     // -------------------------------------------------------------------------
-    // Pipeline & Control State Machine
+    // Control: single registered stage
     // -------------------------------------------------------------------------
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -169,9 +206,9 @@ module t_isa_coprocessor #(
                     end
 
                     OPC_SHEAF_INSP: begin
-                        resp_data      <= {64'd0, sheaf_h1_norm_sq};
+                        resp_data      <= {64'd0, sheaf_residual_norm_sq};
                         if (sheaf_obstruction_detected) begin
-                            // Trip Hardware Sheaf Obstruction Trap (Fault Code 4'hE)
+                            // Sheaf trap (fault code 4'hE)
                             resp_exception <= 1'b1;
                             resp_exc_code  <= 4'hE;
                         end else begin
@@ -181,15 +218,15 @@ module t_isa_coprocessor #(
                     end
 
                     OPC_DSW_HEAL: begin
-                        // 1-Cycle Monopole Trace Repair
-                        resp_data      <= dsw_healed_data;
+                        // Register move only (see Unit 4)
+                        resp_data      <= dsw_move_data;
                         resp_exception <= 1'b0;
                         resp_exc_code  <= 4'h0;
-                        if (cmd_rd != 0) regfile[cmd_rd] <= dsw_healed_data;
+                        if (cmd_rd != 0) regfile[cmd_rd] <= dsw_move_data;
                     end
 
                     OPC_STARK_EVAL: begin
-                        // O(1) Quotient verification indicator
+                        // Placeholder: constant 1, nothing is evaluated
                         resp_data      <= {96'd0, 32'h00000001};
                         resp_exception <= 1'b0;
                         resp_exc_code  <= 4'h0;
@@ -198,7 +235,7 @@ module t_isa_coprocessor #(
                     OPC_RICCI_INSP: begin
                         resp_data      <= {96'd0, (ricci_anomaly_detected ? 32'hFFFFFFFF : 32'h00000001)};
                         if (ricci_anomaly_detected) begin
-                            // Trip Hardware Ricci Curvature Neck Singularity Trap (Fault Code 4'hC)
+                            // Sign trap (fault code 4'hC)
                             resp_exception <= 1'b1;
                             resp_exc_code  <= 4'hC;
                         end else begin
@@ -209,7 +246,7 @@ module t_isa_coprocessor #(
                     end
 
                     OPC_HODGE_PROJ: begin
-                        // Exact subspace projection: covert channel nullification
+                        // Coordinate projection (see Unit 6)
                         resp_data      <= hodge_projected_data;
                         resp_exception <= 1'b0;
                         resp_exc_code  <= 4'h0;
@@ -217,7 +254,7 @@ module t_isa_coprocessor #(
                     end
 
                     OPC_ANOSOV_PURGE: begin
-                        // 1-Cycle Ergodic Memory Purge
+                        // Cat map on the low bytes of a0 (see Unit 7)
                         resp_data      <= anosov_purged_data;
                         resp_exception <= 1'b0;
                         resp_exc_code  <= 4'h0;

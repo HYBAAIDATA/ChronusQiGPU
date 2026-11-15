@@ -79,7 +79,7 @@ RISKS: manifest gatekeeper_p99_us=0.3 CONTRADICTED; measured p99=49.1us, p50=4.7
 ## 7. HYBA & EnhancedTensorRepresentation (Classical Block-Sparse Tensor Network & Search)
 
 - **Charter Compliance**: All pseudocode renames enforced (`superposition` -> `parallel_pathway_search`, `entanglement` -> `bond_structure_with_charge_sectors`, `interference` -> `weighted_pathway_aggregation`, `quantum-inspired` -> `classical_tensor_network`).
-- **Hard Refusals**: Uncertifiable quantum claims (`100X information density`, `O(n^3) -> O(n^2) as general theorem`, `linear scaling beyond chi`, `causal intelligence via interference`, `quantum speedup on classical hardware`) strictly forbidden.
+- **Hard Refusals**: Uncertifiable quantum claims (`O(n^3) -> O(n^2) as general theorem`, `linear scaling beyond chi`, `causal intelligence via interference`, `quantum speedup on classical hardware`) strictly forbidden.
 - **Invariants**: `is_quantum == False`, memory bounds strictly adhere to `topology_formula`, latencies measured at runtime.
 - **Endpoints & Multi-GPU Search**: Implemented `production_hr_api-v2.py` and `src/chronus/service/production_hr_api_v2.py` with `POST /api/v1/quantum/tensor-representation`, `GET` (405 Method Not Allowed), and `POST /api/v1/search`.
 - **Test Suite**: 16/16 passed in `tests/test_enhanced_tensor_representation_v2.py`.

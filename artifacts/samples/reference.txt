@@ -1,0 +1,2 @@
+Reference codec measurement sample.
+This text is synthetic and contains no customer data.

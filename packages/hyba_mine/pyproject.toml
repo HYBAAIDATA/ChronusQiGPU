@@ -1,0 +1,41 @@
+# Copyright (c) 2026 HYBA Software Ltd. All rights reserved.
+#
+# hyba-mine: HYBA's internal, private treasury mining runtime. Not a product.
+# It consumes hyba-chronus (installed first from the repository root, see
+# scripts/mine/setup_mac.sh); hyba-chronus is deliberately not declared as a
+# dependency so pip never looks for it on a public index.
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hyba-mine"
+version = "0.1.0.dev0"
+description = "HYBA Mine: HYBA's internal treasury mining runtime on the Chronus iGPU (internal; not a product)"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Private :: Do Not Upload",
+    "License :: Other/Proprietary License",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = []
+
+[project.optional-dependencies]
+metal = ["pyobjc-framework-Metal>=10.3; sys_platform == 'darwin'"]
+
+[project.scripts]
+hyba-mine = "hyba_mine.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["hyba_mine*"]

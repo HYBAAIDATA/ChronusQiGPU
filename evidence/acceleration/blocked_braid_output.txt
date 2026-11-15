@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/data/cyclo/evidence/acceleration/blocked_braid_test.py", line 7, in <module>
+    assert not missing, f'F/R/pentagon API absent: {missing}'
+           ^^^^^^^^^^^
+AssertionError: F/R/pentagon API absent: ['F_matrix', 'R_matrix', 'verify_pentagon']
+exit status: 1

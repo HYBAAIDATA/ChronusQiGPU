@@ -16,11 +16,13 @@ Zero floating point; strictly compliant with CI purity gate.
 
 import concurrent.futures
 import logging
+import os
 import time
 from typing import Any, Dict, List, Optional
 
 from chronus.backends.lattice import HardwareUnavailableError
 from chronus.execution.cuda_backend import CUDABackendAdapter
+from chronus.execution.native_simd import NativeSIMDBackendAdapter
 from chronus.execution.opencl_backend import OpenCLAcceleratorBackend
 from chronus.execution.opencl_sha256d import OpenCLSha256dMinerBackend
 from chronus.execution.geometric_galois_miner import GeometricGaloisMinerBackend
@@ -40,7 +42,11 @@ PHYSICAL_HARDWARE_EXECUTION = "PHYSICAL_HARDWARE_EXECUTION"
 class HardwareAcceleratorDispatcher:
     """Dispatches workloads across mathematical, software, and physical hardware surfaces."""
 
-    def __init__(self, default_timeout_seconds: int = 30) -> None:
+    def __init__(
+        self,
+        default_timeout_seconds: int = 30,
+        enable_simd: bool = False,
+    ) -> None:
         self.default_timeout_seconds = default_timeout_seconds
         self._reference_backend = NativeMathReferenceBackend()
         self._opencl_backend = OpenCLAcceleratorBackend()
@@ -48,6 +54,7 @@ class HardwareAcceleratorDispatcher:
         self._rtl_backend = SystemVerilogHardwareSimulatorBackend()
         self._opencl_miner_backend = OpenCLSha256dMinerBackend()
         self._geometric_galois_backend = GeometricGaloisMinerBackend()
+        self._simd_backend = NativeSIMDBackendAdapter()
 
         self._backends: Dict[str, Any] = {
             self._reference_backend.name: self._reference_backend,
@@ -57,6 +64,8 @@ class HardwareAcceleratorDispatcher:
             self._opencl_miner_backend.name: self._opencl_miner_backend,
             self._geometric_galois_backend.name: self._geometric_galois_backend,
         }
+        if enable_simd or os.getenv("CHRONUS_ENABLE_SIMD") == "1":
+            self._backends[self._simd_backend.name] = self._simd_backend
 
     def register_backend(self, backend: Any) -> None:
         """Register an additional hardware or execution backend."""
@@ -130,6 +139,8 @@ class HardwareAcceleratorDispatcher:
                 backend = self._opencl_backend
             elif self._rtl_backend.supports(workload_type):
                 backend = self._rtl_backend
+            elif self._simd_backend.supports(workload_type):
+                backend = self._simd_backend
             else:
                 backend = self._reference_backend
 

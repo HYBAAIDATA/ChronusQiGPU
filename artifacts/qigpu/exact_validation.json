@@ -1,0 +1,11 @@
+{
+  "command": "python -m coverage run --branch docs/qigpu/pasted-text.txt",
+  "finding": "Reject mixed-ring matrices, inexact feature coordinates, unequal vector dimensions and truncated unfold inputs; report actual padding. Seven new tests cover these cases; exhaustive public-function-by-class coverage remains open.",
+  "implementation_coverage": {
+    "branch_percent": 91.76,
+    "statement_percent": 97.78
+  },
+  "source_sha256": "112920e52d2ff6dc24adecb943989473fac309e8bfeaab394a885447bd79970a",
+  "step": "Exact-path validation and cross-module tests",
+  "tests_passed": 120
+}

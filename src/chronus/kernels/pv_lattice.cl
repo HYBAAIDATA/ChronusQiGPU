@@ -186,3 +186,15 @@ __kernel void phase_consensus(
     marked_out[lane] = (uint)(((ulong)marked + (ulong)beta * mean) % 257);
     unmarked_out[lane] = (uint)(((ulong)u + (ulong)beta * mean) % 257);
 }
+
+// Host reduces the full scale index modulo 516 before supplying c,d.
+// F_257 residues include 256: use ushort storage and uint intermediates.
+__kernel void pv_field_scale(
+    __global const ushort2 *inputs, __global ushort2 *outputs,
+    const uint c, const uint d
+) {
+    size_t i = get_global_id(0);
+    uint a = inputs[i].x, b = inputs[i].y;
+    outputs[i] = (ushort2)((a*c + b*d) % 257U,
+                          (a*d + b*c + b*d) % 257U);
+}

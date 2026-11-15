@@ -199,3 +199,26 @@ def test_trinity_scale_index_composes_with_lattice_fold():
     )
     expected = PhiElement(3, -2, 7).multiply(phi_power(137))
     assert direct.result["values"][0]["a"] == str(expected.a)
+
+
+@pytest.mark.parametrize('index,expected', [
+    (10**4, (170,73)), (10**5, (186,210)), (10**12,(87,160)),
+    (10**15,(96,216)), (10**18,(2,3)), (10**20,(248,130)),
+])
+def test_structural_scale_field_factor_and_lucas_trace(index, expected):
+    from chronus.core.scaling import PVScale
+    scale = PVScale(index)
+    assert scale.index == index
+    assert scale.field_factor() == expected
+    assert scale.field_trace() == (2*expected[0]+expected[1]) % 257
+    assert scale.advance(516).field_factor() == expected
+    assert scale.advance(516).index == index + 516
+
+
+def test_integer_lattice_does_not_reduce_by_field_period():
+    # The integer domain must retain information erased by reduction to F_257.
+    assert phi_power(516) != PhiElement(1, 0)
+    a, b = 1, 0
+    for order in range(1000):
+        assert phi_power(order) == PhiElement(a, b)
+        a, b = b, a+b

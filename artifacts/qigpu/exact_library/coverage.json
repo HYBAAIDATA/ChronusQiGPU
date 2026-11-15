@@ -1,0 +1,8 @@
+{
+  "file": "src/turing/",
+  "total_executable_lines": 987,
+  "executed_lines": 918,
+  "missing_lines": 69,
+  "coverage_percentage": 93.0,
+  "status": "PASS"
+}

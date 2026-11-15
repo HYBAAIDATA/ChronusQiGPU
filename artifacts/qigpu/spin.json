@@ -1,0 +1,11 @@
+{
+  "command": "python -m coverage run --branch docs/qigpu/pasted-text.txt",
+  "finding": "Two-site XX+YY+ZZ is integer-valued despite individual Y needing i. Spectral projectors yield exact evolution at 2*pi*k/5; arbitrary times, larger systems and physical hardware remain unimplemented.",
+  "implementation_coverage": {
+    "branch_percent": 91.94,
+    "statement_percent": 98.14
+  },
+  "source_sha256": "d069e9ac86ee9f4612180f68291a58ded81ff7c9c7059abf343c4319e3ca2fc1",
+  "step": "Exact two-site XXX Hamiltonian and discrete evolution",
+  "tests_passed": 158
+}

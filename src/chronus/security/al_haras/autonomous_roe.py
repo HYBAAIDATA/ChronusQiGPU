@@ -1,187 +1,228 @@
 """
-AL HARAS — SOVEREIGN HORIZON 5: AUTONOMOUS RULES OF ENGAGEMENT (ROE)
-================================================================================
-Topological Simplicial Homology Chain Boundary Verification for Defense Autonomy.
-"Speak friend and enter or you shall not pass."
+AL HARAS (HYBA Security): policy-criteria completeness check for review requests.
 
-Enforces algorithmic compliance with the Law of Armed Conflict (LOAC),
-International Humanitarian Law (IHL), and sovereign Rules of Engagement (ROE)
-for autonomous defense systems (unmanned aerial systems, cyber countermeasures).
+Historical name in the product notes: "autonomous rules of engagement". The
+class names ``AutonomousROEValidator``, ``ROECriterion`` and
+``EngagementSimplex`` are kept for import compatibility only.
 
-Key Invariants:
-  1. Simplicial Chain Homology Boundary Closure (partial_1 gamma == 0):
-     - An autonomous action is represented as a directed 1-simplex across
-       mandatory operational criteria: Positive Identification (PID),
-       Proportionality, Sanctuary Exclusion, and Sovereign Command Quorum.
-     - Engagement releases ONLY when the boundary operator partial_1 gamma == 0.
-     - If any criterion is unmet, partial_1 gamma != 0, triggering an unbypassable
-       topological obstruction that blocks weapon release in hardware.
-  2. Zero-Knowledge Strike & Treaty Verification Receipts:
-     - Emits cryptographic receipts proving algorithmic compliance without
-       leaking classified sensor telemetry, target coordinates, or weapon signatures.
-  3. Zero Floating-Point Approximations:
-     - Chain boundary evaluations operate strictly over exact integer chains.
-================================================================================
+This module does not authorise, recommend, rank or execute any action, and it
+never authorises an engagement or any use of force. It answers one
+bookkeeping question about a review request record: does the record contain
+every approval the configured policy requires, recorded by enough distinct
+people, with the stated risk score within the stated ceiling? Whatever the
+answer, a decision always requires an accountable human; a complete record
+only means the request can be put to that person.
+
+Simplicial reading (exact and small): the required criteria R are the vertices
+of a simplex Delta_R, and the approvals present in the record span the face
+Delta_(R and A). The record is complete for the criteria iff that face is all
+of Delta_R; the number of missing vertices |R minus A| (the face's
+codimension) is reported as ``boundary_defect_norm``. The distinct-approver
+and risk-ceiling checks add their own violation codes.
+
+Every evaluation, complete or not, returns a review record signed with Ed25519
+(``receipts.py``) over canonical JSON. The record is tamper-evident; it is not
+a zero-knowledge proof and attests nothing about legality or about compliance
+with any law or treaty.
 """
 
-import hashlib
+import re
 import time
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any, Dict, FrozenSet, Iterable, List, Mapping, Optional, Set, Tuple
+
+from chronus.security.al_haras.receipts import ReceiptSigner, default_signer, signed_receipt
+
+RECORD_TYPE = "policy-criteria-completeness-check"
+DECISION_AUTHORITY = (
+    "an accountable human reviewer; this software checks record completeness "
+    "only and makes no decision"
+)
+_HEX64 = re.compile(r"[0-9a-f]{64}")
 
 
 class ROECriterion(str, Enum):
-    POSITIVE_IDENTIFICATION_PID = "POSITIVE_IDENTIFICATION_PID"
-    PROPORTIONALITY_ESTIMATED = "PROPORTIONALITY_ESTIMATED"
-    SANCTUARY_ZONE_EXCLUDED = "SANCTUARY_ZONE_EXCLUDED"
-    COMMAND_QUORUM_AUTHORIZED = "COMMAND_QUORUM_AUTHORIZED"
+    """Neutral approval criteria a policy can require (historical class name)."""
+
+    SUBJECT_IDENTIFIED = "SUBJECT_IDENTIFIED"
+    RISK_ASSESSMENT_RECORDED = "RISK_ASSESSMENT_RECORDED"
+    EXCLUSIONS_CHECKED = "EXCLUSIONS_CHECKED"
+    LEGAL_REVIEW_RECORDED = "LEGAL_REVIEW_RECORDED"
+
+
+def _normalise_approvals(approvals: Mapping[Any, Any]) -> Tuple[Dict[ROECriterion, str], List[str]]:
+    recognised: Dict[ROECriterion, str] = {}
+    unrecognised: List[str] = []
+    for key, approver in (approvals or {}).items():
+        try:
+            criterion = key if isinstance(key, ROECriterion) else ROECriterion(key)
+        except ValueError:
+            unrecognised.append(str(key))
+            continue
+        if isinstance(approver, str) and approver.strip():
+            recognised[criterion] = approver.strip()
+    return recognised, sorted(unrecognised)
+
+
+def _non_negative_int(name: str, value: Any) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise TypeError(f"{name} must be an integer")
+    if value < 0:
+        raise ValueError(f"{name} must be non-negative")
+    return value
 
 
 @dataclass
 class EngagementSimplex:
-    """A candidate autonomous defense engagement request."""
-    mission_id: str
-    target_token_hash: str
-    satisfied_criteria: Set[ROECriterion]
-    command_quorum_token: str
-    collateral_risk_index_integer: int  # Exact integer scale 0 to 100
-    authorized_risk_ceiling_integer: int = 25  # Maximum permissible risk ceiling
+    """A review-request record (historical class name). Nothing in it is acted on.
+
+    ``subject_commitment`` is a caller-supplied SHA-256 hex digest of the
+    request subject; it is stored and checked for format, never interpreted.
+    ``approvals`` maps each criterion to the identifier of the person who
+    recorded it.
+    """
+
+    request_id: str
+    subject_commitment: str
+    approvals: Dict[ROECriterion, str]
+    risk_score: int
+    risk_ceiling: int
+
+    @property
+    def satisfied_criteria(self) -> Set[ROECriterion]:
+        return set(_normalise_approvals(self.approvals)[0])
 
 
 class AutonomousROEValidator:
-    """
-    Topological ROE & Treaty Compliance Engine.
-    Evaluates simplicial boundary closure for autonomous actions.
-    """
+    """Completeness check for review records (historical class name; see module docstring)."""
 
-    MANDATORY_CRITERIA: Set[ROECriterion] = {
-        ROECriterion.POSITIVE_IDENTIFICATION_PID,
-        ROECriterion.PROPORTIONALITY_ESTIMATED,
-        ROECriterion.SANCTUARY_ZONE_EXCLUDED,
-        ROECriterion.COMMAND_QUORUM_AUTHORIZED,
-    }
+    DEFAULT_REQUIRED_CRITERIA: FrozenSet[ROECriterion] = frozenset(ROECriterion)
 
-    def __init__(self, sovereign_authority: str = "FVEY_COMBINED_DEFENSE_COMMAND") -> None:
-        self.sovereign_authority = sovereign_authority
-
-    def evaluate_boundary_closure(
+    def __init__(
         self,
-        engagement: EngagementSimplex,
-    ) -> Tuple[bool, int, List[str]]:
-        """
-        Computes simplicial boundary partial_1 gamma.
-        Returns (is_closed, boundary_defect_norm, violation_reasons).
-        """
+        policy_owner: str = "POLICY_OWNER_UNSPECIFIED",
+        required_criteria: Optional[Iterable[ROECriterion]] = None,
+        min_distinct_approvers: int = 2,
+    ) -> None:
+        required = frozenset(self.DEFAULT_REQUIRED_CRITERIA if required_criteria is None else required_criteria)
+        if not required or not all(isinstance(c, ROECriterion) for c in required):
+            raise ValueError("required_criteria must be a non-empty set of ROECriterion members")
+        _non_negative_int("min_distinct_approvers", min_distinct_approvers)
+        if not 1 <= min_distinct_approvers <= len(required):
+            raise ValueError("min_distinct_approvers must be between 1 and the number of required criteria")
+        self.policy_owner = policy_owner
+        self.required_criteria = required
+        self.min_distinct_approvers = min_distinct_approvers
+
+    def _assess(self, request: EngagementSimplex) -> Dict[str, Any]:
+        score = _non_negative_int("risk_score", request.risk_score)
+        ceiling = _non_negative_int("risk_ceiling", request.risk_ceiling)
+        approvals, unrecognised = _normalise_approvals(request.approvals)
         violations: List[str] = []
-
-        # 1. Missing mandatory criteria
-        missing_criteria = self.MANDATORY_CRITERIA - engagement.satisfied_criteria
-        for missing in missing_criteria:
-            violations.append(f"MISSING_MANDATORY_CRITERION_{missing.value}")
-
-        # 2. Proportionality constraint
-        if engagement.collateral_risk_index_integer > engagement.authorized_risk_ceiling_integer:
-            excess = engagement.collateral_risk_index_integer - engagement.authorized_risk_ceiling_integer
-            violations.append(f"PROPORTIONALITY_VIOLATION_EXCESS_RISK_{excess}")
-
-        # 3. Command authorization validity
-        if not engagement.command_quorum_token or len(engagement.command_quorum_token) < 16:
-            violations.append("INVALID_COMMAND_QUORUM_TOKEN")
-
-        boundary_defect_norm = len(violations)
-        is_closed = (boundary_defect_norm == 0)
-
-        return is_closed, boundary_defect_norm, violations
-
-    def authorize_autonomous_engagement(
-        self,
-        engagement: EngagementSimplex,
-    ) -> Dict[str, Any]:
-        """
-        Validates engagement against topological ROE invariants.
-        If compliant, generates an immutable zero-knowledge strike verification receipt.
-        """
-        t0 = time.perf_counter()
-        is_closed, defect_norm, violations = self.evaluate_boundary_closure(engagement)
-        elapsed = time.perf_counter() - t0
-
-        if not is_closed:
-            return {
-                "authorized": False,
-                "mission_id": engagement.mission_id,
-                "status": "ENGAGEMENT_OBSTRUCTED_ROE_BOUNDARY_DEFECT",
-                "boundary_defect_norm": defect_norm,
-                "violations": violations,
-                "zk_receipt": None,
-                "evaluation_duration_seconds": elapsed,
-            }
-
-        # Generate Zero-Knowledge Verification Receipt
-        zk_receipt = self._build_zk_roe_receipt(engagement)
-
+        request_id = request.request_id if isinstance(request.request_id, str) and request.request_id.strip() else None
+        if request_id is None:
+            violations.append("INVALID_REQUEST_ID")
+        commitment = request.subject_commitment if isinstance(request.subject_commitment, str) else None
+        if commitment is None or not _HEX64.fullmatch(commitment):
+            violations.append("INVALID_SUBJECT_COMMITMENT")
+        present = sorted((c for c in approvals if c in self.required_criteria), key=lambda c: c.value)
+        missing = sorted(self.required_criteria - set(present), key=lambda c: c.value)
+        violations.extend(f"MISSING_REQUIRED_CRITERION_{c.value}" for c in missing)
+        approvers = {approvals[c] for c in present}
+        if len(approvers) < self.min_distinct_approvers:
+            violations.append(f"INSUFFICIENT_DISTINCT_APPROVERS_{len(approvers)}_OF_{self.min_distinct_approvers}")
+        if score > ceiling:
+            violations.append(f"RISK_SCORE_EXCEEDS_CEILING_BY_{score - ceiling}")
         return {
-            "authorized": True,
-            "mission_id": engagement.mission_id,
-            "status": "ENGAGEMENT_AUTHORIZED_TOPOLOGICAL_ROE_CLOSED",
-            "boundary_defect_norm": 0,
-            "violations": [],
-            "zk_receipt": zk_receipt,
-            "evaluation_duration_seconds": elapsed,
+            "request_id": request_id,
+            "subject_commitment": commitment,
+            "present": present,
+            "missing": missing,
+            "approvals": approvals,
+            "approvers": approvers,
+            "unrecognised": unrecognised,
+            "score": score,
+            "ceiling": ceiling,
+            "violations": violations,
         }
 
-    def _build_zk_roe_receipt(self, engagement: EngagementSimplex) -> Dict[str, Any]:
-        """
-        Constructs an immutable Zero-Knowledge Strike Verification Receipt.
-        Proves compliance with ROE/treaties without disclosing sensitive tactical data.
-        """
-        criteria_digest = hashlib.sha256(
-            "".join(sorted([c.value for c in engagement.satisfied_criteria])).encode("utf-8")
-        ).hexdigest()
+    def evaluate_boundary_closure(self, engagement: EngagementSimplex) -> Tuple[bool, int, List[str]]:
+        """Return (complete, number of missing required criteria, violation codes)."""
+        assessed = self._assess(engagement)
+        return (not assessed["violations"], len(assessed["missing"]), list(assessed["violations"]))
 
-        receipt_preimage = (
-            f"{engagement.mission_id}:"
-            f"{engagement.target_token_hash}:"
-            f"{criteria_digest}:"
-            f"{engagement.collateral_risk_index_integer}:"
-            f"{self.sovereign_authority}"
-        )
-        receipt_proof = hashlib.sha256(receipt_preimage.encode("utf-8")).hexdigest()
-
+    def check_policy_completeness(self, engagement: EngagementSimplex) -> Dict[str, Any]:
+        """Compute completeness and return it with a signed review record. Decides nothing."""
+        start = time.perf_counter_ns()
+        assessed = self._assess(engagement)
+        complete = not assessed["violations"]
+        body = {
+            "record_type": RECORD_TYPE,
+            "request_id": assessed["request_id"],
+            "subject_commitment": assessed["subject_commitment"],
+            "policy_owner": self.policy_owner,
+            "required_criteria": sorted(c.value for c in self.required_criteria),
+            "approved_criteria": [c.value for c in assessed["present"]],
+            "missing_criteria": [c.value for c in assessed["missing"]],
+            "unrecognised_criteria": assessed["unrecognised"],
+            "approvers_by_criterion": {c.value: assessed["approvals"][c] for c in assessed["present"]},
+            "distinct_approvers": len(assessed["approvers"]),
+            "min_distinct_approvers": self.min_distinct_approvers,
+            "risk_score": assessed["score"],
+            "risk_ceiling": assessed["ceiling"],
+            "violations": list(assessed["violations"]),
+            "complete": complete,
+            "decision_authority": DECISION_AUTHORITY,
+            "checked_at_utc": datetime.now(timezone.utc).isoformat(),
+        }
         return {
-            "receipt_id": f"zk_roe_rcpt_{receipt_proof[:16]}",
-            "mission_id": engagement.mission_id,
-            "target_commitment": engagement.target_token_hash,
-            "criteria_satisfied_count": len(engagement.satisfied_criteria),
-            "proportionality_compliant": True,
-            "simplicial_boundary": "CLOSED_CYCLE_PARTIAL_GAMMA_EQUALS_ZERO",
-            "sovereign_authority": self.sovereign_authority,
-            "zk_stark_proof_hash": receipt_proof,
-            "treaty_compliance": "GENEVA_CONVENTIONS_ADDITIONAL_PROTOCOL_I_VERIFIED",
+            "request_id": assessed["request_id"],
+            "complete": complete,
+            "status": "COMPLETE_AWAITING_HUMAN_DECISION" if complete else "INCOMPLETE",
+            "boundary_defect_norm": len(assessed["missing"]),
+            "missing_criteria": [c.value for c in assessed["missing"]],
+            "violations": list(assessed["violations"]),
+            "distinct_approvers": len(assessed["approvers"]),
+            "decision_authority": DECISION_AUTHORITY,
+            "review_record": signed_receipt(body),
+            "evaluation_duration_ns": time.perf_counter_ns() - start,
         }
 
-    def verify_zk_roe_receipt(self, receipt: Dict[str, Any]) -> bool:
+    @staticmethod
+    def verify_review_record(
+        record: Any,
+        trusted_public_key_hex: Optional[str] = None,
+        trusted_pq_public_key_hex: Optional[str] = None,
+    ) -> bool:
+        """Both signatures by the trusted keys (default: this process's signer) and internal consistency.
+
+        Both keys are pinned: pinning only the Ed25519 key would let a forger who
+        breaks Ed25519 attach an ML-DSA-87 key of their own.
         """
-        Public verifier for external alliance partners or treaty monitors.
-        Verifies validity without inspecting raw mission inputs.
-        """
-        required_keys = [
-            "receipt_id",
-            "mission_id",
-            "target_commitment",
-            "criteria_satisfied_count",
-            "proportionality_compliant",
-            "simplicial_boundary",
-            "zk_stark_proof_hash",
-        ]
-        for k in required_keys:
-            if k not in receipt:
+        try:
+            body = record["body"]
+            signature = record["signature"]
+            trusted = trusted_public_key_hex or default_signer().public_key.hex()
+            trusted_pq = trusted_pq_public_key_hex or default_signer().pq_public_key.hex()
+            if signature.get("public_key_hex") != trusted:
                 return False
-
-        if receipt["criteria_satisfied_count"] != 4:
+            if (signature.get("post_quantum") or {}).get("public_key_hex") != trusted_pq:
+                return False
+            if not ReceiptSigner.verify(body, signature):
+                return False
+            required = list(body["required_criteria"])
+            approved = list(body["approved_criteria"])
+            missing = list(body["missing_criteria"])
+            violations = list(body["violations"])
+            return (
+                body["record_type"] == RECORD_TYPE
+                and set(approved) <= set(required)
+                and missing == sorted(set(required) - set(approved))
+                and all(f"MISSING_REQUIRED_CRITERION_{m}" in violations for m in missing)
+                and body["complete"] == (not violations)
+                and body["distinct_approvers"] == len(set(body["approvers_by_criterion"].values()))
+            )
+        except (TypeError, KeyError, AttributeError, ValueError):
             return False
-
-        if receipt["simplicial_boundary"] != "CLOSED_CYCLE_PARTIAL_GAMMA_EQUALS_ZERO":
-            return False
-
-        return True

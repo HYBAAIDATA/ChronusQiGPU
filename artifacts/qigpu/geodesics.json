@@ -1,0 +1,9 @@
+{
+  "correction": "P5 discrete geodesic",
+  "source_sha256": "c0fadd7ec345abe50800143fcd875d1ef015d89f319e2cea5993b76e0e812e04",
+  "tests_passed": 75,
+  "implementation_statement_coverage_percent": 97.63,
+  "implementation_branch_coverage_percent": 92.12,
+  "scope": "Exact arithmetic in Q(zeta_5), second-order stereographic step; continuous trajectory is approximated.",
+  "qfim": "Preserves nonconstant ring denominator; integer content only is reduced."
+}

@@ -13,14 +13,13 @@ Deploys hardware-agnostic first-principles quantum mathematics:
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel, Field
 
 from chronus.tensor.enhanced_representation import EnhancedTensorRepresentation
 from chronus.tensor.adaptive_contraction import AdaptiveTensorContractionPathway
 from chronus.tensor.causal_intelligence import CausalInterferenceEngine
-from chronus.intelligence.predictive_engine import PredictiveEngine
 
 logger = logging.getLogger("ProductionHRAPI")
 
@@ -219,5 +218,13 @@ def predict_attrition_risk(req: AttritionPredictionRequest) -> Dict[str, Any]:
 
 # Standalone entrypoint
 if __name__ == "__main__":
+    import os
+
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+    # Loopback by default; a deployment sets CHRONUS_HR_API_HOST explicitly.
+    uvicorn.run(
+        app,
+        host=os.environ.get("CHRONUS_HR_API_HOST", "127.0.0.1"),
+        port=int(os.environ.get("CHRONUS_HR_API_PORT", "8000")),
+    )

@@ -148,7 +148,7 @@ class TestPropertyInvariants:
         q = ExactQ5(a_num, a_den, b_num, b_den)
         assert q.a_den > 0
         assert q.b_den > 0
-        assert isinstance(q.to_float(), float)
+        assert q.decimal(6).count(".") == 1
         assert "√5" in repr(q)
 
     @FAST_HYPOTHESIS
@@ -162,11 +162,11 @@ class TestPropertyInvariants:
         )
     )
     def test_sheaf_cohomology_identical_nodes_zero_norm(self, vec):
-        """Invariant: Identical state vectors yield strictly zero first cohomology class H^1 = 0."""
+        """Invariant: identical state vectors form a global section (delta0 s = 0 exactly)."""
         nodes = [list(vec), list(vec), list(vec), list(vec)]
         res = CellularSheafCohomology.compute_cohomology(nodes)
         assert res["h0_consensus"] is True
-        assert res["h1_vortex_norm"] == 0.0
+        assert res["coboundary_max_edge_norm_sq"] == "0"
 
     @FAST_HYPOTHESIS
     @given(
@@ -186,9 +186,14 @@ class TestPropertyInvariants:
         )
     )
     def test_sheaf_cohomology_positive_semidefinite(self, nodes):
-        """Invariant: Sheaf obstruction norm ||H^1(X; F)|| >= 0 for all node meshes."""
+        """Invariant: the coboundary norm is zero iff all states agree (exact arithmetic)."""
+        from fractions import Fraction
+
         res = CellularSheafCohomology.compute_cohomology(nodes)
-        assert res["h1_vortex_norm"] >= 0.0
+        norm_sq = Fraction(res["coboundary_max_edge_norm_sq"])
+        assert norm_sq >= 0
+        all_equal = all(n == nodes[0] for n in nodes)
+        assert (norm_sq == 0) == all_equal == res["h0_consensus"]
 
 
 # ==============================================================================
@@ -211,49 +216,29 @@ class TestAdversarialHardening:
         ],
     )
     def test_adversarial_payload_isolation_and_healing(self, hostile_payload):
-        """Verifies that adversarial payloads trigger non-zero H1 or 1-cycle cobordism healing."""
-        # Inject extreme state perturbation
+        """A disagreeing node is rejected and located, whatever the payload bytes are."""
         adversarial_nodes = [
             [1.0, 2.0, 3.0],
             [1000.0, -999.0, 5000.0],
             [1.0, 2.0, 3.0],
         ]
-        res = ALHarasSecurityFabric.evaluate_ingress(
-            payload=hostile_payload,
-            state_vectors=adversarial_nodes,
-            passphrase="MALICIOUS_UNAUTHORIZED_PASSPHRASE",
-        )
+        res = ALHarasSecurityFabric.evaluate_ingress(payload=hostile_payload, state_vectors=adversarial_nodes)
         assert res["admitted"] is False
-        assert res["status"] == "REJECTED & HEALED"
+        assert res["status"] == "REJECTED_STATE_DISAGREEMENT"
         assert res["sheaf_cohomology"]["h0_consensus"] is False
-        assert res["sheaf_cohomology"]["h1_vortex_norm"] > 1.0
-        assert res["dsw_self_healing"]["healing_cycles"] == 1
-        assert (
-            res["dsw_self_healing"]["cobordism_type"]
-            == "INSTANTON_COBORDISM_TRACE_HEALED"
-        )
+        assert res["sheaf_cohomology"]["isolating_nodes"] == ["n1"]
+        assert res["trace_protection"]["sha256"] == hashlib.sha256(hostile_payload).hexdigest()
 
     def test_passphrase_spoofing_tamper_resistance(self):
-        """Only exact 'SPEAK FRIEND AND ENTER' unlocks clean admission."""
-        spoofed_passphrases = [
-            "speak friend and enter",  # case check
-            "SPEAK FRIEND AND ENTER ",  # trailing whitespace
-            "SPEAK FRIEND",
-            "ENTER FRIEND AND SPEAK",
-            "YOU SHALL NOT PASS",
-            "",
-        ]
-        for sp in spoofed_passphrases:
+        """The motto is not a credential: admission depends only on computed state agreement."""
+        for phrase in ["speak friend and enter", "SPEAK FRIEND AND ENTER", "YOU SHALL NOT PASS", "", None]:
             res = ALHarasSecurityFabric.evaluate_ingress(
                 payload=b"AUTHENTIC_STREAM",
                 state_vectors=[[1.0, 2.0, 3.0], [1.0, 2.0, 3.0]],
-                passphrase=sp,
+                passphrase=phrase,
             )
-            if sp.strip().upper() == "SPEAK FRIEND AND ENTER":
-                assert res["admitted"] is True
-            else:
-                assert res["admitted"] is False
-                assert res["status"] == "REJECTED & HEALED"
+            assert res["admitted"] is True
+            assert res["status"] == "ADMITTED"
 
     def test_mldsa_tampered_signature_rejection(self):
         """Mutated bytes in post-quantum ML-DSA signatures must fail verification."""
@@ -345,42 +330,36 @@ class TestSecurityUnitCoverage:
         assert z1 != "not_a_cyclotomic_element"
 
     def test_sheaf_cohomology_empty_state_handling(self):
-        """Empty node list handling in CellularSheafCohomology."""
+        """No states: nothing is evaluated and no success is claimed."""
         res = CellularSheafCohomology.compute_cohomology([])
-        assert res["h0_consensus"] is True
-        assert res["h1_vortex_norm"] == 0.0
-        assert res["status"] == "HARMONIC_CONSENSUS_CLEAN"
+        assert res["evaluated"] is False
+        assert res["status"] == "NO_STATE_SUPPLIED"
         assert res["is_isolated"] is False
 
     def test_hecke_modular_checksum_edge_cases(self):
-        """Test Hecke modular eigenform evaluation."""
+        """Elliptic-curve fingerprint: point count agrees with an independent Legendre sum."""
         res = HeckeModularChecksum.verify_payload_eigenform(b"GENERIC_STATE")
-        assert res["modular_form_weight"] == 2
-        assert res["hecke_commutator_zero"] is True
-        assert res["status"] == "HECKE_EIGENFORM_SATISFIED"
+        assert res["independent_trace_check"] is True
+        assert res["frobenius_trace_ap"] ** 2 <= 4 * 257
+        assert res["status"] == "HASSE_BOUND_VERIFIED"
 
     def test_al_haras_topological_kernel_execution(self):
-        """Test microkernel process execution and sovereign manifest."""
-        kernel = ALHarasTopologicalKernel("SOVEREIGN_POD_ALPHA")
+        """Kernel self-test, process admission by state agreement, and product status."""
+        kernel = ALHarasTopologicalKernel("tenant_alpha")
         boot = kernel.boot_kernel()
-        assert boot["boot_status"] == "KERNEL_BOOT_SUCCESSFUL"
+        assert boot["boot_status"] == "SELF_TEST_PASSED"
+        assert all(boot["self_tests"].values())
 
-        # Clean process execution
-        clean_res = kernel.execute_sovereign_process("p100", b"CLEAN_PAYLOAD")
+        clean_res = kernel.execute_sovereign_process("p100", b"PAYLOAD", state_vectors=[[1, 2], [1, 2]])
         assert clean_res["process_admitted"] is True
-        assert clean_res["dsw_instanton_healing"]["repair_latency_cycles"] == 0
+        assert clean_res["content_classification_performed"] is False
 
-        # Adversarial process execution
-        adv_res = kernel.execute_sovereign_process("p101", b"MALICIOUS_PAYLOAD")
+        adv_res = kernel.execute_sovereign_process("p101", b"PAYLOAD", state_vectors=[[1, 2], [7, 2]])
         assert adv_res["process_admitted"] is False
-        assert adv_res["dsw_instanton_healing"]["repair_latency_cycles"] == 1
 
-        # Manifest
-        manifest = ALHarasSovereignOSProduct.get_sovereign_product_manifest(
-            "SOVEREIGN_POD_ALPHA"
-        )
-        assert manifest["system_invariants"] == "94/94_GREEN_CERTIFIED"
-        assert manifest["release_gate"] == "G1-G8_PRODUCTION_QUALIFIED"
+        manifest = ALHarasSovereignOSProduct.get_sovereign_product_manifest("tenant_alpha")
+        assert manifest["release_status"].startswith("NOT QUALIFIED")
+        assert manifest["governance"]["certifications_held"] == []
 
     def test_ovid_storage_and_receipt_lifecycle(self):
         """Test OVID storage, receipt generation, retrieval, and stats."""
@@ -512,7 +491,13 @@ class TestSecurityUnitCoverage:
             kms_provider="AWS_KMS",
             kms_key_arn="arn:aws:kms:us-east-1:123456789012:key/abc-123",
         )
-        assert binding.status == "KMS_BOUND_CUSTOMER_CUSTODY"
+        # Status is derived from the provider actually used: keys are in process memory.
+        assert binding.status == "LOCAL_KEY_NOT_CUSTOMER_HELD"
+        assert binding.customer_held is False and binding.pkcs11_slot_uri is None
+        assert "not implemented" in binding.custody_mode
+        assert binding.to_dict()["kms_key_arn_source"] == "supplied"
+        placeholder = custody.ensure_binding("tenant_placeholder_custody")
+        assert placeholder.kms_key_arn_source == "placeholder"
         assert custody.get_binding("tenant_alpha") is not None
         assert custody.verify_binding("tenant_alpha") is True
         assert custody.verify_binding("unknown_tenant") is False
@@ -569,84 +554,78 @@ class TestEndToEndDefenseOperations:
 
     @pytest.fixture
     def client(self):
-        app = create_app()
-        return TestClient(app)
+        from chronus.service.dependencies import auth_service
+
+        auth_service.register_tenant("e2e-tenant", "e2e-al-haras-token")
+        return TestClient(create_app())
+
+    AUTH = {"Authorization": "Bearer e2e-al-haras-token"}
 
     def test_e2e_clean_sovereign_workload_pipeline(self, client):
-        """Complete sovereign process execution through API and verification."""
+        """Consistent states are admitted; the receipt verifies and is retrievable by handle."""
+        from chronus.security.al_haras import ReceiptSigner
+
         resp = client.post(
             "/v1/al-haras/inspect",
-            json={
-                "payload": "AUTHENTIC_FIVE_EYES_DEFENSE_STREAM",
-                "passphrase": "SPEAK FRIEND AND ENTER",
-                "simulate_adversarial": False,
-                "sovereign_state_id": "UK_MOD_DEFENCE_HQ",
-            },
+            headers=self.AUTH,
+            json={"payload": "STREAM", "state_vectors": [[1, 0], [1, 0], [1, 0]], "sovereign_state_id": "tenant_a"},
         )
         assert resp.status_code == 200
         data = resp.json()
-        assert data["admitted_to_execution_fabric"] is True
-        assert data["sheaf_cohomology"]["h0_harmonic_section"] is True
-        assert data["dsw_instanton_self_healing"]["repair_latency_cycles"] == 0
-        assert (
-            data["sovereign_governance"]["ncsc_14_principles"][
-                "P1_Data_in_Transit_Protection"
-            ]
-            == "COMPLIANT_PASS"
-        )
+        assert data["admitted_to_execution"] is True
+        assert ReceiptSigner.verify(data["receipt"]["body"], data["receipt"]["signature"]) is True
+        assert data["ovid_receipt_handle"].startswith("o1_tenanta_")
 
     def test_e2e_adversarial_failover_and_monopole_healing(self, client):
-        """Hostile injection blocked at Sheaf boundary and healed via DSW cobordism."""
+        """A disagreeing node is rejected and located; a trace drill is repaired and verified."""
         resp = client.post(
             "/v1/al-haras/inspect",
-            json={
-                "payload": "MALICIOUS_ELECTRONIC_WARFARE_JAMMING_ATTACK",
-                "simulate_adversarial": True,
-            },
+            headers=self.AUTH,
+            json={"payload": "STREAM", "state_vectors": [[1, 0], [9, 9], [1, 0]]},
         )
         assert resp.status_code == 200
         data = resp.json()
-        assert data["admitted_to_execution_fabric"] is False
-        assert data["sheaf_cohomology"]["h0_harmonic_section"] is False
-        assert (
-            data["dsw_instanton_self_healing"]["cobordism_status"]
-            == "INSTANTON_COBORDISM_TRACE_HEALED"
-        )
-        assert data["dsw_instanton_self_healing"]["repair_latency_cycles"] == 1
-        assert len(data["dsw_instanton_self_healing"]["healed_trace_hash"]) == 64
+        assert data["admitted_to_execution"] is False
+        assert data["sheaf_cohomology"]["isolating_nodes"] == ["n1"]
+        heal = client.post("/v1/al-haras/heal", headers=self.AUTH, json={"trace_payload": "TRACE", "fault_count": 2}).json()
+        assert heal["healed"] is True and heal["integrity_verified"] is True
+        assert len(heal["repaired_trace_sha256"]) == 64
 
     def test_e2e_all_four_defense_frontiers(self, client):
         """Simulate all 4 Defense Frontiers in a coordinated wargaming scenario."""
+        from chronus.security.al_haras.receipts import ReceiptSigner
+
+        assert client.post("/v1/al-haras/frontiers/simulate", json={"frontier_id": "ALL"}).status_code == 401
         resp = client.post(
-            "/v1/al-haras/frontiers/simulate", json={"frontier_id": "ALL"}
+            "/v1/al-haras/frontiers/simulate", headers=self.AUTH, json={"frontier_id": "ALL"}
         )
         assert resp.status_code == 200
         data = resp.json()
+        assert data["summary"]["runs"] == 4 and data["summary"]["all_checks_true"] is True
 
-        # Frontier 1: Pentagon JADC2 Swarm Mesh
-        f1 = data["frontier_1_jadc2_swarm"]
-        assert f1["frontier"] == "FRONTIER_1_PENTAGON_JADC2_SWARM_TACTICAL_MESH"
+        # Frontier 1: swarm state agreement under bounded noise
+        f1 = data["frontier_1_swarm_consensus"]
+        assert f1["frontier"] == "FRONTIER_1_SWARM_STATE_CONSENSUS"
         assert f1["sheaf_consensus_achieved"] is True
-        assert f1["cyclotomic_topological_braids"]["zero_float_truncation"] is True
+        assert f1["sheaf_check"]["exactly_equal_states"] is False
 
-        # Frontier 2: GCHQ / NSA Post-Quantum Substrate
-        f2 = data["frontier_2_gchq_pqc"]
-        assert f2["frontier"] == "FRONTIER_2_GCHQ_NCSC_NSA_PQC_SUBSTRATE"
-        assert f2["ivc_folding_mode"] == "O(1)_LINE_RATE_NON_UNIFORM_IVC"
+        # Frontier 2: stream receipt signed with Ed25519 and ML-DSA-87 (FIPS 204); both must verify
+        f2 = data["frontier_2_signed_receipts"]
+        assert f2["frontier"] == "FRONTIER_2_SIGNED_STREAM_RECEIPTS"
+        assert f2["post_quantum"] is True and f2["post_quantum_algorithm"] == "ML-DSA-87"
+        assert ReceiptSigner.verify_ml_dsa(f2["receipt"]["body"], f2["receipt"]["signature"]) is True
+        assert ReceiptSigner.verify(f2["receipt"]["body"], f2["receipt"]["signature"]) is True
 
-        # Frontier 3: DARPA Hyperscale Simulation
-        f3 = data["frontier_3_darpa_hyperscale"]
-        assert f3["frontier"] == "FRONTIER_3_DARPA_HYPERSCALE_DEFENSE_SIMULATION"
-        assert f3["pisot_lucas_ram_footprint_bytes"] == 64
-        assert f3["dec_fluid_crossbar"]["zero_stall_guaranteed"] is True
+        # Frontier 3: exact normal-shock relations at Mach 14 (not CFD)
+        f3 = data["frontier_3_flow_relations"]
+        assert f3["frontier"] == "FRONTIER_3_EXACT_FLOW_RELATIONS"
+        assert f3["normal_shock"]["pressure_ratio_p2_p1"]["exact"] == "457/2"
 
-        # Frontier 4: NATO CNI Defense
-        f4 = data["frontier_4_nato_cni"]
-        assert f4["frontier"] == "FRONTIER_4_NATO_CNI_SELF_HEALING_DEFENSE"
-        assert f4["dsw_instanton_monopole"]["healing_cycles"] == 1
-        assert (
-            f4["cni_defense_posture"] == "TOPOLOGICALLY_HEALED_UNINTERRUPTED_OPERATION"
-        )
+        # Frontier 4: Reed-Solomon trace repair drill
+        f4 = data["frontier_4_trace_repair"]
+        assert f4["frontier"] == "FRONTIER_4_TRACE_REPAIR"
+        assert f4["trace_repair"]["symbol_errors_corrected"] == 1
+        assert f4["trace_integrity_status"] == "TRACE_REPAIRED_AND_VERIFIED"
 
 
 # ==============================================================================
@@ -658,48 +637,32 @@ class TestEdgeCasesAndDeepCoverage:
     """Targeted coverage for edge branches across the entire security architecture."""
 
     def test_lucas_subsystem_zero_fast_path(self):
-        """Covers fast doubling branch when n <= 0."""
+        """Covers the n = 0 Lucas branch (L_0 = 2) next to an exact normal shock at Mach 5."""
         res = HyperscaleDefenseSimulationEngine.execute_hypersonic_cfd_simulation(
             mach_number=5.0,
             state_dimensions=0,
         )
-        assert res["frontier"] == "FRONTIER_3_DARPA_HYPERSCALE_DEFENSE_SIMULATION"
-        assert res["pisot_lucas_ram_footprint_bytes"] == 64
-        assert "L_0" in res["state_space_dimension"]
+        assert res["frontier"] == "FRONTIER_3_EXACT_FLOW_RELATIONS"
+        assert res["lucas_number"]["value"] == "2" and res["lucas_number"]["binet_identity_verified"] is True
+        assert res["normal_shock"]["pressure_ratio_p2_p1"]["exact"] == "29"
 
     def test_al_haras_topological_os_kernel_lifecycle(self):
-        """Covers ALHarasTopologicalKernel boot, process exec, and sovereign manifest."""
-        kernel = ALHarasTopologicalKernel("UK_NATIONAL_CYBER_DEFENCE")
+        """Kernel self-test, process admission by state agreement, and product status."""
+        kernel = ALHarasTopologicalKernel("tenant_alpha")
         boot = kernel.boot_kernel()
-        assert boot["kernel_name"] == "AL_HARAS_TOPOLOGICAL_OS_v36"
-        assert boot["boot_status"] == "KERNEL_BOOT_SUCCESSFUL"
-        assert boot["maclane_pentagon_coherence"] is True
+        assert boot["boot_status"] == "SELF_TEST_PASSED"
+        assert all(boot["self_tests"].values())
 
-        # Clean process
-        clean_res = kernel.execute_sovereign_process("proc_clean", b"AUTHENTIC_STREAM")
+        clean_res = kernel.execute_sovereign_process("p100", b"PAYLOAD", state_vectors=[[1, 2], [1, 2]])
         assert clean_res["process_admitted"] is True
-        assert clean_res["sheaf_cohomology"]["h0_harmonic_section"] is True
-        assert clean_res["dsw_instanton_healing"]["repair_latency_cycles"] == 0
+        assert clean_res["content_classification_performed"] is False
 
-        # Adversarial process
-        adv_res = kernel.execute_sovereign_process(
-            "proc_adv", b"MALICIOUS_ATTACK_VECTOR"
-        )
+        adv_res = kernel.execute_sovereign_process("p101", b"PAYLOAD", state_vectors=[[1, 2], [7, 2]])
         assert adv_res["process_admitted"] is False
-        assert (
-            adv_res["dsw_instanton_healing"]["cobordism_status"]
-            == "INSTANTON_COBORDISM_TRACE_HEALED"
-        )
-        assert adv_res["dsw_instanton_healing"]["repair_latency_cycles"] == 1
 
-        # Manifest
-        manifest = ALHarasSovereignOSProduct.get_sovereign_product_manifest(
-            "UK_NATIONAL_CYBER_DEFENCE"
-        )
-        assert manifest["product_name"] == "AL_HARAS_TOPOLOGICAL_OS_SOVEREIGN_EDITION"
-        assert (
-            manifest["governance_standards"]["fedramp_high"] == "FEDRAMP_HIGH_CERTIFIED"
-        )
+        manifest = ALHarasSovereignOSProduct.get_sovereign_product_manifest("tenant_alpha")
+        assert manifest["release_status"].startswith("NOT QUALIFIED")
+        assert manifest["governance"]["certifications_held"] == []
 
     def test_kms_in_memory_stream_encryption_and_errors(self):
         """Covers RAM-only KMS envelope encryption, decryption, and error branches."""

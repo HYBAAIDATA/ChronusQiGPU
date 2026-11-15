@@ -15,7 +15,6 @@ from dataclasses import dataclass
 
 from chronus.backends.lattice import PhiElement, phi_power
 from chronus.backends.metallic import metallic_power, metallic_sequence
-from chronus.config import runtime_bounds
 
 
 @dataclass(frozen=True)
@@ -26,15 +25,19 @@ class PVScale:
     m: int = 1  # metallic family; m=1 is the golden/Lucas anchor
 
     def __post_init__(self) -> None:
-        max_index = runtime_bounds()["max_trinity_index"]
-        if not isinstance(self.index, int) or isinstance(self.index, bool) \
-                or not 0 <= self.index <= max_index:
-            raise ValueError(f"index must be an integer in [0, {max_index}]")
+        if not isinstance(self.index, int) or isinstance(self.index, bool) or self.index < 0:
+            raise ValueError("index must be a non-negative integer")
         if not isinstance(self.m, int) or isinstance(self.m, bool) or self.m < 1:
             raise ValueError("m must be a positive integer")
 
     def advance(self, increment: int) -> "PVScale":
-        """Scale further by index addition; no coefficients are materialized."""
+        """Compose by a signed index delta without materializing coefficients.
+
+        Negative deltas are retained for compatibility, but the resulting index
+        must remain nonnegative and both values must be genuine integers.
+        """
+        if not isinstance(increment, int) or isinstance(increment, bool):
+            raise ValueError("increment must be an integer")
         return PVScale(self.index + increment, self.m)
 
     def trace(self) -> int:
@@ -50,6 +53,18 @@ class PVScale:
         if self.m != 1:
             raise ValueError("factor() materializes the golden anchor; use metallic_power for m > 1")
         return phi_power(self.index)
+
+    def field_factor(self) -> tuple[int, int]:
+        """Exact phi**index in F_257[phi], with period reduction at this boundary."""
+        if self.m != 1:
+            raise ValueError("field_factor() requires the golden anchor m=1")
+        from chronus.quantum.extension_search import phi_element_power
+        return phi_element_power(self.index)
+
+    def field_trace(self) -> int:
+        """Lucas trace in F_257 without materializing integer coefficients."""
+        a, b = self.field_factor()
+        return (2 * a + b) % 257
 
     def metallic_factor(self) -> "object":
         """Materialize sigma_m^index as exact coefficients."""

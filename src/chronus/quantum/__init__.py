@@ -1,8 +1,10 @@
-"""Exact finite-field quantum evolution for Chronus.
+"""Legacy finite-field and algebraic research code for Chronus.
 
-Quantum behavior here comes from mathematics, not vendor hardware facades:
-statevectors evolve over F_257 with exact field arithmetic — no floating
-point, no simulated noise, no fabricated fidelities, no external backends.
+This namespace is not TURING and is not a conventional complex-Hilbert-space
+quantum-mathematics library. Its finite-field and algebraic constructions are
+research models; names and exact arithmetic do not establish physical quantum
+semantics, hardware execution, or quantum advantage. See the package README and
+``docs/system-update/quantum-package-taxonomy.md`` for scope and limitations.
 """
 
 from chronus.quantum.extension_search import (
@@ -53,6 +55,16 @@ from chronus.quantum.statevector import (
     SQRT2,
     StateVector,
 )
+from chronus.quantum.entanglement import (
+    BellStateKind,
+    algebraic_concurrence_determinant,
+    create_bell_state,
+    create_ghz_state,
+    create_superposition_state,
+    entanglement_entropy_proxy,
+    is_entangled_bipartite,
+    superposition_memory_lookup,
+)
 
 __all__ = [
     "ExtensionSubspaceState",
@@ -91,4 +103,12 @@ __all__ = [
     "phi_element_power",
     "subspace_iterate",
     "uniform_subspace",
+    "BellStateKind",
+    "create_superposition_state",
+    "create_bell_state",
+    "create_ghz_state",
+    "algebraic_concurrence_determinant",
+    "is_entangled_bipartite",
+    "entanglement_entropy_proxy",
+    "superposition_memory_lookup",
 ]

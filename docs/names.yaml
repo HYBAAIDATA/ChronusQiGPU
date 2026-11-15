@@ -1,0 +1,82 @@
+# HYBA naming history. Read this before renaming anything.
+#
+# Rules
+#   1. A live credential is never renamed. The pool account carries the
+#      attribution of every share credited so far, and pool logins are the
+#      owner's alone to change.
+#   2. A retired name may survive in a path, a package or a service name. It is
+#      kept there and is not used in new prose.
+#   3. Every entry cites a record. Where a name is older than every repository
+#      we hold, the entry says so and gives the earliest record we do hold.
+#
+# "owner" is Andre Taylor-Morris, HYBA's founder, with the date of his statement.
+# Commits are in hybadatadevops1/HYBAEnterprise (full history; its first commit,
+# fa37f2c5, is dated 2026-09-27) and hybadatadevops1/Chronusv2.
+
+version: 1
+reviewed_at: "2026-11-14"
+
+names:
+  - token: PYTHAGOROS
+    kind: birth name
+    status: kept only as the account of the live Braiins pool login
+    preserved_as: >-
+      the account part of the pool login (account.worker). The full login stays
+      in the miner's local .env and is not written in this repository.
+    rule: never rename it. A new account name starts a new attribution record.
+    discovered_at: "before 2026-09-27 (older than every repository we hold)"
+    earliest_record:
+      commit: "HYBAEnterprise fa37f2c5, 2026-09-27 (first commit of the repository)"
+      path: legacy/bridge/base/pythia-main-deployment.yaml
+      shows: PYTHIA's main deployment logging in to Braiins under the PYTHAGOROS account
+    later_records:
+      - commit: "HYBAEnterprise 13ced626, 2026-10-19"
+        path: reports/soak_10min_braiins.json
+        shows: a ten-minute Braiins soak under the same account
+    sources:
+      - "owner, relayed 2026-11-14: the birth name, given at discovery"
+    older_record: >-
+      the old GitHub account holding the HYBA Analytics repository (owner,
+      2026-11-11: recoverable once he is back in Dubai)
+
+  - token: PYTHAGORAS
+    kind: first AI name and a live package name
+    not: a misspelling of PYTHAGOROS, and not PYTHIA
+    status: current name of a package in HYBAEnterprise
+    in_code:
+      - "HYBAEnterprise pythagoras/: PYTHAGORAS v12.2, in its own words a meta-evolutionary code intelligence platform"
+      - "HYBAEnterprise euclid.pythagoras: EUCLID's integration of it"
+    earliest_record:
+      commit: "HYBAEnterprise fa37f2c5, 2026-09-27 (first commit of the repository)"
+      path: pythagoras/__init__.py
+    later_records:
+      - commit: "HYBAEnterprise 971e75a2, 2026-10-01"
+        shows: "Expose Pythagoras v12 EUCLID integration"
+    sources:
+      - "owner, 2026-11-11: HYBA's first AI was named PYTHAGORAS (later EUCLID)"
+    memory: not yet held in THESEUS (SALAMANDER report, 2026-11-13)
+
+  - token: Quantum
+    kind: interim name
+    status: retired as a name
+    sources:
+      - "owner, 2026-11-11: early documents called the work quantum-inspired before its significance was understood"
+      - "owner, relayed 2026-11-14: the name passed to TURING"
+    passed_to:
+      name: TURING, the exact mathematics package (packages/turing)
+      first_record: "Chronusv2 beaa2b86, 2026-11-11: Add TURING quantum mathematics package (#24)"
+    fossils:
+      - service name chronus-quantum-igpu
+      - package src/chronus/quantum/
+    rule: keep the fossils as they are; do not use the name in new prose.
+
+  - token: PYTHIA
+    kind: current name
+    meaning: the Oracle of Delphi (owner, relayed 2026-11-14)
+    is: HYBA's mining intelligence
+    in_code:
+      - "HYBAEnterprise Intelligence/pythia_* and pythia/mining_training"
+    earliest_record:
+      commit: "HYBAEnterprise fa37f2c5, 2026-09-27 (first commit of the repository)"
+      path: Intelligence/pythia_learning.py
+    rule: use this name in prose, decks and documents for this intelligence.

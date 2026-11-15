@@ -6,7 +6,9 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
 WORKDIR /build
 COPY pyproject.toml README.md ./
 COPY src ./src
-RUN python -m pip wheel --wheel-dir=/wheels .
+COPY packages/turing /build/packages/turing
+RUN python -m pip install --upgrade 'pip>=26.2' \
+    && python -m pip wheel --wheel-dir=/wheels ./packages/turing .
 
 FROM python:3.12-slim AS runtime-base
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -18,7 +20,8 @@ RUN groupadd --system --gid 10001 chronus \
     && mkdir -p /var/lib/chronus \
     && chown chronus:chronus /var/lib/chronus
 COPY --from=builder /wheels /wheels
-RUN python -m pip install --no-cache-dir --no-index --find-links=/wheels chronus-quantum-igpu \
+RUN python -m pip install --upgrade 'pip>=26.2' \
+    && python -m pip install --no-cache-dir --no-index --find-links=/wheels 'hyba-chronus[mining]' \
     && rm -rf /wheels
 WORKDIR /var/lib/chronus
 USER 10001:10001

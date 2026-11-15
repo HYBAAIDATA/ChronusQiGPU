@@ -1,0 +1,6 @@
+{
+  "cpu": "Intel(R) Xeon(R) Processor @ 2.90GHz (virtual machine)",
+  "disk": "/dev/vdb xfs (guest block device; underlying media not exposed)",
+  "gpu": "not used",
+  "ram": "MemTotal:        4387300 kB"
+}

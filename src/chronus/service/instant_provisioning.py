@@ -3,7 +3,7 @@
 Implements the 4-Stage Zero-Friction Provisioning Architecture (< 30s T0 SLA):
 - Stage 1: Contract Signature & Webhook Ingress (DocuSign / Ironclad / CPQ / System Admin)
 - Stage 2: Automated Tenant Provisioning & Storage Fabrics (PostgreSQL REPEATABLE READ + OVID o1_<tenant> + THESEUS Journal)
-- Stage 3: AL HARAS Security Authority & KMS Key Deployment (4-Tier RBAC + PKCS#11 Cloud KMS Custody + Encrypted Handoff)
+- Stage 3: AL HARAS key binding (4-tier RBAC + KMS provider binding whose status states where the key lives; customer-held KMS/HSM custody is not implemented + encrypted handoff)
 - Stage 4: Enduring CCE & Dynamic Self-Service Expansion (Zero-Addendum Scaling + Hermiten 25% Value-Share Settlement)
 """
 
@@ -163,7 +163,7 @@ class InstantOnboardResponse(BaseModel):
     status: str = "TENANT_PROVISIONED_INSTANTLY"
     tenant_id: str
     assigned_cce_id: str
-    al_haras_kms_status: str = "KMS_BOUND_CUSTOMER_CUSTODY"
+    al_haras_kms_status: str = "NOT_BOUND"
     tenant_admin_token: str
     console_access_url: str
     zero_copy_prefix: str

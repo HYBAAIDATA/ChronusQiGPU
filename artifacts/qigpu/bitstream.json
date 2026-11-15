@@ -1,0 +1,12 @@
+{
+  "correction": "P4",
+  "finding": "Canonical 9-bit encoding expands each byte; no memory saving claimed. Ring embedding and decoding now preserve all byte values. No physical memory or write amplification measured.",
+  "implementation_coverage": {
+    "branches_percent": 92.83,
+    "statements_percent": 97.92
+  },
+  "manifest_file_sha256": "b4ba422a724567c0f6f5f5db43b5e6cd8b17672903d4ea49910c6f33bfe479c0",
+  "source_sha256": "8ef4db3bb710a395454f7e8dbd4037bd80584235afbb162efd63a6d5a582d831",
+  "test_command": "python -m coverage run --branch docs/qigpu/pasted-text.txt",
+  "test_count": 99
+}

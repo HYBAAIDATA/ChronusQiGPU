@@ -1,0 +1,18 @@
+id: exact-pv-python
+language: Python
+severity: error
+message: PV scale arithmetic must use exact integers and storage wide enough for residue 256.
+files:
+  - src/chronus/quantum/extension_search.py
+  - src/chronus/core/scaling.py
+  - src/chronus/backends/lattice.py
+  - src/chronus/backends/pv_field.py
+  - src/chronus/execution/pv_scale_fleet.py
+  - src/chronus/opencl_folded_adapter.py
+rule:
+  any:
+    - kind: float
+    - pattern: float($$$ARGS)
+    - pattern: array('B', $$$ARGS)
+    - pattern: array("B", $$$ARGS)
+    - pattern: $NP.uint8($$$ARGS)

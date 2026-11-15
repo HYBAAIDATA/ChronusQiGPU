@@ -1,0 +1,11 @@
+{
+  "command": "python -m coverage run --branch docs/qigpu/pasted-text.txt",
+  "finding": "Ten focused unit tests added; seven-class exhaustive coverage remains open pending context audit.",
+  "implementation_coverage": {
+    "branch_percent": 91.76,
+    "statement_percent": 97.87
+  },
+  "source_sha256": "6a8082453809862fcf574a148f335e263f6e2637273a0794bd40d560190a366b",
+  "step": "Expand focused public-function unit tests",
+  "tests_passed": 130
+}

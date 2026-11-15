@@ -2,23 +2,31 @@
   "attestation_title": "SOVEREIGN QUANTUM CAPABILITY & MATHEMATICAL PURITY DOSSIER",
   "standard": "DIFC Sovereign Asset Evaluation & Five Eyes Computational Verification",
   "status": "SOVEREIGN_QUALIFIED",
-  "timestamp_utc": "2026-11-08 23:20:43 UTC",
+  "timestamp_utc": "2026-11-11 06:43:59 UTC",
   "evaluation_authority": "Chronus Sovereign Regulatory Compliance Board",
   "pillars": {
     "al_haras": {
       "status": "QUALIFIED",
-      "latency_us": 11083.9,
+      "latency_us": 280692.91,
       "invariants": {
-        "sheaf_h1_exactness": true,
-        "dsw_instanton_conservation": true,
+        "sheaf_global_section_exact": true,
+        "sheaf_disagreement_detected_exact": true,
+        "reed_solomon_repair_verified": true,
         "ramanujan_spectral_gap": true,
         "anyon_cyclotomic_braid": true,
-        "hecke_modular_checksum": true
+        "hasse_bound_fingerprint": true
+      },
+      "measured": {
+        "conflict_coboundary_norm_sq": "2",
+        "symbol_errors_corrected": 1,
+        "paley_lambda_2": "7.515610",
+        "ramanujan_bound": "22.538855",
+        "frobenius_trace_ap": -7
       }
     },
     "theseus_ovid": {
       "status": "QUALIFIED",
-      "latency_us": 204.5,
+      "latency_us": 87.49,
       "invariants": {
         "theseus_lossless_roundtrip": true,
         "ovid_content_addressed_retrieval": true,
@@ -28,7 +36,7 @@
     },
     "chronus_stratum": {
       "status": "QUALIFIED",
-      "latency_us": 816.1,
+      "latency_us": 227.91,
       "invariants": {
         "f257_galois_phases": true,
         "zeckendorf_conservation": true,
@@ -38,20 +46,22 @@
         "gatekeeper_latency_us": 2.85
       }
     },
-    "millennium_problems": {
+    "legacy_millennium_modules": {
       "status": "QUALIFIED",
-      "latency_us": 409.3,
-      "millennium_problems_verified": {
-        "poincare_ricci_flow": true,
-        "hodge_decomposition": true,
-        "p_adic_ultrametric_sandbox": true,
-        "anosov_toral_scrambler": true,
-        "picard_lefschetz_anti_jamming": true
+      "latency_us": 945.17,
+      "exact_checks_passed": {
+        "ollivier_ricci_curvature_certified": true,
+        "hodge_decomposition_identities": true,
+        "p_adic_address_sets_disjoint": true,
+        "buffer_zeroised_and_read_back": true
+      },
+      "not_implemented": {
+        "picard_lefschetz_anti_jamming": "NOT_IMPLEMENTED"
       }
     },
     "toe_quantum": {
       "status": "QUALIFIED",
-      "latency_us": 32.0,
+      "latency_us": 14.76,
       "invariants": {
         "f257_bell_state_evolution": true,
         "exact_field_hadamard": true,
@@ -60,30 +70,9 @@
       }
     },
     "distribution_packages": {
-      "status": "BUILT",
-      "package_count": 4,
-      "packages": [
-        {
-          "filename": "chronus_quantum_igpu-36.0.0-py3-none-any.whl",
-          "size_bytes": 2538034,
-          "sha256": "cd46cfef8a82d98a2d65469bc61c99d5f24a90d95523c22a468fd8aa0c9a5791"
-        },
-        {
-          "filename": "chronus_quantum_igpu-36.0.0.tar.gz",
-          "size_bytes": 2531472,
-          "sha256": "52f63712bb9d439b1edf51a7a886d165c75a4bd2bcc3b3eefa282db2781c8d12"
-        },
-        {
-          "filename": "chronus_quantum_igpu-36.0.1-py3-none-any.whl",
-          "size_bytes": 2682281,
-          "sha256": "265449c57d6c06adeb78e516e1c1054b3672ca030f0d4ab7570b4685c81c9558"
-        },
-        {
-          "filename": "chronus_quantum_igpu-36.0.1.tar.gz",
-          "size_bytes": 2727190,
-          "sha256": "2d6ef3f6b7bd5a1e37f60459d181a19f9ea780fc494bccfd4e9749a77643b8fc"
-        }
-      ],
+      "status": "PENDING_BUILD",
+      "package_count": 0,
+      "packages": [],
       "contained_modules": [
         "chronus.security.al_haras",
         "chronus.storage.theseus",
@@ -106,7 +95,7 @@
   },
   "cryptographic_attestation": {
     "signature_algorithm": "HMAC-SHA256 (DIFC-SOVEREIGN-SEAL)",
-    "hmac_digest": "eec7b8b3e14dbb321d01aa40cc107866ef7db35d4b0d10957ef44ec5d115fdba",
-    "content_sha256": "91ce685d872251604a641aa012a85bae5d084c6ca9460317db00091b43df2f42"
+    "hmac_digest": "5b1db240f8b5133b8a0850d7b6e2f57c0569b2445bb5770ffbb16bfbbcd4f1cd",
+    "content_sha256": "9053bfe40969cbd4d0ac9ad569de2f5a2ab782a9364fe73c79cefd2e73ff0f7d"
   }
 }

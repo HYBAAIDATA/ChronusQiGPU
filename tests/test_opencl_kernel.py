@@ -254,3 +254,24 @@ def test_api_path_rejects_mismatched_opencl_result(
         assert receipt["execution_mode"] == "SOFTWARE_EXECUTION"
         assert receipt["result"]["norm_invariant_verified"] is True
         assert receipt["result"]["values"][0]["b"] == "2880067194370816120"
+
+
+@pytest.mark.parametrize('index', [0, 258, 516, 10**4, 10**5, 10**12, 10**15, 10**18, 10**20])
+def test_field_scaling_exact_including_residue_256(cpu_opencl, index):
+    from chronus.backends.pv_field import scale_pairs
+    pairs = [(a, b) for a in (0, 1, 128, 256) for b in (0, 1, 128, 256)]
+    output = cpu_opencl.dispatch_field_scale(pairs, index)
+    assert output == scale_pairs(pairs, index)
+    # Independent linear recurrence over the reduced exponent.
+    expected = pairs
+    for _ in range(index % 516):
+        expected = [(b, (a+b) % 257) for a,b in expected]
+    assert output == expected
+
+
+def test_field_scaling_rejects_lossy_inputs(cpu_opencl):
+    for pairs in [[(257, 0)], [(True, 0)], [(1.0, 0)], [(-1, 0)]]:
+        with pytest.raises(ValueError):
+            cpu_opencl.dispatch_field_scale(pairs, 10**20)
+    with pytest.raises(ValueError):
+        cpu_opencl.dispatch_field_scale([(1,0)], -1)

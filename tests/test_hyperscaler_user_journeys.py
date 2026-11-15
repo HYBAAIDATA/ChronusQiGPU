@@ -2,9 +2,9 @@
 
 Rigorously verifies all 4 architectural user journeys, 6 explicit memory access classes,
 the 7-row Hyperscaler Connector Matrix, 4-phase scaling roadmap to 160k warps (5.12M SIMD lanes),
-exact H_4 600-cell crossbar routing, DSW 4D instanton cobordism self-healing, Cellular Sheaf
-cohomology obstruction isolation (norm 1.4142), exact Z[zeta_5] cyclotomic anyon braids,
-and Hermiten 25% value-share settlement ($520k benchmark).
+exact H_4 600-cell crossbar routing, AL HARAS Reed-Solomon trace repair, exact sheaf
+coboundary checks (||delta0 s|| = sqrt(2) computed for the disagreeing input), exact
+Z[zeta_5] braid relations, and Hermiten 25% value-share settlement ($520k benchmark).
 """
 
 import json
@@ -297,31 +297,33 @@ def test_user_journey_2_hyperscale_ai_factory_flow(api_client):
     assert pool_data["virtual_crossbar"]["dma_packet_stalls"] == 0
     assert pool_data["virtual_crossbar"]["bus_saturation_pct"] == 100
 
-    # 4. 1-Cycle DSW 4D Instanton Monopole Self-Healing
+    # 4. AL HARAS trace repair (Reed-Solomon over GF(257); the class keeps its legacy name)
     heal_result = DSW4DInstantonMonopoleHealer.inspect_and_heal(
         trace_payload=b"dummy_trace",
         is_perturbed=True,
     )
 
-    assert heal_result["healing_cycles"] == 1
-    assert heal_result["repair_latency_cycles"] == 1
-    assert heal_result["stream_rollback_bytes"] == 0
-    assert heal_result["cobordism_map"] == "W: Sigma_1 -> Sigma_2"
+    assert heal_result["healed"] is True and heal_result["integrity_verified"] is True
+    assert heal_result["symbol_errors_corrected"] >= 1
+    assert heal_result["checkpoint_restore_used"] is False  # repaired in place, no rollback
+    assert heal_result["repaired_trace_sha256"] == heal_result["trace_sha256"]
 
 
 def test_user_journey_3_sovereign_defense_air_gapped_flow(api_client):
     """Verify User Journey 3: Sovereign Defense (Palantir Foundry & DoD IL6)."""
-    # 1. Air-Gapped Sovereign Profile with CUSTOMER_HELD_HSM_PKCS11 and 0 Telemetry Egress
-    # 1. Air-Gapped Sovereign Profile with CUSTOMER_HELD_HSM_PKCS11 and 0 Telemetry Egress
+    # 1. Governance register: nothing is claimed that has not been assessed
     profile = SovereignGovernanceEngine.audit_sovereign_compliance(
         "sovereign_dod_il6_intel"
     )
-    assert profile["sovereign_profile"] == "SOVEREIGN_INSTITUTIONAL_EDITION"
-    assert profile["kms_custody_mode"] == "CUSTOMER_HELD_HSM_PKCS11"
-    assert profile["external_telemetry_egress_bytes"] == 0
-    assert profile["dod_il6_compliance"] == "DOD_IL6_AIRGAPPED_READY"
+    assert profile["principles_independently_assessed"] == 0
+    assert profile["certifications_held"] == []
+    assert all(p["assessment"] == "NOT_ASSESSED" for p in profile["ncsc_14_principles"].values())
+    assert len(profile["ncsc_14_principles"]) == 14
+    assert profile["key_custody"]["customer_held_hsm_demonstrated"] is False
+    for withdrawn in ("kms_custody_mode", "dod_il6_compliance", "external_telemetry_egress_bytes"):
+        assert withdrawn not in profile
 
-    # 2. Cellular Sheaf Cohomology Obstruction Filtration (Norm = 1.4142)
+    # 2. Exact sheaf coboundary: agreement is delta0(s) = 0; ||delta0 s|| = sqrt(2) is computed
     sheaf = CellularSheafCohomology()
     clean_nodes = ["intel_agent_alpha", "intel_agent_bravo", "intel_agent_charlie"]
     clean_edges = [
@@ -338,9 +340,8 @@ def test_user_journey_3_sovereign_defense_air_gapped_flow(api_client):
         },
     )
     assert clean_cohom["h0_harmonic_section"] is True
-    assert clean_cohom["h1_first_cohomology_rank"] == 0
-    assert clean_cohom["h1_vortex_norm"] == 0.0
-    assert clean_cohom["downstream_context_contaminated"] is False
+    assert clean_cohom["status"] == "CONSISTENT"
+    assert clean_cohom["coboundary_total_norm_sq"] == "0"
 
     # Adversarial Injection payload induces non-zero coboundary obstruction
     attack_cohom = sheaf.compute_cohomology(
@@ -352,27 +353,23 @@ def test_user_journey_3_sovereign_defense_air_gapped_flow(api_client):
             "intel_agent_charlie": [1, 2],
         },
     )
-    assert attack_cohom["h1_first_cohomology_rank"] > 0
-    assert attack_cohom["h1_vortex_norm"] == 1.4142
-    assert attack_cohom["is_secure"] is False
-    assert attack_cohom["downstream_context_contaminated"] is False
-    assert (
-        attack_cohom["audit_alert"]
-        == "OBSTRUCTION_ISOLATED: H1(X; F) != 0, vortex norm 1.4142"
-    )
+    # bravo = (2, 3) against (1, 2) on both edges: residual (1, 1), squared norm exactly 2
+    assert attack_cohom["h0_consensus"] is False
+    assert attack_cohom["coboundary_max_edge_norm_sq"] == "2"
+    assert attack_cohom["coboundary_max_edge_norm"] == "1.41421356"
+    assert attack_cohom["isolating_nodes"] == ["intel_agent_bravo"]
+    assert attack_cohom["status"] == "INCONSISTENT_STATES_ISOLATED"
+    assert "intel_agent_bravo" in attack_cohom["audit_alert"]
 
     # 3. Cyclotomic Anyon Braids over Exact Z[zeta_5] (Artin braid and pentagon coherence, zero floats)
     braid_engine = CyclotomicAnyonBraidEngine()
     braid_verification = braid_engine.compile_braid(["sigma_1", "sigma_2", "sigma_1"])
     assert braid_verification["artin_braid_satisfied"] is True
-    assert (
-        braid_verification["artin_relation"]
-        == "sigma_1 * sigma_2 * sigma_1 == sigma_2 * sigma_1 * sigma_2"
-    )
-    assert braid_verification["pentagon_coherence_verified"] is True
-    assert braid_verification["hexagon_coherence_verified"] is True
-    assert braid_verification["exact_cyclotomic_ring"] == "Z[zeta_5]"
-    assert braid_verification["zero_floating_point"] is True
+    assert braid_verification["relations_verified"]["artin_relation"] is True
+    assert braid_verification["relations_verified"]["f_move_involution"] is True
+    assert braid_verification["relations_verified"]["r_matrix_order_10"] is True
+    assert braid_verification["ring"].startswith("Z[zeta_5]")
+    assert braid_verification["exact_arithmetic"] is True
 
 
 def test_user_journey_4_finops_metering_and_hermiten_settlement(api_client):

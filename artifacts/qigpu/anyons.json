@@ -1,0 +1,11 @@
+{
+  "command": "python -m coverage run --branch docs/qigpu/pasted-text.txt",
+  "finding": "Perron dimension satisfies Fibonacci fusion equation. In a fixed nonunitary gauge, exhaustive search of 100 tenth-root pairs yields two coherent conjugate solutions; pentagon and both hexagons are checked. Does not establish uniqueness among arbitrary phases or physical hardware.",
+  "implementation_coverage": {
+    "branch_percent": 92.44,
+    "statement_percent": 97.88
+  },
+  "source_sha256": "67384c0b03e15d20bfb04e5718f945bb9a911e87a385f424f3d12ecc8189b296",
+  "step": "P2 exact bounded fusion category derivation",
+  "tests_passed": 106
+}

@@ -229,3 +229,102 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: '1'
         run: pnpm build
+
+  qigpu-model:
+    name: QiGPU model tests and implementation coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install coverage==7.17.2
+      - name: Run QiGPU model tests and report per-function coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m coverage erase
+          python -m coverage run --branch docs/qigpu/pasted-text.txt 2>&1 | tee qigpu-test-output.txt
+          python -m coverage json -o qigpu-coverage.json
+          python - <<'PY'
+          import ast,json
+          from pathlib import Path
+          source='docs/qigpu/pasted-text.txt'
+          tree=ast.parse(Path(source).read_text())
+          data=json.loads(Path('qigpu-coverage.json').read_text())['files'][source]
+          skip=set()
+          for n in tree.body:
+              if isinstance(n,ast.ClassDef) and n.name.startswith('Test'):
+                  skip.update(range(n.lineno,n.end_lineno+1))
+          executed={n for n in data['executed_lines'] if n not in skip}
+          missing={n for n in data['missing_lines'] if n not in skip}
+          taken=[b for b in data['executed_branches'] if b[0] not in skip]
+          untaken=[b for b in data['missing_branches'] if b[0] not in skip]
+          statement=100*len(executed)/(len(executed)+len(missing))
+          branch=100*len(taken)/(len(taken)+len(untaken))
+          functions=[]
+          for node in tree.body:
+              if isinstance(node,ast.FunctionDef) and not node.name.startswith('_'):
+                  functions.append((node.name,node))
+              if isinstance(node,ast.ClassDef) and not node.name.startswith('Test'):
+                  functions.extend((node.name+'.'+n.name,n) for n in node.body if isinstance(n,ast.FunctionDef) and not n.name.startswith('_'))
+          report={}
+          for name,n in functions:
+              hit=sorted(i for i in executed if n.lineno<=i<=n.end_lineno)
+              miss=sorted(i for i in missing if n.lineno<=i<=n.end_lineno)
+              report[name]={'executed_lines':len(hit),'missing_lines':miss,'statement_percent':round(100*len(hit)/(len(hit)+len(miss)),2) if hit or miss else None}
+          Path('qigpu-function-coverage.json').write_text(json.dumps({'method':'Executed statement lines by function; not proof of semantic coverage or seven-class completeness.','functions':report},indent=2,sort_keys=True)+'\n')
+          print('Implementation coverage: statements %.2f%%; branches %.2f%%'%(statement,branch))
+          print('Per-function report:',len(report),'public functions')
+          if statement<90 or branch<90: raise SystemExit('Implementation coverage below 90%')
+          PY
+      - name: Audit coverage by public function and test class
+        shell: python
+        run: |
+          import ast,collections,coverage,importlib.util,json,sys,unittest
+          from importlib.machinery import SourceFileLoader
+          from pathlib import Path
+          source=Path('docs/qigpu/pasted-text.txt'); spec=importlib.util.spec_from_loader('qigpu_audit',SourceFileLoader('qigpu_audit',str(source)));mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
+          classes=['TestInvariant','TestProperty','TestAdversarial','TestEdge','TestUnit','TestIntegration','TestEndToEnd']
+          cov=coverage.Coverage(data_file='.coverage_context',branch=True);cov.start()
+          class AuditResult(unittest.TextTestResult):
+           def startTest(self,test):
+            cov.switch_context(test.__class__.__name__)
+            super().startTest(test)
+          suite=unittest.TestSuite(unittest.defaultTestLoader.loadTestsFromTestCase(getattr(mod,c)) for c in classes)
+          with open('qigpu-context-tests.txt','w') as stream: result=unittest.TextTestRunner(stream=stream,resultclass=AuditResult,verbosity=1).run(suite)
+          cov.stop();cov.save()
+          if not result.wasSuccessful():sys.exit(1)
+          data=cov.get_data(); name=next(x for x in data.measured_files() if x.endswith('pasted-text.txt'));line_context=data.contexts_by_lineno(name); statements=set(cov.analysis2(name)[1]);tree=ast.parse(source.read_text())
+          public=[]
+          for node in tree.body:
+           if isinstance(node,ast.FunctionDef) and not node.name.startswith('_'):
+            public.append((node.name,node))
+           elif isinstance(node,ast.ClassDef) and not node.name.startswith('Test'):
+            for n in node.body:
+             if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and not n.name.startswith('_'):
+              public.append((node.name+'.'+n.name,n))
+          missing={x:[] for x in classes};covered={x:0 for x in classes}
+          for name,node in public:
+           contexts=set()
+           for line in range(node.lineno,node.end_lineno+1):
+            if line in statements: contexts.update(c.split('|')[-1] for c in line_context.get(line,[]))
+           for c in classes:
+            if c in contexts:covered[c]+=1
+            else:missing[c].append(name)
+          report={'test_count':result.testsRun,'classes':classes,'public_functions_count':len(public),'method':'Dynamic executed-line contexts attributed per unittest class; any executable line in a function counts as touched, not proof of full behavioral coverage. Abstract methods and methods not meaningful in a class are included.','public_functions_touched_count_by_class':covered,'public_functions_not_touched_by_class':missing,'finding':'The requested every-public-function-in-every-class criterion is not established; Passing tests and aggregate coverage do not imply it. Cross-module composition coverage is not exhaustive.'}
+          Path('qigpu-seven-class-coverage.json').write_text(json.dumps(report,indent=2,sort_keys=True)+'\n')
+          print('tests',result.testsRun,'public',len(public),'touched',covered)
+      - name: State remaining acceptance gaps
+        run: echo "::warning::Passing this job does not establish CFT scaling, general backend equivalence, or exhaustive seven-class coverage."
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: qigpu-model-evidence
+          path: |
+            qigpu-test-output.txt
+            qigpu-coverage.json
+            qigpu-function-coverage.json
+            qigpu-seven-class-coverage.json
+            qigpu-context-tests.txt
+          if-no-files-found: warn

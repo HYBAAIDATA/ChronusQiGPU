@@ -8,18 +8,12 @@ from __future__ import annotations
 
 import unittest
 import warnings
-import numpy as np
 from fastapi.testclient import TestClient
 
 from chronus.tensor.enhanced_representation import (
-    Bond,
     BondStructure,
     Config,
     ContractionTree,
-    EnhancedTensorRepresentation,
-    ErrorLedger,
-    RefusedError,
-    SearchResult,
     ShardPlan,
     build_search_index,
     claim_superposition_speedup,
@@ -30,16 +24,14 @@ from chronus.tensor.enhanced_representation import (
     search_contraction_trees,
     select_best_tree,
     topology_formula,
-    _create_bond_structure,
     _create_entanglement_map,
     _initialize_tensor_network,
     HARD_CAP,
     FORBIDDEN_HYPE_STRINGS,
+    RefusedError,
+    SearchResult,
 )
-import importlib
-
-production_hr_api_v2_module = importlib.import_module("production_hr_api-v2")
-app = production_hr_api_v2_module.app
+from chronus.service.production_hr_api_v2 import app
 
 
 class TestEnhancedTensorCharter(unittest.TestCase):

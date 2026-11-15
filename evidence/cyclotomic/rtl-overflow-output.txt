@@ -1,0 +1,4 @@
+inputs=(65536,0,0,0)*(65536,0,0,0)
+exact c0=4294967296, RTL packed c0=0
+FATAL: hw/tb_cyclotomic_overflow_finding.sv:19: exact ring result is not representable by this output interface
+       Time: 26000 Scope: tb_cyclotomic_overflow_finding
