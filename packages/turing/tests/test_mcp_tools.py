@@ -55,3 +55,27 @@ def test_pauli_rejects_nonfinite_coefficients_before_encoding(value):
     with patch("turing.mcp_tools._operator", return_value=operator):
         with pytest.raises(ValueError, match="Pauli coefficients must be finite"):
             turing_decompose_pauli("I")
+
+
+def test_oversized_integer_is_validation_error():
+    from turing.mcp_tools import turing_normalize
+    with pytest.raises(ValueError, match="representable"):
+        turing_normalize([10**1000])
+
+
+def test_large_finite_vector_normalizes_without_overflow():
+    from turing.mcp_tools import turing_normalize
+    result = turing_normalize([1e308, 0])
+    assert result["amplitudes"] == [[1.0, 0.0], [0.0, 0.0]]
+
+
+def test_nonfinite_computed_expectation_rejected():
+    from turing.mcp_tools import turing_expectation
+    with pytest.raises(ValueError, match="not finite"):
+        turing_expectation([[1e308, 1e308], [1e308, 1e308]], [2**-0.5, 2**-0.5])
+
+
+def test_large_finite_operator_is_nonunitary():
+    from turing.mcp_tools import turing_operator
+    result = turing_operator([[1e308]])
+    assert result["unitary"] is False
