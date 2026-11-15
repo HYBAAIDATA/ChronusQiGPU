@@ -130,9 +130,16 @@ def _attach_tier_fields(
             )
             return _suspended_tier_fields(suspended)
         reverified = harness.reverify_contract(prior)
-        remember_transcript(reverified)
+        class_updated = remember_transcript(reverified)
         if reverified.contract.suspended:
             return _suspended_tier_fields(reverified.contract)
+        if not class_updated:
+            # A concurrent suspension won the class row; do not return clean.
+            current = recall_by_class(internal)
+            if current is not None and (
+                current.contract.suspended or current.tier == Tier.SUSPENDED
+            ):
+                return _suspended_tier_fields(current.contract)
     from chronus.qualification.harness import _default_probe_sizes
 
     sizes = _default_probe_sizes(seed)
@@ -145,7 +152,12 @@ def _attach_tier_fields(
         sizes = tuple(sorted(set(sizes) | {submission_index}))
         included_submission = True
     qualified = harness.qualify(internal, seed=seed, sizes=sizes)
-    remember_transcript(qualified)
+    if not remember_transcript(qualified):
+        current = recall_by_class(internal)
+        if current is not None and (
+            current.contract.suspended or current.tier == Tier.SUSPENDED
+        ):
+            return _suspended_tier_fields(current.contract)
     public = qualified.public_decision_fields()
     return {
         "tier": public["tier"],

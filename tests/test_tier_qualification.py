@@ -277,6 +277,75 @@ class ForgeryAndPrecisionTests(unittest.TestCase):
             )
         )
 
+    def test_reverify_keeps_custom_signed_when_measurements_match(self) -> None:
+        from chronus.security.signers import Ed25519Signer
+
+        custom = Ed25519Signer()
+        prior = QualificationHarness().qualify(
+            "LUCAS_PV_SCALING", seed=17, signer=custom.sign
+        )
+        self.assertNotIn("signing_key_id", prior.audit_transcript)
+        again = QualificationHarness().reverify_contract(prior)
+        self.assertFalse(again.contract.suspended)
+        self.assertNotEqual(again.tier, Tier.SUSPENDED)
+
+    def test_attach_returns_suspension_when_clean_remember_rejected(self) -> None:
+        import tempfile
+        from unittest.mock import patch
+
+        from chronus.qualification import transcript_store as store
+        from chronus.qualification.signing import reset_qualification_signer
+        from chronus.qualification.tiers import TIER_CONTRACT_VERSION, TierContract
+        from chronus.service.models import WorkloadStatus
+        from chronus.service.routers import workloads as workloads_router
+
+        with tempfile.TemporaryDirectory() as tmp:
+            db = str(Path(tmp) / "qualification.sqlite3")
+            with _qualification_env(CHRONUS_QUALIFICATION_DB_PATH=db):
+                reset_qualification_signer()
+                store.clear()
+                clean = QualificationHarness().qualify("LUCAS_PV_SCALING", seed=3)
+                store.remember(clean)
+                suspended = type(clean)(
+                    tier=Tier.SUSPENDED,
+                    contract=TierContract(
+                        tier=Tier.SUSPENDED,
+                        tier_contract_version=TIER_CONTRACT_VERSION,
+                        residual_bound_by_size=clean.contract.residual_bound_by_size,
+                        qualification_evidence_hash=clean.evidence_hash,
+                        suspended=True,
+                    ),
+                    evidence_hash="concurrent-suspension",
+                    audit_transcript={
+                        **clean.audit_transcript,
+                        "tier": Tier.SUSPENDED.value,
+                        "suspended": True,
+                        "evidence_hash": "concurrent-suspension",
+                    },
+                    public_view=clean.public_view,
+                    economics=clean.economics,
+                )
+
+                def reject_clean(result):
+                    if result.contract.suspended or result.tier == Tier.SUSPENDED:
+                        return store.remember(result)
+                    store.remember(suspended)
+                    return False
+
+                with patch.object(
+                    workloads_router, "remember_transcript", side_effect=reject_clean
+                ):
+                    fields = workloads_router._attach_tier_fields(
+                        "scaling.v1", status=WorkloadStatus.COMPLETED
+                    )
+                self.assertTrue(fields["tier_suspended"])
+                self.assertEqual(fields["tier"], Tier.SUSPENDED.value)
+                remaining = store.recall_by_class("LUCAS_PV_SCALING")
+                self.assertIsNotNone(remaining)
+                self.assertTrue(remaining.contract.suspended)
+                store.clear()
+            reset_qualification_signer()
+
     def test_tampered_recalled_transcript_suspends_attach(self) -> None:
         from chronus.qualification.transcript_store import clear, remember
         from chronus.service.models import WorkloadStatus
@@ -527,9 +596,10 @@ class ForgeryAndPrecisionTests(unittest.TestCase):
                 reset_qualification_signer()
                 # Group/world-readable seed is refused.
                 fd = os.open(
-                    str(seed_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644
+                    str(seed_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600
                 )
                 try:
+                    os.fchmod(fd, 0o644)  # ignore umask; force group/other bits
                     os.write(fd, ("bb" * 32).encode("ascii"))
                 finally:
                     os.close(fd)
@@ -542,7 +612,9 @@ class ForgeryAndPrecisionTests(unittest.TestCase):
         import threading
 
         from chronus.qualification.signing import (
-            get_qualification_signer,
+            QualificationSigner,
+            _publish_seed_file,
+            _seed_file_path,
             reset_qualification_signer,
         )
 
@@ -553,6 +625,7 @@ class ForgeryAndPrecisionTests(unittest.TestCase):
                 CHRONUS_QUALIFICATION_SIGNING_SEED_HEX=None,
             ):
                 reset_qualification_signer()
+                seed_path = _seed_file_path()
                 barrier = threading.Barrier(2)
                 results: list[str] = []
                 errors: list[BaseException] = []
@@ -560,8 +633,14 @@ class ForgeryAndPrecisionTests(unittest.TestCase):
                 def worker() -> None:
                     try:
                         barrier.wait(timeout=5)
-                        reset_qualification_signer()
-                        results.append(get_qualification_signer().key_id)
+                        # Call publish directly so threads compete on os.link,
+                        # not on the process-wide signer cache lock.
+                        seed = _publish_seed_file(seed_path)
+                        results.append(
+                            QualificationSigner(
+                                seed, custody="test-concurrent"
+                            ).key_id
+                        )
                     except BaseException as exc:  # noqa: BLE001 — collect for assert
                         errors.append(exc)
 

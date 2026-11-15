@@ -81,6 +81,35 @@ def _sha256_hex(payload: Any) -> str:
     return hashlib.sha256(_stable_json(payload)).hexdigest()
 
 
+_MEASUREMENT_FINGERPRINT_KEYS = (
+    "workload_class",
+    "probe_family",
+    "seed",
+    "sizes",
+    "residuals",
+    "fit",
+    "tier",
+    "tier_contract_version",
+    "degraded_probe",
+    "qualification_scope",
+    "internal_identities",
+)
+
+
+def _measurement_fingerprint(transcript: dict[str, Any]) -> str:
+    """Hash measurement fields only — excludes signing_key_id / signature.
+
+    Reverification must not suspend solely because a custom-signed prior
+    omitted ``signing_key_id`` while a durable re-probe includes it.
+    """
+    body = {
+        key: transcript[key]
+        for key in _MEASUREMENT_FINGERPRINT_KEYS
+        if key in transcript
+    }
+    return _sha256_hex(body)
+
+
 def _exact_sequence_term(n: int) -> int:
     """Exact integer term via internal metallic recurrence (provenance path)."""
     from chronus.math.binet_lucas import lucas_recurrence
@@ -298,7 +327,9 @@ class QualificationHarness:
         reason = None
         if breached:
             reason = "envelope_violation"
-        elif fresh.evidence_hash != result.evidence_hash:
+        elif _measurement_fingerprint(fresh.audit_transcript) != _measurement_fingerprint(
+            audit
+        ):
             reason = "evidence_hash_mismatch"
         if reason is None:
             return fresh
