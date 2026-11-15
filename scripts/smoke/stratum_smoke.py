@@ -487,12 +487,8 @@ class Session:
             pass
 
 
-def _hostname_looks_loopback(host: str) -> bool:
-    return host.lower() in ("127.0.0.1", "localhost", "::1")
-
-
 def _peer_is_loopback(writer) -> bool:
-    """True when the connected peer address is a loopback IP (not a hostname spelling)."""
+    """True when the connected peer address is loopback (full 127.0.0.0/8 and ::1)."""
     peer = writer.get_extra_info("peername")
     if not peer:
         return False
@@ -514,15 +510,8 @@ async def smoke(args, tx: Transcript) -> int:
     if not user:
         tx.step("config", False, f"{args.user_var} is empty")
         return 4
-    # Fail fast for clearly remote cleartext hosts before opening a socket.
-    if not use_tls and not _hostname_looks_loopback(host) and not allow_cleartext:
-        tx.step(
-            "config",
-            False,
-            "cleartext Stratum to a non-loopback host requires --allow-cleartext "
-            "(worker credentials travel in the clear)",
-        )
-        return 4
+    # Cleartext gate is the connected peer IP (not hostname spelling). That
+    # covers 127.0.0.2 and local aliases; localhost→remote hijacks still fail.
 
     started = time.monotonic()
     try:
@@ -540,7 +529,6 @@ async def smoke(args, tx: Transcript) -> int:
     peer_loopback = _peer_is_loopback(writer)
     tx.data["peer_loopback"] = peer_loopback
     if not use_tls and not peer_loopback and not allow_cleartext:
-        # Hostname may say "localhost" while the resolver maps it elsewhere.
         try:
             writer.close()
             await writer.wait_closed()

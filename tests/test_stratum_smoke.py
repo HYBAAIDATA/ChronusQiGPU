@@ -103,17 +103,48 @@ class EndianSmokeTests(unittest.TestCase):
                     main()
         self.assertEqual(raised.exception.code, 4)
 
-    def test_cleartext_non_loopback_requires_flag(self) -> None:
-        from stratum_smoke import main
+    def test_cleartext_non_loopback_peer_requires_flag(self) -> None:
+        from argparse import Namespace
+        from stratum_smoke import Transcript, smoke
+
+        class FakeWriter:
+            def get_extra_info(self, name):
+                return ("203.0.113.10", 3333) if name == "peername" else None
+
+            def close(self):
+                pass
+
+            async def wait_closed(self):
+                pass
+
+        async def fake_open_connection(*_args, **_kwargs):
+            return asyncio.StreamReader(), FakeWriter()
+
+        async def run() -> int:
+            args = Namespace(
+                host_var="MINING_BRAIINS_HOST",
+                user_var="MINING_BRAIINS_USER",
+                password_var="MINING_BRAIINS_PASSWORD",
+                port=3333,
+                timeout=1.0,
+                job_timeout=1.0,
+                submit_share=False,
+                require_accept=False,
+                share_seconds=1.0,
+                search="python",
+                version_rolling=False,
+                allow_cleartext=False,
+            )
+            tx = Transcript("fake")
+            with patch("stratum_smoke.asyncio.open_connection", fake_open_connection):
+                return await smoke(args, tx)
 
         env = {
             "MINING_BRAIINS_HOST": "stratum+tcp://pool.example:3333",
             "MINING_BRAIINS_USER": "worker",
         }
         with patch.dict(os.environ, env, clear=False):
-            with patch("sys.argv", ["stratum_smoke.py", "--target", "braiins"]):
-                with patch("sys.stderr", new=StringIO()):
-                    code = main()
+            code = asyncio.run(run())
         self.assertEqual(code, 4)
 
     def test_validate_job_params_rejects_bad_fields(self) -> None:
@@ -167,6 +198,7 @@ class EndianSmokeTests(unittest.TestCase):
                 return self._addr if name == "peername" else None
 
         self.assertTrue(_peer_is_loopback(Peer(("127.0.0.1", 3333))))
+        self.assertTrue(_peer_is_loopback(Peer(("127.0.0.2", 3333))))
         self.assertTrue(_peer_is_loopback(Peer(("::1", 3333))))
         self.assertFalse(_peer_is_loopback(Peer(("8.8.8.8", 3333))))
         self.assertFalse(_peer_is_loopback(Peer(None)))
@@ -214,6 +246,61 @@ class EndianSmokeTests(unittest.TestCase):
         with patch.dict(os.environ, env, clear=False):
             code = asyncio.run(run())
         self.assertEqual(code, 4)
+
+    def test_full_ipv4_loopback_peer_skips_cleartext_flag(self) -> None:
+        from argparse import Namespace
+        from stratum_smoke import Transcript, smoke
+
+        class FakeWriter:
+            def get_extra_info(self, name):
+                return ("127.0.0.2", 3333) if name == "peername" else None
+
+            def write(self, _data):
+                pass
+
+            async def drain(self):
+                pass
+
+            def close(self):
+                pass
+
+            async def wait_closed(self):
+                pass
+
+        async def fake_open_connection(*_args, **_kwargs):
+            reader = asyncio.StreamReader()
+            reader.feed_eof()
+            return reader, FakeWriter()
+
+        async def run():
+            args = Namespace(
+                host_var="MINING_BRAIINS_HOST",
+                user_var="MINING_BRAIINS_USER",
+                password_var="MINING_BRAIINS_PASSWORD",
+                port=3333,
+                timeout=0.2,
+                job_timeout=0.2,
+                submit_share=False,
+                require_accept=False,
+                share_seconds=1.0,
+                search="python",
+                version_rolling=False,
+                allow_cleartext=False,
+            )
+            tx = Transcript("fake")
+            with patch("stratum_smoke.asyncio.open_connection", fake_open_connection):
+                code = await smoke(args, tx)
+            return code, tx
+
+        env = {
+            "MINING_BRAIINS_HOST": "stratum+tcp://127.0.0.2:3333",
+            "MINING_BRAIINS_USER": "smoke",
+        }
+        with patch.dict(os.environ, env, clear=False):
+            code, tx = asyncio.run(run())
+        self.assertNotEqual(code, 4)
+        self.assertTrue(tx.data.get("peer_loopback"))
+        self.assertTrue(any(s["step"] == "tcp_connect" and s["ok"] for s in tx.data["steps"]))
 
 
 class TranscriptTests(unittest.TestCase):

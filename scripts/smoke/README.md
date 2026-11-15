@@ -34,7 +34,8 @@ MINING_BRAIINS_USER=smoke PYTHONPATH=src \
 preset host (does not inherit a live `MINING_*_HOST`). TLS schemes
 (`stratum+ssl` / `stratum+tls`) open a verified SSL socket; unknown schemes
 are rejected. Cleartext Stratum requires `--allow-cleartext` unless the
-**connected peer IP** is loopback (hostname spelling alone is not enough).
+**connected peer IP** is loopback (full `127.0.0.0/8` / `::1`; hostname
+spelling alone is not enough).
 Mid-search `clean_jobs=True` advances work generation and aborts submit;
 `set_difficulty` and non-clean notifies leave the selected job valid.
 
