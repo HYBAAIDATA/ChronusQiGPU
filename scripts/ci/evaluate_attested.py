@@ -110,7 +110,12 @@ def main() -> int:
         "product_gate_status":product_gate_status,
         "product_facts":product_facts,
         "gates":gates,
-        "claims":dispositions(gates, production_evidence_verified),
+        "claims":dispositions(
+            gates,
+            production_evidence_verified,
+            deployment_profile=deployment_profile,
+            product_facts=product_facts,
+        ),
     }
     target=Path(a.output)
     target.parent.mkdir(parents=True,exist_ok=True)
