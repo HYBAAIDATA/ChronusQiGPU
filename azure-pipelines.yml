@@ -17,6 +17,11 @@
 # run on App Service (infra/azure/app.bicep, infra/azure/deploy_app.sh).
 # https://docs.microsoft.com/azure/devops/pipelines/languages/python
 
+# SECURITY: this pipeline runs for every branch, and branch-supplied YAML can
+# reference the privileged service connections below. Each Azure service
+# connection must have an Azure DevOps branch-control check allowing only the
+# protected refs/heads/main branch before publish or deploy credentials can be used.
+
 trigger:
   branches:
     include:
@@ -39,6 +44,7 @@ parameters:
 variables:
   # Deployment (deploy=true only). The Azure Resource Manager connection is the
   # CronusQiGPU one; share it with this project before a deploy run.
+  # Require a branch-control check allowing protected main only.
   azureServiceConnection: '1271238c-f010-4c8c-b17a-48ec0eef51fa'
   resourceGroup: 'rg-cronusqigpu-demo'
   appServicePlan: 'asp-cronusqigpu-demo-hybadata'
