@@ -47,7 +47,11 @@ def select_run(data: dict, commit: str) -> int:
         if run.get("head_sha") == commit
         and run.get("event") == "push"
         and run.get("head_branch") == "main"
-        and run.get("path") == _WORKFLOW
+        and run.get("path") in {
+            _WORKFLOW,
+            f"{_WORKFLOW}@main",
+            f"{_WORKFLOW}@refs/heads/main",
+        }
         and run.get("status") == "completed"
         and run.get("conclusion") == "success"
         and isinstance(run.get("id"), int)
