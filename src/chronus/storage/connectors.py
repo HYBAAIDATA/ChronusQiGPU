@@ -1933,7 +1933,7 @@ class ZeroCopyConnectorManager:
                 "trace": [folded_out.trace().numerator, folded_out.trace().denominator],
                 "norm_invariant_verified": norm_verified,
             }
-        elif op == "LUCAS_PV_SCALING":
+        elif op in ("LUCAS_PV_SCALING", "scaling.v1"):
             base_idx = int(desc.get("pisot_lucas_state", {}).get("structural_index_n", 8))
             target_idx = base_idx + scale_order
             fn_t, fn1_t = _fib_pair_exact(target_idx)
@@ -1975,7 +1975,7 @@ class ZeroCopyConnectorManager:
         else:
             raise ValueError(
                 f"Unsupported pointer operation '{operation}'. "
-                "Supported: PV_LATTICE_FOLD, LUCAS_PV_SCALING, METALLIC_SCALE, EXACT_RECONSTRUCT_VERIFY, ZERO_COPY_QUERY_BENCHMARK"
+                "Supported: PV_LATTICE_FOLD, scaling.v1, METALLIC_SCALE, EXACT_RECONSTRUCT_VERIFY, ZERO_COPY_QUERY_BENCHMARK"
             )
 
         elapsed_ms = (time.perf_counter() - started) * 1000

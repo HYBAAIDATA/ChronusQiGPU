@@ -29,7 +29,7 @@ _PAGE = """<!DOCTYPE html>
 <body>
 <h1>Chronus Sovereign Control Plane</h1>
 <h2>QiGPU execution surfaces &mdash; {surface_count} provisioned (default: {default_surface})</h2>
-<h2>Phyllotaxis storage &mdash; {record_count} records across {lane_count} golden-ratio lanes</h2>
+<h2>Phyllotaxis storage &mdash; {record_count} records across {lane_count} spiral lanes</h2>
 <canvas id="spiral" width="420" height="420"></canvas>
 <canvas id="lanes" width="420" height="160"></canvas>
 <h2>Workloads: {total_workloads} total / {active_workloads} active</h2>
@@ -37,11 +37,11 @@ _PAGE = """<!DOCTYPE html>
 <script>
 const telemetry = {telemetry};
 document.getElementById("telemetry").textContent = JSON.stringify(telemetry, null, 2);
-const golden = (3 - Math.sqrt(5)) / 2;
+const spiralStep = (3 - Math.sqrt(5)) / 2;
 const sc = document.getElementById("spiral").getContext("2d");
 sc.fillStyle = "#e8b64c";
 for (let n = 0; n < Math.max(telemetry.storage.records, 1); n++) {{
-  const r = 8 * Math.sqrt(n), t = 2 * Math.PI * golden * n;
+  const r = 8 * Math.sqrt(n), t = 2 * Math.PI * spiralStep * n;
   sc.beginPath();
   sc.arc(210 + r * Math.cos(t), 210 + r * Math.sin(t), 3, 0, 7);
   sc.fill();

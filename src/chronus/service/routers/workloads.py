@@ -26,9 +26,42 @@ from chronus.service.models import (
 )
 import hashlib
 import time
+from chronus.core.seal import find_banned_tokens
+from chronus.core.workload_alias import (
+    INTERNAL_INGEST_WORKLOAD,
+    INTERNAL_SCALING_WORKLOAD,
+    normalize_workload_type,
+)
+from chronus.qualification import QualificationHarness
 from chronus.security.receipt_signer import receipt_signer
 from chronus.storage.connectors import zero_copy_connector_manager
 from chronus.service.workload_store import get_workload_store
+
+
+def _sealed_error_message(message: str) -> str:
+    """Customer-visible errors must not leak mechanism tokens."""
+    if find_banned_tokens(message):
+        return "Workload rejected: invalid or unsupported request."
+    return message
+
+
+def _attach_tier_fields(workload_type: str) -> dict:
+    """Qualify sealed scaling class; other types leave tier fields empty."""
+    internal = normalize_workload_type(str(workload_type))
+    if internal != INTERNAL_SCALING_WORKLOAD:
+        return {}
+    # Deterministic seed from class name — same class ⇒ same evidence.
+    seed = int(hashlib.sha256(b"qualify:" + internal.encode()).hexdigest()[:16], 16)
+    result = QualificationHarness().qualify(internal, seed=seed)
+    public = result.public_decision_fields()
+    return {
+        "tier": public["tier"],
+        "qualification_evidence_hash": public["qualification_evidence_hash"],
+        "envelope": public["envelope"],
+        "tier_contract_version": public["tier_contract_version"],
+        "tier_suspended": public["suspended"],
+        "metadata_tier_economics": public["economics"],
+    }
 
 _workload_ed25519_signer = receipt_signer
 from chronus.service.telemetry import (
@@ -113,8 +146,18 @@ async def submit_workload(
                 backend_preference = QiGPUOrchestrator(execution_router).auto_select(
                     request.workload_type
                 )[0]
-            is_folding = str(request.workload_type) in ("PV_LATTICE_FOLD", "TRINITY_SCALE_FOLD_STORE", "BINET_ZECKENDORF_INGEST")
-            is_storage = str(request.workload_type) in ("PHYLOTAXIS_STORE", "THESEUS_RETRIEVE", "OVID_NORM_PROOF", "ZERO_COPY_CONNECTOR_EXECUTE")
+            internal_workload = request.internal_workload_type()
+            is_folding = internal_workload in (
+                "PV_LATTICE_FOLD",
+                "TRINITY_SCALE_FOLD_STORE",
+                INTERNAL_INGEST_WORKLOAD,
+            )
+            is_storage = internal_workload in (
+                "PHYLOTAXIS_STORE",
+                "THESEUS_RETRIEVE",
+                "OVID_NORM_PROOF",
+                "ZERO_COPY_CONNECTOR_EXECUTE",
+            )
             with trace_span("execution_dispatch", {"backend": backend_preference, "workload_type": str(request.workload_type)}):
                 if is_folding:
                     with trace_span("algebraic_folding"):
@@ -125,7 +168,7 @@ async def submit_workload(
                 execution = await run_in_threadpool(
                     execution_router.execute,
                     request.payload_bytes,
-                    request.workload_type,
+                    internal_workload,
                     backend_preference,
                 )
             parsed_id = uuid4()
@@ -166,7 +209,7 @@ async def submit_workload(
             detail=ErrorResponse(
                 error="invalid_or_unsupported_workload",
                 error_code="WL001",
-                message=str(exc),
+                message=_sealed_error_message(str(exc)),
             ).model_dump(),
         ) from exc
     except ChronusSDKError as exc:
@@ -197,6 +240,17 @@ async def submit_workload(
             ).model_dump(),
         ) from exc
 
+    tier_fields = _attach_tier_fields(str(request.workload_type))
+    economics = tier_fields.pop("metadata_tier_economics", None)
+    metadata = dict(request.metadata or {})
+    if economics is not None:
+        metadata["tier_economics"] = economics
+    # Apply relative price weight when a measured tier is present.
+    if economics is not None and ccu_cost is None:
+        ccu_cost = float(economics.get("relative_price_weight", 1.0))
+    elif economics is not None and ccu_cost is not None:
+        ccu_cost = float(ccu_cost) * float(economics.get("relative_price_weight", 1.0))
+
     workload = WorkloadResponse(
         workload_id=parsed_id,
         status=backend_status,
@@ -209,12 +263,17 @@ async def submit_workload(
         result=result,
         verification_receipt=receipt,
         callback_url=request.callback_url,
-        metadata=request.metadata,
+        metadata=metadata or None,
         completed_at=(
             datetime.now(timezone.utc)
             if backend_status == WorkloadStatus.COMPLETED
             else None
         ),
+        tier=tier_fields.get("tier"),
+        qualification_evidence_hash=tier_fields.get("qualification_evidence_hash"),
+        envelope=tier_fields.get("envelope"),
+        tier_contract_version=tier_fields.get("tier_contract_version"),
+        tier_suspended=tier_fields.get("tier_suspended"),
     )
     current_workload_id.set(str(parsed_id))
     elapsed_duration = time.time() - start_wall_time

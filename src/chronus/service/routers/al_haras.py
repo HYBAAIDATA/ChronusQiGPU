@@ -153,7 +153,7 @@ async def get_al_haras_status() -> Dict[str, Any]:
                 "spectral_gap": expander["spectral_gap_decimal"],
                 "certified_exactly": expander["satisfies_bound"],
             },
-            "braid_relations": "Fibonacci braid representation over Z[zeta_5], exact",
+            "braid_relations": "Exact braid representation over Z[zeta_5]",
             "receipts": "Ed25519 and ML-DSA-87 (FIPS 204) over canonical JSON; both must verify",
         },
         "not_implemented": [

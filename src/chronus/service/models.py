@@ -13,13 +13,24 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
+from chronus.core.workload_alias import (
+    externalize_representation_mode,
+    externalize_workload_type,
+    normalize_representation_mode,
+    normalize_workload_type,
+)
+
 
 class WorkloadType(str, Enum):
-    """Supported workload types for Chronus computation."""
+    """Supported workload types for Chronus computation.
+
+    External wire values are sealed class names (e.g. ``scaling.v1``). Legacy
+    identifiers remain accepted on ingress via ``normalize_workload_type``.
+    """
 
     QUANTUM_CHEMISTRY_VQE = "QUANTUM_CHEMISTRY_VQE"
     EXACT_Q5_ALGEBRAIC = "EXACT_Q5_ALGEBRAIC"
-    LUCAS_PV_SCALING = "LUCAS_PV_SCALING"
+    SCALING_V1 = "scaling.v1"
     SHA256D_NONCE_SEARCH = "SHA256D_NONCE_SEARCH"
     PV_LATTICE_FOLD = "PV_LATTICE_FOLD"
     TRINITY_SCALE_FOLD_STORE = "TRINITY_SCALE_FOLD_STORE"
@@ -34,16 +45,16 @@ class WorkloadType(str, Enum):
     DEFENCE_SIMULATION = "DEFENCE_SIMULATION"
     SOVEREIGN_INFRASTRUCTURE = "SOVEREIGN_INFRASTRUCTURE"
     ZERO_COPY_CONNECTOR_EXECUTE = "ZERO_COPY_CONNECTOR_EXECUTE"
-    BINET_ZECKENDORF_INGEST = "BINET_ZECKENDORF_INGEST"
+    INGEST_V1 = "ingest.v1"
 
 
 class RepresentationMode(str, Enum):
-    """Representation modes for exact algebraic computation."""
+    """Representation modes for exact algebraic computation (sealed wire names)."""
 
     EXACT_Q5_RATIONAL = "EXACT_Q5_RATIONAL"
-    BINET_ZECKENDORF = "BINET_ZECKENDORF"
-    PV_LUCAS_COLLAPSE = "PV_LUCAS_COLLAPSE"
-    GALOIS_F257_PHI = "GALOIS_F257_PHI"
+    EXACT_FOLD_V1 = "exact.fold.v1"
+    COLLAPSE_V1 = "collapse.v1"
+    GALOIS_V1 = "galois.v1"
     O1_STRUCTURAL = "O1_STRUCTURAL"
 
 
@@ -80,11 +91,11 @@ class WorkloadRequest(BaseModel):
     )
     workload_type: WorkloadType = Field(
         default=WorkloadType.EXACT_Q5_ALGEBRAIC,
-        description="Type of workload to execute",
+        description="Type of workload to execute (sealed class name; legacy aliases accepted)",
     )
     representation_mode: RepresentationMode = Field(
         default=RepresentationMode.EXACT_Q5_RATIONAL,
-        description="Exact algebraic representation mode",
+        description="Exact algebraic representation mode (sealed class name)",
     )
     priority: Priority = Field(default=Priority.HIGH, description="Workload priority")
     tenant_id: str = Field(
@@ -125,6 +136,22 @@ class WorkloadRequest(BaseModel):
     def encode_wire_payload(self, value: bytes) -> str:
         return "base64:" + base64.b64encode(value).decode("ascii")
 
+    @field_validator("workload_type", mode="before")
+    @classmethod
+    def accept_workload_aliases(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            internal = normalize_workload_type(value)
+            return externalize_workload_type(internal)
+        return value
+
+    @field_validator("representation_mode", mode="before")
+    @classmethod
+    def accept_representation_aliases(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            internal = normalize_representation_mode(value)
+            return externalize_representation_mode(internal)
+        return value
+
     @field_validator("tenant_id")
     @classmethod
     def tenant_id_must_be_valid(cls, v: str) -> str:
@@ -133,6 +160,12 @@ class WorkloadRequest(BaseModel):
         return v.strip()
 
     model_config = ConfigDict(use_enum_values=True)
+
+    def internal_workload_type(self) -> str:
+        return normalize_workload_type(str(self.workload_type))
+
+    def internal_representation_mode(self) -> str:
+        return normalize_representation_mode(str(self.representation_mode))
 
 
 class WorkloadResponse(BaseModel):
@@ -158,8 +191,53 @@ class WorkloadResponse(BaseModel):
     verification_receipt: Optional[str] = None
     callback_url: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
+    # Measured-tier contract (behavior only — no mechanism tokens).
+    tier: Optional[str] = Field(
+        default=None,
+        description="Measured convergence tier assigned by the qualification harness",
+    )
+    qualification_evidence_hash: Optional[str] = Field(
+        default=None,
+        description="Hash of the sealed qualification transcript evidence",
+    )
+    envelope: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Signed residual envelope: max residual as a function of input size",
+    )
+    tier_contract_version: Optional[str] = Field(
+        default=None,
+        description="Version of the tier envelope contract",
+    )
+    tier_suspended: Optional[bool] = Field(
+        default=None,
+        description="True when the tier contract is suspended after envelope violation",
+    )
 
     model_config = ConfigDict(use_enum_values=True)
+
+    @field_validator("workload_type", mode="before")
+    @classmethod
+    def seal_workload_type(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            return externalize_workload_type(normalize_workload_type(value))
+        return value
+
+    @field_validator("representation_mode", mode="before")
+    @classmethod
+    def seal_representation_mode(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            return externalize_representation_mode(normalize_representation_mode(value))
+        return value
+
+    @field_validator("error_message")
+    @classmethod
+    def error_must_be_sealed(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return value
+        from chronus.core.seal import assert_sealed
+
+        assert_sealed(value, context="WorkloadResponse.error_message")
+        return value
 
 
 class HealthStatus(str, Enum):
