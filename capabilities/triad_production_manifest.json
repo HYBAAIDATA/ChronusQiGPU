@@ -110,6 +110,22 @@
         "scripts/ci/evaluate_attested.py"
       ],
       "owner": "CHRONUS"
+    },
+    "tensor_cuda": {
+      "status": "IMPLEMENTED_BRANCH_HARDWARE_EVIDENCE_REQUIRED",
+      "paths": [
+        "src/chronus/tensor/cuda_backend.py",
+        "tests/test_geodesic_tensor_migration.py"
+      ],
+      "owner": "CHRONUS"
+    },
+    "tensor_metal": {
+      "status": "IMPLEMENTED_BRANCH_HARDWARE_EVIDENCE_REQUIRED",
+      "paths": [
+        "src/chronus/tensor/metal_backend.py",
+        "tests/test_geodesic_tensor_migration.py"
+      ],
+      "owner": "CHRONUS"
     }
   },
   "release_rule": "No capability receives production-admitted status from source presence or historical evidence alone; exact-commit current evidence and mandatory gates are required."
