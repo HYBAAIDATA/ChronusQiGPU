@@ -514,6 +514,57 @@ class NotifyRetentionTests(unittest.TestCase):
 
         asyncio.run(scenario())
 
+    def test_session_defaults_to_difficulty_one_before_set_difficulty(self) -> None:
+        async def scenario() -> None:
+            reader = asyncio.StreamReader()
+
+            class W:
+                def write(self, _data):
+                    pass
+
+                async def drain(self):
+                    pass
+
+                def close(self):
+                    pass
+
+                async def wait_closed(self):
+                    pass
+
+            session = Session(reader, W(), Transcript("fake"))
+            try:
+                self.assertEqual(session.difficulty, 1.0)
+                reader.feed_data(
+                    (
+                        json.dumps(
+                            {
+                                "id": None,
+                                "method": "mining.notify",
+                                "params": ["early-job"] + ["00"] * 7 + [True],
+                            }
+                        )
+                        + "\n"
+                    ).encode()
+                )
+                notify = await session.wait_for("mining.notify", 1.0)
+                self.assertEqual(notify["_difficulty"], 1.0)
+                # A later set_difficulty must not rewrite the prior snapshot.
+                reader.feed_data(
+                    (
+                        json.dumps(
+                            {"id": None, "method": "mining.set_difficulty", "params": [9]}
+                        )
+                        + "\n"
+                    ).encode()
+                )
+                await asyncio.sleep(0.05)
+                self.assertEqual(notify["_difficulty"], 1.0)
+                self.assertEqual(session.difficulty, 9)
+            finally:
+                await session.close()
+
+        asyncio.run(scenario())
+
     def test_notify_snapshots_difficulty_and_work_generation(self) -> None:
         async def scenario() -> None:
             reader = asyncio.StreamReader()

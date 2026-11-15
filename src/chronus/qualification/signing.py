@@ -70,7 +70,8 @@ def _validate_seed_stat(st: os.stat_result, *, path: Path) -> None:
             f"qualification seed {path} must be owned by the service user "
             f"(uid={st.st_uid})"
         )
-    if st.st_mode & 0o077:
+    # POSIX group/other bits are not meaningful on Windows ACLs.
+    if os.name == "posix" and (st.st_mode & 0o077):
         raise ValueError(
             f"qualification seed {path} must not be group/world accessible "
             f"(mode={stat.filemode(st.st_mode)})"
@@ -143,21 +144,16 @@ def _write_all(fd: int, payload: bytes) -> None:
 def _fsync_dir(directory: Path) -> None:
     """Durably record directory entries (required after link/create).
 
-    On Windows, ``os.open`` on a directory raises ``PermissionError``; the
-    seed file itself was already ``fsync``'d before ``link``, so skip the
-    parent fsync there.
+    Non-POSIX platforms cannot reliably ``os.open`` a directory for fsync; the
+    seed file itself was already ``fsync``'d before ``link``, so skip there.
     """
-    if os.name == "nt":
+    if os.name != "posix":
         return
     flags = os.O_RDONLY
-    # O_DIRECTORY is POSIX-only; Windows open() rejects unknown flags.
     directory_flag = getattr(os, "O_DIRECTORY", 0)
     if directory_flag:
         flags |= directory_flag
-    try:
-        dir_fd = os.open(str(directory), flags)
-    except OSError:
-        return
+    dir_fd = os.open(str(directory), flags)
     try:
         os.fsync(dir_fd)
     finally:

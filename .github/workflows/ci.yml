@@ -16,6 +16,8 @@ jobs:
   tests:
     name: Python ${{ matrix.python }} tests
     # Critical path: self-hosted Windows (see docs/ci/self-hosted-runner.md).
+    # Same-repo only — fork PRs must not execute on a persistent runner.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, windows]
     strategy:
       fail-fast: false
@@ -41,6 +43,7 @@ jobs:
   quality-and-package:
     name: Lint, compile and package
     # Critical path: self-hosted Windows (see docs/ci/self-hosted-runner.md).
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, windows]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -130,6 +133,7 @@ jobs:
   purity-gate:
     name: Mathematical purity gate & Sovereign DIFC Attestation
     # Critical path: self-hosted Windows (see docs/ci/self-hosted-runner.md).
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, windows]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -337,6 +341,7 @@ jobs:
   offline-stratum-smoke:
     name: Offline Stratum smoke
     # Critical path: self-hosted Windows (see docs/ci/self-hosted-runner.md).
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, windows]
     timeout-minutes: 5
     steps:
@@ -352,7 +357,26 @@ jobs:
         shell: pwsh
         run: |
           $pool = Start-Process -PassThru -NoNewWindow -FilePath python -ArgumentList @('scripts/smoke/fake_pool.py','--port','3333','--exit-after','30')
-          Start-Sleep -Seconds 1
-          python scripts/smoke/stratum_smoke.py --target fake --submit-share --require-accept
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          if (-not $pool.HasExited) { Stop-Process -Id $pool.Id -Force }
+          $ready = $false
+          foreach ($i in 1..50) {
+            try {
+              $client = New-Object System.Net.Sockets.TcpClient
+              $iar = $client.BeginConnect('127.0.0.1', 3333, $null, $null)
+              $ok = $iar.AsyncWaitHandle.WaitOne(200)
+              if ($ok -and $client.Connected) { $ready = $true; $client.Close(); break }
+              $client.Close()
+            } catch { }
+            Start-Sleep -Milliseconds 200
+          }
+          if (-not $ready) {
+            if (-not $pool.HasExited) { Stop-Process -Id $pool.Id -Force }
+            throw 'fake pool did not accept connections on 127.0.0.1:3333 within 10s'
+          }
+          $code = 0
+          try {
+            python scripts/smoke/stratum_smoke.py --target fake --submit-share --require-accept
+            $code = $LASTEXITCODE
+          } finally {
+            if (-not $pool.HasExited) { Stop-Process -Id $pool.Id -Force }
+          }
+          exit $code
