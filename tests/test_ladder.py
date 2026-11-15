@@ -21,6 +21,11 @@ def test_console_index_is_the_known_lucas_value():
     assert verify(10) == 123
 
 
+def test_index_zero_holds_without_a_negative_fibonacci():
+    assert lucas(0) == 2
+    assert verify(0) == 2
+
+
 def test_shipped_ladder_stays_under_int64_and_names_the_crossing():
     assert max(verify(index).bit_length() for index in LUCAS_LADDER) <= 53
     assert verify(INT64_CROSSING - 1) < INT64_LIMIT < verify(INT64_CROSSING)

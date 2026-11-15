@@ -52,8 +52,12 @@ def lucas(n: int) -> int:
 
 def verify(n: int) -> int:
     """Exact double identity. Returns L(n); raises if either half fails."""
+    if n < 0:
+        raise AssertionError(f"index must be nonnegative, got {n}")
     value, neighbour = lucas(n), fib(n)
-    if value != fib(n - 1) + fib(n + 1):
+    # F(-1) = F(1), so index 0 never asks fib for a negative argument.
+    earlier = fib(1) if n == 0 else fib(n - 1)
+    if value != earlier + fib(n + 1):
         raise AssertionError(f"additive identity failed at {n}")
     if value**2 - 5 * neighbour**2 != 4 * (-1) ** n:
         raise AssertionError(f"cassini analogue failed at {n}")
