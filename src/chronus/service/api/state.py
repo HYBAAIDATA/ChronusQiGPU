@@ -218,12 +218,62 @@ def database_path() -> str:
     return os.getenv("CHRONUS_API_DB_PATH", "data/chronus-api.sqlite3")
 
 
+def _open_existing_database(path: str, expected_identity: tuple[int, int]) -> sqlite3.Connection:
+    """Open a previously initialized database without serializing all requests."""
+    try:
+        before = os.stat(path)
+    except OSError as exc:
+        raise RuntimeError(
+            "SQLite database unavailable at initialized path; recovery verification required"
+        ) from exc
+    if (before.st_dev, before.st_ino) != expected_identity:
+        raise RuntimeError(
+            "SQLite database replaced at an initialized path; "
+            "recovery verification required before serving requests"
+        )
+    connection = sqlite3.connect(path, timeout=30.0, isolation_level=None)
+    try:
+        connection.execute("PRAGMA busy_timeout=30000")
+        after = os.stat(path)
+        if (after.st_dev, after.st_ino) != expected_identity:
+            raise RuntimeError(
+                "SQLite database changed while opening; recovery verification required"
+            )
+        if connection.execute("PRAGMA journal_mode").fetchone()[0].lower() != "wal":
+            raise RuntimeError(
+                "SQLite journal mode changed; recovery verification required"
+            )
+        if not _schema_valid(connection):
+            raise RuntimeError(
+                "SQLite schema changed after initialization; "
+                "recovery verification required before serving requests"
+            )
+        final = os.stat(path)
+        if (final.st_dev, final.st_ino) != expected_identity:
+            raise RuntimeError(
+                "SQLite database replaced during validation; recovery verification required"
+            )
+        return connection
+    except Exception:
+        connection.close()
+        raise
+
+
 def _connect() -> sqlite3.Connection:
-    path = str(Path(database_path()).resolve())
+    # Normalize lexical aliases without resolving the symlink target.
+    # A retargeted symlink must retain its cache key and fail identity checks.
+    path = os.path.abspath(os.path.normpath(database_path()))
     Path(path).parent.mkdir(parents=True, exist_ok=True)
-    # Serialize initial creation and validation, not just schema DDL.
-    # This prevents another thread seeing a partially bootstrapped database.
+    prior_identity = _INITIALIZED_DB.get(path)
+    if prior_identity is not None:
+        return _open_existing_database(path, prior_identity)
+
+    # Lock only first-use startup. Recheck inside the lock so concurrent
+    # callers neither see incomplete DDL nor block steady-state requests.
     with _SCHEMA_LOCK:
+        prior_identity = _INITIALIZED_DB.get(path)
+        if prior_identity is not None:
+            return _open_existing_database(path, prior_identity)
         try:
             before_stat = os.stat(path)
             before_identity = (before_stat.st_dev, before_stat.st_ino)
@@ -238,24 +288,16 @@ def _connect() -> sqlite3.Connection:
                 raise RuntimeError(
                     "SQLite database changed while opening; recovery verification required"
                 )
-            prior_identity = _INITIALIZED_DB.get(path)
-            if prior_identity is not None and prior_identity != identity:
+            # An existing incomplete database must never be recreated on restart.
+            if before_identity is not None and not _schema_valid(connection):
                 raise RuntimeError(
-                    "SQLite database replaced at an initialized path; "
+                    "SQLite schema missing or invalid in existing database; "
                     "recovery verification required before serving requests"
                 )
-            if prior_identity is None:
-                # Restarting a process must not recreate tables in an existing
-                # incomplete database. Only a newly created file is bootstrapped.
-                if before_identity is not None and not _schema_valid(connection):
-                    raise RuntimeError(
-                        "SQLite schema missing or invalid in existing database; "
-                        "recovery verification required before serving requests"
-                    )
-                mode = connection.execute("PRAGMA journal_mode").fetchone()[0]
-                if mode.lower() != "wal":
-                    connection.execute("PRAGMA journal_mode=WAL")
-                if before_identity is None:
+            mode = connection.execute("PRAGMA journal_mode").fetchone()[0]
+            if mode.lower() != "wal":
+                connection.execute("PRAGMA journal_mode=WAL")
+            if before_identity is None:
                     for table in _TABLES:
                         connection.execute(
                             f"CREATE TABLE IF NOT EXISTS api_{table} ("
@@ -280,25 +322,17 @@ def _connect() -> sqlite3.Connection:
                         "CREATE TABLE IF NOT EXISTS api_rate_limits ("
                         "key TEXT PRIMARY KEY, window_start INTEGER NOT NULL, count INTEGER NOT NULL)"
                     )
-                if not _schema_valid(connection):
-                    raise RuntimeError(
-                        "SQLite schema invalid after initialization; "
-                        "recovery verification required before serving requests"
-                    )
-                _INITIALIZED_DB[path] = identity
-            else:
-                if connection.execute("PRAGMA journal_mode").fetchone()[0].lower() != "wal":
-                    raise RuntimeError("SQLite journal mode changed; recovery verification required")
-                if not _schema_valid(connection):
-                    raise RuntimeError(
-                        "SQLite schema changed after initialization; "
-                        "recovery verification required before serving requests"
-                    )
+            if not _schema_valid(connection):
+                raise RuntimeError(
+                    "SQLite schema invalid after initialization; "
+                    "recovery verification required before serving requests"
+                )
             after_stat = os.stat(path)
             if identity != (after_stat.st_dev, after_stat.st_ino):
                 raise RuntimeError(
                     "SQLite database replaced during initialization; recovery verification required"
                 )
+            _INITIALIZED_DB[path] = identity
             return connection
         except Exception:
             connection.close()

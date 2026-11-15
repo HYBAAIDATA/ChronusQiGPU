@@ -314,6 +314,48 @@ def test_sqlite_rejects_unexpected_write_trigger(tmp_path, monkeypatch):
     monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
 
 
+def test_sqlite_symlink_retarget_fails_closed(tmp_path, monkeypatch):
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "sqlite")
+    first = tmp_path / "first.sqlite3"
+    second = tmp_path / "second.sqlite3"
+    link = tmp_path / "current.sqlite3"
+    for db_path in (first, second):
+        monkeypatch.setenv("CHRONUS_API_DB_PATH", str(db_path))
+        with state.connection():
+            pass
+    link.symlink_to(first)
+    monkeypatch.setenv("CHRONUS_API_DB_PATH", str(link))
+    with state.connection():
+        pass
+    link.unlink()
+    link.symlink_to(second)
+    with pytest.raises(RuntimeError, match="database replaced"):
+        with state.connection():
+            pass
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
+
+
+def test_sqlite_steady_state_connections_do_not_take_bootstrap_lock(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "sqlite")
+    monkeypatch.setenv("CHRONUS_API_DB_PATH", str(tmp_path / "api.sqlite3"))
+    with state.connection():
+        pass
+
+    class RejectBootstrapLock:
+        def __enter__(self):
+            raise AssertionError("regular connections should not take bootstrap lock")
+
+        def __exit__(self, *args):
+            return False
+
+    monkeypatch.setattr(state, "_SCHEMA_LOCK", RejectBootstrapLock())
+    with state.connection() as conn:
+        assert conn.execute("SELECT 1").fetchone()[0] == 1
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
+
+
 def test_same_key_different_body_is_409(client):
     _post(client, ALPHA)
     response = _post(client, ALPHA, body={**BODY, "gpu_count": 2})
