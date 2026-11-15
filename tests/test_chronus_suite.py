@@ -15,13 +15,14 @@ from chronus.config import (
 
 
 class TestChronusMasterSuite(unittest.TestCase):
-    def test_full_verification_suite(self):
+    def test_full_verification_suite_fails_closed_without_external_evidence(self):
         res = ChronusVerificationOrchestrator.run_complete_verification_suite()
-        self.assertEqual(res["qualification_status"], "PRODUCTION_QUALIFIED")
-        self.assertEqual(res["total_release_gates_evaluated"], 8)
-        self.assertEqual(res["release_gates_passed"], 8)
-        self.assertEqual(res["total_invariants_evaluated"], 94)
-        self.assertEqual(res["invariants_passed"], 94)
+        self.assertEqual(res["qualification_status"], "UNQUALIFIED")
+        self.assertFalse(res["production_admitted"])
+        self.assertEqual(res["total_release_gates_evaluated"], 5)
+        self.assertEqual(res["release_gates_passed"], 0)
+        self.assertFalse(res["attestation_verified"])
+        self.assertTrue(res["blockers"])
 
     def test_production_config_capabilities(self):
         self.assertTrue(PRODUCTION_MODE)
