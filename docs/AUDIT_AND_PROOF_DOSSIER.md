@@ -1,5 +1,7 @@
 # Chronus GPIU v36.0 & AL HARAS OS: Irrefutable CI System Audit & Cryptographic Proof Dossier
 
+> **Evidence-status notice (15 November 2026): HISTORICAL / NOT CURRENTLY QUALIFIED.** The certificate, metrics, signatures, hardware timings, production and API claims below are retained as historical assertions, **not** as currently verified results. The present `ChronusVerificationOrchestrator.run_complete_verification_suite()` generates a local `NOT_QUALIFIED` diagnostic with five local gates; it does not prove 8/8 production gates, 94/94 invariants, external device performance, or deployment. Re-establish each claim against an identified commit, raw test/runtime artifacts, independent verification and release attestation before using this dossier as current certification. A successful CI workflow is not itself a production qualification.
+
 **Document Classification**: Sovereign Production Qualification & Cryptographic Attestation  
 **Release Target**: Chronus GPIU v36.0 Enterprise Sovereign Edition  
 **Substrate**: Heterogeneous Accelerated Silicon (`CPU_SOFTWARE_NATIVE_MATHEMATICAL_SUBSTRATE` / `T-ISA RoCC`)  
@@ -32,7 +34,7 @@ Zero-Auth Endpoint     : GET /v1/verify/{receipt_hash} -> HTTP 200 OK (valid=tru
 
 ## 2. Six-Step Automated CI Audit Telemetry
 
-The automated audit script [`scripts/ci/run_irrefutable_audit.py`](file:///c:/Users/leonn/OneDrive/Desktop/chronus-quantum-igpu/scripts/ci/run_irrefutable_audit.py) executed the full end-to-end verification sequence:
+**Historical sequence only — not an execution report for the current commit.** The current `scripts/ci/run_irrefutable_audit.py` fails closed when local diagnostics are not qualified and does **not** establish execution of all subsequent stages. The stages and telemetry below are historical claims requiring fresh source evidence:
 
 ### Step 1: Mathematical Purity & Zero-Theatre Audit
 * **Scanner**: `scripts/ci/purity_gate.py`
@@ -136,7 +138,7 @@ The automated audit script [`scripts/ci/run_irrefutable_audit.py`](file:///c:/Us
 
 ### Step 6: Qualification Dossier Manifest Compilation
 * Manifest written to: [`manifests/qualification_manifest_v36.json`](file:///c:/Users/leonn/OneDrive/Desktop/chronus-quantum-igpu/manifests/qualification_manifest_v36.json)
-* Status finalized: `"PRODUCTION_QUALIFIED"`
+* Historical status recorded: `"PRODUCTION_QUALIFIED"` (**not valid as current qualification; current local diagnostics: `NOT_QUALIFIED`**)
 
 ---
 
