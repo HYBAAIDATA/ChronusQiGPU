@@ -102,6 +102,33 @@
         "evidence/acceleration/"
       ],
       "current_qualification": "CURRENT_EVIDENCE_EXISTS"
+    },
+    {
+      "id": "enterprise-native-tensor-backends-pr67",
+      "source_kind": "NOTION",
+      "source": "Notion 7cbb9c98-2162-48c4-b6bb-7b348b2d98e5 / historical merged PR #67",
+      "capability": "Explicit CUDA and Metal tensor execution with device-bound evidence semantics",
+      "historical_result": "Merged enterprise-hardening record described CUDA C kernels and MLX/Metal routes for matmul/add/scale/kron/hadamard, fail-closed routing and device-bound measurement; no current physical CUDA/Metal timing was claimed.",
+      "sha256": null,
+      "migrated_to": [
+        "src/chronus/tensor/cuda_backend.py",
+        "src/chronus/tensor/metal_backend.py",
+        "tests/test_geodesic_tensor_migration.py"
+      ],
+      "current_qualification": "MAPPED_TO_CURRENT_TESTS"
+    },
+    {
+      "id": "storage-suite-20261115-mbrif-evidence",
+      "source_kind": "LIBRARY",
+      "source": "HYBA_MBRIF_Investment_Deck.pdf / file_00000000cf9481fdbbf49d7c26cb442c",
+      "capability": "Storage reconstruction and digest-mismatch rejection",
+      "historical_result": "Deck records 16/16 storage checks passed on Chronusv2 main at revision 672f3d7 on 15 Nov 2026 using tests/test_storage.py.",
+      "sha256": null,
+      "migrated_to": [
+        "tests/test_storage.py",
+        "tests/test_triad_production.py"
+      ],
+      "current_qualification": "RERUN_REQUIRED"
     }
   ]
 }
