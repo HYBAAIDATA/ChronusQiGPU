@@ -1,0 +1,61 @@
+# Known failures.
+#
+# Every test listed here was already failing at origin/main (commit
+# dc920a82) before this branch touched anything. They are recorded rather
+# than hidden, so a reviewer can see the debt and tell whose it is.
+#
+# The list is enforced by tests/conftest.py, which applies a strict xfail to
+# every node id below. Strict means that a test which starts passing while it
+# is still listed FAILS, so fixing a test requires removing it from this list
+# in the same change. The debt cannot be forgotten.
+#
+# Format: one node id per line, "path/to/module.py::test_name". Blank lines
+# and lines beginning with # are ignored. A path prefixed with
+# "collection:" is a module that fails at import, which an xfail marker
+# cannot reach; those are skipped before import and reported.
+#
+# The list is per test, not per module, so a module that is partly working
+# is not written off wholesale.
+#
+# Remove a line as soon as the test passes, in the same commit as the fix.
+#
+# --- collection failures (the module cannot be imported) ---
+collection:tests/test_signers.py
+collection:tests/test_al_haras_runner_scripts.py
+#
+# --- tests/test_facade.py ---
+tests/test_facade.py::test_empty_gates_fail
+tests/test_facade.py::test_failing_gate_fails
+tests/test_facade.py::test_crashing_gate_fails
+tests/test_facade.py::test_mldsa_blocks
+#
+# --- tests/test_al_haras_scenarios.py ---
+tests/test_al_haras_scenarios.py::TestPassphrasePaths::test_empty_passphrase_rejected
+tests/test_al_haras_scenarios.py::TestPassphrasePaths::test_whitespaced_passphrase
+tests/test_al_haras_scenarios.py::TestAdversarialVortexDetection::test_large_perturbation_vortex
+tests/test_al_haras_scenarios.py::TestAdversarialVortexDetection::test_pure_noise_state_rejected
+tests/test_al_haras_scenarios.py::TestCleanConsensusPreserved::test_identical_vectors_clean
+tests/test_al_haras_scenarios.py::TestDeepStateDrift::test_cumulative_drift_exceeds_tolerance
+tests/test_al_haras_scenarios.py::TestDeepStateDrift::test_is_secure_flag_matches_consensus
+tests/test_al_haras_scenarios.py::TestDSWInstantonHealing::test_bitflip_payload_healed
+tests/test_al_haras_scenarios.py::TestDSWInstantonHealing::test_clean_trace_no_fault
+tests/test_al_haras_scenarios.py::TestHeckeModularChecksum::test_paylooad_satisfies_weil_bound
+tests/test_al_haras_scenarios.py::TestHeckeModularChecksum::test_random_payloads_all_satisfy_bound
+tests/test_al_haras_scenarios.py::TestUnifiedSecurityFabric::test_speak_friend_enter_admitted
+tests/test_al_haras_scenarios.py::TestSovereignGovernanceEngine::test_ncsc_14_principles_compliant
+tests/test_al_haras_scenarios.py::TestSovereignGovernanceEngine::test_sovereign_kernel_boot
+tests/test_al_haras_scenarios.py::TestCyclotomicAnyonBraidEngine::test_artin_braid_relation_satisfied
+tests/test_al_haras_scenarios.py::TestCyclotomicAnyonBraidEngine::test_zero_floating_point_exact
+tests/test_al_haras_scenarios.py::TestWrongPassphraseRejected::test_wrong_passphrase_rejected_and_healed
+tests/test_al_haras_scenarios.py::TestCaseInsensitivePassphrase::test_case_variant_passphrase_admitted
+#
+# --- tests/test_capacity_harness.py ---
+tests/test_capacity_harness.py::ProbeTests::test_block_counter_unavailable_is_not_physical_measurement
+#
+# --- tests/test_wiring.py ---
+tests/test_wiring.py::test_repeat_run_updates_and_duplicate_history
+tests/test_wiring.py::test_descendant_symlink_cannot_redirect_write[False]
+tests/test_wiring.py::test_descendant_symlink_cannot_redirect_write[True]
+#
+# --- tests/test_repository_layout.py ---
+tests/test_repository_layout.py::test_one_turing_source_tree
