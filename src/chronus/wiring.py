@@ -14,6 +14,7 @@ import logging
 import os
 import re
 import shutil
+import stat
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -306,18 +307,61 @@ def toposort_wired(graph: Dict[Path, List[Path]]) -> List[Path]:
 
 
 # PART_2_MARKER
+def _bundle_file_matches(output_dir: Path, rel_path: Path, entry: FileEntry) -> bool:
+    """Hash a regular output file through no-follow directory/file descriptors.
+
+    Reuse must not trust aliases or symlinked ancestors, even when their bytes
+    currently happen to match. The opened descriptor remains bound to the file
+    being verified rather than following a mutable path during hashing.
+    """
+    if rel_path.is_absolute() or not rel_path.parts or ".." in rel_path.parts:
+        return False
+    flags = os.O_RDONLY | os.O_NOFOLLOW
+    try:
+        dir_fd = os.open(output_dir, flags | os.O_DIRECTORY)
+    except (OSError, ValueError):
+        return False
+    try:
+        for part in rel_path.parts[:-1]:
+            child_fd = os.open(part, flags | os.O_DIRECTORY, dir_fd=dir_fd)
+            os.close(dir_fd)
+            dir_fd = child_fd
+        leaf_fd = os.open(rel_path.name, flags | os.O_NONBLOCK, dir_fd=dir_fd)
+        try:
+            metadata = os.fstat(leaf_fd)
+            if not stat.S_ISREG(metadata.st_mode) or metadata.st_size != entry.size:
+                return False
+            digest = hashlib.sha256()
+            while True:
+                chunk = os.read(leaf_fd, 1024 * 1024)
+                if not chunk:
+                    break
+                digest.update(chunk)
+            return digest.hexdigest() == entry.sha256
+        finally:
+            os.close(leaf_fd)
+    except (OSError, ValueError, RuntimeError):
+        return False
+    finally:
+        os.close(dir_fd)
+
+
 def _already_wired(entries: List[FileEntry], output_dir: Path) -> Tuple[List[FileEntry], List[FileEntry]]:
     """Return only source-identical files already present in the sealed output bundle.
 
-    Manifest entries alone are not trusted: both the source digest and the
-    contained destination's bytes must match. Reject symlink escapes.
+    The manifest is untrusted metadata. The source digest, source size and the
+    actual regular destination bytes must all agree; no symlink aliases pass.
     """
     current = {e.rel_path: e for e in entries}
     wired_set: Set[Path] = set()
-    if output_dir.is_dir():
+    if output_dir.is_dir() and not output_dir.is_symlink():
         for manifest_file in output_dir.glob("__wiring_manifest.json"):
+            if manifest_file.is_symlink():
+                continue
             try:
                 data = json.loads(manifest_file.read_text(encoding="utf-8"))
+                if not isinstance(data, dict):
+                    continue
                 records = data.get("files") or {}
                 if not isinstance(records, dict):
                     continue
@@ -327,22 +371,13 @@ def _already_wired(entries: List[FileEntry], output_dir: Path) -> Tuple[List[Fil
                 if not isinstance(rel, str) or not isinstance(rec, dict):
                     continue
                 rel_path = Path(rel)
-                if rel_path.is_absolute() or ".." in rel_path.parts:
+                if rel_path.is_absolute() or not rel_path.parts or ".." in rel_path.parts:
                     continue
                 entry = current.get(rel_path)
                 if entry is None or entry.size != rec.get("size") or entry.sha256 != rec.get("sha256"):
                     continue
-                target = output_dir / rel_path
-                try:
-                    if (
-                        _is_within(target.resolve(), output_dir.resolve())
-                        and target.is_file()
-                        and target.stat().st_size == entry.size
-                        and _hash_file(target) == entry.sha256
-                    ):
-                        wired_set.add(rel_path)
-                except (OSError, ValueError, RuntimeError):
-                    continue
+                if _bundle_file_matches(output_dir, rel_path, entry):
+                    wired_set.add(rel_path)
     return (
         [e for e in entries if e.rel_path in wired_set],
         [e for e in entries if e.rel_path not in wired_set],
