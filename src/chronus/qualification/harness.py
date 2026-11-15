@@ -10,7 +10,15 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
-from decimal import Decimal, localcontext
+from decimal import (
+    ROUND_HALF_EVEN,
+    Context,
+    Decimal,
+    DivisionByZero,
+    InvalidOperation,
+    Overflow,
+    localcontext,
+)
 from typing import Any, Callable, Sequence
 
 from chronus.core.seal import assert_sealed, external_behavior_blurb
@@ -25,6 +33,15 @@ _DECIMAL_PREC = 80
 
 # Internal probe identity — never emitted on external surfaces.
 _INTERNAL_PROBE_FAMILY = "metallic_sequence_residual_v1"
+
+
+def _qualification_context(prec: int) -> Context:
+    """Deterministic Decimal context — does not inherit caller traps/rounding."""
+    return Context(
+        prec=prec,
+        rounding=ROUND_HALF_EVEN,
+        traps=[InvalidOperation, DivisionByZero, Overflow],
+    )
 
 
 @dataclass(frozen=True)
@@ -82,9 +99,9 @@ def _residual(n: int) -> Decimal:
     Evaluating |β|^n directly avoids subtracting two large nearly-equal values,
     which lets rounding dominate for large n. External surfaces never name α/β.
     """
-    with localcontext() as ctx:
-        # |β|^n needs ~0.21n decimal digits; keep a generous headroom.
-        ctx.prec = max(_DECIMAL_PREC, (n // 4) + 40)
+    # |β|^n needs ~0.21n decimal digits; keep a generous headroom.
+    # High-precision Decimal approximation of the conjugate residual — not float.
+    with localcontext(_qualification_context(max(_DECIMAL_PREC, (n // 4) + 40))):
         beta = (Decimal(1) - Decimal(5).sqrt()) / Decimal(2)
         return abs(beta) ** n
 
@@ -171,8 +188,7 @@ class QualificationHarness:
         degrade: bool = False,
         signer: Callable[[bytes], str] | None = None,
     ) -> QualificationResult:
-        with localcontext() as ctx:
-            ctx.prec = _DECIMAL_PREC
+        with localcontext(_qualification_context(_DECIMAL_PREC)):
             probe_sizes = tuple(sizes) if sizes is not None else _default_probe_sizes(seed)
             residuals = [self._residual_fn(n) for n in probe_sizes]
             if degrade:
@@ -242,8 +258,12 @@ class QualificationHarness:
                 economics=economics,
             )
 
-    def reverify_contract(self, result: QualificationResult) -> TierContract:
-        """Re-run the same seed/sizes; suspend on envelope violation."""
+    def reverify_contract(self, result: QualificationResult) -> QualificationResult:
+        """Re-run the same seed/sizes; return a suspended result on breach.
+
+        Always returns a full ``QualificationResult`` so callers can persist the
+        fresh audit transcript that backs any new evidence hash.
+        """
         audit = result.audit_transcript
         sizes = tuple(audit["sizes"])
         seed = int(audit["seed"])
@@ -254,29 +274,41 @@ class QualificationHarness:
             sizes=sizes,
             degrade=degrade,
         )
-        # Compare residuals against contracted bounds (exact string form).
+        violated = False
         for (size, bound), (_, fresh_bound) in zip(
             result.contract.residual_bound_by_size, fresh.contract.residual_bound_by_size
         ):
             if Decimal(fresh_bound) > Decimal(bound):
-                suspended = TierContract(
-                    tier=Tier.SUSPENDED,
-                    tier_contract_version=TIER_CONTRACT_VERSION,
-                    residual_bound_by_size=fresh.contract.residual_bound_by_size,
-                    qualification_evidence_hash=fresh.evidence_hash,
-                    suspended=True,
-                )
-                return suspended
-        if fresh.evidence_hash != result.evidence_hash:
-            # Seed/size locked — hash mismatch is also a model-risk alarm.
-            return TierContract(
-                tier=Tier.SUSPENDED,
-                tier_contract_version=TIER_CONTRACT_VERSION,
-                residual_bound_by_size=fresh.contract.residual_bound_by_size,
-                qualification_evidence_hash=fresh.evidence_hash,
-                suspended=True,
-            )
-        return fresh.contract
+                violated = True
+                break
+        if not violated and fresh.evidence_hash != result.evidence_hash:
+            violated = True
+        if not violated:
+            return fresh
+        suspended_contract = TierContract(
+            tier=Tier.SUSPENDED,
+            tier_contract_version=TIER_CONTRACT_VERSION,
+            residual_bound_by_size=fresh.contract.residual_bound_by_size,
+            qualification_evidence_hash=fresh.evidence_hash,
+            suspended=True,
+        )
+        economics = economics_for_tier(Tier.SUSPENDED).to_public_dict()
+        public_view = {
+            **fresh.public_view,
+            "tier": Tier.SUSPENDED.value,
+            "suspended": True,
+            "envelope": suspended_contract.to_public_dict()["envelope"],
+            "economics": economics,
+        }
+        assert_sealed(json.dumps(public_view), context="qualification suspended view")
+        return QualificationResult(
+            tier=Tier.SUSPENDED,
+            contract=suspended_contract,
+            evidence_hash=fresh.evidence_hash,
+            audit_transcript=fresh.audit_transcript,
+            public_view=public_view,
+            economics=economics,
+        )
 
     @staticmethod
     def _default_signer(body: bytes) -> str:

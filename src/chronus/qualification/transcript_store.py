@@ -7,6 +7,7 @@ the workload; operators can re-verify against the stored transcript.
 
 from __future__ import annotations
 
+import copy
 from threading import Lock
 from typing import Any
 
@@ -18,21 +19,24 @@ _BY_CLASS: dict[str, QualificationResult] = {}
 
 
 def remember(result: QualificationResult) -> None:
-    """Persist the latest qualification result for its class and evidence hash."""
+    """Persist a deep copy of the latest qualification result."""
     with _LOCK:
-        _BY_HASH[result.evidence_hash] = dict(result.audit_transcript)
-        _BY_CLASS[str(result.audit_transcript.get("workload_class", ""))] = result
+        _BY_HASH[result.evidence_hash] = copy.deepcopy(result.audit_transcript)
+        _BY_CLASS[str(result.audit_transcript.get("workload_class", ""))] = copy.deepcopy(
+            result
+        )
 
 
 def recall_by_class(workload_class: str) -> QualificationResult | None:
     with _LOCK:
-        return _BY_CLASS.get(workload_class)
+        stored = _BY_CLASS.get(workload_class)
+        return copy.deepcopy(stored) if stored is not None else None
 
 
 def recall_by_hash(evidence_hash: str) -> dict[str, Any] | None:
     with _LOCK:
         transcript = _BY_HASH.get(evidence_hash)
-        return dict(transcript) if transcript is not None else None
+        return copy.deepcopy(transcript) if transcript is not None else None
 
 
 def clear() -> None:

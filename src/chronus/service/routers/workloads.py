@@ -123,9 +123,10 @@ def _attach_tier_fields(
                 suspended=True,
             )
             return _suspended_tier_fields(suspended)
-        contract = harness.reverify_contract(prior)
-        if contract.suspended:
-            return _suspended_tier_fields(contract)
+        reverified = harness.reverify_contract(prior)
+        remember_transcript(reverified)
+        if reverified.contract.suspended:
+            return _suspended_tier_fields(reverified.contract)
     from chronus.qualification.harness import _default_probe_sizes
 
     sizes = _default_probe_sizes(seed)

@@ -78,7 +78,7 @@ def scrub_dict_strings(payload: dict, *, context: str = "api payload") -> dict:
                 if isinstance(key, str):
                     assert_sealed(key, context=f"{context}:{key_path}")
                 walk(value, key_path)
-        elif isinstance(node, list):
+        elif isinstance(node, (list, tuple)):
             for index, value in enumerate(node):
                 walk(value, f"{path}[{index}]")
         elif isinstance(node, str):

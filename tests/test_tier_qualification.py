@@ -100,8 +100,8 @@ class HarnessTests(unittest.TestCase):
         self.assertEqual(first.public_view["qualification_scope"], "reference_model_class")
 
     def test_localcontext_isolates_decimal_precision(self) -> None:
-        from decimal import getcontext
         from concurrent.futures import ThreadPoolExecutor
+        from decimal import ROUND_DOWN, Inexact, getcontext, localcontext
 
         harness = QualificationHarness()
         baseline = harness.qualify("LUCAS_PV_SCALING", seed=7).evidence_hash
@@ -113,6 +113,13 @@ class HarnessTests(unittest.TestCase):
         with ThreadPoolExecutor(max_workers=1) as pool:
             other = pool.submit(worker).result()
         self.assertEqual(baseline, other)
+
+        with localcontext() as ctx:
+            ctx.rounding = ROUND_DOWN
+            ctx.traps[Inexact] = True
+            ctx.prec = 28
+            hostile = harness.qualify("LUCAS_PV_SCALING", seed=7).evidence_hash
+        self.assertEqual(baseline, hostile)
 
     def test_degraded_class_drops_tier(self) -> None:
         harness = QualificationHarness()
@@ -196,8 +203,11 @@ class HarnessTests(unittest.TestCase):
             economics=tight.economics,
         )
         suspended = harness.reverify_contract(tight_contract_result)
-        self.assertTrue(suspended.suspended)
+        self.assertTrue(suspended.contract.suspended)
         self.assertEqual(suspended.tier, Tier.SUSPENDED)
+        self.assertEqual(
+            suspended.evidence_hash, suspended.audit_transcript["evidence_hash"]
+        )
 
 
 class ForgeryAndPrecisionTests(unittest.TestCase):
