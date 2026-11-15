@@ -32,7 +32,14 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-EVIDENCE_DIR = REPO_ROOT / "evidence" / "chronus"
+
+# Evidence is written to the repository by default, so a release artefact can
+# be regenerated deliberately. CHRONUS_EVIDENCE_DIR redirects the writes, which
+# lets a test compare a generated artefact against the committed one without
+# overwriting it. The writer is opt-in; the test only reads.
+EVIDENCE_DIR = Path(
+    os.environ.get("CHRONUS_EVIDENCE_DIR") or (REPO_ROOT / "evidence" / "chronus")
+)
 
 SEEDS = [1337, 42, 2026]
 
