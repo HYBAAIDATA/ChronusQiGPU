@@ -68,6 +68,7 @@ class TestCommercialSuite(unittest.TestCase):
             },
         )
         self.assertEqual(result.verdict, "UNVERIFIED_LEGACY")
+        self.assertIsNone(result.total_cost_usd)
         self.assertIn("security_verdict", result.contributions)
 
     def test_structured_extractor(self) -> None:
