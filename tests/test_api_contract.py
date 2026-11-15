@@ -230,6 +230,41 @@ with state.connection() as conn:
     assert (tmp_path / "multiprocess.sqlite3.bootstrap.lock").exists()
 
 
+def test_bootstrap_sidecar_blocks_competing_process(tmp_path):
+    """Prove a second process cannot acquire an already-held bootstrap lock."""
+    import time
+
+    db_path = tmp_path / "sidecar-lock.sqlite3"
+    script = (
+        "from chronus.service.api.state import _interprocess_bootstrap_lock; "
+        "print('WAITING', flush=True); "
+        "with_lock = _interprocess_bootstrap_lock(" + repr(str(db_path)) + "); "
+        "with_lock.__enter__(); "
+        "print('ACQUIRED', flush=True); "
+        "with_lock.__exit__(None, None, None)"
+    )
+    child = None
+    try:
+        with state._interprocess_bootstrap_lock(str(db_path)):
+            child = subprocess.Popen(
+                [sys.executable, "-c", script],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+            )
+            assert child.stdout.readline().strip() == "WAITING"
+            time.sleep(0.35)
+            assert child.poll() is None, (
+                "Second worker bypassed the first worker's bootstrap lock"
+            )
+        stdout, stderr = child.communicate(timeout=30)
+        assert child.returncode == 0, stderr
+        assert "ACQUIRED" in stdout
+    finally:
+        if child is not None:
+            if child.poll() is None:
+                child.kill()
+            child.wait(timeout=15)
+
+
 def test_sqlite_replaced_database_fails_closed_and_readiness_drops(
     tmp_path, monkeypatch
 ):
