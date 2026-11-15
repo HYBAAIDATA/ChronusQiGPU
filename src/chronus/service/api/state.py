@@ -278,7 +278,17 @@ def _interprocess_bootstrap_lock(path: str) -> Iterator[None]:
         else:
             import fcntl
 
-            fcntl.flock(fd, fcntl.LOCK_EX)
+            deadline = time.monotonic() + 30
+            while True:
+                try:
+                    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    break
+                except BlockingIOError as exc:
+                    if time.monotonic() >= deadline:
+                        raise TimeoutError(
+                            "SQLite bootstrap lock contention exceeded 30s"
+                        ) from exc
+                    time.sleep(0.05)
         try:
             yield
         finally:
