@@ -18,7 +18,7 @@ class Policy(CapabilityQualificationRegistry):
         super().__init__(trusted_verifiers={"test": Ed25519PrivateKey.generate().public_key()})
 
     def authorize(self, *, claim_id, source_revision, domain, task_scope, authority):
-        if claim_id != "promoted." + authority or domain != "euclid.agent.skill":
+        if not claim_id.endswith("." + authority) or domain != "euclid.agent.skill":
             raise PermissionError("not qualified")
         if source_revision != "c" * 40 or task_scope != "case":
             raise PermissionError("scope mismatch")
@@ -35,7 +35,7 @@ class CommercialIntegration(unittest.TestCase):
         def member(identifier, skills):
             return QualifiedAgent(
                 identifier, "c" * 40, "case", tuple(sorted(skills)),
-                {skill: "promoted." + skill for skill in skills},
+                {skill: identifier + "." + skill for skill in skills},
             )
         self.agents = [member("lead", LEADER_SKILLS), member("agent", {"task.run"})]
         self.activator = SwarmActivator(
