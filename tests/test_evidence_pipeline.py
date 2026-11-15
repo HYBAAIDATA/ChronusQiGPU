@@ -18,7 +18,7 @@ def test_skipped_tests_are_recorded_but_do_not_qualify(tmp_path, monkeypatch):
     target = tmp_path / "test-evidence.json"
     monkeypatch.setenv("GITHUB_SHA", "expected-commit")
     monkeypatch.setenv("GITHUB_RUN_ID", "1234")
-    assert build_evidence.build(junit, target) == 0
+    assert build_evidence.build(junit, target) == 1
     result = json.loads(target.read_text(encoding="utf-8"))
     assert result["status"] == "UNQUALIFIED"
     assert result["tests"] == {"total": 2, "passed": 1, "failed": 0, "skipped": 1}
