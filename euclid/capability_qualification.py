@@ -495,6 +495,15 @@ class CapabilityQualificationRegistry:
             return QualificationStatus.REVOKED
         return QualificationStatus.UNAVAILABLE
 
+    def active_claim(
+        self, *, claim_id: str, source_revision: str, domain: str, task_scope: str
+    ) -> CapabilityClaim | None:
+        """Return the currently promoted exact-scope claim, if any."""
+        key = (claim_id, source_revision, domain, task_scope)
+        if key in self._revoked:
+            return None
+        return self._active.get(key)
+
     def authorize(
         self,
         *,
