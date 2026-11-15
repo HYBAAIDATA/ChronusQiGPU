@@ -11,13 +11,14 @@ from __future__ import annotations
 
 import re
 import json
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 from typing import Any
 
 _SKILL = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}\Z")
 _FEATURE = re.compile(r"[A-Za-z0-9_.:-]{1,128}\Z")
 _ROLE = re.compile(r"r[0-9]{1,2}\Z")
 _MAX_OUTPUT_BYTES = 65536
+
 
 def _tool(description: str, fields: dict[str, Any], required: list[str]) -> dict[str, Any]:
     return {
@@ -189,7 +190,6 @@ class EuclidSkillExchange:
     ) -> dict[str, Any]:
         """Read one committed EUCLID generation and return scoped results."""
         from euclid.cognition.integrated.skills import _roles_of, instantiate
-        from euclid.cognition.state import MemoryKind
 
         args = self._validate_arguments(name, arguments)
         # Authorize BEFORE inspecting custody or revealing whether it exists.
@@ -216,14 +216,12 @@ class EuclidSkillExchange:
                     ], "training_required_for_consumer": False})
         if name in {"euclid_skill_get", "euclid_skill_render"}:
             record = self._promoted(library, args["skill_id"])
-            body = library.to_payload()
-            sealed_row = next(row for row in body["skills"] if row["skill_id"] == record.skill_id)
             if name == "euclid_skill_get":
                 return self._bounded({"owner": "EUCLID", "custody_binding": binding_id,
                         "skill": {
                             "skill_id": record.skill_id, "status": record.status,
-                            "level": record.level, "pattern": sealed_row["pattern_json"],
-                            "semantic_digest": record.semantic, "seal": sealed_row["seal"],
+                            "level": record.level, "pattern": record.pattern,
+                            "semantic_digest": record.semantic, "seal": library.seal(record),
                             "support_count": len(record.support),
                             "surfaces": sorted(record.surfaces),
                             "held_out_utility": record.held_out_utility,
@@ -239,10 +237,9 @@ class EuclidSkillExchange:
                     "operators": [self._mechanism(m) for m in instructions],
                     "execution_performed": False, "authority_granted": False})
 
-        kinds = args.get("kinds", [])
-        types = [MemoryKind(x) for x in kinds] if kinds else None
-        records = knowledge.memory.retrieve(frozenset(args["features"]), kinds=types)
-        results = []
+        # StructuralMemory currently has no trusted mission binding in its schema.
+        # Fail closed rather than expose or rank cross-mission episodes.
+        raise PermissionError("EUCLID memory recall is unavailable until memory custody is mission-scoped")
         for item in records:
             # Mission ownership must be explicit in the custodied record.
             # Unbound or cross-mission memories are never exported.
