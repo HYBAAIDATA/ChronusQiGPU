@@ -164,7 +164,7 @@ class SwarmJournal:
             self._db.close()
             raise SwarmRefused("journal requires SQLite WAL mode")
         self._db.execute("PRAGMA synchronous=FULL")
-        self._db.execute("CREATE TABLE IF NOT EXISTS missions (id TEXT PRIMARY KEY, digest TEXT NOT NULL, status TEXT NOT NULL)")
+        self._db.execute("CREATE TABLE IF NOT EXISTS missions (id TEXT PRIMARY KEY, digest TEXT NOT NULL, status TEXT NOT NULL, event_count INTEGER NOT NULL DEFAULT 0, event_head TEXT NOT NULL DEFAULT '')"
         self._db.execute("CREATE TABLE IF NOT EXISTS events (mission_id TEXT NOT NULL, seq INTEGER NOT NULL, previous TEXT NOT NULL, hash TEXT NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(mission_id,seq))")
 
     def close(self) -> None:
@@ -220,6 +220,7 @@ class SwarmJournal:
                     "INSERT INTO events VALUES(?,?,?,?,?)",
                     (mission_id, seq, previous, digest, data.decode("utf-8")),
                 )
+                self._db.execute("UPDATE missions SET event_count=?, event_head=? WHERE id=?", (seq, digest, mission_id))
                 self._db.execute("COMMIT")
                 return digest
             except BaseException:
@@ -243,6 +244,9 @@ class SwarmJournal:
                 "SELECT seq,previous,hash,payload FROM events WHERE mission_id=? ORDER BY seq",
                 (mission_id,),
             ).fetchall()
+        mission_row = self._db.execute("SELECT status,event_count,event_head FROM missions WHERE id=?", (mission_id,)).fetchone()
+        if mission_row is None or not rows or len(rows) != mission_row[1]:
+            return False
         previous = "0" * 64
         for expected, (seq, prev, digest, payload) in enumerate(rows, start=1):
             try:
@@ -256,7 +260,11 @@ class SwarmJournal:
             if seq != expected or prev != previous or digest != computed:
                 return False
             previous = digest
-        return True
+        if previous != mission_row[2]:
+            return False
+        if mission_row[0] in {"completed", "failed"}:
+            return json.loads(rows[-1][3]).get("kind") == mission_row[0]
+        return mission_row[0] == "running"
 
 
 class SwarmActivator:
