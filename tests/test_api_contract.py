@@ -265,6 +265,41 @@ def test_bootstrap_sidecar_blocks_competing_process(tmp_path):
             child.wait(timeout=15)
 
 
+def test_bootstrap_lock_is_shared_by_database_symlink_alias(tmp_path):
+    """Two independent workers resolving the same DB must share one lock."""
+    import time
+
+    target = tmp_path / "canonical.sqlite3"
+    target.touch()
+    alias = tmp_path / "alias.sqlite3"
+    alias.symlink_to(target)
+    code = (
+        "from chronus.service.api.state import _interprocess_bootstrap_lock; "
+        "print('WAITING', flush=True); "
+        "gate = _interprocess_bootstrap_lock(" + repr(str(alias)) + "); "
+        "gate.__enter__(); print('ACQUIRED', flush=True); "
+        "gate.__exit__(None, None, None)"
+    )
+    child = None
+    try:
+        with state._interprocess_bootstrap_lock(str(target)):
+            child = subprocess.Popen(
+                [sys.executable, "-c", code],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+            )
+            assert child.stdout.readline().strip() == "WAITING"
+            time.sleep(0.25)
+            assert child.poll() is None, "alias obtained a different bootstrap lock"
+        output, errors = child.communicate(timeout=30)
+        assert child.returncode == 0, errors
+        assert "ACQUIRED" in output
+    finally:
+        if child is not None:
+            if child.poll() is None:
+                child.kill()
+            child.wait(timeout=15)
+
+
 def test_crash_during_bootstrap_keeps_incomplete_database_unqualified(
     tmp_path, monkeypatch
 ):
