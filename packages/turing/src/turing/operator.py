@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Iterable
 
@@ -79,9 +80,16 @@ class LinearOperator:
         return self.almost_equal(self.adjoint(), tolerance)
 
     def is_unitary(self, tolerance: float = DEFAULT_TOLERANCE) -> bool:
-        return self.adjoint().compose(self).almost_equal(
-            LinearOperator.identity(self.dimension), tolerance
-        )
+        # Reject impossible columns before multiplying; large finite entries
+        # must classify as non-unitary, not overflow an intermediate operator.
+        if any(abs(value) > 1.0 + tolerance for row in self.matrix for value in row):
+            return False
+        try:
+            return self.adjoint().compose(self).almost_equal(
+                LinearOperator.identity(self.dimension), tolerance
+            )
+        except (ValueError, OverflowError):
+            return False
 
     def almost_equal(self, other: "LinearOperator", tolerance: float = DEFAULT_TOLERANCE) -> bool:
         if not isinstance(other, LinearOperator) or self.dimension != other.dimension:
