@@ -28,6 +28,7 @@ import copy
 import hashlib
 import json
 import logging
+import struct
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable, Sequence
 
@@ -72,7 +73,8 @@ def _normalise(value: Any) -> Any:
     if isinstance(value, int):
         return ["int", value]
     if isinstance(value, float):
-        return ["float", format(value, ".17g")]
+        # Binary64 bits, not decimal text: distinct NaN payloads stay distinct.
+        return ["float", struct.pack("!d", value).hex()]
     if isinstance(value, bytes):
         return ["bytes", value.hex()]
     raise IdentityError(f"not canonicalisable: {type(value).__name__}")

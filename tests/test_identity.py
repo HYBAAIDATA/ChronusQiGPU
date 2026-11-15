@@ -1,6 +1,7 @@
 """Digest identity: Theseus preserves, Ovid breaks, Chronus orders the faces."""
 
 import copy
+import struct
 
 import pytest
 
@@ -43,6 +44,9 @@ def test_canonical_bytes_distinguish_types():
     assert canonical(RECORD) == canonical(dict(reversed(list(RECORD.items()))))
     assert digest({"x": 1.0}) != digest({"x": "1"})
     assert digest(True) != digest(1)
+    quiet = struct.unpack("!d", bytes.fromhex("7ff8000000000001"))[0]
+    loud = struct.unpack("!d", bytes.fromhex("7ff8000000000002"))[0]
+    assert digest(quiet) != digest(loud)
     assert digest(b"\xde\xad") != digest({"$bytes": "dead"})
     with pytest.raises(IdentityError, match="dictionary keys"):
         canonical({1: "x"})
