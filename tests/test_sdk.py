@@ -61,7 +61,8 @@ def test_sdk_submits_and_retrieves_workload_through_service(tmp_path, monkeypatc
         sdk.close()
 
     assert submitted["status"] == "COMPLETED"
-    assert submitted["result"]["result"]["lucas"] == "123"
+    assert submitted["result"]["result"]["family"] == "scaling.v1"
+    assert submitted["result"]["result"]["sequence_value"] == "123"
     assert retrieved["workload_id"] == submitted["workload_id"]
 
 

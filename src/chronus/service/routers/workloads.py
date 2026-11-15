@@ -26,13 +26,16 @@ from chronus.service.models import (
 )
 import hashlib
 import time
-from chronus.core.seal import find_banned_tokens
+from chronus.core.seal import find_banned_tokens, scrub_dict_strings
 from chronus.core.workload_alias import (
     INTERNAL_INGEST_WORKLOAD,
     INTERNAL_SCALING_WORKLOAD,
+    externalize_scaling_result,
     normalize_workload_type,
 )
-from chronus.qualification import QualificationHarness
+from chronus.qualification import QualificationHarness, Tier
+from chronus.qualification.transcript_store import remember as remember_transcript
+from chronus.qualification.transcript_store import recall_by_class
 from chronus.security.receipt_signer import receipt_signer
 from chronus.storage.connectors import zero_copy_connector_manager
 from chronus.service.workload_store import get_workload_store
@@ -50,6 +53,7 @@ def _attach_tier_fields(workload_type: object, *, status: WorkloadStatus) -> dic
 
     This is explicitly *not* a claim that the selected execution backend was
     re-probed for this submission. Only attach on COMPLETED responses.
+    Prior transcripts for the class are re-verified; envelope breach suspends.
     """
     if status != WorkloadStatus.COMPLETED:
         return {}
@@ -58,7 +62,29 @@ def _attach_tier_fields(workload_type: object, *, status: WorkloadStatus) -> dic
         return {}
     # Deterministic seed from class name — same class ⇒ same evidence.
     seed = int(hashlib.sha256(b"qualify:" + internal.encode()).hexdigest()[:16], 16)
-    result = QualificationHarness().qualify(internal, seed=seed)
+    harness = QualificationHarness()
+    prior = recall_by_class(internal)
+    if prior is not None:
+        contract = harness.reverify_contract(prior)
+        if contract.suspended:
+            economics = {
+                "tier": Tier.SUSPENDED.value,
+                "service_level": "envelope.suspended",
+                "escalation_threshold": "model_risk_alarm",
+                "review_budget_ccu": 0,
+                "relative_price_weight": 0.0,
+            }
+            return {
+                "tier": Tier.SUSPENDED.value,
+                "qualification_evidence_hash": contract.qualification_evidence_hash,
+                "envelope": contract.to_public_dict()["envelope"],
+                "tier_contract_version": contract.tier_contract_version,
+                "tier_suspended": True,
+                "metadata_tier_economics": economics,
+                "metadata_qualification_scope": "reference_model_class",
+            }
+    result = harness.qualify(internal, seed=seed)
+    remember_transcript(result)
     public = result.public_decision_fields()
     return {
         "tier": public["tier"],
@@ -145,6 +171,12 @@ async def submit_workload(
             parsed_id = UUID(workload_id)
             backend_status = WorkloadStatus(submission["status"])
             result = submission.get("result")
+            if (
+                normalize_workload_type(request.workload_type) == INTERNAL_SCALING_WORKLOAD
+                and isinstance(result, dict)
+            ):
+                result = externalize_scaling_result(result)
+                scrub_dict_strings(result, context="scaling.v1 adapter result")
             receipt = submission.get("verification_receipt")
             ccu_cost = submission.get("ccu_cost")
         else:
@@ -181,6 +213,9 @@ async def submit_workload(
             parsed_id = uuid4()
             backend_status = WorkloadStatus.COMPLETED
             result = execution.to_dict()
+            if internal_workload == INTERNAL_SCALING_WORKLOAD and isinstance(result, dict):
+                result = externalize_scaling_result(result)
+                scrub_dict_strings(result, context="scaling.v1 result")
             raw_digest = (result.get("result") or {}).get("execution_digest") if isinstance(result, dict) else None
             if not raw_digest:
                 raw_digest = hashlib.sha256(str(result).encode("utf-8")).hexdigest()
@@ -255,10 +290,9 @@ async def submit_workload(
         metadata["tier_economics"] = economics
     if qualification_scope is not None:
         metadata["qualification_scope"] = qualification_scope
-    # Apply relative price weight when a measured tier is present.
-    if economics is not None and ccu_cost is None:
-        ccu_cost = float(economics.get("relative_price_weight", 1.0))
-    elif economics is not None and ccu_cost is not None:
+    # Relative price weight is a multiplier on a measured/base CCU only.
+    # Do not invent an absolute cost from the weight when no meter exists.
+    if economics is not None and ccu_cost is not None:
         ccu_cost = float(ccu_cost) * float(economics.get("relative_price_weight", 1.0))
 
     workload = WorkloadResponse(

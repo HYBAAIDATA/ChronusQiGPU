@@ -18,13 +18,18 @@ When asked how scaling works, the external answer is:
 > tier class is assigned by measured convergence behavior under our qualification harness
 
 Legacy workload wire name for the scaling class is accepted on ingress and
-emitted as `scaling.v1`.
+emitted as `scaling.v1`. Scaling execution results on the API are rewritten to
+sealed keys (`family`, `sequence_value`, `companion_value`); mechanism names
+are not customer-visible. Envelope bounds are scoped to
+`discrete_probe_sizes` only.
 
 ## Internal posture
 
 Audit transcripts and the claim registry keep full provenance (mechanism
 identities, probe family, cross-checks). The seal is one-way: audit wins
-internally; seal wins externally.
+internally; seal wins externally. Process-local transcript storage supports
+re-verify on subsequent class attachments; envelope breach suspends the tier.
+Transcript signatures use process-local Ed25519 (not durable key custody).
 
 ## CI
 

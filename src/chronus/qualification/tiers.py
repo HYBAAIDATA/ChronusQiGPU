@@ -35,10 +35,13 @@ class TierContract:
             "tier": self.tier.value,
             "tier_contract_version": self.tier_contract_version,
             "envelope": {
+                # Bounds are measured at the discrete probe sizes only —
+                # not a continuous interpolant across untested sizes.
+                "scope": "discrete_probe_sizes",
                 "residual_bound": [
                     {"size": size, "max_residual": bound}
                     for size, bound in self.residual_bound_by_size
-                ]
+                ],
             },
             "qualification_evidence_hash": self.qualification_evidence_hash,
             "suspended": self.suspended,

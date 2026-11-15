@@ -7,6 +7,7 @@ import math
 import subprocess
 import sys
 import unittest
+from decimal import Decimal, localcontext
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -14,12 +15,17 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from chronus.core.seal import assert_sealed, find_banned_tokens  # noqa: E402
 from chronus.core.workload_alias import (  # noqa: E402
+    externalize_scaling_result,
     externalize_workload_type,
     normalize_workload_type,
 )
 from chronus.math.binet_lucas import fibonacci_fast, lucas_recurrence  # noqa: E402
 from chronus.qualification import QualificationHarness  # noqa: E402
-from chronus.qualification.harness import verify_transcript_integrity  # noqa: E402
+from chronus.qualification.harness import (  # noqa: E402
+    _residual,
+    _sha256_hex,
+    verify_transcript_integrity,
+)
 from chronus.qualification.tiers import Tier  # noqa: E402
 from chronus.service.models import WorkloadRequest, WorkloadType  # noqa: E402
 
@@ -146,7 +152,7 @@ class HarnessTests(unittest.TestCase):
                 result = super().qualify(*args, **kwargs)
                 # Inflate residual bounds beyond the contracted envelope.
                 inflated = tuple(
-                    (size, format(float(bound) * 10.0, "f"))
+                    (size, format(Decimal(bound) * Decimal(10), "f"))
                     for size, bound in result.contract.residual_bound_by_size
                 )
                 from chronus.qualification.tiers import TIER_CONTRACT_VERSION, TierContract
@@ -172,7 +178,7 @@ class HarnessTests(unittest.TestCase):
         from chronus.qualification.tiers import TIER_CONTRACT_VERSION, TierContract
 
         tightened_bounds = tuple(
-            (size, format(max(float(bound) * 1e-9, 0.0), "f"))
+            (size, format(max(Decimal(bound) * Decimal("1e-9"), Decimal(0)), "f"))
             for size, bound in tight.contract.residual_bound_by_size
         )
         tight_contract_result = type(tight)(
@@ -192,6 +198,55 @@ class HarnessTests(unittest.TestCase):
         suspended = harness.reverify_contract(tight_contract_result)
         self.assertTrue(suspended.suspended)
         self.assertEqual(suspended.tier, Tier.SUSPENDED)
+
+
+class ForgeryAndPrecisionTests(unittest.TestCase):
+    def test_recomputed_hash_forgery_rejected(self) -> None:
+        result = QualificationHarness().qualify("LUCAS_PV_SCALING", seed=11)
+        forged = dict(result.audit_transcript)
+        forged["residuals"] = list(forged["residuals"])
+        forged["residuals"][0] = "999.0"
+        body = {k: v for k, v in forged.items() if k not in ("evidence_hash", "signature")}
+        forged["evidence_hash"] = _sha256_hex(body)
+        self.assertFalse(verify_transcript_integrity(forged))
+
+    def test_signature_only_alteration_rejected(self) -> None:
+        result = QualificationHarness().qualify("LUCAS_PV_SCALING", seed=11)
+        altered = dict(result.audit_transcript)
+        altered["signature"] = "00" * 64
+        self.assertFalse(verify_transcript_integrity(altered))
+        missing = {k: v for k, v in result.audit_transcript.items() if k != "signature"}
+        self.assertFalse(verify_transcript_integrity(missing))
+
+    def test_large_probe_residual_is_accurate(self) -> None:
+        n = 500
+        with localcontext() as ctx:
+            ctx.prec = 1200
+            beta = (Decimal(1) - Decimal(5).sqrt()) / Decimal(2)
+            reference = abs(beta) ** n
+        measured = _residual(n)
+        self.assertGreater(measured, 0)
+        self.assertLess(abs(measured - reference), reference * Decimal("1e-60"))
+        result = QualificationHarness().qualify(
+            "LUCAS_PV_SCALING", seed=13, sizes=(300, 400, 500)
+        )
+        self.assertEqual(result.contract.residual_bound_by_size[-1][0], 500)
+
+
+class ScalingResultSealTests(unittest.TestCase):
+    def test_scaling_result_is_sealed(self) -> None:
+        from chronus.execution.reference import NativeMathReferenceBackend
+
+        raw = NativeMathReferenceBackend().execute(b'{"index":10}', "scaling.v1")
+        sealed = externalize_scaling_result({"backend": "x", "result": raw})
+        payload = json.dumps(sealed)
+        self.assertEqual(find_banned_tokens(payload), [])
+        self.assertEqual(sealed["result"]["family"], "scaling.v1")
+        self.assertEqual(sealed["result"]["sequence_value"], str(lucas_recurrence(10)))
+
+    def test_envelope_declares_discrete_scope(self) -> None:
+        result = QualificationHarness().qualify("LUCAS_PV_SCALING", seed=3)
+        self.assertEqual(result.public_view["envelope"]["scope"], "discrete_probe_sizes")
 
 
 class InternalIdentityTests(unittest.TestCase):

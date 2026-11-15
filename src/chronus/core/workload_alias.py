@@ -97,3 +97,42 @@ def normalize_pointer_operation(operation: str) -> str:
     if text.lower() in EXTERNAL_TO_INTERNAL_WORKLOAD:
         return EXTERNAL_TO_INTERNAL_WORKLOAD[text.lower()]
     return text.upper()
+
+
+def externalize_scaling_result(result: dict) -> dict:
+    """Map a scaling execution result onto sealed external keys.
+
+    Only measured values and the sealed family name are emitted; internal
+    provenance keys and identity text are dropped from the customer view.
+    """
+    if not isinstance(result, dict):
+        return result
+    payload = result.get("result")
+    if not isinstance(payload, dict):
+        return result
+    representation = payload.get("representation")
+    index = representation.get("index") if isinstance(representation, dict) else None
+    family = (
+        representation.get("family") if isinstance(representation, dict) else None
+    )
+    already_sealed = (
+        family == "scaling.v1"
+        or "sequence_value" in payload
+        or "companion_value" in payload
+    )
+    is_scaling_payload = (
+        already_sealed
+        or family == "LUCAS_PISOT"
+        or "lucas" in payload
+        or "fibonacci" in payload
+    )
+    if not is_scaling_payload:
+        return result
+    sealed_payload = {
+        "family": "scaling.v1",
+        "index": index,
+        "sequence_value": payload.get("sequence_value", payload.get("lucas")),
+        "companion_value": payload.get("companion_value", payload.get("fibonacci")),
+        "identity_verified": payload.get("identity_verified"),
+    }
+    return {**result, "result": sealed_payload}

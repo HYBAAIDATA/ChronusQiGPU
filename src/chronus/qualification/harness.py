@@ -78,12 +78,15 @@ def _metallic_unit() -> Decimal:
 def _residual(n: int) -> Decimal:
     """Measured residual |α^n − L_n| — decays geometrically for this class.
 
-    Internal identity: residual equals |β^n| for the conjugate unit. External
-    surfaces never name α/β; they only see the measured envelope.
+    Internal identity: α^n − L_n = −β^n exactly, so the residual is |β|^n.
+    Evaluating |β|^n directly avoids subtracting two large nearly-equal values,
+    which lets rounding dominate for large n. External surfaces never name α/β.
     """
-    exact = Decimal(_exact_sequence_term(n))
-    alpha = _metallic_unit()
-    return abs((alpha**n) - exact)
+    with localcontext() as ctx:
+        # |β|^n needs ~0.21n decimal digits; keep a generous headroom.
+        ctx.prec = max(_DECIMAL_PREC, (n // 4) + 40)
+        beta = (Decimal(1) - Decimal(5).sqrt()) / Decimal(2)
+        return abs(beta) ** n
 
 
 def _fit_ratios(sizes: Sequence[int], residuals: Sequence[Decimal]) -> dict[str, Decimal]:
@@ -277,16 +280,25 @@ class QualificationHarness:
 
     @staticmethod
     def _default_signer(body: bytes) -> str:
-        # Deterministic HMAC-like seal using sha256 of body + domain separator.
-        # Not a substitute for ML-DSA release signing; labels the transcript.
-        return hashlib.sha256(b"chronus-tier-qualification-v1|" + body).hexdigest()
+        # Ed25519 over the canonical transcript body with the process-local
+        # receipt key. Not durable key custody; not ML-DSA release signing.
+        from chronus.security.receipt_signer import receipt_signer
+
+        return receipt_signer.sign(body)
 
 
 def verify_transcript_integrity(transcript: dict[str, Any]) -> bool:
-    """Tamper check: recompute hash over body fields excluding signature/hash."""
+    """Tamper check: body hash must match AND the stored signature must verify."""
     body = {
         key: value
         for key, value in transcript.items()
         if key not in ("evidence_hash", "signature")
     }
-    return _sha256_hex(body) == transcript.get("evidence_hash")
+    if _sha256_hex(body) != transcript.get("evidence_hash"):
+        return False
+    signature = transcript.get("signature")
+    if not isinstance(signature, str):
+        return False
+    from chronus.security.receipt_signer import receipt_signer
+
+    return receipt_signer.verify(_stable_json(body), signature)
