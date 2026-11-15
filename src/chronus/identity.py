@@ -43,20 +43,31 @@ def canonical(value: Any) -> bytes:
 
 
 def _normalise(value: Any) -> Any:
-    if isinstance(value, dict):
-        return {str(k): _normalise(v) for k, v in value.items()}
-    if isinstance(value, (list, tuple)):
-        return [_normalise(v) for v in value]
-    if isinstance(value, str):
-        return value
-    if isinstance(value, bool) or value is None:
-        return value
+    """Type-tagged encoding: every value is [tag, payload], so no two
+    distinct Python types can produce the same canonical bytes."""
+    if value is None:
+        return ["none", None]
+    if isinstance(value, bool):
+        return ["bool", value]
     if isinstance(value, int):
-        return value
+        return ["int", value]
     if isinstance(value, float):
-        return format(value, ".17g")
+        return ["float", format(value, ".17g")]
+    if isinstance(value, str):
+        return ["str", value]
     if isinstance(value, bytes):
-        return {"$bytes": value.hex()}
+        return ["bytes", value.hex()]
+    if isinstance(value, list):
+        return ["list", [_normalise(v) for v in value]]
+    if isinstance(value, tuple):
+        return ["tuple", [_normalise(v) for v in value]]
+    if isinstance(value, dict):
+        for k in value:
+            if not isinstance(k, str):
+                raise IdentityError(
+                    f"dictionary keys must be str, got {type(k).__name__}"
+                )
+        return ["dict", {k: _normalise(v) for k, v in value.items()}]
     raise IdentityError(f"not canonicalisable: {type(value).__name__}")
 
 
@@ -120,32 +131,57 @@ def assert_ovid(record: dict, changes: Sequence[Transformation]) -> list[Face]:
     return faces
 
 
-def _link_digest(index: int, name: str, before: str, previous: str) -> str:
-    return digest({"i": index, "n": name, "b": before, "p": previous})
+def _face_record(face: Face) -> dict:
+    return {
+        "i": face.index,
+        "n": face.transformation,
+        "b": face.before,
+        "a": face.after,
+        "c": list(face.changed_keys),
+    }
+
+
+def _link_digest(face: Face, previous: str) -> str:
+    return digest({"face": _face_record(face), "p": previous})
 
 
 @dataclass
 class Chain:
-    """Chronus: ordered faces, each bound to its predecessor."""
+    """Chronus: ordered faces, each bound to its predecessor.
 
-    links: list[tuple[int, str, str, str]] = field(default_factory=list)
+    Each link stores the complete face and the digest of the link before it.
+    Consecutive faces must describe a continuous history: a face's `before`
+    digest must equal the previous face's `after` digest.
+    """
+
+    links: list[tuple[Face, str]] = field(default_factory=list)
 
     def append(self, face: Face) -> None:
+        if face.index != len(self.links):
+            raise IdentityError(f"gap at {face.index}, expected {len(self.links)}")
         previous = "0" * 64
         if self.links:
-            index, name, before, recorded = self.links[-1]
-            previous = _link_digest(index, name, before, recorded)
-        self.links.append((face.index, face.transformation, face.before, previous))
+            last_face, last_recorded = self.links[-1]
+            if face.before != last_face.after:
+                raise IdentityError(
+                    f"{face.transformation} does not continue from {last_face.transformation}"
+                )
+            previous = _link_digest(last_face, last_recorded)
+        self.links.append((face, previous))
 
     def verify(self) -> int:
         """Recompute the chain. Returns the length; raises on any gap."""
         previous = "0" * 64
-        for expected, (index, name, before, recorded) in enumerate(self.links):
-            if index != expected:
-                raise IdentityError(f"gap at {index}, expected {expected}")
+        prior: Face | None = None
+        for expected, (face, recorded) in enumerate(self.links):
+            if face.index != expected:
+                raise IdentityError(f"gap at {face.index}, expected {expected}")
             if recorded != previous:
-                raise IdentityError(f"{name} is not bound to its predecessor")
-            previous = _link_digest(index, name, before, previous)
+                raise IdentityError(f"{face.transformation} is not bound to its predecessor")
+            if prior is not None and face.before != prior.after:
+                raise IdentityError(f"{face.transformation} does not continue from {prior.transformation}")
+            previous = _link_digest(face, recorded)
+            prior = face
         return len(self.links)
 
 
@@ -217,6 +253,37 @@ def _self_test() -> None:
         pass
     else:
         raise AssertionError("opaque type must be rejected")
+
+    # Value-type collisions must not share a digest.
+    assert digest({"x": 1250.0}) != digest({"x": "1250"})
+    assert digest({"x": b"\xde\xad"}) != digest({"x": {"$bytes": "dead"}})
+    assert digest({"x": True}) != digest({"x": 1})
+
+    # Non-string keys are rejected rather than silently stringified.
+    try:
+        canonical({1: "x"})
+    except IdentityError:
+        pass
+    else:
+        raise AssertionError("non-str key must be rejected")
+
+    # Deletion of a None-valued key and Python-equal swaps are named.
+    assert _diff({"k": None}, {}) == ("k",)
+    assert _diff({"k": True}, {"k": 1}) == ("k",)
+
+    # Unrelated faces with correct indices must not form a chain.
+    unrelated = [
+        Face(0, "a", "1" * 64, "2" * 64, ("x",)),
+        Face(1, "b", "3" * 64, "4" * 64, ("y",)),
+    ]
+    bad = Chain()
+    bad.append(unrelated[0])
+    try:
+        bad.append(unrelated[1])
+    except IdentityError:
+        pass
+    else:
+        raise AssertionError("discontinuous faces must not chain")
 
     LOG.info("identity self test passed")
 
