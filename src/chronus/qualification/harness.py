@@ -204,7 +204,7 @@ class QualificationHarness:
                 for size, residual in zip(probe_sizes, residuals)
             )
             # Audit transcript — FULL provenance (mechanism names allowed here).
-            audit_body = {
+            audit_body: dict[str, Any] = {
                 "workload_class": workload_class,
                 "probe_family": self._probe_family,
                 "seed": seed,
@@ -221,6 +221,11 @@ class QualificationHarness:
                     "float64_boundary_index": 70,
                 },
             }
+            if signer is None:
+                from chronus.qualification.signing import get_qualification_signer
+
+                durable = get_qualification_signer()
+                audit_body["signing_key_id"] = durable.key_id
             evidence_hash = _sha256_hex(audit_body)
             signature = (signer or self._default_signer)(_stable_json(audit_body))
             audit_transcript = {
@@ -298,6 +303,9 @@ class QualificationHarness:
         if reason is None:
             return fresh
 
+        from chronus.qualification.signing import get_qualification_signer
+
+        durable = get_qualification_signer()
         suspension_body = {
             "decision": Tier.SUSPENDED.value,
             "reason": reason,
@@ -315,6 +323,7 @@ class QualificationHarness:
             "tier_contract_version": TIER_CONTRACT_VERSION,
             "qualification_scope": "reference_model_class",
             "suspended": True,
+            "signing_key_id": durable.key_id,
         }
         evidence_hash = _sha256_hex(suspension_body)
         signature = self._default_signer(_stable_json(suspension_body))
@@ -353,11 +362,12 @@ class QualificationHarness:
 
     @staticmethod
     def _default_signer(body: bytes) -> str:
-        # Ed25519 over the canonical transcript body with the process-local
-        # receipt key. Not durable key custody; not ML-DSA release signing.
-        from chronus.security.receipt_signer import receipt_signer
+        # Durable Ed25519 over the canonical transcript body. Shared via
+        # CHRONUS_QUALIFICATION_SIGNING_SEED_HEX or the seed file beside the
+        # qualification DB. Not HSM custody; not ML-DSA release signing.
+        from chronus.qualification.signing import get_qualification_signer
 
-        return receipt_signer.sign(body)
+        return get_qualification_signer().sign(body)
 
 
 def verify_transcript_integrity(
@@ -367,7 +377,7 @@ def verify_transcript_integrity(
 ) -> bool:
     """Tamper check: body hash must match AND the stored signature must verify.
 
-    ``verifier(message, signature_hex)`` defaults to the process-local receipt
+    ``verifier(message, signature_hex)`` defaults to the durable qualification
     signer. Callers that passed a custom ``signer`` to ``qualify()`` must supply
     the matching verifier here.
     """
@@ -383,6 +393,10 @@ def verify_transcript_integrity(
         return False
     if verifier is not None:
         return bool(verifier(_stable_json(body), signature))
-    from chronus.security.receipt_signer import receipt_signer
+    from chronus.qualification.signing import get_qualification_signer
 
-    return receipt_signer.verify(_stable_json(body), signature)
+    durable = get_qualification_signer()
+    key_id = body.get("signing_key_id")
+    if isinstance(key_id, str) and key_id != durable.key_id:
+        return False
+    return durable.verify(_stable_json(body), signature)

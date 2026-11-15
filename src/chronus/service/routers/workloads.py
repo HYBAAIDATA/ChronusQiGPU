@@ -199,6 +199,18 @@ async def reset_qualification_suspension(
                 message="No sticky qualification state is present for scaling.v1.",
             ).model_dump(),
         )
+    if not cleared.get("cleared", True):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=ErrorResponse(
+                error="qualification_state_changed",
+                error_code="WL011",
+                message=(
+                    "Qualification state changed during reset; a newer sticky "
+                    "record was left intact. Retry after review."
+                ),
+            ).model_dump(),
+        )
     preserved = cleared["preserved_evidence_hash"]
     transcript = recall_by_hash(preserved)
     return {

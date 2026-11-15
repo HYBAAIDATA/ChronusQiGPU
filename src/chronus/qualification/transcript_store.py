@@ -3,6 +3,10 @@
 Backed by SQLite so API replicas that share the database file observe the same
 suspension/reset state. Process restart retains evidence under the configured
 path. Set ``CHRONUS_QUALIFICATION_DB_PATH`` to override the default location.
+
+Writers use ``BEGIN IMMEDIATE`` so reset and remember serialize across
+processes; ``clear_class`` deletes only the exact row it read so a concurrent
+suspension cannot be wiped by a stale reset.
 """
 
 from __future__ import annotations
@@ -31,10 +35,12 @@ def _db_path() -> str:
 
 
 @contextmanager
-def _connect() -> Iterator[sqlite3.Connection]:
+def _connect(*, exclusive: bool = False) -> Iterator[sqlite3.Connection]:
     path = _db_path()
     Path(path).parent.mkdir(parents=True, exist_ok=True)
-    connection = sqlite3.connect(path, timeout=10.0)
+    # isolation_level=None → autocommit; we manage BEGIN/COMMIT explicitly so
+    # writers can take BEGIN IMMEDIATE and hold it across SELECT+DELETE.
+    connection = sqlite3.connect(path, timeout=10.0, isolation_level=None)
     try:
         connection.execute(
             """
@@ -52,10 +58,14 @@ def _connect() -> Iterator[sqlite3.Connection]:
             )
             """
         )
+        connection.execute("BEGIN IMMEDIATE" if exclusive else "BEGIN")
         yield connection
-        connection.commit()
+        connection.execute("COMMIT")
     except Exception:
-        connection.rollback()
+        try:
+            connection.execute("ROLLBACK")
+        except sqlite3.Error:
+            pass
         raise
     finally:
         connection.close()
@@ -112,7 +122,7 @@ def remember(result: QualificationResult) -> None:
         result.audit_transcript, sort_keys=True, separators=(",", ":")
     )
     with _LOCK:
-        with _connect() as connection:
+        with _connect(exclusive=True) as connection:
             connection.execute(
                 """
                 INSERT INTO transcripts (evidence_hash, transcript_json)
@@ -162,9 +172,14 @@ def clear_class(workload_class: str) -> dict[str, Any] | None:
 
     Preserves the prior audit transcript under its evidence hash so suspension
     evidence remains inspectable after the class is allowed to re-qualify.
+
+    Deletion is conditioned on the exact ``result_json`` that was read inside
+    an exclusive write transaction. If another writer replaced the class state
+    before the delete, the newer row is left intact and this returns
+    ``cleared=False``.
     """
     with _LOCK:
-        with _connect() as connection:
+        with _connect(exclusive=True) as connection:
             row = connection.execute(
                 "SELECT result_json FROM class_state WHERE workload_class = ?",
                 (workload_class,),
@@ -186,22 +201,27 @@ def clear_class(workload_class: str) -> dict[str, Any] | None:
                     ),
                 ),
             )
-            connection.execute(
-                "DELETE FROM class_state WHERE workload_class = ?",
-                (workload_class,),
+            deleted = connection.execute(
+                """
+                DELETE FROM class_state
+                WHERE workload_class = ? AND result_json = ?
+                """,
+                (workload_class, row[0]),
             )
+            cleared = deleted.rowcount == 1
     return {
         "workload_class": workload_class,
         "preserved_evidence_hash": prior.evidence_hash,
         "was_suspended": bool(
             prior.contract.suspended or prior.tier == Tier.SUSPENDED
         ),
+        "cleared": cleared,
     }
 
 
 def clear() -> None:
     """Test helper — drop all qualification state and transcripts."""
     with _LOCK:
-        with _connect() as connection:
+        with _connect(exclusive=True) as connection:
             connection.execute("DELETE FROM class_state")
             connection.execute("DELETE FROM transcripts")
