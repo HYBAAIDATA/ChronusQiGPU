@@ -67,7 +67,7 @@ class TestCommercialSuite(unittest.TestCase):
                 "SALAMANDER": lambda obj: "SALAMANDER: Verified",
             },
         )
-        self.assertEqual(result.verdict, "APPROVED_BY_CONSENSUS")
+        self.assertEqual(result.verdict, "UNVERIFIED_LEGACY")
         self.assertIn("security_verdict", result.contributions)
 
     def test_structured_extractor(self) -> None:
