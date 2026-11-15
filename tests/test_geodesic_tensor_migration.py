@@ -109,6 +109,7 @@ def test_opencl_tensor_backend_never_claims_cpu_fallback():
         record = backend.device_record()
         assert record["execution_mode"] == "PHYSICAL_ACCELERATOR"
         assert record["measured"] is False
+        assert record["known_answer_self_test"] == "PASS"
     else:
         assert backend.is_available() is False
 
@@ -145,6 +146,7 @@ def test_cuda_tensor_backend_is_real_or_fails_closed():
         np.testing.assert_allclose(result["output"], a + b)
         assert result["physical_execution"] is True
         assert result["device"]["measured"] is False
+        assert result["device"]["known_answer_self_test"] == "PASS"
     else:
         with pytest.raises(CUDATensorUnavailable):
             backend.execute("add", np.ones(2, dtype=np.float32), np.ones(2, dtype=np.float32))
