@@ -1,6 +1,6 @@
-from chronus.gates import Fixture,GATES
+from chronus.gates import Fixture
 from chronus.qualify import qualify
-from chronus.verdict import Status,GateResult,Verdict
+from chronus.verdict import Status,GateResult
 from chronus.crypto.signers import SignerUnavailable
 import chronus.qualify as module
 
