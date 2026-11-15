@@ -39,7 +39,6 @@ dependencies = [
 
 [project.optional-dependencies]
 mining = ["hyba-turing==0.2.0.dev0"]
-test = ["pytest>=7.0"]
 dev = [
     "hyba-turing @ file:./packages/turing",
     "prometheus-client>=0.20,<1",
