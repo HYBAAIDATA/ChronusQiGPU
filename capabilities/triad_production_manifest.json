@@ -1,0 +1,116 @@
+{
+  "schema": "hyba.triad.production-capabilities/v1",
+  "generated_from": "closeout/triad-production-posture-20261115",
+  "authorities": {
+    "CHRONUS": "execution",
+    "OVID": "versioned representation transformation/materialisation",
+    "THESEUS": "durable custody/integrity/continuity/recovery/provenance"
+  },
+  "capabilities": {
+    "durable_custody": {
+      "status": "IMPLEMENTED_BRANCH",
+      "paths": [
+        "src/chronus/storage/durable.py",
+        "tests/test_triad_production.py"
+      ],
+      "owner": "THESEUS"
+    },
+    "restart_recovery": {
+      "status": "IMPLEMENTED_BRANCH",
+      "paths": [
+        "src/chronus/storage/durable.py",
+        "tests/test_triad_production.py"
+      ],
+      "owner": "THESEUS"
+    },
+    "journal_continuity": {
+      "status": "IMPLEMENTED_BRANCH",
+      "paths": [
+        "src/chronus/storage/durable.py",
+        "tests/test_triad_production.py"
+      ],
+      "owner": "THESEUS"
+    },
+    "versioned_transform": {
+      "status": "IMPLEMENTED_BRANCH",
+      "paths": [
+        "src/chronus/ovid/transform.py",
+        "tests/test_triad_production.py"
+      ],
+      "owner": "OVID"
+    },
+    "verified_materialisation": {
+      "status": "IMPLEMENTED_BRANCH",
+      "paths": [
+        "src/chronus/ovid/transform.py",
+        "src/chronus/triad.py",
+        "tests/test_triad_production.py"
+      ],
+      "owner": "OVID"
+    },
+    "tensor_runtime": {
+      "status": "IMPLEMENTED_BRANCH",
+      "paths": [
+        "src/chronus/tensor/geodesic.py",
+        "src/chronus/tensor/folded_state.py",
+        "src/chronus/tensor/folded_inference.py",
+        "tests/test_geodesic_tensor_migration.py"
+      ],
+      "owner": "CHRONUS"
+    },
+    "tensor_opencl": {
+      "status": "IMPLEMENTED_BRANCH_HARDWARE_EVIDENCE_REQUIRED",
+      "paths": [
+        "src/chronus/tensor/opencl_backend.py",
+        "src/chronus/kernels/tensor_ops.cl",
+        "tests/test_geodesic_tensor_migration.py"
+      ],
+      "owner": "CHRONUS"
+    },
+    "fleet_execution": {
+      "status": "IMPLEMENTED_MAIN",
+      "paths": [
+        "src/chronus/fleet/coordinator.py",
+        "src/chronus/fleet/executor.py",
+        "src/chronus/fleet/recovery.py",
+        "src/chronus/fleet/receipts.py"
+      ],
+      "owner": "CHRONUS"
+    },
+    "backend_truth": {
+      "status": "IMPLEMENTED_MAIN_AND_BRANCH",
+      "paths": [
+        "src/chronus/fleet/backends.py",
+        "src/chronus/tensor/opencl_backend.py",
+        "tests/test_geodesic_tensor_migration.py"
+      ],
+      "owner": "CHRONUS"
+    },
+    "connector_plane": {
+      "status": "IMPLEMENTED_MAIN",
+      "paths": [
+        "src/chronus/storage/connectors.py",
+        "tests/test_hyperscaler_user_journeys.py"
+      ],
+      "owner": "CHRONUS"
+    },
+    "evidence_migration": {
+      "status": "IMPLEMENTED_BRANCH",
+      "paths": [
+        "evidence/migration/chronus_historical_evidence_register.json",
+        "docs/production/TEST_AND_BENCHMARK_PROVENANCE.md"
+      ],
+      "owner": "THESEUS"
+    },
+    "production_admission": {
+      "status": "EVIDENCE_GATED",
+      "paths": [
+        "src/chronus/core/qualification.py",
+        "src/chronus/core/facade.py",
+        "scripts/ci/evaluate_attested.py"
+      ],
+      "owner": "CHRONUS"
+    }
+  },
+  "release_rule": "No capability receives production-admitted status from source presence or historical evidence alone; exact-commit current evidence and mandatory gates are required."
+}
