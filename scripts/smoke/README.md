@@ -13,7 +13,8 @@ common-mode failure that lets a fake pool certify the client's own bug.
 Fake pool default is Bitcoin **difficulty 1** (`DIFF1`). Expected work is
 ~2³² SHA-256d evaluations. Chronus structured search (Zeckendorf/Galois) and
 the QiGPU OpenCL kernel raise **throughput**; they do not reduce the oracle's
-expected trial count. Fleet scale multiplies H/s further.
+expected trial count. Fleet scale multiplies H/s further. `nbits` is harder
+than the share target.
 
 ```bash
 # Diff-1 fake pool + Chronus geometric search (needs PYTHONPATH=src)
@@ -22,11 +23,16 @@ MINING_BRAIINS_USER=smoke PYTHONPATH=src \
   python scripts/smoke/stratum_smoke.py --target fake --submit-share \
   --search geometric --share-seconds 600
 
-# Optional CI micro-target (not Bitcoin diff1): --difficulty 1e-7 on the pool
+# Optional CI micro-target (not Bitcoin diff1)
 python scripts/smoke/fake_pool.py --port 3333 --difficulty 1e-7 &
+MINING_BRAIINS_USER=smoke PYTHONPATH=src \
+  python scripts/smoke/stratum_smoke.py --target fake --submit-share \
+  --require-accept --search geometric
 ```
 
-`--require-accept` demands a literal pool `true`. Live Braiins with
-`--submit-share` usually fails search then passes submit as framing (`error 23`).
+`--require-accept` requires `--submit-share`. `--target fake` forces the local
+preset host (does not inherit a live `MINING_*_HOST`). TLS schemes
+(`stratum+ssl` / `stratum+tls`) open a verified SSL socket; unknown schemes
+are rejected.
 
 Transcripts land in `evidence/smoke/`.

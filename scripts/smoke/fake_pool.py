@@ -1,10 +1,10 @@
 """scripts/smoke/fake_pool.py — local Stratum V1 pool for offline smoke.
 
-Bitcoin difficulty 1 via set_difficulty (DIFF1). nbits stays a harder network
-target. Canonical little-endian target comparison, matching a real pool and
-the smoke client. Expected share work is ~2^32 SHA-256d evaluations — use the
-smoke's --search geometric|opencl path (Chronus structured search / QiGPU),
-or fleet scale, for wall-clock; the naive Python nonce loop is not the claim.
+Bitcoin difficulty 1 via set_difficulty (DIFF1). nbits encodes a harder network
+target (smaller than the share target). Canonical little-endian target
+comparison, matching a real pool and the smoke client. Expected share work is
+~2^32 SHA-256d evaluations — use the smoke's --search geometric|opencl path
+(Chronus structured search / QiGPU), or fleet scale, for wall-clock.
 
     python scripts/smoke/fake_pool.py --port 3333 --exit-after 1
 """
@@ -17,15 +17,32 @@ import hashlib
 import json
 import sys
 
-NBITS = "207fffff"           # network target, deliberately harder than the share target
+# Compact target harder than Bitcoin difficulty 1 (DIFF1 = 0x1d00ffff decoded).
+NBITS = "1c00ffff"
 DIFF1 = 0xFFFF << (8 * (0x1D - 3))
 DIFFICULTY = 1
 TARGET = DIFF1 // DIFFICULTY
 JOB_ID = "smokejob1"
 VERSION = "20000000"
 PREVHASH = "00" * 31 + "01"
+NTIME = "67000000"
 COINB1 = "01000000" + "01" + "00" * 31 + "ffffffff" + "01" + "00f2052a01000000" + "0151"
 COINB2 = "ffffffff" + "01000000"
+_HEX = frozenset("0123456789abcdefABCDEF")
+
+
+def network_target(nbits: str = NBITS) -> int:
+    raw = int(nbits, 16)
+    return (raw & 0xFFFFFF) << (8 * ((raw >> 24) - 3))
+
+
+def _is_hex(text: object, length: int | None = None) -> bool:
+    return (
+        isinstance(text, str)
+        and len(text) % 2 == 0
+        and set(text) <= _HEX
+        and (length is None or len(text) == length)
+    )
 
 
 def header(extranonce1: str, params: list) -> bytes:
@@ -39,6 +56,26 @@ def header(extranonce1: str, params: list) -> bytes:
             + int(ntime, 16).to_bytes(4, "little")
             + int(NBITS, 16).to_bytes(4, "little")
             + int(nonce, 16).to_bytes(4, "little"))
+
+
+def accept_share(extranonce1: str, params: list, target: int = TARGET) -> tuple[bool, list | None]:
+    """Validate submit fields and apply the LE share predicate. Used by tests."""
+    if len(params) < 5:
+        return False, [20, "Malformed submit", None]
+    worker, job_id, en2, ntime, nonce = params[:5]
+    if job_id != JOB_ID:
+        return False, [21, "Job not found", None]
+    if not isinstance(worker, str) or not worker:
+        return False, [20, "Malformed submit", None]
+    if not _is_hex(en2) or len(en2) != 8:
+        return False, [20, "Malformed submit", None]
+    if not _is_hex(ntime, 8) or ntime.lower() != NTIME:
+        return False, [20, "Malformed submit", None]
+    if not _is_hex(nonce, 8):
+        return False, [20, "Malformed submit", None]
+    digest = hashlib.sha256(hashlib.sha256(header(extranonce1, params)).digest()).digest()
+    ok = int.from_bytes(digest, "little") <= target
+    return ok, (None if ok else [23, "low difficulty share", None])
 
 
 def make_handler(extranonce1: str, difficulty: float, target: int):
@@ -63,16 +100,14 @@ def make_handler(extranonce1: str, difficulty: float, target: int):
                         {"id": None, "method": "mining.set_difficulty", "params": [difficulty]},
                         {"id": None, "method": "mining.notify",
                          "params": [JOB_ID, PREVHASH, COINB1, COINB2, [], VERSION,
-                                    NBITS, "67000000", True]},
+                                    NBITS, NTIME, True]},
                     ):
                         writer.write((json.dumps(note) + "\n").encode())
                     await writer.drain()
                     continue
                 elif method == "mining.submit":
-                    digest = hashlib.sha256(hashlib.sha256(header(extranonce1, params)).digest()).digest()
-                    ok = int.from_bytes(digest, "little") <= target
-                    reply = {"id": ident, "result": True if ok else False,
-                             "error": None if ok else [23, "low difficulty share", None]}
+                    ok, error = accept_share(extranonce1, params, target)
+                    reply = {"id": ident, "result": True if ok else False, "error": error}
                 else:
                     reply = {"id": ident, "result": None, "error": [20, f"unknown {method}", None]}
                 writer.write((json.dumps(reply) + "\n").encode())
@@ -86,12 +121,14 @@ async def serve(port: int, exit_after: float | None, difficulty: float) -> None:
     if difficulty <= 0:
         raise ValueError("difficulty must be positive")
     target = int(DIFF1 // difficulty)
+    if not network_target() < target:
+        raise ValueError("NBITS must decode to a harder (smaller) target than the share target")
     server = await asyncio.start_server(
         make_handler("deadbeef", difficulty, target), "127.0.0.1", port
     )
     print(
         f"fake pool on 127.0.0.1:{port} difficulty={difficulty} "
-        f"target_hex={target:064x} (LE compare)",
+        f"target_hex={target:064x} nbits={NBITS} (LE compare)",
         flush=True,
     )
     if exit_after is None:
