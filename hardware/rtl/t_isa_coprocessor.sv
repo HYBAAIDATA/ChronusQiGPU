@@ -22,7 +22,7 @@
 //    0x03 T_SHEAF_INSPECT  exception 4'hE iff rs1 != rs2               (= model)
 //    0x04 T_DSW_HEAL       register move rd <= rs2; no parity storage and
 //                          no error correction    (model: Reed-Solomon scrub)
-//    0x05 T_STARK_EVAL     returns the constant 1; evaluates nothing
+//    0x05 T_STARK_EVAL     unsupported: illegal-instruction trap 4'h2
 //                                                 (model: F_257 identity check)
 //    0x06 T_RICCI_INSPECT  exception 4'hC iff a0 < 0 (a sign test)      (= model)
 //    0x07 T_HODGE_PROJ     rd <= (a0, a1, 0, 0)                         (= model)
@@ -226,10 +226,10 @@ module t_isa_coprocessor #(
                     end
 
                     OPC_STARK_EVAL: begin
-                        // Placeholder: constant 1, nothing is evaluated
-                        resp_data      <= {96'd0, 32'h00000001};
-                        resp_exception <= 1'b0;
-                        resp_exc_code  <= 4'h0;
+                        // No RTL STARK evaluator exists. Never report a fabricated pass.
+                        resp_data      <= '0;
+                        resp_exception <= 1'b1;
+                        resp_exc_code  <= 4'h2;
                     end
 
                     OPC_RICCI_INSP: begin
