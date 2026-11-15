@@ -184,7 +184,7 @@ def train_qualify_and_activate(
     accept: Callable[[SkillCase, Mapping[str, Any]], bool],
     certify: Callable[[Mapping[str, Any]], None],
     dispatch: Callable[["SwarmTask"], Mapping[str, Any]],
-    verify: Callable[["SwarmTask", Mapping[str, Any]], bool],
+    verify: Callable[["SwarmMission", "SwarmTask", Mapping[str, Any]], Any],
 ) -> dict[str, Any]:
     """One ordered training→independent attestation→leadership activation path.
 
