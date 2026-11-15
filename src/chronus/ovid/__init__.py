@@ -1,10 +1,14 @@
-"""OVID: content-addressed objects, zero-copy pointers and receipts.
+"""OVID representation transformation, materialisation and compatibility surfaces.
 
-First-class import path for the OVID primitives implemented in
-chronus.security.ovid; the objects below are the same objects. State is
-process-local: OVID is not a durable or distributed store.
+OVID does not own durable custody. Legacy content-addressed helpers remain
+available for compatibility; production persistence belongs to THESEUS.
 """
 
+from chronus.ovid.transform import (
+    OvidRepresentation,
+    OvidTransformService,
+    TransformationContract,
+)
 from chronus.security.ovid import (
     POINTER_PREFIX,
     OVIDReceipt,
@@ -14,9 +18,12 @@ from chronus.security.ovid import (
 )
 
 __all__ = [
+    "OvidRepresentation",
+    "OvidTransformService",
     "POINTER_PREFIX",
     "OVIDReceipt",
     "OVIDStorage",
     "OVIDZeroCopyPointer",
+    "TransformationContract",
     "VerifyEndpoint",
 ]
