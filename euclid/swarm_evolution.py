@@ -262,7 +262,10 @@ class SwarmJournal:
                     "INSERT INTO events VALUES(?,?,?,?,?)",
                     (mission_id, seq, previous, digest, data.decode("utf-8")),
                 )
-                self._db.execute("UPDATE missions SET event_count=?, event_head=? WHERE id=?", (seq, digest, mission_id))
+                self._db.execute(
+                    "UPDATE missions SET event_count=?, event_head=? WHERE id=?",
+                    (seq, digest, mission_id),
+                )
                 self._db.execute("COMMIT")
                 return digest
             except BaseException:
@@ -283,10 +286,14 @@ class SwarmJournal:
     def verify(self, mission_id: str) -> bool:
         with self._lock:
             rows = self._db.execute(
-                "SELECT seq,previous,hash,payload FROM events WHERE mission_id=? ORDER BY seq",
+                "SELECT seq,previous,hash,payload FROM events "
+                "WHERE mission_id=? ORDER BY seq",
                 (mission_id,),
             ).fetchall()
-        mission_row = self._db.execute("SELECT status,event_count,event_head FROM missions WHERE id=?", (mission_id,)).fetchone()
+            mission_row = self._db.execute(
+                "SELECT status,event_count,event_head FROM missions WHERE id=?",
+                (mission_id,),
+            ).fetchone()
         if mission_row is None or not rows or len(rows) != mission_row[1]:
             return False
         previous = "0" * 64
@@ -452,12 +459,15 @@ class SwarmActivator:
                 "outcomes": outcomes,
             }
         except BaseException:
-            # Preserve the originating exception if the journal itself is unavailable.
+            # Preserve the originating exception if journal cleanup also fails.
             try:
                 self.journal.append(mission.mission_id, {
                     "kind": "failed", "verified_tasks": sorted(completed),
                     "reserved_budget_units": consumed,
                 })
+            except Exception:
+                pass
+            try:
                 self.journal.finish(mission.mission_id, "failed")
             except Exception:
                 pass
