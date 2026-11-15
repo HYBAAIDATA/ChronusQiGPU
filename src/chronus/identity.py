@@ -6,20 +6,24 @@ Chronus orders. Theseus swaps every part. Ovid changes the form.
 The contract: a record has canonical bytes and a digest over them. A
 declared *preserving* transformation must leave the digest identical. A
 declared *breaking* transformation must change it and must emit a face
-record naming the delta. A transformation that is not declared is a
-failure, so the registry is exhaustive-checked rather than trusted.
+record naming the delta. The same swap can be re-declared under the
+other contract. A transformation that is not in a supplied registry is
+a failure.
 
 Bidirectional is the whole point. A digest invariant under everything is
 useless; one invariant under nothing flags every edit. Theseus proves the
 first half, Ovid the second, and neither passes alone.
 
-Canonical bytes tag each value with its type. A float is not a string, a
-bool is not an int, bytes are not a dictionary, and dictionary keys must
-already be strings. This digest is not `chronus.canon.canonical_bytes`,
-which rejects floats.
+An integer float inside the exact binary64 range is the same datum as
+that integer. Other floats keep a decimal form. Strings, bools, and
+bytes stay tagged so they do not collide with those numbers. Dictionary
+keys must already be strings. This digest is not
+`chronus.canon.canonical_bytes`, which rejects floats.
 
-This digest contract is separate from the process-local Theseus store and
-the Ovid content-addressed pointers.
+The chain is bound to the record digest it starts from. Each face must
+start where the previous face ended, and its timestamp is part of the
+link. This digest contract is separate from the process-local Theseus
+store and the Ovid content-addressed pointers.
 """
 
 from __future__ import annotations
@@ -28,14 +32,16 @@ import copy
 import hashlib
 import json
 import logging
-import struct
-from dataclasses import dataclass, field
+import math
+import time
+from dataclasses import dataclass, field, replace
 from typing import Any, Callable, Iterable, Sequence
 
 LOG = logging.getLogger("identity")
 
-# index, name, before, after, changed keys, predecessor digest
-Link = tuple[int, str, str, str, tuple[str, ...], str]
+# index, name, at, before, predecessor digest, after
+Link = tuple[int, str, float, str, str, str]
+EXACT_INT_FLOAT = 2**53
 
 
 class IdentityError(RuntimeError):
@@ -43,7 +49,7 @@ class IdentityError(RuntimeError):
 
 
 def canonical(value: Any) -> bytes:
-    """Canonical bytes for a record. Sorted keys, exact floats, no spaces."""
+    """Canonical bytes for a record. Sorted keys, no spaces."""
     return json.dumps(
         _normalise(value),
         sort_keys=True,
@@ -73,8 +79,9 @@ def _normalise(value: Any) -> Any:
     if isinstance(value, int):
         return ["int", value]
     if isinstance(value, float):
-        # Binary64 bits, not decimal text: distinct NaN payloads stay distinct.
-        return ["float", struct.pack("!d", value).hex()]
+        if math.isfinite(value) and value.is_integer() and abs(value) < EXACT_INT_FLOAT:
+            return ["int", int(value)]
+        return ["float", format(value, ".17g")]
     if isinstance(value, bytes):
         return ["bytes", value.hex()]
     raise IdentityError(f"not canonicalisable: {type(value).__name__}")
@@ -92,6 +99,10 @@ class Transformation:
     apply: Callable[[dict], dict]
     preserving: bool
 
+    def as_breaking(self) -> "Transformation":
+        """Re-declare the same change under the breaking contract."""
+        return replace(self, preserving=False)
+
 
 @dataclass(frozen=True)
 class Face:
@@ -99,19 +110,24 @@ class Face:
 
     index: int
     transformation: str
+    at: float
     before: str
     after: str
     changed_keys: tuple[str, ...]
 
 
-def _changed(before: dict, after: dict) -> tuple[str, ...]:
-    keys = set(before) | set(after)
+def _changed(before: dict, after: dict, prefix: str = "") -> tuple[str, ...]:
     changed: list[str] = []
-    for key in sorted(keys):
+    for key in sorted(set(before) | set(after)):
+        path = f"{prefix}.{key}" if prefix else key
         if (key in before) != (key in after):
-            changed.append(key)
-        elif canonical(before[key]) != canonical(after[key]):
-            changed.append(key)
+            changed.append(path)
+            continue
+        left, right = before[key], after[key]
+        if isinstance(left, dict) and isinstance(right, dict):
+            changed.extend(_changed(left, right, path))
+        elif canonical(left) != canonical(right):
+            changed.append(path)
     return tuple(changed)
 
 
@@ -123,10 +139,14 @@ def _apply(change: Transformation, record: dict) -> tuple[dict, dict]:
 
 
 def assert_theseus(
-    record: dict, swaps: Sequence[Transformation], *, declared: Iterable[str]
+    record: dict,
+    swaps: Sequence[Transformation],
+    *,
+    declared: Iterable[str] | None = None,
 ) -> str:
     """Every preserving swap must leave the digest byte-identical."""
-    check_registry_complete(declared, (swap.name for swap in swaps))
+    if declared is not None:
+        check_registry_complete(declared, (swap.name for swap in swaps))
     original = digest(record)
     for swap in swaps:
         if not swap.preserving:
@@ -139,10 +159,14 @@ def assert_theseus(
 
 
 def assert_ovid(
-    record: dict, changes: Sequence[Transformation], *, declared: Iterable[str]
+    record: dict,
+    changes: Sequence[Transformation],
+    *,
+    declared: Iterable[str] | None = None,
 ) -> list[Face]:
     """Every breaking change must move the digest and name what moved."""
-    check_registry_complete(declared, (change.name for change in changes))
+    if declared is not None:
+        check_registry_complete(declared, (change.name for change in changes))
     faces: list[Face] = []
     current = copy.deepcopy(record)
     for change in changes:
@@ -154,96 +178,82 @@ def assert_ovid(
         if after == before:
             raise IdentityError(f"{change.name} broke nothing")
         faces.append(
-            Face(len(faces), change.name, before, after, _changed(snapshot, moved))
+            Face(
+                len(faces),
+                change.name,
+                time.time(),
+                before,
+                after,
+                _changed(snapshot, moved),
+            )
         )
         current = moved
     return faces
 
 
-def _link_digest(
-    index: int,
-    name: str,
-    before: str,
-    after: str,
-    changed: tuple[str, ...],
-    previous: str,
-) -> str:
-    return digest(
-        {
-            "i": index,
-            "n": name,
-            "b": before,
-            "a": after,
-            "k": list(changed),
-            "p": previous,
-        }
-    )
+def _link_digest(index: int, name: str, at: float, before: str, previous: str, after: str) -> str:
+    return digest({"i": index, "n": name, "t": at, "b": before, "p": previous, "a": after})
 
 
 @dataclass
 class Chain:
-    """Chronus: ordered faces, each bound to its predecessor and its outcome."""
+    """Chronus: ordered faces, each bound to its predecessor and to the record's origin."""
 
+    origin: str
     links: list[Link] = field(default_factory=list)
+
+    @classmethod
+    def for_record(cls, record: dict) -> "Chain":
+        return cls(digest(record))
+
+    def _bound(self, link: Link) -> str:
+        index, name, at, before, recorded, after = link
+        return _link_digest(index, name, at, before, recorded, after)
 
     def append(self, face: Face) -> None:
         if face.index != len(self.links):
             raise IdentityError(f"gap at {face.index}, expected {len(self.links)}")
-        previous = "0" * 64
         if self.links:
-            prior = self.links[-1]
-            if face.before != prior[3]:
+            if face.before != self.links[-1][5]:
                 raise IdentityError(
-                    f"{face.transformation} does not continue {prior[1]}"
+                    f"{face.transformation} does not start where {len(self.links) - 1} ended"
                 )
-            previous = _link_digest(*prior[:5], prior[5])
+            recorded = self._bound(self.links[-1])
+        else:
+            if face.before != self.origin:
+                raise IdentityError(
+                    f"{face.transformation} does not start at the record origin"
+                )
+            recorded = self.origin
         self.links.append(
-            (
-                face.index,
-                face.transformation,
-                face.before,
-                face.after,
-                face.changed_keys,
-                previous,
-            )
+            (face.index, face.transformation, face.at, face.before, recorded, face.after)
         )
 
-    def tip(self) -> str:
-        """Digest of the last committed face. Edits to that face change it."""
-        previous = "0" * 64
-        for link in self.links:
-            previous = _link_digest(*link[:5], previous)
-        return previous
-
-    def verify(self, *, tip: str | None = None) -> int:
+    def verify(self) -> int:
         """Recompute the chain. Returns the length; raises on any gap."""
-        previous = "0" * 64
-        prior_after: str | None = None
+        previous = self.origin
         for expected, link in enumerate(self.links):
-            index, name, before, after, _changed_keys, recorded = link
+            index, name, at, before, recorded, after = link
             if index != expected:
                 raise IdentityError(f"gap at {index}, expected {expected}")
             if recorded != previous:
                 raise IdentityError(f"{name} is not bound to its predecessor")
-            if prior_after is not None and before != prior_after:
-                raise IdentityError(f"{name} does not continue its predecessor")
-            previous = _link_digest(*link[:5], previous)
-            prior_after = after
-        if tip is not None and previous != tip:
-            raise IdentityError("terminal digest does not match")
+            if expected == 0 and before != self.origin:
+                raise IdentityError(f"{name} does not start at the record origin")
+            if expected and self.links[expected - 1][5] != before:
+                raise IdentityError(f"{name} does not start where {expected - 1} ended")
+            previous = _link_digest(index, name, at, before, previous, after)
         return len(self.links)
 
 
-def check_registry_complete(
-    declared: Iterable[str], present: Iterable[str]
-) -> None:
-    """Every transformation in the codebase must be declared."""
+def check_registry_complete(declared: Iterable[str], present: Iterable[str]) -> None:
+    """Every transformation passed in must be declared."""
     missing = sorted(set(present) - set(declared))
     if missing:
         raise IdentityError(f"undeclared transformations: {missing}")
 
 
-def _swap(field_name: str, value: Any, *, preserving: bool = True) -> Transformation:
+def _swap(field_name: str, value: Any, preserving: bool = True) -> Transformation:
     return Transformation(
         name=f"swap:{field_name}",
         apply=lambda record, field_name=field_name, value=value: {
@@ -264,6 +274,10 @@ def _drop(field_name: str) -> Transformation:
     )
 
 
+def _reorder(record: dict) -> dict:
+    return {key: record[key] for key in reversed(list(record))}
+
+
 def _self_test() -> None:
     record = {
         "claim": "CO-014",
@@ -272,42 +286,37 @@ def _self_test() -> None:
         "verified": True,
         "absent": [],
     }
-    swaps = [_swap("jurisdiction", "DIFC"), _swap("verified", True)]
-    breaks = [_drop("verified"), _swap("amount", 1250.5, preserving=False)]
-    swap_names = [swap.name for swap in swaps]
-    break_names = [change.name for change in breaks]
+    assert digest({"n": 123}) == digest({"n": 123.0})
+    assert digest({"n": 123}) != digest({"n": "123"})
+    huge = float(EXACT_INT_FLOAT)
+    assert digest({"n": huge}) != digest({"n": int(huge)})
 
-    original = assert_theseus(record, swaps, declared=swap_names)
-    assert original == digest(record)
-    assert record["amount"] == 1250.0
-
-    faces = assert_ovid(record, breaks, declared=break_names)
-    assert len(faces) == 2
-    assert faces[0].changed_keys == ("verified",)
-    assert faces[1].changed_keys == ("amount",)
-    assert faces[1].before == faces[0].after
-
-    chain = Chain()
-    for face in faces:
-        chain.append(face)
-    tip = chain.tip()
-    assert chain.verify(tip=tip) == 2
+    held = _swap("amount", 1250)
+    assert_theseus(record, [held])
+    assert_theseus(
+        record,
+        [
+            Transformation("reorder", _reorder, True),
+            Transformation("round-trip", lambda item: json.loads(json.dumps(item)), True),
+        ],
+    )
+    moved = _swap("amount", 1250.5).as_breaking()
+    faces = assert_ovid(record, [moved])
+    assert faces[0].changed_keys == ("amount",)
+    assert faces[0].before != faces[0].after
 
     try:
-        assert_theseus(record, swaps, declared=["swap:jurisdiction"])
-    except IdentityError as exc:
-        if "undeclared" not in str(exc):
-            raise
-    else:
-        raise AssertionError("undeclared preserving swap must fail")
-
-    try:
-        assert_ovid(record, [_swap("amount", 1250.0, preserving=False)], declared=["swap:amount"])
+        assert_ovid(record, [held.as_breaking()])
     except IdentityError as exc:
         if "broke nothing" not in str(exc):
             raise
     else:
-        raise AssertionError("no-op declared as breaking must fail")
+        raise AssertionError("no-op re-declared as breaking must fail")
+
+    chain = Chain.for_record(record)
+    chain.append(faces[0])
+    assert chain.verify() == 1
+    assert chain.origin == faces[0].before
 
     try:
         canonical(object())

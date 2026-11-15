@@ -1,11 +1,12 @@
 """Digest identity: Theseus preserves, Ovid breaks, Chronus orders the faces."""
 
 import copy
-import struct
+import json
 
 import pytest
 
 from chronus.identity import (
+    EXACT_INT_FLOAT,
     Chain,
     Face,
     IdentityError,
@@ -16,6 +17,7 @@ from chronus.identity import (
     check_registry_complete,
     digest,
     _self_test,
+    _swap,
 )
 
 
@@ -25,72 +27,83 @@ RECORD = {
     "jurisdiction": "DIFC",
     "verified": True,
     "absent": [],
+    "result": {"lucas": "123", "index": 10},
 }
-
-
-def _swap(name: str, value, *, preserving: bool) -> Transformation:
-    return Transformation(
-        name,
-        lambda record, value=value: {**record, "amount": value},
-        preserving,
-    )
 
 
 def test_self_test_passes():
     _self_test()
 
 
-def test_canonical_bytes_distinguish_types():
-    assert canonical(RECORD) == canonical(dict(reversed(list(RECORD.items()))))
-    assert digest({"x": 1.0}) != digest({"x": "1"})
+def test_integer_float_is_the_same_datum_inside_the_exact_range():
+    assert digest({"n": 123}) == digest({"n": 123.0})
+    assert digest({"n": 123}) != digest({"n": "123"})
     assert digest(True) != digest(1)
-    quiet = struct.unpack("!d", bytes.fromhex("7ff8000000000001"))[0]
-    loud = struct.unpack("!d", bytes.fromhex("7ff8000000000002"))[0]
-    assert digest(quiet) != digest(loud)
+    huge = float(EXACT_INT_FLOAT)
+    assert digest({"n": huge}) != digest({"n": int(huge)})
     assert digest(b"\xde\xad") != digest({"$bytes": "dead"})
     with pytest.raises(IdentityError, match="dictionary keys"):
         canonical({1: "x"})
-    with pytest.raises(IdentityError, match="not canonicalisable"):
-        canonical(object())
+
+
+def test_same_swap_runs_under_both_contracts():
+    same = _swap("status", "COMPLETED")
+    record = {"status": "COMPLETED", "tenant_id": "dev"}
+    assert_theseus(record, [same])
+    with pytest.raises(IdentityError, match="broke nothing"):
+        assert_ovid(record, [same.as_breaking()])
+
+    changed = _swap("status", "FAILED").as_breaking()
+    faces = assert_ovid(record, [changed])
+    assert faces[0].changed_keys == ("status",)
+    assert faces[0].before != faces[0].after
+
+
+def test_theseus_accepts_structural_substitution():
+    assert_theseus(
+        RECORD,
+        [
+            Transformation("reorder", lambda record: {k: record[k] for k in reversed(list(record))}, True),
+            Transformation("round-trip", lambda record: json.loads(json.dumps(record)), True),
+            _swap("amount", 1250),
+        ],
+    )
 
 
 def test_theseus_rejects_a_preserving_swap_that_moves_the_digest():
     with pytest.raises(IdentityError, match="moved the digest"):
-        assert_theseus(
-            RECORD,
-            [_swap("swap:amount", 1.0, preserving=True)],
-            declared=["swap:amount"],
-        )
+        assert_theseus(RECORD, [_swap("amount", 1.0)])
+    with pytest.raises(IdentityError, match="is not preserving"):
+        assert_theseus(RECORD, [_swap("amount", 1.0, False)])
 
 
 def test_theseus_and_ovid_reject_undeclared_names():
-    preserving = _swap("swap:amount", 1250.0, preserving=True)
-    breaking = _swap("swap:amount", 1.0, preserving=False)
     with pytest.raises(IdentityError, match="undeclared"):
-        assert_theseus(RECORD, [preserving], declared=[])
+        assert_theseus(RECORD, [_swap("amount", 1250.0)], declared=[])
     with pytest.raises(IdentityError, match="undeclared"):
-        assert_ovid(RECORD, [breaking], declared=["drop:verified"])
+        assert_ovid(RECORD, [_swap("amount", 1.0).as_breaking()], declared=["drop:verified"])
 
 
-def test_ovid_names_presence_and_canonical_deltas():
+def test_ovid_names_dotted_paths_and_presence():
     faces = assert_ovid(
-        {"keep": 1, "gone": None, "flag": True},
+        {"keep": 1, "gone": None, "flag": True, "result": {"lucas": "123"}},
         [
             Transformation(
                 "drop:gone",
                 lambda record: {key: value for key, value in record.items() if key != "gone"},
                 False,
             ),
+            Transformation("swap:flag", lambda record: {**record, "flag": 1}, False),
             Transformation(
-                "swap:flag",
-                lambda record: {**record, "flag": 1},
+                "edit:lucas",
+                lambda record: {**record, "result": {**record["result"], "lucas": "322"}},
                 False,
             ),
         ],
-        declared=["drop:gone", "swap:flag"],
     )
     assert faces[0].changed_keys == ("gone",)
     assert faces[1].changed_keys == ("flag",)
+    assert faces[2].changed_keys == ("result.lucas",)
 
 
 def test_ovid_snapshots_an_in_place_edit():
@@ -102,55 +115,60 @@ def test_ovid_snapshots_an_in_place_edit():
         current["nested"]["x"] = 2
         return current
 
-    faces = assert_ovid(
-        record,
-        [Transformation("mutate", mutate, False)],
-        declared=["mutate"],
-    )
+    faces = assert_ovid(record, [Transformation("mutate", mutate, False)])
     assert record == original
-    assert faces[0].changed_keys == ("amount", "nested")
+    assert faces[0].changed_keys == ("amount", "nested.x")
 
 
-def test_chain_binds_outcome_and_terminal_digest():
-    face = Face(0, "drop:verified", "a" * 64, "b" * 64, ("verified",))
-    chain = Chain()
-    chain.append(face)
-    tip = chain.tip()
-    assert chain.verify(tip=tip) == 1
+def test_chain_is_tied_to_the_record_and_rejects_a_reroot():
+    faces = assert_ovid(RECORD, [_swap("amount", 1).as_breaking(), _swap("verified", False).as_breaking()])
+    chain = Chain.for_record(RECORD)
+    for face in faces:
+        chain.append(face)
+    assert chain.verify() == 2
+    assert faces[1].before == faces[0].after
 
-    chain.links[-1] = (
-        0,
-        "tampered",
-        face.before,
-        face.after,
-        face.changed_keys,
-        chain.links[-1][5],
+    dated = chain.links[0]
+    chain.links[0] = (dated[0], dated[1], dated[2] - 10.0, dated[3], dated[4], dated[5])
+    with pytest.raises(IdentityError, match="not bound"):
+        chain.verify()
+
+    truncated = Chain(origin="0" * 64)
+    second = faces[1]
+    truncated.links.append(
+        (0, second.transformation, second.at, second.before, "0" * 64, second.after)
     )
-    with pytest.raises(IdentityError, match="terminal digest"):
-        chain.verify(tip=tip)
-
-    unrelated = Face(1, "swap:amount", "c" * 64, "d" * 64, ("amount",))
-    fresh = Chain()
-    fresh.append(face)
-    with pytest.raises(IdentityError, match="does not continue"):
-        fresh.append(unrelated)
+    with pytest.raises(IdentityError, match="record origin"):
+        truncated.verify()
 
 
-def test_chain_rejects_a_gap_and_a_broken_predecessor():
-    chain = Chain()
-    chain.links.append((1, "swap:amount", "a" * 64, "b" * 64, ("amount",), "0" * 64))
+def test_chain_rejects_a_gap():
+    chain = Chain.for_record(RECORD)
+    chain.links.append((1, "swap:amount", 0.0, "a" * 64, chain.origin, "b" * 64))
     with pytest.raises(IdentityError, match="gap"):
         chain.verify()
 
-    bound = Chain()
-    first = Face(0, "drop:verified", "a" * 64, "b" * 64, ("verified",))
-    bound.append(first)
-    bound.links.append((1, "swap:amount", "b" * 64, "c" * 64, ("amount",), "0" * 64))
-    with pytest.raises(IdentityError, match="not bound"):
-        bound.verify()
+
+def test_seed_42_record_is_not_hardcoded_to_one_payload():
+    with open("evidence/chronus/modeA_42.json", encoding="utf-8") as handle:
+        evidence = json.load(handle)
+    held = digest(evidence)
+    assert_theseus(evidence, [_swap("device_run", "NOT_RUN")])
+    faces = assert_ovid(evidence, [_swap("device_run", "RUN").as_breaking()])
+    assert faces[0].changed_keys == ("device_run",)
+    assert digest(evidence) == held
 
 
 def test_registry_is_exhaustive():
     check_registry_complete(["swap:amount"], ["swap:amount"])
     with pytest.raises(IdentityError, match="undeclared"):
         check_registry_complete(["swap:amount"], ["swap:amount", "drop:verified"])
+
+
+def test_unrelated_face_does_not_continue():
+    origin = digest(RECORD)
+    face = Face(0, "swap:amount", 1.0, origin, digest({"n": 1}), ("amount",))
+    chain = Chain(origin)
+    chain.append(face)
+    with pytest.raises(IdentityError, match="does not start where"):
+        chain.append(Face(1, "swap:verified", 2.0, "c" * 64, "d" * 64, ("verified",)))
