@@ -38,11 +38,11 @@
 
 Directly run against the uploaded archive with Python 3.13.5 and NumPy 2.3.5:
 - Falsification campaign: PASS (five attempts, 256 seeded random cases).
-- Focused validation and enterprise suite: 135 passed.
+- Extended original-archive validation, tensor-network and enterprise suite: **195 passed** with the portable source directories on PYTHONPATH.
 - Python source compilation: PASS.
-- Whole-archive test collection: NOT GREEN (missing hypothesis and stale absolute import in legacy test).
+- Whole-archive test collection: NOT GREEN because the optional Hypothesis dependency was unavailable. The legacy absolute-import failure was isolated to missing PYTHONPATH setup and the corresponding test file passed after supplying the archive's source directories.
 
-Directly run against this imported operator/seam: 21 tests passed.
+Directly run against this imported operator/seam: 22 tests passed, including a same-shape kernel tamper detection case under a supplied evidence receipt.
 These results are local to the intake. Current GitHub CI and deployment evidence must be inspected before release promotion.
 
 The upload's depth-4 retained-state ratio was about 0.655x, meaning complete-state expansion rather than net stored-byte compression on that tested path.
