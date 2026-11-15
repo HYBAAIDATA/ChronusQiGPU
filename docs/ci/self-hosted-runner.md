@@ -22,12 +22,14 @@ Each critical-path job also has:
 if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
 ```
 
-so **fork PRs never run on the persistent self-hosted machine**. Same-repo PRs
-and pushes still use it.
+so **fork PRs never run on the self-hosted machine**. Same-repo PRs and pushes
+still use it.
 
-## Register a runner
+## Register a runner (persistent — required for four jobs)
 
-On the Windows host (PowerShell as the service account that will run jobs):
+Four critical-path jobs run **sequentially** on one labelled machine. A single
+`--ephemeral` registration deregisters after the first job and leaves the other
+three queued until timeout. Use a **persistent** runner for this critical path:
 
 ```powershell
 # From the repo Settings → Actions → Runners → New self-hosted runner
@@ -35,16 +37,28 @@ mkdir actions-runner; cd actions-runner
 Invoke-WebRequest -Uri https://github.com/actions/runner/releases/download/v2.321.0/actions-runner-win-x64-2.321.0.zip -OutFile actions-runner-win-x64.zip
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 [System.IO.Compression.ZipFile]::ExtractToDirectory("$PWD/actions-runner-win-x64.zip", "$PWD")
-./config.cmd --url https://github.com/HYBAAIDATA/ChronusQiGPU --token <REGISTRATION_TOKEN> --labels windows --name chronus-win-critical --ephemeral
-./run.cmd
+./config.cmd --url https://github.com/HYBAAIDATA/ChronusQiGPU --token <REGISTRATION_TOKEN> --labels windows --name chronus-win-critical
+./svc.cmd install
+./svc.cmd start
 ```
 
-Use the registration token from the GitHub UI (short-lived). Prefer
-`--ephemeral` so each job gets a fresh runner process. If you must use a
-long-lived service (`./svc.cmd install` / `start`), treat the host as
-high-trust and keep the same-repo `if:` guard above.
+Required labels: `self-hosted` (added by default) and `windows`. Treat the host
+as high-trust: keep the same-repo `if:` guard, enable outside-collaborator
+approval, and clean the work directory between jobs if you share the machine.
 
-Required labels: `self-hosted` (added by default) and `windows`.
+### Optional: ephemeral loop (advanced)
+
+If you prefer ephemeral runners, you must **re-register after every job** —
+one `--ephemeral` `./run.cmd` is not enough for four jobs:
+
+```powershell
+# PAT or registration token with admin:org / repo admin rights to create runners
+while ($true) {
+  ./config.cmd --url https://github.com/HYBAAIDATA/ChronusQiGPU --token <TOKEN> --labels windows --name chronus-win-eph --ephemeral --unattended --replace
+  ./run.cmd
+  # run.cmd exits after one job when --ephemeral; loop registers the next
+}
+```
 
 ## Fork-PR caveat (public repos)
 
