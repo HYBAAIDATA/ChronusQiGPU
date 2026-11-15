@@ -176,6 +176,8 @@ def test_sqlite_replaced_database_fails_closed_and_readiness_drops(
     )
     assert response.status_code == 503
     assert "state_unavailable" in response.json()["reasons"]
+    # Return the test fixture to the memory backend before teardown resets.
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
 
 
 def test_sqlite_missing_schema_after_initialization_fails_closed(
@@ -192,6 +194,8 @@ def test_sqlite_missing_schema_after_initialization_fails_closed(
     with pytest.raises(RuntimeError, match="schema changed"):
         with state.connection():
             pass
+    # Teardown must not try to clean a deliberately invalid SQLite schema.
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
 
 
 def test_same_key_different_body_is_409(client):
