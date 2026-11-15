@@ -2,12 +2,21 @@
 
 Executes all 8 Enterprise Release Gates and 94 Architectural Invariants (I1 - I94),
 generating the qualification_manifest_v36.json release record.
+
+The manifest is written to the repository by default, so a release artefact
+can be regenerated deliberately. CHRONUS_MANIFEST_OUT_DIR redirects the write,
+which lets a test run the suite without overwriting the tracked manifest. The
+writer is opt-in; the test only reads.
 """
 
 import importlib.util
 import json
 import os
 from typing import Any, Dict
+
+# Where the release manifest is written. The repository is the default; an
+# override lets a caller collect the artefact somewhere disposable.
+MANIFEST_OUT_DIR = os.environ.get("CHRONUS_MANIFEST_OUT_DIR")
 
 
 class ChronusVerificationOrchestrator:
@@ -48,8 +57,10 @@ class ChronusVerificationOrchestrator:
         manifest["invariants_passed"] = 94
         manifest["invariant_summary"] = "All 94 Architectural Invariants (I1-I94) Green"
 
-        # Persist to repository manifests/qualification_manifest_v36.json
-        manifest_path = os.path.join(repo_root, "manifests", "qualification_manifest_v36.json")
+        # Persist to the repository manifests/qualification_manifest_v36.json,
+        # or to CHRONUS_MANIFEST_OUT_DIR when the caller redirects the write.
+        out_dir = MANIFEST_OUT_DIR or os.path.join(repo_root, "manifests")
+        manifest_path = os.path.join(out_dir, "qualification_manifest_v36.json")
         try:
             os.makedirs(os.path.dirname(manifest_path), exist_ok=True)
             with open(manifest_path, "w", encoding="utf-8") as f:
