@@ -29,7 +29,10 @@ _NAMED = {
 def _number(value: Any) -> float:
     if type(value) not in (int, float):
         raise ValueError("numeric values must be JSON numbers, not booleans")
-    result = float(value)
+    try:
+        result = float(value)
+    except OverflowError as exc:
+        raise ValueError("numeric value exceeds representable range") from exc
     if not math.isfinite(result):
         raise ValueError("non-finite numbers are forbidden")
     return result
@@ -44,6 +47,8 @@ def _complex(value: Any) -> complex:
 
 
 def _encode(value: complex) -> list[float]:
+    if not math.isfinite(value.real) or not math.isfinite(value.imag):
+        raise ValueError("computed complex value is not finite")
     return [float(value.real), float(value.imag)]
 
 
@@ -90,7 +95,12 @@ def turing_normalize(amplitudes: list[Any]) -> dict[str, Any]:
     """Explicitly normalize a nonzero complex vector into a ket."""
     if not isinstance(amplitudes, list) or not 1 <= len(amplitudes) <= MAX_DIMENSION:
         raise ValueError("state dimension must be between 1 and 64")
-    return _state_result(QuantumState.normalized(_complex(x) for x in amplitudes))
+    values = [_complex(x) for x in amplitudes]
+    scale = max(abs(v) for v in values)
+    if scale == 0:
+        raise ValueError("the zero vector cannot be normalized")
+    scaled = [v / scale for v in values]
+    return _state_result(QuantumState.normalized(scaled))
 
 
 def turing_operator(operator: Any) -> dict[str, Any]:
