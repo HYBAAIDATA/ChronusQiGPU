@@ -1,6 +1,7 @@
 """Contract tests: the guarantees the surface actually makes."""
 
 import json
+import sqlite3
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 
@@ -150,6 +151,47 @@ def test_concurrent_sqlite_first_use_initializes_wal_once(tmp_path, monkeypatch)
     with ThreadPoolExecutor(max_workers=8) as pool:
         modes = list(pool.map(open_connection, range(8)))
     assert modes == ["wal"] * 8
+
+
+def test_sqlite_replaced_database_fails_closed_and_readiness_drops(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "sqlite")
+    db_path = tmp_path / "api.sqlite3"
+    monkeypatch.setenv("CHRONUS_API_DB_PATH", str(db_path))
+    with state.connection() as conn:
+        assert conn.execute("SELECT count(*) FROM api_workloads").fetchone()
+
+    replacement = tmp_path / "replacement.sqlite3"
+    with sqlite3.connect(replacement) as conn:
+        conn.execute("CREATE TABLE unrelated (value INTEGER)")
+    replacement.replace(db_path)
+
+    with pytest.raises(RuntimeError, match="database replaced"):
+        with state.connection():
+            pass
+
+    response = TestClient(create_app(), raise_server_exceptions=False).get(
+        "/health/ready"
+    )
+    assert response.status_code == 503
+    assert "state_unavailable" in response.json()["reasons"]
+
+
+def test_sqlite_missing_schema_after_initialization_fails_closed(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "sqlite")
+    db_path = tmp_path / "api.sqlite3"
+    monkeypatch.setenv("CHRONUS_API_DB_PATH", str(db_path))
+    with state.connection():
+        pass
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("DROP TABLE api_rate_limits")
+
+    with pytest.raises(RuntimeError, match="schema changed"):
+        with state.connection():
+            pass
 
 
 def test_same_key_different_body_is_409(client):
