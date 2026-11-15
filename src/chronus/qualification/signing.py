@@ -12,9 +12,9 @@ Key custody (not HSM-backed):
    (``<db>.ed25519.seed``), created once via write-temp + atomic link and
    reused so restart and replicas sharing that path keep the same key.
 
-Seed-file hardening: reject symlinks, require a regular file owned by the
-process user with group/other bits clear, and never treat an incomplete
-(empty / wrong-length) file as a valid key.
+Seed-file hardening: reject symlinks, require a regular file whose ``st_uid``
+matches ``os.geteuid()`` (when available) with group/other bits clear, and
+never treat an incomplete (empty / wrong-length) file as a valid key.
 """
 
 from __future__ import annotations
@@ -64,15 +64,16 @@ def _open_flags(base: int) -> int:
 def _validate_seed_stat(st: os.stat_result, *, path: Path) -> None:
     if not stat.S_ISREG(st.st_mode):
         raise ValueError(f"qualification seed {path} must be a regular file")
-    if st.st_mode & 0o077:
-        raise ValueError(
-            f"qualification seed {path} must not be group/world accessible "
-            f"(mode={stat.filemode(st.st_mode)})"
-        )
+    # Ownership is the primary trust gate (mode alone passes in a root container).
     if hasattr(os, "geteuid") and st.st_uid != os.geteuid():
         raise ValueError(
             f"qualification seed {path} must be owned by the service user "
             f"(uid={st.st_uid})"
+        )
+    if st.st_mode & 0o077:
+        raise ValueError(
+            f"qualification seed {path} must not be group/world accessible "
+            f"(mode={stat.filemode(st.st_mode)})"
         )
 
 
@@ -89,7 +90,7 @@ def _decode_seed_hex(text: str, *, path: Path) -> bytes:
     return raw
 
 
-def _read_seed_file(path: Path) -> bytes:
+def read_trusted(path: Path) -> bytes:
     """Open an existing seed without following symlinks; reject incomplete files."""
     last_error: Exception | None = None
     for attempt in range(_READ_ATTEMPTS):
@@ -99,7 +100,9 @@ def _read_seed_file(path: Path) -> bytes:
             raise
         except OSError as exc:
             # ELOOP when O_NOFOLLOW hits a symlink
-            raise ValueError(f"qualification seed {path} is not a trusted regular file") from exc
+            raise ValueError(
+                f"qualification seed {path} is not a trusted regular file"
+            ) from exc
         try:
             st = os.fstat(fd)
             _validate_seed_stat(st, path=path)
@@ -123,6 +126,10 @@ def _read_seed_file(path: Path) -> bytes:
     raise last_error
 
 
+# Back-compat alias for callers/tests that imported the private name.
+_read_seed_file = read_trusted
+
+
 def _write_all(fd: int, payload: bytes) -> None:
     """Write every byte; treat a zero-length write as failure."""
     offset = 0
@@ -135,7 +142,12 @@ def _write_all(fd: int, payload: bytes) -> None:
 
 def _fsync_dir(directory: Path) -> None:
     """Durably record directory entries (required after link/create)."""
-    dir_fd = os.open(str(directory), os.O_RDONLY)
+    flags = os.O_RDONLY
+    # O_DIRECTORY is POSIX-only; Windows open() rejects unknown flags.
+    directory_flag = getattr(os, "O_DIRECTORY", 0)
+    if directory_flag:
+        flags |= directory_flag
+    dir_fd = os.open(str(directory), flags)
     try:
         os.fsync(dir_fd)
     finally:
@@ -143,7 +155,12 @@ def _fsync_dir(directory: Path) -> None:
 
 
 def _publish_seed_file(path: Path) -> bytes:
-    """Write seed to a private temp file, then atomically link into place."""
+    """Write seed to a private temp file, then atomically link into place.
+
+    Durability order: open(0600) → write_all → fsync(fd) → close → link →
+    fsync(parent). ``FileExistsError`` on link is the loser path: unlink the
+    temp and return the winner's bytes via ``read_trusted``.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     seed = os.urandom(32)
     payload = seed.hex().encode("ascii")
@@ -157,16 +174,18 @@ def _publish_seed_file(path: Path) -> bytes:
         finally:
             os.close(fd)
         try:
-            # link fails if the final name already exists — no replace of a live seed.
+            # File must be durable before the link makes it visible.
             os.link(str(tmp), str(path))
         except FileExistsError:
-            published = None
-        else:
-            _fsync_dir(path.parent)
-            published = seed
+            # Loser path — winner's final file is authoritative.
+            try:
+                os.unlink(str(tmp))
+            except FileNotFoundError:
+                pass
+            return read_trusted(path)
+        _fsync_dir(path.parent)
+        published = seed
     except Exception:
-        # Drop a partial temp before propagating; never leave a linked incomplete seed
-        # because link only runs after a full write + fsync.
         try:
             os.unlink(str(tmp))
         except FileNotFoundError:
@@ -179,7 +198,7 @@ def _publish_seed_file(path: Path) -> bytes:
             pass
     if published is not None:
         return published
-    return _read_seed_file(path)
+    return read_trusted(path)
 
 
 def _resolve_seed() -> tuple[bytes, str]:
@@ -194,7 +213,7 @@ def _resolve_seed() -> tuple[bytes, str]:
     path = _seed_file_path()
     if path.exists():
         # exists() may follow a symlink for the existence check; open uses O_NOFOLLOW.
-        return _read_seed_file(path), f"seed-file:{path}"
+        return read_trusted(path), f"seed-file:{path}"
     seed = _publish_seed_file(path)
     return seed, f"seed-file:{path}"
 
