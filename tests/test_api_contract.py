@@ -153,6 +153,44 @@ def test_concurrent_sqlite_first_use_initializes_wal_once(tmp_path, monkeypatch)
     assert modes == ["wal"] * 8
 
 
+def test_parallel_processes_initialize_sqlite_atomically(tmp_path):
+    """Concurrent workers must not reject a partially initialized DB."""
+    import os
+    import subprocess
+    import sys
+
+    db_path = tmp_path / "cross-process.sqlite3"
+    environment = {
+        **os.environ,
+        "CHRONUS_API_STATE_BACKEND": "sqlite",
+        "CHRONUS_API_DB_PATH": str(db_path),
+    }
+    script = (
+        "from chronus.service.api import state; "
+        "with_conn = state.connection(); "
+        "conn = with_conn.__enter__(); "
+        "assert conn.execute('SELECT COUNT(*) FROM api_workloads').fetchone(); "
+        "with_conn.__exit__(None, None, None)"
+    )
+    def open_worker(_):
+        return subprocess.run(
+            [sys.executable, "-c", script],
+            env=environment, capture_output=True, text=True, timeout=45,
+            check=False,
+        )
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        outputs = list(pool.map(open_worker, range(6)))
+    assert all(item.returncode == 0 for item in outputs), [
+        item.stderr for item in outputs if item.returncode
+    ]
+    with sqlite3.connect(db_path) as conn:
+        assert conn.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
+        assert conn.execute(
+            "SELECT COUNT(*) FROM sqlite_master "
+            "WHERE type='table' AND name LIKE 'api_%'"
+        ).fetchone()[0] == 5
+
+
 def test_sqlite_replaced_database_fails_closed_and_readiness_drops(
     tmp_path, monkeypatch
 ):
