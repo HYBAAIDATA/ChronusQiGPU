@@ -15,6 +15,8 @@ The machine-readable authority is `evidence/migration/chronus_historical_evidenc
 | Eleven-layer iGPU measurement | 30/30 measurement tests and 1,488/1,488 substrate tests; 16 stages available, 5 unavailable due absent sensors | Historical measurement record retained; rerun required for release claim |
 | Intel UHD 620 physical history | 2026-09-21 record at commit `823cf39`: 22.13–23.44 MH/s kernel, 16.86–18.96 MH/s wall on `opencl:gpu` | Device/workload history only; post-migration artifact/device binding must be rerun or reconciled |
 | UHD 630 | Historical record said pending | Remains unavailable until current target-host evidence exists |
+| Enterprise native tensor hardening | Historical merged PR record described explicit CUDA C and MLX/Metal tensor routes with device-bound measurement semantics and no physical timing claim | Capability restored into maintained tensor package; device evidence still required |
+| Storage suite — 15 Nov 2026 | Confidential deck records 16/16 storage checks at Chronusv2 revision `672f3d7` using `tests/test_storage.py` | Preserved as provenance; current close-out suite reruns storage/triad behavior |
 
 ## Current repository evidence retained
 
