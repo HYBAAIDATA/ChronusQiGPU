@@ -265,6 +265,49 @@ def test_bootstrap_sidecar_blocks_competing_process(tmp_path):
             child.wait(timeout=15)
 
 
+def test_crash_during_bootstrap_keeps_incomplete_database_unqualified(
+    tmp_path, monkeypatch
+):
+    """An abruptly exited bootstrap must not cause silent custody recreation."""
+    db_path = tmp_path / "crashed-bootstrap.sqlite3"
+    env = {
+        **os.environ,
+        "CHRONUS_API_STATE_BACKEND": "sqlite",
+        "CHRONUS_API_DB_PATH": str(db_path),
+    }
+    crashing_worker = """
+import os
+import sqlite3
+from chronus.service.api.state import _interprocess_bootstrap_lock
+
+path = os.environ["CHRONUS_API_DB_PATH"]
+with _interprocess_bootstrap_lock(path):
+    with sqlite3.connect(path) as conn:
+        conn.execute("CREATE TABLE interrupted_bootstrap (id INTEGER)")
+    os._exit(37)
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", crashing_worker],
+        env=env, capture_output=True, text=True, timeout=45,
+    )
+    assert result.returncode == 37, result.stderr
+    assert db_path.exists()
+
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "sqlite")
+    monkeypatch.setenv("CHRONUS_API_DB_PATH", str(db_path))
+    with pytest.raises(RuntimeError, match="existing database"):
+        with state.connection():
+            pass
+    with sqlite3.connect(db_path) as conn:
+        assert conn.execute(
+            "SELECT name FROM sqlite_master WHERE name = 'interrupted_bootstrap'"
+        ).fetchone()
+        assert conn.execute(
+            "SELECT name FROM sqlite_master WHERE name = 'api_idempotency'"
+        ).fetchone() is None
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
+
+
 def test_sqlite_replaced_database_fails_closed_and_readiness_drops(
     tmp_path, monkeypatch
 ):
