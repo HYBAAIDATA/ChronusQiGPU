@@ -42,7 +42,7 @@ def test_missing_or_invalid_verdict_fails_closed():
 def test_exact_push_main_commit_required_for_release():
     sha = "a" * 40
     good = {
-        "id": 123, "head_sha": sha, "event": "push", "head_branch": "main",
+        "id": 123, "run_attempt": 1, "head_sha": sha, "event": "push", "head_branch": "main",
         "path": ".github/workflows/chronus-evidence-qualification.yml",
         "status": "completed", "conclusion": "success",
     }
@@ -71,7 +71,7 @@ def test_attestation_path_enforces_exact_identity(tmp_path, monkeypatch):
     sha = "a" * 40
     calls = []
     run = {
-        "id": 123, "head_sha": sha, "event": "push",
+        "id": 123, "run_attempt": 1, "head_sha": sha, "event": "push",
         "head_branch": "main", "status": "completed",
         "conclusion": "success",
         "path": gate._WORKFLOW + "@main",
@@ -93,7 +93,10 @@ def test_attestation_path_enforces_exact_identity(tmp_path, monkeypatch):
             assert "--source-digest" in args
             assert args[args.index("--source-digest") + 1] == sha
             assert args[args.index("--source-ref") + 1] == "refs/heads/main"
-            return "attestation verified"
+            assert args[args.index("--format") + 1] == "json"
+            return json.dumps([{"verificationResult": {"signature": {"certificate": {
+                "runInvocationURI": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/123/attempts/1",
+            }}}}])
         raise AssertionError(f"unexpected command {args!r}")
 
     monkeypatch.setattr(gate, "call", fake_call)
@@ -119,12 +122,12 @@ def test_missing_or_rejected_attestation_fails_closed(monkeypatch):
 
     sha = "b" * 40
     run = {
-        "id": 234, "head_sha": sha, "event": "push",
+        "id": 234, "run_attempt": 1, "head_sha": sha, "event": "push",
         "head_branch": "main", "status": "completed",
         "conclusion": "success", "path": gate._WORKFLOW + "@main",
     }
 
-    for variant in ("missing", "rejected", "tampered"):
+    for variant in ("missing", "rejected", "tampered", "other-run"):
         def fake_call(*args):
             if args[:2] == ("gh", "--version"):
                 return "gh version 2.102.0"
@@ -142,7 +145,13 @@ def test_missing_or_rejected_attestation_fails_closed(monkeypatch):
             if args[:3] == ("gh", "attestation", "verify"):
                 if variant in ("rejected", "tampered"):
                     raise ReleaseBlocked("missing or invalid attestation")
-                return ""
+                return json.dumps([{"verificationResult": {"signature": {"certificate": {
+                    "runInvocationURI": (
+                        "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/"
+                        + ("999" if variant == "other-run" else "234")
+                        + "/attempts/1"
+                    ),
+                }}}}])
             raise AssertionError(f"unexpected command {args!r}")
 
         monkeypatch.setattr(gate, "call", fake_call)
