@@ -1,7 +1,10 @@
 """Contract tests: the guarantees the surface actually makes."""
 
 import json
+import os
 import sqlite3
+import subprocess
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 
@@ -189,6 +192,33 @@ def test_parallel_processes_initialize_sqlite_atomically(tmp_path):
             "SELECT COUNT(*) FROM sqlite_master "
             "WHERE type='table' AND name LIKE 'api_%'"
         ).fetchone()[0] == 5
+
+
+def test_fresh_sqlite_bootstrap_is_serialized_across_processes(tmp_path):
+    """Independent workers must never observe a partially created schema."""
+    db_path = tmp_path / "multiprocess.sqlite3"
+    env = {
+        **os.environ,
+        "CHRONUS_API_STATE_BACKEND": "sqlite",
+        "CHRONUS_API_DB_PATH": str(db_path),
+    }
+    script = """
+from chronus.service.api import state
+with state.connection() as conn:
+    assert conn.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
+    assert conn.execute("SELECT count(*) FROM api_workloads").fetchone()[0] == 0
+"""
+    children = [
+        subprocess.Popen(
+            [sys.executable, "-c", script],
+            env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        )
+        for _ in range(6)
+    ]
+    results = [child.communicate(timeout=60) for child in children]
+    assert all(child.returncode == 0 for child in children), results
+    assert db_path.exists()
+    assert (tmp_path / "multiprocess.sqlite3.bootstrap.lock").exists()
 
 
 def test_sqlite_replaced_database_fails_closed_and_readiness_drops(
