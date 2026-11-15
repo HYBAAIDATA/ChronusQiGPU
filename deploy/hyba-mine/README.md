@@ -96,9 +96,11 @@ store, never in the repository or image.
 
 ## Historical deployment adapters
 
-The empty `.github/workflows/hyba-mine.yml` has been deleted. `control.env` and
+The empty mining deployment workflow has been deleted. `control.env` and
 `vm-hyba-mine.sh` are retained as historical adapters; they are not used by the
-local validation commands. The owner hold in `control.env` remains in place.
+local validation commands. Azure remains an available future hosting option,
+subject to a separate owner decision and deployment review. The owner hold in
+`control.env` remains in place.
 
 ## Pools
 
