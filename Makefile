@@ -1,6 +1,6 @@
 # Makefile for Chronus Quantum iGPU
 
-.PHONY: test test-cover lint format build clean install-devmode help
+.PHONY: test test-cover lint format build clean install install-devmode import claims run ga-test help
 
 # Default target
 help:
@@ -12,11 +12,35 @@ help:
 	@echo "make format          Auto-format code (black)"
 	@echo "make build           Build the package"
 	@echo "make clean           Clean build artifacts"
+	@echo "make import          Verify the GA foundation imports"
+	@echo "make claims          Verify the GA executable claims manifest"
+	@echo "make run             Run the experimental GA API"
+	@echo "make ga-test         Run the GA foundation tests"
 	@echo "make install-devmode Install development dependencies"
+
+# Install the repository and development dependencies.
+install: install-devmode
 
 # Install development dependencies (pyproject.toml is the single source of truth)
 install-devmode:
 	pip install -e '.[dev]'
+
+# Import-safe GA foundation. FastAPI is loaded only when create_app is called.
+import:
+	python scripts/ci/check_ga_import.py
+
+# Verify every implemented GA claim against its named executable check.
+claims:
+	python -m ga.claims verify --manifest docs/claims.yaml
+
+# Run the experimental GA API factory.
+run:
+	python -m ga.cli
+
+# Run only the evidence-safe GA foundation tests.
+ga-test:
+	python -m ga.claims verify --manifest docs/claims.yaml
+	pytest -q tests/ga
 
 # Run tests
 test:

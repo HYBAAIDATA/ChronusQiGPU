@@ -4,7 +4,8 @@
     "vendor/",
     "archive/",
     "chronus_source_backup/",
-    "docs/directives/"
+    "docs/directives/",
+    "docs/research/"
   ],
   "allowlist": [
     {
