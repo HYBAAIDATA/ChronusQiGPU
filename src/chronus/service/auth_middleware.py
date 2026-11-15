@@ -10,6 +10,7 @@ Supports:
 import json
 import logging
 import os
+import secrets
 import time
 from enum import Enum
 from typing import Any, Callable, Dict, Optional, Set
@@ -24,6 +25,30 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 logger = logging.getLogger(__name__)
 
 security = HTTPBearer(auto_error=False)
+
+# There is deliberately no built-in signing key: a key published in source code lets
+# anyone mint tokens for any tenant and role. CHRONUS_JWT_SECRET configures the key;
+# without it, each process uses its own random key, so the tokens it issues are only
+# accepted by that process (they do not survive a restart or reach other replicas).
+_PROCESS_JWT_SECRET = secrets.token_urlsafe(48)
+_HMAC_ALGORITHMS = frozenset({"HS256", "HS384", "HS512"})
+_ASYMMETRIC_ALGORITHMS = frozenset(
+    {"RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "ES256", "ES384", "ES512", "EdDSA"}
+)
+
+
+def configured_jwt_secret() -> str:
+    """Return CHRONUS_JWT_SECRET, or this process's random key when it is unset."""
+    configured = os.getenv("CHRONUS_JWT_SECRET")
+    if configured:
+        return configured
+    if not getattr(configured_jwt_secret, "_warned", False):
+        logger.warning(
+            "CHRONUS_JWT_SECRET is not set: issued tokens are signed with a random "
+            "per-process key and are not accepted after a restart or by other replicas."
+        )
+        configured_jwt_secret._warned = True  # type: ignore[attr-defined]
+    return _PROCESS_JWT_SECRET
 
 
 class Role(str, Enum):
@@ -244,9 +269,16 @@ class JWTValidator:
     ) -> None:
         self.audience = audience or os.getenv("CHRONUS_JWT_AUDIENCE", "chronus-api")
         self.issuer = issuer or os.getenv("CHRONUS_JWT_ISSUER")
-        self.secret = secret or os.getenv(
-            "CHRONUS_JWT_SECRET", "test-secret-key-for-hmac-32bytes-chronus!!"
-        )
+        self._secret = secret
+
+    @property
+    def secret(self) -> str:
+        """HMAC key: the one given to this validator, else configured_jwt_secret()."""
+        return self._secret or configured_jwt_secret()
+
+    @secret.setter
+    def secret(self, value: Optional[str]) -> None:
+        self._secret = value
 
     def validate_token(self, token: str) -> AuthenticatedIdentity:
         """Decode and validate JWT token claims."""
@@ -261,6 +293,18 @@ class JWTValidator:
                 detail={
                     "error": "invalid_token_header",
                     "message": f"Malformed JWT header: {exc}",
+                },
+            )
+
+        # Only known signature algorithms; the header must not choose anything else.
+        if not isinstance(alg, str) or (
+            alg not in _HMAC_ALGORITHMS and alg not in _ASYMMETRIC_ALGORITHMS
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail={
+                    "error": "unsupported_algorithm",
+                    "message": f"JWT algorithm {alg!r} is not accepted.",
                 },
             )
 
@@ -455,9 +499,7 @@ def create_jwt_token(
     additional_claims: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Mint an authenticated JWT token with role claims for testing or tenant access."""
-    key = secret or os.getenv(
-        "CHRONUS_JWT_SECRET", "test-secret-key-for-hmac-32bytes-chronus!!"
-    )
+    key = secret or configured_jwt_secret()
     now = int(time.time())
     role_str = role.value if isinstance(role, Role) else str(role)
     payload = {
