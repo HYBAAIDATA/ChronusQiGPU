@@ -26,10 +26,11 @@ from chronus.service.models import (
 )
 import hashlib
 import time
-from chronus.core.seal import find_banned_tokens
+from chronus.core.seal import find_banned_tokens, scrub_dict_strings
 from chronus.core.workload_alias import (
     INTERNAL_INGEST_WORKLOAD,
     INTERNAL_SCALING_WORKLOAD,
+    externalize_scaling_result,
     normalize_workload_type,
 )
 from chronus.qualification import QualificationHarness
@@ -413,6 +414,12 @@ async def cancel_workload(
                 error="workload_not_cancellable",
                 error_code="WL004",
                 message=f"Workload {workload_id} is in {workload.status} state and cannot be cancelled.",
+            ).model_dump(),
+        )
+
+    workload.status = WorkloadStatus.CANCELLED
+    workload.completed_at = datetime.now(timezone.utc)
+    workload_store.save(workload)in {workload.status} state and cannot be cancelled.",
             ).model_dump(),
         )
 

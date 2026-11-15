@@ -61,6 +61,29 @@ def externalize_workload_type(internal: str) -> str:
     return INTERNAL_TO_EXTERNAL_WORKLOAD.get(internal, internal)
 
 
+def externalize_scaling_result(result: dict) -> dict:
+    """Map a scaling execution result onto sealed external keys.
+
+    Only measured values and the sealed family name are emitted; the internal
+    provenance keys and identity text are dropped.
+    """
+    if not isinstance(result, dict):
+        return result
+    payload = result.get("result")
+    if not isinstance(payload, dict):
+        return result
+    representation = payload.get("representation")
+    index = representation.get("index") if isinstance(representation, dict) else None
+    sealed_payload = {
+        "family": "scaling.v1",
+        "index": index,
+        "sequence_value": payload.get("lucas"),
+        "companion_value": payload.get("fibonacci"),
+        "identity_verified": payload.get("identity_verified"),
+    }
+    return {**result, "result": sealed_payload}
+
+
 def normalize_representation_mode(value: str) -> str:
     if not isinstance(value, str) or not value:
         raise ValueError("representation_mode must be a non-empty string")
