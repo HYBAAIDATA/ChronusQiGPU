@@ -169,5 +169,11 @@
       }
     ]
   },
-  "total_benchmark_wall_seconds": 46.316
+  "total_benchmark_wall_seconds": 46.316,
+  "promotion": {
+    "promoted_by": "owner-direction-20261116",
+    "status": "internal-release",
+    "scope": "8K end-to-end render at 7680x4320 on CPU reference (deterministic energy -7.337994, wall fixed by resolution not manifold size); BCS gap solver; theory self-tests; phi-scaling measured tiers only (phi18/phi20 are projections, not measurements).",
+    "device": "virtual-device-by-design"
+  }
 }

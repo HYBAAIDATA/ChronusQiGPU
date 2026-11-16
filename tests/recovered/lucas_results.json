@@ -3,6 +3,12 @@
   "backend": "python-exact-reference",
   "hardware_accelerated": false,
   "commit_sha": "UNVERSIONED-WORKTREE",
+  "promotion": {
+    "promoted_by": "owner-direction-20261116",
+    "status": "internal-release",
+    "scope": "Lucas-engine scalar reference: exact integer verification rates for the virtual iGPU path. Not GPU throughput, not FLOPS/EH/s.",
+    "device": "virtual-device-by-design"
+  },
   "lucas_sanity": {
     "L_0": 2,
     "L_10": 123,

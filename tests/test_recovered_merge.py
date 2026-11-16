@@ -43,6 +43,21 @@ def test_lucas_benchmark_record_shape_and_provenance():
     )
 
 
+def test_8k_benchmark_record_promoted_with_scope():
+    record = json.loads(
+        Path(__file__).parent.joinpath("recovered", "results.json").read_text()
+    )
+    assert record["promotion"]["status"] == "internal-release"
+    assert record["promotion"]["device"] == "virtual-device-by-design"
+    render32 = record["full_render_at_scale"]["32"]
+    assert render32["total_pixels"] == 7680 * 4320
+    assert render32["energy"] == -7.337994
+    assert render32["rendered_pixels_hit"] == 1832112
+    measured = [t for t in record["phi_power_scaling"]["tiers"] if t["measured"]]
+    projected = [t for t in record["phi_power_scaling"]["tiers"] if not t["measured"]]
+    assert len(measured) == 3 and len(projected) == 2
+
+
 def test_recovered_reference_modules_not_imported_by_engine():
     import chronus.tensor as tensor
 
