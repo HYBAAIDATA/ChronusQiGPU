@@ -137,6 +137,13 @@ def main(argv=None):
             os.link(staged,target)  # atomic publish, fails if target exists
         finally:
             os.unlink(staged)
+        # The file is durable only after the new directory entry is synced.
+        # A sync failure returns FAIL rather than claiming persistent evidence.
+        dir_fd = os.open(target.parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+        try:
+            os.fsync(dir_fd)
+        finally:
+            os.close(dir_fd)
         print(json.dumps({"result":"PASS","output":str(target),
                           "production_qualification":"UNVERIFIED"}))
         return 0
