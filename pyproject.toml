@@ -111,3 +111,23 @@ markers = [
     "real: executes production code without mocked behaviour; not hardware/deployment proof",
     "simulated: uses test doubles, synthetic harnesses or controlled fakes; not runtime evidence",
 ]
+
+[tool.coverage.run]
+source = [
+    "chronus.execution",
+    "chronus.backends",
+    "chronus.service",
+    "chronus.sdk",
+    "chronus.security",
+    "chronus.stratum",
+    "chronus.math",
+    "chronus.hw",
+    "chronus.storage",
+    "chronus.tensor",
+    "chronus.ovid",
+    "chronus.core",
+    "chronus.triad",
+]
+
+[tool.coverage.xml]
+output = "coverage.xml"
