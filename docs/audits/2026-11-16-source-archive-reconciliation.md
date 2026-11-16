@@ -117,6 +117,25 @@ This branch changes the API to a fixed local-loopback rehearsal classification, 
 
 The original July Geodesic test modules were executed in a temporary isolated import layout with the November PULVINI handoff's `formal.py`. **115/115 historical tests passed** under Python 3.13.5, NumPy 2.3.5, pytest 9.0.2 at 2026-11-16T06:41Z. This is a mixed-archive compatibility check, **not** a test of current Chronus source, PR head, physical device or mining deployment. Original archive hashes, reconstructed dependency hash, invocation, exit code and local stdout/JUnit digests are recorded at [evidence/migration/2026-11-16-geodesic-archive-replay.md](../../evidence/migration/2026-11-16-geodesic-archive-replay.md).
 
+## PR #130 code review remediation
+
+CodeRabbit and Qodo source findings were evaluated against the current branch:
+- **High / cross-stream signed receipt replay:** fixed by a second
+  domain-separated Ed25519 binding signature over tenant, stream and digest,
+  verified during every fresh THESEUS replay; adversarial copy and missing-binding
+  tests added.
+- **Fixture teardown on failure:** the four loopback sessions now close
+  the client writer and stop each fixture server in `finally` on success,
+  error and cancellation. Rejected-share-then-rehearsal test added.
+- **SDK mismatch:** legacy `pools` option in
+  `ChronusClient.simulate_patroclus_mining()` is rejected explicitly;
+  valid requests send no override and classify results as local rehearsal.
+- **Failure observability:** the API logs the original fixture exception
+  server-side but returns a redacted error to callers.
+- **Old API test contract:** test assertions updated to
+  `REHEARSAL_COMPLETED`, unverified pool status and zero verified decision points.
+These are **source changes/test additions**, not current-head passing CI evidence.
+
 ## Release disposition
 
 **NOT QUALIFIED / RELEASE HELD.** Targeted PR-level source fixes are not merged/current-main proof. No live service was deployed, no pool credentials used, no hidden benchmark generated and no issue or production hold is declared closed without linked evidence. Preserve the historical archives, hashes and failing results for reconstruction.
