@@ -172,8 +172,9 @@ class OpenCLTensorBackend:
         elif op == "scale":
             if len(arrays) != 1 or scalar is None:
                 raise ValueError("scale requires one tensor and scalar")
-            if isinstance(scalar, (str, bytes, bool)) or not np.isscalar(scalar):
-                raise ValueError("float32 scale scalar must be finite and numeric")
+            if (isinstance(scalar, (str, bytes, bool))
+                    or np.iscomplexobj(scalar) or not np.isscalar(scalar)):
+                raise ValueError("float32 scale scalar must be real, finite and numeric")
             try:
                 converted_scalar = np.float32(scalar)
             except (ValueError, TypeError, OverflowError) as exc:
