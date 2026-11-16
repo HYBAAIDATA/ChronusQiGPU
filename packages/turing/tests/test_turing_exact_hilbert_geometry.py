@@ -112,3 +112,15 @@ def test_invalid_phase_requests_fail_even_for_unoccupied_coordinates():
     with pytest.raises(ValueError):
         phase_injection(state,{-1:ExactComplex(1)})
     assert phase_injection(state,{3:ExactComplex(0,1)}) == state
+
+
+def test_involution_snapshots_nested_mutable_pair_values():
+    space = TensorHilbert((2,))
+    left, right = [1,1], [0,1]
+    supplied = {0:left,1:right}
+    op = SignedInvolution(space,supplied)
+    left[0] = 0
+    right[0] = 1
+    assert op.images[0] == (1,1)
+    assert op.images[1] == (0,1)
+    assert op.quarter_turn(SparseState.basis(space,(0,)),1).norm2() == 1
