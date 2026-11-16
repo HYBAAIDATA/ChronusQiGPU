@@ -51,6 +51,7 @@ class FoldedExecutionResult:
             "relative_reconstruction_error": receipt.relative_reconstruction_error,
             "physical_accelerator_measured": self.physical_accelerator_measured,
             "net_storage_savings_measured": self.net_storage_savings_measured,
+            "source_hash_status": "LOCAL_UNKEYED_DIGEST_NOT_INDEPENDENT_ATTESTATION",
             "whole_state_materialised": self.whole_state_materialised,
             "fused_hardware_instruction": self.fused_hardware_instruction,
         }
@@ -149,7 +150,7 @@ class FoldedTensorExecutor:
         items = np.asarray(replacement)
         if items.ndim != 1 or items.size != stop-start or not np.all(np.isfinite(items)):
             raise ValueError("replacement shape or finite contract failed")
-        if not np.can_cast(items.dtype, array.dtype, casting="same_kind"):
+        if not np.can_cast(items.dtype, array.dtype, casting="safe"):
             raise ValueError("replacement would silently truncate numerical precision")
         changed = array.copy().reshape(-1)
         changed[start:stop] = items
