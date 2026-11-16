@@ -67,3 +67,48 @@ def test_interference_and_exact_reflection_are_first_class_turing_primitives():
     assert engine.amplify(reference,{2}).born_distribution() == {2:Fraction(1)}
     with pytest.raises(ValueError):
         marked_reflection(reference,{4})
+
+
+def test_exact_turing_ownership_objects_are_immutably_snapshotted():
+    dims = [2, 3]
+    space = TensorHilbert(dims)
+    dims[0] = 100
+    assert space.dimension == 6
+    raw = {0: ExactComplex(1)}
+    state = SparseState(space, raw)
+    raw[0] = ExactComplex(0)
+    assert state.born_distribution() == {0: Fraction(1)}
+    with pytest.raises(TypeError):
+        state.amplitudes[0] = ExactComplex(2)
+
+    images = {0:(1,1),1:(0,1)}
+    operator = SignedInvolution(space, images)
+    images[1] = (1, 1)
+    assert operator.apply(state).amplitudes == {1:ExactComplex(1)}
+    with pytest.raises(TypeError):
+        operator.images[0] = (0,1)
+
+
+def test_all_exact_quarter_turn_phases_reject_mismatched_spaces():
+    space2 = TensorHilbert((2,))
+    space3 = TensorHilbert((3,))
+    state3 = SparseState.basis(space3,(0,))
+    op = SignedInvolution(space2,{0:(1,1),1:(0,1)})
+    for steps in (0,1,2,3,4,5,6,7):
+        with pytest.raises(ValueError,match="space mismatch"):
+            op.quarter_turn(state3,steps)
+    with pytest.raises(ValueError):
+        op.transition_probability(state3,0,steps=0)
+
+
+def test_invalid_phase_requests_fail_even_for_unoccupied_coordinates():
+    from turing.exact.geometry.hilbert import phase_injection
+    space = TensorHilbert((4,))
+    state = SparseState.basis(space,(0,))
+    with pytest.raises(ValueError):
+        phase_injection(state,{4:ExactComplex(1)})
+    with pytest.raises(ValueError):
+        phase_injection(state,{3:ExactComplex(2)})
+    with pytest.raises(ValueError):
+        phase_injection(state,{-1:ExactComplex(1)})
+    assert phase_injection(state,{3:ExactComplex(0,1)}) == state
