@@ -108,7 +108,12 @@ class TopologicalIntegrityGate:
             # Reference float64 GEMM also rounds; its error budget is
             # explicitly included rather than assumed to be exact.
             gamma64 = (2 * k * 2.0 ** -53) / (1.0 - 2 * k * 2.0 ** -53)
-            bound = (gamma_k + gamma64) * magnitude
+            # Purely relative error bounds exclude floating-point
+            # underflow. Each non-fused multiply/add may incur an
+            # absolute subnormal rounding error. This allowance does
+            # not admit flush-to-zero on ordinary subnormal products.
+            eta = float(np.nextafter(np.float32(0), np.float32(1)))
+            bound = (gamma_k + gamma64) * magnitude + (2 * k * eta)
             difference = np.abs(result.astype(np.float64) - reference)
         if not (np.all(np.isfinite(reference)) and np.all(np.isfinite(bound))
                 and np.all(np.isfinite(difference))):
