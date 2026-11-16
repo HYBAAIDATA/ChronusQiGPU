@@ -117,6 +117,18 @@ This branch changes the API to a fixed local-loopback rehearsal classification, 
 
 The original July Geodesic test modules were executed in a temporary isolated import layout with the November PULVINI handoff's `formal.py`. **115/115 historical tests passed** under Python 3.13.5, NumPy 2.3.5, pytest 9.0.2 at 2026-11-16T06:41Z. This is a mixed-archive compatibility check, **not** a test of current Chronus source, PR head, physical device or mining deployment. Original archive hashes, reconstructed dependency hash, invocation, exit code and local stdout/JUnit digests are recorded at [evidence/migration/2026-11-16-geodesic-archive-replay.md](../../evidence/migration/2026-11-16-geodesic-archive-replay.md).
 
+## Frontend operator control integration
+
+`frontend/lib/api-client.ts` supports JWT-authenticated global mining
+methods, proxied only through the established Next.js API boundary.
+`frontend/app/mining/page.tsx` uses an ephemeral password-form operator
+JWT, obtains live admin status before enabling the engage/stop control,
+and updates the displayed running status only following confirmed backend
+responses. Failed/unavailable controls remain visibly denied rather than
+showing default success. No API keys or service principals were added to
+front-end environment variables or source. The remaining research panels
+contain historical design context, not current certified device telemetry.
+
 ## PR #130 code review remediation
 
 CodeRabbit and Qodo source findings were evaluated against the current branch:
