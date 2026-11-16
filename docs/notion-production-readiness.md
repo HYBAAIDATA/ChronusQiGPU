@@ -54,6 +54,34 @@ The historical PYTHIA TypeScript mining audit is a separate source lineage. Its 
 | Benchmarks and claim promotion | Runners in `benchmarks/` and `scripts/benchmarks/benchmark_gatekeeper.py`; withdrawn report `docs/reports/chronus_gpiu_v36_benchmark.md` | Runners are SOURCE-PRESENT; no current immutable, device-bound claim packet |
 | Release chain | `.github/workflows/ci.yml`, `.github/workflows/packages.yml`, `.github/workflows/chronus-evidence-qualification.yml`, `.github/workflows/storage-reference.yml`, `scripts/ci/manifest.py` | CI is observable; release qualification remains GATED by external evidence |
 
+## 16 November: durable receipts and AL HARAS mining controls
+
+- **SOURCE-PRESENT / TEST-PRESENT, no runtime certificate:** `src/chronus/security/durable_receipts.py`
+  now preserves signed receipt chains in the existing THESEUS journal and verifies
+  integrity, tenant separation, replay and key binding after a new service instance
+  opens the same store. Gate G2 in `src/chronus/core/facade.py` uses this path
+  rather than relying on an in-memory chain. See
+  `tests/test_durable_signed_receipts.py`.
+- **SOURCE-PRESENT / TEST-PRESENT, controls not deployed:** All nine mutating and
+  two read-only `/v1/mining/admin` routes use
+  `get_mining_admin_operator`. A verified system-admin JWT,
+  explicit subject and tenant configuration, stable signing secret and successful
+  THESEUS admission journal are mandatory. Static tenant bearer tokens do not
+  acquire global mining authority. See `tests/test_mining_admin_admission.py`.
+- **SOURCE-PRESENT:** Both Kubernetes manifests use `/health/ready` in place
+  of global mining telemetry, eliminating the static-token readiness probe.
+- **ARCHIVE-DIGEST VERIFIED:** The original November PULVINI handoff matches
+  maintained source, test, integrity guard and workflow Git blobs. The protected
+  research document contains later changes and is not overwritten. GitHub
+  ruleset enforcement and executed CI remain separate required evidence.
+- **UNAVAILABLE:** Historical Kellogg source implementation itself is not in
+  the examined archived ZIP inventories or accessible through the connected
+  old GitHub repository; its exact semantics are not represented as restored
+  without matching source and tests.
+- **OUTSTANDING:** Legacy `access_control.py` authority integration, distributed
+  receipt append, real HSM/KMS custody, accepted live shares, actual hardware
+  execution, soak/rollback and current-head CI remain unverified.
+
 ## Required mining packet
 
 The Notion page requires one immutable packet for the exact release commit:
