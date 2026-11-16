@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Chronus Automated Qualification & Artifact Verifier.
-Runs all six qualification audit artifacts (H1-H6) and prints the falsifiable status table.
+Inspects legacy H1-H6 artifacts; this script does not issue release qualification.
 """
 
 import os
@@ -20,7 +20,7 @@ def run(cmd: str) -> str:
 
 def main():
     print("========================================================================")
-    print("       CHRONUS PRODUCTION QUALIFICATION AUTOMATED AUDIT (H1-H6)         ")
+    print("       CHRONUS LOCAL EVIDENCE INSPECTION (H1-H6; NOT RELEASE PROOF)      ")
     print("========================================================================")
 
     # H1: PRODUCTION_QUALIFIED.json
@@ -65,7 +65,7 @@ def main():
         print(run(cmd)[:300])
 
     print("\n========================================================================")
-    print("ALL SIX ARTIFACTS VERIFIED SUCCESSFULLY!")
+    print("INSPECTION COMPLETE; PRODUCTION QUALIFICATION NOT ESTABLISHED.")
     print("========================================================================")
 
 if __name__ == "__main__":
