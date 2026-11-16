@@ -49,6 +49,7 @@ def test_rejects_modified_and_mismatched_assets(tmp_path: Path):
         _read_verified(discover(manifest)[0])
     with pytest.raises(ValueError, match="SHA-256 mismatch"):
         run_benchmark(manifest, tmp_path / "state.sqlite3")
+    assert not (tmp_path / "state.sqlite3").exists()
 
 
 @pytest.mark.simulated
@@ -117,3 +118,16 @@ def test_cli_never_overwrites_input_or_custody_with_evidence(tmp_path: Path):
     assert main(["--manifest", str(manifest), "--custody-db", str(db),
                  "--output", str(state)]) == 2
     assert state.read_bytes() == b"real bytes in a controlled non-production contract test"
+
+@pytest.mark.simulated
+def test_cli_refuses_existing_output_before_custody_write(tmp_path: Path):
+    snapshot = tmp_path / "existing.snapshot"
+    snapshot.write_bytes(b"already-provided bytes in an explicit non-production test")
+    manifest = _manifest(tmp_path, snapshot, "snapshot")
+    destination = tmp_path / "evidence.json"
+    destination.write_text('{"protected": true}', encoding="utf-8")
+    custody = tmp_path / "custody.sqlite3"
+    assert main(["--manifest", str(manifest), "--custody-db", str(custody),
+                 "--output", str(destination)]) == 2
+    assert json.loads(destination.read_text(encoding="utf-8")) == {"protected": True}
+    assert not custody.exists()
