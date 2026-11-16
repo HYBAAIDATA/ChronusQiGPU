@@ -21,6 +21,9 @@ from chronus.tensor.geodesic import PhiTensorCore
 class VerifiedFoldedOperand:
     state: FoldState
     evidence: FoldEvidence
+    # Unkeyed receipt hashes establish local consistency, NOT independently
+    # authenticated original-data provenance or an AL HARAS signature.
+    source_digest_authentication: str = "UNVERIFIED_UNSIGNED_ORIGIN"
 
 
 @dataclass(frozen=True)
@@ -80,7 +83,8 @@ class FoldedTensorExecutor:
         state, evidence = fold_verified(np.asarray(data), depth=self.depth,
                                         tolerance=self.tolerance,
                                         max_elements=self.max_elements)
-        return VerifiedFoldedOperand(state, evidence)
+        return VerifiedFoldedOperand(state, evidence,
+                                     "LOCAL_SOURCE_HASH_COMPUTED_NOT_SIGNED")
 
     def materialise(self, operand: VerifiedFoldedOperand) -> np.ndarray:
         if not isinstance(operand, VerifiedFoldedOperand):
