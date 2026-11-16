@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from chronus.execution.mining_admin import MiningAdminEngine
-from chronus.service.dependencies import get_current_tenant
 from chronus.service.mining_operator import get_mining_admin_operator
 
 router = APIRouter(prefix="/v1/mining/admin", tags=["mining_admin"])
@@ -57,7 +56,7 @@ class SimulatePatroclusRequest(BaseModel):
 
 @router.get("/status", summary="Get real-time mining administration status")
 async def get_mining_status(
-    tenant_id: str = Depends(get_current_tenant),
+    tenant_id: str = Depends(get_mining_admin_operator),
 ) -> Dict[str, Any]:
     return _engine.get_status()
 
@@ -140,7 +139,7 @@ async def execute_dsw_heal(
 
 @router.get("/patroclus", summary="Get Patroclus Gateway & 600 Myrmidon Searchers telemetry")
 async def get_patroclus_telemetry(
-    tenant_id: str = Depends(get_current_tenant),
+    tenant_id: str = Depends(get_mining_admin_operator),
 ) -> Dict[str, Any]:
     return _engine.get_patroclus_status()
 
