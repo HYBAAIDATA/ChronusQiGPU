@@ -281,3 +281,21 @@ class VerificationError(PostQuantumError):
     """Exception for signature verification failures."""
 
     pass
+
+
+class MlDsaSigner:
+    """Legacy fail-closed placeholder; no conformant implementation is exposed.
+
+    Retained only so old imports fail closed instead of silently changing
+    algorithm semantics.
+    """
+
+    conformant = False
+    key_id = "ml-dsa-65:unavailable"
+
+    def sign(self, message: bytes) -> bytes:
+        raise NotImplementedError("ML-DSA-65 not implemented")
+
+    def verify(self, message: bytes, signature: bytes) -> bool:
+        raise NotImplementedError("ML-DSA-65 not implemented")
+

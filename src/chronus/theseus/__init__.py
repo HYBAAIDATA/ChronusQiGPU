@@ -1,10 +1,14 @@
-"""Theseus: content-addressed reconstruction over OVID.
+"""THESEUS custody, reconstruction, continuity and recovery surfaces.
 
-First-class import path for chronus.storage.theseus: payloads are stored as
-OVID objects, assigned a phyllotaxis coordinate and reconstructed with digest
-verification. State is process-local; it is not durable across restart.
+`TheseusService` remains the in-process compatibility implementation.
+`DurableTheseusService` is the production custody path and survives restart.
 """
 
+from chronus.storage.durable import (
+    CustodyConflictError,
+    CustodyUnavailableError,
+    DurableTheseusService,
+)
 from chronus.storage.phyllotaxis import PhyllotaxisCoordinate, phyllotaxis_coordinate
 from chronus.storage.theseus import (
     StorageIntegrityError,
@@ -16,6 +20,9 @@ from chronus.storage.theseus import (
 )
 
 __all__ = [
+    "CustodyConflictError",
+    "CustodyUnavailableError",
+    "DurableTheseusService",
     "PhyllotaxisCoordinate",
     "StorageIntegrityError",
     "TenantStateJournalEntry",

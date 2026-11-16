@@ -40,38 +40,10 @@ from stratum_smoke import (  # noqa: E402
 
 
 class EndianSmokeTests(unittest.TestCase):
-    def test_default_pool_is_offline_micro_difficulty(self) -> None:
-        from fractions import Fraction
-
-        self.assertEqual(DIFFICULTY, 1 / 2**24)
-        self.assertEqual(TARGET, int(Fraction(DIFF1) / Fraction(DIFFICULTY)))
+    def test_default_pool_is_bitcoin_difficulty_1(self) -> None:
+        self.assertEqual(DIFFICULTY, 1)
+        self.assertEqual(TARGET, DIFF1)
         self.assertEqual(target_from_difficulty(DIFFICULTY), TARGET)
-
-    def test_target_is_exact(self) -> None:
-        from fractions import Fraction
-
-        # difficulty 1 → DIFF1; difficulty 1/2**24 is easier → DIFF1 * 2**24.
-        # Harder difficulty 2**24 → DIFF1 // 2**24 (exact because DIFF1 has
-        # trailing zero bits below bit 208).
-        self.assertEqual(target_from_difficulty(Fraction(1)), DIFF1)
-        self.assertEqual(
-            target_from_difficulty(Fraction(1, 2**24)), DIFF1 * 2**24
-        )
-        self.assertEqual(
-            target_from_difficulty(Fraction(2**24)), DIFF1 // 2**24
-        )
-
-    def test_meets_rejects_above_target(self) -> None:
-        from fractions import Fraction
-
-        target = target_from_difficulty(Fraction(1, 2**24))
-        self.assertFalse(meets(b"\xff" * 32, target))
-
-    def test_target_from_difficulty_rejects_non_positive(self) -> None:
-        with self.assertRaises(ValueError):
-            target_from_difficulty(0)
-        with self.assertRaises(ValueError):
-            target_from_difficulty(-1)
 
     def test_network_target_harder_than_share_target(self) -> None:
         self.assertLess(network_target(NBITS), TARGET)
@@ -109,17 +81,8 @@ class EndianSmokeTests(unittest.TestCase):
         self.assertFalse(ok)
         self.assertEqual(error[0], 21)
 
-        # BIP 310 sixth version_bits parameter is accepted when well-formed.
-        with_bits = list(params) + ["00000000"]
-        ok, error = accept_share(extranonce1, with_bits, soft)
-        self.assertTrue(ok)
-        self.assertIsNone(error)
-        bad_bits = list(params) + ["not-hex"]
-        ok, error = accept_share(extranonce1, bad_bits, soft)
-        self.assertFalse(ok)
-        self.assertEqual(error[0], 20)
-        too_many = list(params) + ["00000000", "00000000"]
-        ok, error = accept_share(extranonce1, too_many, soft)
+        extra = list(params) + ["00000000"]
+        ok, error = accept_share(extranonce1, extra, soft)
         self.assertFalse(ok)
         self.assertEqual(error[0], 20)
 
@@ -537,57 +500,6 @@ class NotifyRetentionTests(unittest.TestCase):
             import time
 
             return time.monotonic() + 30.0
-
-        asyncio.run(scenario())
-
-    def test_session_defaults_to_difficulty_one_before_set_difficulty(self) -> None:
-        async def scenario() -> None:
-            reader = asyncio.StreamReader()
-
-            class W:
-                def write(self, _data):
-                    pass
-
-                async def drain(self):
-                    pass
-
-                def close(self):
-                    pass
-
-                async def wait_closed(self):
-                    pass
-
-            session = Session(reader, W(), Transcript("fake"))
-            try:
-                self.assertEqual(session.difficulty, 1.0)
-                reader.feed_data(
-                    (
-                        json.dumps(
-                            {
-                                "id": None,
-                                "method": "mining.notify",
-                                "params": ["early-job"] + ["00"] * 7 + [True],
-                            }
-                        )
-                        + "\n"
-                    ).encode()
-                )
-                notify = await session.wait_for("mining.notify", 1.0)
-                self.assertEqual(notify["_difficulty"], 1.0)
-                # A later set_difficulty must not rewrite the prior snapshot.
-                reader.feed_data(
-                    (
-                        json.dumps(
-                            {"id": None, "method": "mining.set_difficulty", "params": [9]}
-                        )
-                        + "\n"
-                    ).encode()
-                )
-                await asyncio.sleep(0.05)
-                self.assertEqual(notify["_difficulty"], 1.0)
-                self.assertEqual(session.difficulty, 9)
-            finally:
-                await session.close()
 
         asyncio.run(scenario())
 

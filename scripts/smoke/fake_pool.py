@@ -1,10 +1,12 @@
 """scripts/smoke/fake_pool.py — local Stratum V1 pool for offline smoke.
 
-Share difficulty defaults to 1/2**24 (easy offline accept). nbits encodes a
-harder network target (smaller than the share target). Canonical little-endian
-target comparison, matching a real pool and the smoke client.
+Bitcoin difficulty 1 via set_difficulty (DIFF1). nbits encodes a harder network
+target (smaller than the share target). Canonical little-endian target
+comparison, matching a real pool and the smoke client. Expected share work is
+~2^32 SHA-256d evaluations — use the smoke's --search geometric|opencl path
+(Chronus structured search / QiGPU), or fleet scale, for wall-clock.
 
-    python scripts/smoke/fake_pool.py --port 3333 --exit-after 30
+    python scripts/smoke/fake_pool.py --port 3333 --exit-after 1
 """
 
 from __future__ import annotations
@@ -14,13 +16,12 @@ import asyncio
 import hashlib
 import json
 import sys
-from fractions import Fraction
 
 # Compact target harder than Bitcoin difficulty 1 (DIFF1 = 0x1d00ffff decoded).
 NBITS = "1c00ffff"
 DIFF1 = 0xFFFF << (8 * (0x1D - 3))
-DIFFICULTY = 1 / 2**24
-TARGET = int(Fraction(DIFF1) / Fraction(DIFFICULTY))
+DIFFICULTY = 1
+TARGET = DIFF1 // DIFFICULTY
 JOB_ID = "smokejob1"
 VERSION = "20000000"
 PREVHASH = "00" * 31 + "01"
@@ -58,15 +59,10 @@ def header(extranonce1: str, params: list) -> bytes:
 
 
 def accept_share(extranonce1: str, params: list, target: int = TARGET) -> tuple[bool, list | None]:
-    """Validate submit fields and apply the LE share predicate. Used by tests.
-
-    Accepts 5-param submits or BIP 310 6-param submits (trailing version_bits).
-    """
-    if not isinstance(params, list) or len(params) not in (5, 6):
+    """Validate submit fields and apply the LE share predicate. Used by tests."""
+    if not isinstance(params, list) or len(params) != 5:
         return False, [20, "Malformed submit", None]
-    worker, job_id, en2, ntime, nonce = params[:5]
-    if len(params) == 6 and not _is_hex(params[5], 8):
-        return False, [20, "Malformed submit", None]
+    worker, job_id, en2, ntime, nonce = params
     if job_id != JOB_ID:
         return False, [21, "Job not found", None]
     if not isinstance(worker, str) or not worker:
@@ -77,7 +73,7 @@ def accept_share(extranonce1: str, params: list, target: int = TARGET) -> tuple[
         return False, [20, "Malformed submit", None]
     if not _is_hex(nonce, 8):
         return False, [20, "Malformed submit", None]
-    digest = hashlib.sha256(hashlib.sha256(header(extranonce1, params[:5])).digest()).digest()
+    digest = hashlib.sha256(hashlib.sha256(header(extranonce1, params)).digest()).digest()
     ok = int.from_bytes(digest, "little") <= target
     return ok, (None if ok else [23, "low difficulty share", None])
 
@@ -124,7 +120,7 @@ def make_handler(extranonce1: str, difficulty: float, target: int):
 async def serve(port: int, exit_after: float | None, difficulty: float) -> None:
     if difficulty <= 0:
         raise ValueError("difficulty must be positive")
-    target = int(Fraction(DIFF1) / Fraction(difficulty))
+    target = int(DIFF1 // difficulty)
     if not network_target() < target:
         raise ValueError("NBITS must decode to a harder (smaller) target than the share target")
     server = await asyncio.start_server(
@@ -145,17 +141,12 @@ async def serve(port: int, exit_after: float | None, difficulty: float) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=3333)
-    parser.add_argument(
-        "--exit-after",
-        type=float,
-        default=None,
-        help="Stop the pool after N seconds (e.g. 30 for offline smoke)",
-    )
+    parser.add_argument("--exit-after", type=float, default=None)
     parser.add_argument(
         "--difficulty",
         type=float,
         default=DIFFICULTY,
-        help="Bitcoin-style share difficulty (default 1/2**24 for offline accept)",
+        help="Bitcoin-style share difficulty (default 1 ≈ 2^32 expected hashes)",
     )
     args = parser.parse_args()
     try:

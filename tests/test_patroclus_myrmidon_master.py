@@ -271,7 +271,9 @@ class TestUnitComponents:
         assert hash_hex.startswith("000000000019d668")
 
     def test_unit_stealth_gateway_orchestration(self):
-        config = StealthConfig(max_configured_ehs=10.0, stealth_target_ehs=1.0)
+        with pytest.raises(ValueError):
+            StealthConfig(max_configured_ehs=10.0, stealth_target_ehs=1.0)
+        config = StealthConfig(max_configured_ehs=1.0, stealth_target_ehs=1.0)
         gateway = PatroclusStealthGateway(config)
         assert gateway.active_ehs == 1.0
 
@@ -324,17 +326,23 @@ class TestIntegrationAndE2E:
         assert len(data["phalanxes"]) == 10
 
     def test_api_configure_stealth_endpoint(self, client):
+        rejected = client.post(
+            "/v1/mining/admin/stealth",
+            json={"max_configured_eh_s": 12.0, "stealth_target_eh_s": 1.5},
+            headers=AUTH_HEADERS,
+        )
+        assert rejected.status_code == 422
         payload = {
-            "max_configured_eh_s": 12.0,
-            "stealth_target_eh_s": 1.5,
+            "max_configured_eh_s": 1.0,
+            "stealth_target_eh_s": 0.5,
             "never_consecutive_blocks": True,
             "persistent_presence": True,
         }
         resp = client.post("/v1/mining/admin/stealth", json=payload, headers=AUTH_HEADERS)
         assert resp.status_code == 200
         data = resp.json()
-        assert data["stealth"]["max_configured_eh_s"] == 12.0
-        assert data["stealth"]["stealth_target_eh_s"] == 1.5
+        assert data["stealth"]["max_configured_eh_s"] == 1.0
+        assert data["stealth"]["stealth_target_eh_s"] == 0.5
         assert data["stealth"]["never_consecutive_blocks"] is True
 
     def test_api_patroclus_simulate_endpoint(self, client):
@@ -353,12 +361,14 @@ class TestIntegrationAndE2E:
         sdk._request.assert_called_with("GET", "/v1/mining/admin/patroclus")
 
         # SDK stealth configuration
-        sdk.configure_mining_stealth(max_configured_eh_s=10.0, stealth_target_eh_s=1.0)
+        sdk.configure_mining_stealth(max_configured_eh_s=1.0, stealth_target_eh_s=0.5)
         sdk._request.assert_called_with(
             "POST",
             "/v1/mining/admin/stealth",
-            json={"max_configured_eh_s": 10.0, "stealth_target_eh_s": 1.0},
+            json={"max_configured_eh_s": 1.0, "stealth_target_eh_s": 0.5},
         )
+        with pytest.raises(ValueError):
+            sdk.configure_mining_stealth(max_configured_eh_s=10.0)
 
         # SDK simulation
         sdk.simulate_patroclus_mining()

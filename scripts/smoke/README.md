@@ -10,24 +10,24 @@ common-mode failure that lets a fake pool certify the client's own bug.
 
 ## Difficulty and search
 
-Fake pool default is **difficulty `1/2**24`** (offline micro-target). Expected
-hashes is `difficulty * 2^32` (~256 at the default). Bitcoin difficulty 1 is
-~4e9 hashes and will not be found in 30s — error 23 is then the correct framing
-result. Chronus structured search and QiGPU OpenCL raise **throughput**; they
-do not change the SHA-256d oracle's expected trial count. `nbits` is harder
+Fake pool default is Bitcoin **difficulty 1** (`DIFF1`). Expected work is
+~2³² SHA-256d evaluations. Chronus structured search (Zeckendorf/Galois) and
+the QiGPU OpenCL kernel raise **throughput**; they do not reduce the oracle's
+expected trial count. Fleet scale multiplies H/s further. `nbits` is harder
 than the share target.
 
 ```bash
-# Offline accept (default micro-difficulty)
-python scripts/smoke/fake_pool.py --port 3333 --exit-after 30 &
-MINING_BRAIINS_USER=smoke.worker PYTHONPATH=src \
-  python scripts/smoke/stratum_smoke.py --target fake --submit-share --require-accept
-
-# Bitcoin difficulty 1 (long search; framing may return error 23)
-python scripts/smoke/fake_pool.py --port 3333 --difficulty 1 &
-MINING_BRAIINS_USER=smoke.worker PYTHONPATH=src \
+# Diff-1 fake pool + Chronus geometric search (needs PYTHONPATH=src)
+python scripts/smoke/fake_pool.py --port 3333 &
+MINING_BRAIINS_USER=smoke PYTHONPATH=src \
   python scripts/smoke/stratum_smoke.py --target fake --submit-share \
   --search geometric --share-seconds 600
+
+# Optional CI micro-target (not Bitcoin diff1)
+python scripts/smoke/fake_pool.py --port 3333 --difficulty 1e-7 &
+MINING_BRAIINS_USER=smoke PYTHONPATH=src \
+  python scripts/smoke/stratum_smoke.py --target fake --submit-share \
+  --require-accept --search geometric
 ```
 
 `--require-accept` requires `--submit-share`. `--target fake` forces the local

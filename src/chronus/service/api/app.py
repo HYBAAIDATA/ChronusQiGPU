@@ -14,7 +14,14 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from chronus.service.api import claims, state
 from chronus.service.api.errors import ApiError, install_error_handlers, problem_response
 from chronus.service.api.lease import current_lease
-from chronus.service.api.routers import capabilities, evidence, lease, nodes, workloads
+from chronus.service.api.routers import (
+    capabilities,
+    evidence,
+    lease,
+    nodes,
+    procurement,
+    workloads,
+)
 from chronus.service.api.schemas import IntrospectionResult, Lease
 from chronus.service.api.security import Principal, _token_table, current_principal
 from chronus.service.metrics import router as metrics_router
@@ -88,6 +95,7 @@ def create_app() -> FastAPI:
     v1.include_router(workloads.router, prefix="/workloads", tags=["workloads"])
     v1.include_router(nodes.router, prefix="/nodes", tags=["fleet"])
     v1.include_router(nodes.capacity_router, prefix="/capacity", tags=["fleet"])
+    v1.include_router(procurement.router, prefix="/capacity", tags=["procurement"])
     v1.include_router(capabilities.router, prefix="/capabilities", tags=["evidence"])
     v1.include_router(capabilities.qualification_router, prefix="/qualification",
                       tags=["evidence"])

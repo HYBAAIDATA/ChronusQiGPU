@@ -59,6 +59,9 @@ class LaneSearchMixin:
         if self._pending:
             return self._pending.popleft()
 
+        from chronus.execution.hashrate_cap import apply_published_limit
+
+        apply_published_limit()
         shards = self.partitioner.ranges
         shard_count = len(shards)
         shard = shards[self._next_shard % shard_count]
@@ -84,16 +87,29 @@ class LaneSearchMixin:
 
         started = time.perf_counter_ns()
         hits = []
+        searched = 0
         for low, high in windows:
             hits.extend(self.lanes.search(header, low, high, share_target))
+            requested = high - low
+            span_done = getattr(self.lanes, "last_span", None)
+            done = requested if span_done is None else span_done
+            searched += done
+            if done < requested:
+                break
         elapsed = time.perf_counter_ns() - started
-        self.hashes_computed += count
-        self.ledger.record(count, elapsed)
+        if searched <= 0:
+            self._hash_throttled = True
+            return None
+        self._hash_throttled = False
+        self.hashes_computed += searched
+        self.ledger.record(searched, elapsed)
         self._adapt_window(elapsed)
 
-        self._nonce_cursors[shard.shard_id] = shard.start_nonce + ((cursor - shard.start_nonce + count) % span)
+        self._nonce_cursors[shard.shard_id] = shard.start_nonce + (
+            (cursor - shard.start_nonce + searched) % span
+        )
         self._scanned_per_shard[shard.shard_id] = min(
-            span, self._scanned_per_shard.get(shard.shard_id, 0) + count
+            span, self._scanned_per_shard.get(shard.shard_id, 0) + searched
         )
         self._next_shard = (shard.shard_id + 1) % shard_count
 

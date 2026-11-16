@@ -14,6 +14,20 @@ Add --require-accept to demand a literal true (implies --submit-share).
 
     PYTHONPATH=src python scripts/smoke/stratum_smoke.py --target fake \\
         --submit-share --require-accept
+nbits is the network target and is harder than a pool share. At Bitcoin
+difficulty 1 expect ~2^32 SHA-256d evaluations; use --search geometric|opencl
+(Chronus structured search / QiGPU Mode A) or scale via fleet for wall-clock.
+The schedule is a checked permutation over the nonce space — it raises
+throughput when backed by QiGPU/OpenCL/fleet; it does not change the SHA-256d
+oracle's expected trial count.
+
+Exit 0 smoke passed, 2 protocol failure, 3 endpoint unreachable, 4 config error.
+Against a live pool a submit usually returns error 23 "above target"; that is a
+pass for framing, so exit 2 only on a malformed or uncorrelated reply. Add
+--require-accept to demand a literal true (implies --submit-share).
+
+    PYTHONPATH=src python scripts/smoke/stratum_smoke.py --target fake \\
+        --submit-share --search geometric --share-seconds 600
     python scripts/smoke/stratum_smoke.py --target braiins --job-timeout 45
 """
 
@@ -25,12 +39,9 @@ import hashlib
 import ipaddress
 import json
 import os
-import platform
 import ssl
-import subprocess
 import sys
 import time
-from fractions import Fraction
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -51,40 +62,18 @@ class Parser(argparse.ArgumentParser):
         sys.exit(4)
 
 
-def _git_head() -> str:
-    """Commit that produced this smoke process; unknown if git is unavailable."""
-    root = Path(__file__).resolve().parents[2]
-    try:
-        return subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=root, text=True
-        ).strip()
-    except (OSError, subprocess.CalledProcessError):
-        return "unknown"
-
-
 class Transcript:
     def __init__(self, target: str) -> None:
         self.stamp = time.strftime("%Y%m%dT%H%M%S")
-        # Capture execution provenance at run start — not at later bind time.
-        self.data: dict = {
-            "schema": "chronus.smoke/1",
-            "target": target,
-            "started": self.stamp,
-            "git_commit": _git_head(),
-            "host": platform.node(),
-            "steps": [],
-            "jobs": [],
-            "set_difficulty": [],
-            "submits": [],
-        }
+        self.data: dict = {"schema": "chronus.smoke/1", "target": target,
+                           "started": self.stamp, "steps": [], "jobs": [],
+                           "set_difficulty": [], "submits": []}
 
     def step(self, name: str, ok: bool, detail: str = "", **extra) -> None:
         self.data["steps"].append({"step": name, "ok": ok, "detail": detail,
                                    "at_ms": round(time.monotonic() * 1000), **extra})
 
-    def write(self, exit_code: int | None = None) -> Path:
-        if exit_code is not None:
-            self.data["exit_code"] = int(exit_code)
+    def write(self) -> Path:
         EVIDENCE.mkdir(parents=True, exist_ok=True)
         base = f"{self.data['target']}-{self.stamp}"
         for suffix in range(0, 10_000):
@@ -153,16 +142,10 @@ def target_from_nbits(nbits: str) -> int:
     return target
 
 
-def target_from_difficulty(difficulty: float | Fraction) -> int:
-    """Share target for ``difficulty``: ``int(Fraction(DIFF1) / Fraction(difficulty))``.
-
-    ``difficulty`` must be strictly positive; zero or negative raises
-    ``ValueError`` instead of letting ``Fraction`` raise three frames down.
-    """
-    value = Fraction(difficulty)
-    if value <= 0:
-        raise ValueError(f"difficulty must be > 0, got {difficulty!r}")
-    return int(Fraction(DIFF1) / value)
+def target_from_difficulty(difficulty: float) -> int:
+    if not difficulty or difficulty <= 0:
+        return 0
+    return int(DIFF1 // difficulty)
 
 
 def prevhash_to_header(prevhash: str) -> bytes:
@@ -375,8 +358,7 @@ class Session:
         self.phase = "setup"
         self.alive = asyncio.Event()
         self.alive.set()
-        # Stratum default share difficulty is 1 until set_difficulty arrives.
-        self.difficulty = 1.0
+        self.difficulty = None
         self.work_generation = 0
         self.pump = asyncio.create_task(self._pump(reader))
 
@@ -581,23 +563,12 @@ async def smoke(args, tx: Transcript) -> int:
     )
 
     session = Session(reader, writer, tx)
-    version_rolling_active = False
-    version_bits = "00000000"
     try:
         if args.version_rolling:
             reply = await session.call(
                 "mining.configure",
                 [["version-rolling"], {"version-rolling.mask": "1fffe000"}], args.timeout)
-            result = reply.get("result")
-            configured = isinstance(result, dict) and bool(result.get("version-rolling"))
-            tx.step("configure", configured, json.dumps(result))
-            if configured:
-                version_rolling_active = True
-                mask = result.get("version-rolling.mask", "1fffe000")
-                tx.data["version_rolling_mask"] = mask
-                # Smoke search does not roll bits yet; BIP 310 still requires
-                # the sixth submit parameter after successful negotiation.
-                version_bits = "00000000"
+            tx.step("configure", bool(reply.get("result")), json.dumps(reply.get("result")))
 
         reply = await session.call("mining.subscribe", [AGENT], args.timeout)
         result = reply.get("result")
@@ -655,15 +626,16 @@ async def smoke(args, tx: Transcript) -> int:
         if not args.submit_share:
             return 0
 
-        # Use the difficulty snapshot on the selected notify only. Do not
-        # fall back to a later set_difficulty or to nbits (network target).
         if job_difficulty is not None:
-            difficulty = float(job_difficulty)
+            difficulty = job_difficulty
             target_source = "notify_difficulty"
+        elif tx.data["set_difficulty"]:
+            difficulty = tx.data["set_difficulty"][-1]["value"]
+            target_source = "set_difficulty"
         else:
-            difficulty = 1.0
-            target_source = "default_difficulty_1"
-        target = target_from_difficulty(difficulty)
+            difficulty = None
+            target_source = "nbits"
+        target = target_from_difficulty(difficulty) if difficulty else target_from_nbits(job["nbits"])
         tx.data.update({"difficulty": difficulty,
                         "target_source": target_source,
                         "target_hex": f"{target:064x}",
@@ -738,13 +710,8 @@ async def smoke(args, tx: Transcript) -> int:
                         "header_hex": header.hex(),
                         "share_hash_hex": digest[::-1].hex()})
 
-        submit_params = [
-            user, job["job_id"], extranonce2, job["ntime"], f"{submit_nonce:08x}"
-        ]
-        if version_rolling_active:
-            submit_params.append(version_bits)
-            tx.data["version_bits"] = version_bits
-        wanted = await session.send("mining.submit", submit_params)
+        wanted = await session.send("mining.submit", [
+            user, job["job_id"], extranonce2, job["ntime"], f"{submit_nonce:08x}"])
         reply = None
         deadline = time.monotonic() + args.timeout
         while True:
@@ -825,20 +792,10 @@ def main() -> int:
     except Exception as exc:  # malformed pool data must not escape as a traceback
         tx.step("unexpected", False, f"{type(exc).__name__}: {exc}")
         code = 2
-    path = tx.write(exit_code=code)
+    path = tx.write()
     for step in tx.data["steps"]:
         print(f"  [{'ok  ' if step['ok'] else 'FAIL'}] {step['step']}: {step['detail']}")
     print(f"transcript: {path}")
-    try:
-        bind_dir = Path(__file__).resolve().parents[1] / "ci"
-        if str(bind_dir) not in sys.path:
-            sys.path.insert(0, str(bind_dir))
-        from bind_evidence import bind as bind_evidence
-
-        sidecar = bind_evidence(path, exit_code=code)
-        print(f"sidecar: {sidecar}")
-    except Exception as exc:  # binding must not hide the smoke result
-        print(f"sidecar: unbound ({type(exc).__name__}: {exc})", file=sys.stderr)
     return code
 
 

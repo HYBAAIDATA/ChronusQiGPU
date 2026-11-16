@@ -1,0 +1,11 @@
+records: 200000
+labels_per_record: 3
+prime_index_bytes: 1133945
+numpy_int64_bytes: 1600000
+dict_bytes: 22482076
+prime_vs_dict_ratio: 19.8
+prime_vs_numpy_ratio: 1.41
+prime_probe_ns: 23.7
+dict_probe_ns: 29.5
+address_bytes_at_4096_labels: 6
+notes: int64 array holds one key; a prime address holds a three-label set — compare like for like. Payload bytes are unchanged and not measured.

@@ -54,6 +54,20 @@ def sha256d(data: bytes) -> bytes:
     return hashlib.sha256(hashlib.sha256(data).digest()).digest()
 
 
+def _validate_lane_search(header80: bytes, start: int, stop: int, target: int) -> None:
+    """Reject a search before it reserves hashes."""
+    if not isinstance(header80, (bytes, bytearray)) or len(header80) != 80:
+        raise ValueError("header must be exactly 80 bytes")
+    if (
+        isinstance(start, bool) or isinstance(stop, bool)
+        or not isinstance(start, int) or not isinstance(stop, int)
+        or not 0 <= start <= stop <= MAX_NONCE
+    ):
+        raise ValueError("nonce range must lie within [0, 2**32]")
+    if isinstance(target, bool) or not isinstance(target, int) or not 0 <= target < 1 << 256:
+        raise ValueError("target must be an unsigned 256-bit integer")
+
+
 def reference_scan(header80: bytes, start: int, stop: int, target: int) -> List[int]:
     """Host reference: every nonce in [start, stop) whose SHA-256d meets target, ascending."""
     if not isinstance(header80, (bytes, bytearray)) or len(header80) != 80:
@@ -113,6 +127,14 @@ class ProcessLanes:
         return {"backend": self.name, "lanes": self.lanes, "processes": self.lanes}
 
     def search(self, header80: bytes, start: int, stop: int, target: int) -> List[int]:
+        from chronus.execution.hashrate_cap import process_cap
+
+        _validate_lane_search(header80, start, stop, target)
+        granted = process_cap().allow(stop - start)
+        self.last_span = granted
+        if granted <= 0:
+            return []
+        stop = start + granted
         chunks = split_range(start, stop, self.lanes)
         futures = [self._pool.submit(reference_scan, bytes(header80), a, b, target) for a, b in chunks]
         hits: List[int] = []
@@ -147,7 +169,9 @@ class OpenCLLanes:
         return {"backend": self.name, "lanes": self.lanes, "device": self.device}
 
     def search(self, header80: bytes, start: int, stop: int, target: int) -> List[int]:
-        return self._backend.search(bytes(header80), start, stop, target)
+        matches = self._backend.search(bytes(header80), start, stop, target)
+        self.last_span = self._backend._last_span
+        return matches
 
     def close(self) -> None:
         return None

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Chronus Production Qualification Manifest Generator (§5.3, F3.1-F3.18, H1).
-Executes all CI verification gates and generates a cryptographically signed PRODUCTION_QUALIFIED.json artifact.
+Executes local verification gates and writes a signed manifest whose release status remains NOT_QUALIFIED until the external evidence packet is present.
 """
 
 import hashlib
@@ -28,6 +28,53 @@ def run_cmd(cmd: str) -> bool:
     if res.returncode != 0:
         print(f"[CMD FAIL] {cmd}\nSTDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}")
     return res.returncode == 0
+
+
+_REQUIRED_RELEASE_EVIDENCE = (
+    "owner-approval.json",
+    "device-certificate.json",
+    "benchmark.json",
+    "sbom.json",
+    "provenance.json",
+    "rollback-plan.json",
+)
+
+
+def collect_release_evidence() -> dict[str, object]:
+    """Return the external evidence state without inferring qualification.
+
+    Local tests and a clean build are necessary but not sufficient.  The
+    device certificate, matched benchmark, signed provenance, rollback plan,
+    and owner approval must be supplied as one immutable packet.  CI does not
+    have that packet, so the generated artifact must remain NOT_QUALIFIED.
+    """
+
+    configured = os.getenv("CHRONUS_RELEASE_EVIDENCE_DIR", "").strip()
+    if not configured:
+        return {
+            "status": "MISSING",
+            "path": None,
+            "required": list(_REQUIRED_RELEASE_EVIDENCE),
+            "missing": list(_REQUIRED_RELEASE_EVIDENCE) + [
+                "CHRONUS_RELEASE_APPROVED=true",
+            ],
+        }
+
+    root = os.path.abspath(configured)
+    missing = [
+        name for name in _REQUIRED_RELEASE_EVIDENCE
+        if not os.path.isfile(os.path.join(root, name))
+    ]
+    if os.getenv("CHRONUS_RELEASE_APPROVED", "").strip().lower() not in {
+        "1", "true", "yes",
+    }:
+        missing.append("CHRONUS_RELEASE_APPROVED=true")
+    return {
+        "status": "PRESENT" if not missing else "MISSING",
+        "path": root,
+        "required": list(_REQUIRED_RELEASE_EVIDENCE),
+        "missing": missing,
+    }
 
 
 def main():
@@ -77,6 +124,11 @@ def main():
     except Exception:
         git_sha = None
 
+    external_evidence = collect_release_evidence()
+    release_qualified = (
+        all_passed and external_evidence["status"] == "PRESENT"
+    )
+
     # Lockfile hash: hash actual lockfile if present; otherwise None (never hardcode empty hash)
     lock_hash = None
     lock_candidates = ["uv.lock", "poetry.lock", "Pipfile.lock", "requirements.lock", "pyproject.toml"]
@@ -112,8 +164,14 @@ def main():
             pass
 
     manifest_data = {
-        "status": "PRODUCTION_QUALIFIED" if all_passed else "QUALIFICATION_FAILED",
+        "status": (
+            "PRODUCTION_QUALIFIED" if release_qualified
+            else "QUALIFICATION_FAILED" if not all_passed
+            else "NOT_QUALIFIED"
+        ),
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
+        "local_gate_status": "PASS" if all_passed else "FAIL",
+        "external_release_evidence": external_evidence,
         "gates": {
             "pytest": "PASS" if p_tests else "FAIL",
             "purity": "PASS" if p_purity else "FAIL",
@@ -156,12 +214,17 @@ def main():
     print(f"Manifest written to {manifest_path}")
     print(f"HMAC Signature: {sig}")
 
-    if all_passed:
-        print("SYSTEM QUALIFICATION COMPLETED WITH 100% PASS RATE!")
+    if release_qualified:
+        print("SYSTEM QUALIFICATION COMPLETED WITH LOCAL AND EXTERNAL EVIDENCE.")
         sys.exit(0)
-    else:
-        print("SYSTEM QUALIFICATION FAILED.")
-        sys.exit(1)
+    if all_passed:
+        print(
+            "LOCAL GATES PASSED; RELEASE REMAINS NOT QUALIFIED: "
+            "external evidence packet or explicit owner approval is missing."
+        )
+        sys.exit(0)
+    print("SYSTEM QUALIFICATION FAILED.")
+    sys.exit(1)
 
 
 if __name__ == "__main__":

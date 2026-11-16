@@ -1,6 +1,8 @@
 import logging
 from typing import Tuple, Optional
 
+from chronus.execution.hashrate_cap import HASHRATE_CAP_EH_S, require_eh_s
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("PatroclusStealthOrchestrator")
 
@@ -10,14 +12,16 @@ logger = logging.getLogger("PatroclusStealthOrchestrator")
 class StealthConfig:
     def __init__(
         self,
-        max_configured_ehs: float = 10.0,       # Initial config cap: 10 EH/s
-        stealth_target_ehs: float = 1.0,        # Under-the-radar active target: 1 EH/s
+        max_configured_ehs: float = float(HASHRATE_CAP_EH_S),
+        stealth_target_ehs: float = float(HASHRATE_CAP_EH_S),
         never_consecutive_blocks: bool = True,  # Disallow mining 2 back-to-back blocks
         persistent_presence: bool = True,       # Stay connected, steady heartbeat shares
         target_pool_name: str = "ViaBTC"
     ):
-        self.max_configured_ehs = max_configured_ehs
-        self.stealth_target_ehs = stealth_target_ehs
+        self.max_configured_ehs = require_eh_s(max_configured_ehs)
+        self.stealth_target_ehs = require_eh_s(
+            stealth_target_ehs, ceiling=self.max_configured_ehs
+        )
         self.never_consecutive_blocks = never_consecutive_blocks
         self.persistent_presence = persistent_presence
         self.target_pool_name = target_pool_name
@@ -93,7 +97,7 @@ class PatroclusStealthGateway:
 def run_stealth_simulation():
     logger.info("=== STARTING PATROCLUS STEALTH & HASHRATE SHAPING SIMULATION ===")
     config = StealthConfig(
-        max_configured_ehs=10.0,
+        max_configured_ehs=1.0,
         stealth_target_ehs=1.0,
         never_consecutive_blocks=True,
         persistent_presence=True
