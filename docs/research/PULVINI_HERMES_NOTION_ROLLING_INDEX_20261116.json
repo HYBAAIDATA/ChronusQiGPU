@@ -1,0 +1,1090 @@
+{
+  "schema": "chronus.pulvini.notion-search-index/1",
+  "generated_on": "2026-11-16",
+  "scope": "Keyword discovery only; this does not exhaust Notion pages or validate every attached artifact",
+  "queries": [
+    "PULVINI",
+    "HERMES",
+    "fold",
+    "Geodesic Tensor",
+    "Chronus",
+    "PHI-1",
+    "data folding",
+    "Artifact Repository",
+    "HYBA Data"
+  ],
+  "distinct_search_hits": 225,
+  "relevant_page_count": 112,
+  "pages": [
+    {
+      "id": "0f9aedc5-b415-479c-b34a-9b1646f006b4",
+      "title": "HYBA DATA — Integrated Deployment Package & Discoveries",
+      "url": "https://app.notion.com/p/0f9aedc5b415479cb34a9b1646f006b4?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "HERMES",
+        "fold",
+        "Geodesic Tensor",
+        "PHI-1",
+        "data folding",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "ee3a4d63-0691-436f-9c87-7496eb7e83fd",
+      "title": "Data-First Claim Clarifications — Quantum Gated · No IP Leak · Brick Demos",
+      "url": "https://app.notion.com/p/ee3a4d630691436f9c877496eb7e83fd?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "HERMES",
+        "fold",
+        "Geodesic Tensor",
+        "Chronus",
+        "PHI-1",
+        "data folding"
+      ]
+    },
+    {
+      "id": "d0a77a19-280c-45b7-a089-64b4a54d6c75",
+      "title": "PHI-1 OS Design Document (v1.0)",
+      "url": "https://app.notion.com/p/d0a77a19280c45b7a08964b4a54d6c75?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "HERMES",
+        "fold",
+        "Geodesic Tensor",
+        "PHI-1",
+        "data folding",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "3e14dd36-5bfb-4123-a17f-88baa7e81c38",
+      "title": "Chronos GPU — Mathematical Quantum Graphics Engine Implementation Record",
+      "url": "https://app.notion.com/p/3e14dd365bfb4123a17f88baa7e81c38?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "HERMES",
+        "fold",
+        "Geodesic Tensor",
+        "Chronus",
+        "data folding",
+        "Artifact Repository"
+      ]
+    },
+    {
+      "id": "5700504f-17b6-4fdc-a2e0-926196110c47",
+      "title": "Data Folding Standard — Definition · Claim Lanes · CRO/CPO Packaging (Authoritative)",
+      "url": "https://app.notion.com/p/5700504f17b64fdca2e0926196110c47?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "HERMES",
+        "fold",
+        "Geodesic Tensor",
+        "PHI-1",
+        "data folding"
+      ]
+    },
+    {
+      "id": "42c1ea4e-ace4-410f-902e-428df5f71ef9",
+      "title": "HYBA Data — Sealed Claims Register",
+      "url": "https://app.notion.com/p/42c1ea4eace4410f902e428df5f71ef9?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "HERMES",
+        "fold",
+        "Geodesic Tensor",
+        "data folding",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "8f35848b-af3c-4bf3-9d15-1b7f7fdde01d",
+      "title": "HYBA Data — Product Suite: From Verified Mathematics to Sovereign Security (McKinsey View)",
+      "url": "https://app.notion.com/p/8f35848baf3c4bf39d151b7f7fdde01d?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "HERMES",
+        "fold",
+        "Geodesic Tensor",
+        "data folding",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "3cfee276-6417-4a26-97e1-edf17be637b2",
+      "title": "EUCLID — Research Archive & Artifact Repository",
+      "url": "https://app.notion.com/p/3cfee27664174a2697e1edf17be637b2?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "fold",
+        "Geodesic Tensor",
+        "Chronus",
+        "data folding",
+        "Artifact Repository"
+      ]
+    },
+    {
+      "id": "2dd867f3-c967-4fe9-9353-a4ab21ef67f5",
+      "title": "HYBA Data — Marketing Master (External-Ready)",
+      "url": "https://app.notion.com/p/2dd867f3c9674fe99353a4ab21ef67f5?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "HERMES",
+        "fold",
+        "PHI-1",
+        "data folding",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "ffd11e55-5214-4c30-ad38-a5aaab0b5fcb",
+      "title": "Geodesic Tensor Engine & PULVINI V3 Integration — Engineering Record (24 July 2026)",
+      "url": "https://app.notion.com/p/ffd11e5552144c30ad38a5aaab0b5fcb?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "HERMES",
+        "fold",
+        "Geodesic Tensor",
+        "data folding"
+      ]
+    },
+    {
+      "id": "cef5bd03-509e-43dc-bb39-9517dfb5a4f9",
+      "title": "HYBA Data — PULVINI Lab Log: Phi-Depth Determinism & Structured-Data Test (23 Jul 2026)",
+      "url": "https://app.notion.com/p/cef5bd03509e43dcbb399517dfb5a4f9?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "fold",
+        "Geodesic Tensor",
+        "PHI-1",
+        "data folding"
+      ]
+    },
+    {
+      "id": "2539733e-bb78-48c9-a84a-e4e3d7429822",
+      "title": "Artifact Repository",
+      "url": "https://app.notion.com/p/2539733ebb7848c9a84ae4e3d7429822?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "fold",
+        "Geodesic Tensor",
+        "data folding",
+        "Artifact Repository"
+      ]
+    },
+    {
+      "id": "3efbcc6f-a499-80a8-9ced-ef61ffef38b0",
+      "title": "Chronos audit: revised GitHub code review",
+      "url": "https://app.notion.com/p/3efbcc6fa49980a89cedef61ffef38b0?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "fold",
+        "Geodesic Tensor",
+        "Chronus",
+        "data folding"
+      ]
+    },
+    {
+      "id": "08c45bf7-de0c-4043-a72c-10b45eb9d677",
+      "title": "PHI-Space Architecture Specification v2.0",
+      "url": "https://app.notion.com/p/08c45bf7de0c4043a72c10b45eb9d677?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "HERMES",
+        "fold",
+        "Geodesic Tensor",
+        "PHI-1"
+      ]
+    },
+    {
+      "id": "3f0bcc6f-a499-81ef-9b12-f67cab2d5f21",
+      "title": "CHRONUS — Canonical Operations Manual & Production Constitution",
+      "url": "https://app.notion.com/p/3f0bcc6fa49981ef9b12f67cab2d5f21?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "fold",
+        "Geodesic Tensor",
+        "Chronus",
+        "data folding"
+      ]
+    },
+    {
+      "id": "186f3044-516b-4abc-b70f-0b806ee21313",
+      "title": "Breakthrough Doctrine — Fold Never Truncate · Quantum Serves Data",
+      "url": "https://app.notion.com/p/186f3044516b4abcb70f0b806ee21313?pvs=204",
+      "query_matches": [
+        "HERMES",
+        "fold",
+        "PHI-1",
+        "data folding",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "a14577d2-b8c6-4735-b034-4bdcf9c80c38",
+      "title": "HYBA Data Repository (Artifact Store)",
+      "url": "https://app.notion.com/p/a14577d2b8c64735b0344bdcf9c80c38?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "HERMES",
+        "data folding",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "3f0bcc6f-a499-81c6-8659-c178cbb72a19",
+      "title": "HYBA / QuantumPhi — Canonical Architecture Authority Register — 5 Oct 2026",
+      "url": "https://app.notion.com/p/3f0bcc6fa49981c68659c178cbb72a19?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "fold",
+        "Geodesic Tensor",
+        "Chronus"
+      ]
+    },
+    {
+      "id": "9536b310-2936-4e57-b60a-7248579f25a0",
+      "title": "Reconstruction + PRISMA Integration — Expectation Values → 8K Geodesic Frame (Chronos GPU, 3 Aug 2026)",
+      "url": "https://app.notion.com/p/9536b31029364e57b60a7248579f25a0?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "HERMES",
+        "fold",
+        "Geodesic Tensor"
+      ]
+    },
+    {
+      "id": "55462a72-3e3d-461f-87b0-d1db630d1280",
+      "title": "Learn-to-Learn — Internet Library · φ-Fold Memory",
+      "url": "https://app.notion.com/p/55462a723e3d461f87b0d1db630d1280?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "fold",
+        "PHI-1",
+        "data folding"
+      ]
+    },
+    {
+      "id": "9eb9eea6-a331-45af-8f6f-91aa846a29ee",
+      "title": "CPO Handover — Chief Product Officer (HYBA Data)",
+      "url": "https://app.notion.com/p/9eb9eea6a33145af8f6f91aa846a29ee?pvs=204",
+      "query_matches": [
+        "HERMES",
+        "fold",
+        "PHI-1",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "9c56caf5-2be0-40a2-8f37-da830164758e",
+      "title": "HYBA Data — Pilot Measurement Protocol",
+      "url": "https://app.notion.com/p/9c56caf52be040a28f37da830164758e?pvs=204",
+      "query_matches": [
+        "HERMES",
+        "fold",
+        "data folding",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "7660d427-8965-4e9e-ae2e-21364a28080b",
+      "title": "HYBA Data SDK Integration Manual",
+      "url": "https://app.notion.com/p/7660d42789654e9eae2e21364a28080b?pvs=204",
+      "query_matches": [
+        "HERMES",
+        "Geodesic Tensor",
+        "data folding",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "419bcc6f-a499-81cf-9e6c-ecfa7a838b70",
+      "title": "ChronusQiGPU — Mining Production Readiness & Chronos/Tensor Reconciliation — 15 Nov 2026",
+      "url": "https://app.notion.com/p/419bcc6fa49981cf9e6cecfa7a838b70?pvs=204",
+      "query_matches": [
+        "fold",
+        "Geodesic Tensor",
+        "Chronus",
+        "data folding"
+      ]
+    },
+    {
+      "id": "4771c194-ec5d-484d-bb05-1f321caa7d16",
+      "title": "Investor & Due Diligence Data Room — HYBA Data",
+      "url": "https://app.notion.com/p/4771c194ec5d484dbb051f321caa7d16?pvs=204",
+      "query_matches": [
+        "fold",
+        "PHI-1",
+        "data folding",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "1189945a-4565-453a-9c9d-d85d11b1f394",
+      "title": "Executive Data Sheet — PULVINI & HERMES Compute Substrate",
+      "url": "https://app.notion.com/p/1189945a4565453a9c9dd85d11b1f394?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "HERMES",
+        "data folding"
+      ]
+    },
+    {
+      "id": "3e3b3cca-4948-4671-936d-c42765f09967",
+      "title": "Case Study — HYBA Data: Resolving the $5.3T AI Capex Crisis",
+      "url": "https://app.notion.com/p/3e3b3cca49484671936dc42765f09967?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "HERMES",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "36b8e3d5-002d-4277-9186-3e417addf262",
+      "title": "φ-Power Fold Law — Investigation, Test & Fix (19 July 2026)",
+      "url": "https://app.notion.com/p/36b8e3d5002d427791863e417addf262?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "fold",
+        "data folding"
+      ]
+    },
+    {
+      "id": "9ef9d44e-c407-4157-a851-657ba0039330",
+      "title": "Brand Architecture & Go-to-Market Plan — HYBA Data First",
+      "url": "https://app.notion.com/p/9ef9d44ec4074157a851657ba0039330?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "HERMES",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "a6028e62-29ad-4ff4-8b8f-560594fe3f95",
+      "title": "PHI-1 Product Portfolio & GTM — Reconciled Packaging",
+      "url": "https://app.notion.com/p/a6028e6229ad4ff48b8f560594fe3f95?pvs=204",
+      "query_matches": [
+        "HERMES",
+        "fold",
+        "PHI-1"
+      ]
+    },
+    {
+      "id": "decc9092-9940-43c5-8026-27dc6058316e",
+      "title": "HYBA Product Portfolio — Full Architecture, SDK & Deployment (Ready)",
+      "url": "https://app.notion.com/p/decc9092994043c5802627dc6058316e?pvs=204",
+      "query_matches": [
+        "HERMES",
+        "data folding",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "27e8330f-2fea-4271-92e0-dc8f2079f4ce",
+      "title": "Board-Level Architecture Pack: PHI-Space",
+      "url": "https://app.notion.com/p/27e8330f2fea427192e0dc8f2079f4ce?pvs=204",
+      "query_matches": [
+        "HERMES",
+        "PHI-1",
+        "data folding"
+      ]
+    },
+    {
+      "id": "be3c2c54-1ed7-4102-a84e-808344d33ae3",
+      "title": "EUCLID — Kairos Fold Synchronization",
+      "url": "https://app.notion.com/p/be3c2c541ed74102a84e808344d33ae3?pvs=204",
+      "query_matches": [
+        "fold",
+        "data folding",
+        "Artifact Repository"
+      ]
+    },
+    {
+      "id": "30b91b68-8875-46df-b254-18fb01a27592",
+      "title": "Case Studies — Fold × Quantum-for-Data (Board Pack)",
+      "url": "https://app.notion.com/p/30b91b68887546dfb25418fb01a27592?pvs=204",
+      "query_matches": [
+        "fold",
+        "data folding",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "c1df9971-5bbd-4d56-9c77-a6bac0540507",
+      "title": "Converge July tensor capabilities into Kellogg and close Chronus GPU gaps",
+      "url": "https://app.notion.com/p/c1df99715bbd4d569c77a6bac0540507?pvs=204",
+      "query_matches": [
+        "fold",
+        "Geodesic Tensor",
+        "Chronus"
+      ]
+    },
+    {
+      "id": "047301c2-d999-43fa-9359-b0dbf5979c02",
+      "title": "Project Chronos — Quantum Graphics Engine v2.0: Architecture Capture & Subsystem Roadmap (3 Aug 2026)",
+      "url": "https://app.notion.com/p/047301c2d99943fa9359b0dbf5979c02?pvs=204",
+      "query_matches": [
+        "Geodesic Tensor",
+        "PHI-1",
+        "Artifact Repository"
+      ]
+    },
+    {
+      "id": "48cf51c7-b14f-4fcd-ac9a-abe40d8b8d87",
+      "title": "Chairman Designate Briefing — HYBA Data",
+      "url": "https://app.notion.com/p/48cf51c7b14f4fcdac9aabe40d8b8d87?pvs=204",
+      "query_matches": [
+        "PHI-1",
+        "data folding",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "61fb1335-b266-4aab-ad6b-4a6caa972c11",
+      "title": "HYBA CIaaS — Unified Intelligence Console Architecture",
+      "url": "https://app.notion.com/p/61fb1335b2664aabad6b4a6caa972c11?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "Geodesic Tensor"
+      ]
+    },
+    {
+      "id": "330d5851-372e-461d-9bdf-edbb18ed5276",
+      "title": "Chronos QGPU — Competitive Benchmark Table (Mathematical Reframe, 3 Aug 2026)",
+      "url": "https://app.notion.com/p/330d5851372e461d9bdfedbb18ed5276?pvs=204",
+      "query_matches": [
+        "PULVINI",
+        "HERMES"
+      ]
+    },
+    {
+      "id": "e8208ac4-e4b3-4a5c-95c5-6890c370cc78",
+      "title": "Enterprise vs. Hyperscaler Deployment Architecture",
+      "url": "https://app.notion.com/p/e8208ac4e4b34a5c95c56890c370cc78?pvs=204",
+      "query_matches": [
+        "HERMES",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "6bcf3e27-5c14-49bd-87e6-f85f1474e4b4",
+      "title": "Chronos GPU — Quantum-from-Maths Real-Time Graphics Engine (Implementation Start, 3 Aug 2026)",
+      "url": "https://app.notion.com/p/6bcf3e275c1449bd87e6f85f1474e4b4?pvs=204",
+      "query_matches": [
+        "HERMES",
+        "Geodesic Tensor"
+      ]
+    },
+    {
+      "id": "1993e69e-b259-4269-bf1b-28cb9e53da84",
+      "title": "EUCLID — Kairos Integrated Fold Runtime",
+      "url": "https://app.notion.com/p/1993e69eb2594269bf1b28cb9e53da84?pvs=204",
+      "query_matches": [
+        "fold",
+        "data folding"
+      ]
+    },
+    {
+      "id": "3f0bcc6f-a499-8125-91ae-db9a32251b30",
+      "title": "Turing Workflow 04 — OVID Transformation & Fold Contract",
+      "url": "https://app.notion.com/p/3f0bcc6fa499812591aedb9a32251b30?pvs=204",
+      "query_matches": [
+        "fold",
+        "data folding"
+      ]
+    },
+    {
+      "id": "d3261d7e-af34-4a16-b11f-02eebff4a581",
+      "title": "EUCLID — Kairos Fold-Aware Runtime Journey",
+      "url": "https://app.notion.com/p/d3261d7eaf344a16b11f02eebff4a581?pvs=204",
+      "query_matches": [
+        "fold",
+        "data folding"
+      ]
+    },
+    {
+      "id": "bd56a7b4-766f-4614-91aa-ba0e98642d97",
+      "title": "Chief of Staff Handover — HYBA Data",
+      "url": "https://app.notion.com/p/bd56a7b4766f461491aaba0e98642d97?pvs=204",
+      "query_matches": [
+        "fold",
+        "PHI-1"
+      ]
+    },
+    {
+      "id": "c2f8e653-69cb-4409-96f6-f3532f08bfb1",
+      "title": "Consolidate July Geodesic Tensor capabilities into Chronus/Tensor",
+      "url": "https://app.notion.com/p/c2f8e65369cb440996f6f3532f08bfb1?pvs=204",
+      "query_matches": [
+        "Geodesic Tensor",
+        "Chronus"
+      ]
+    },
+    {
+      "id": "7cbb9c98-2162-48c4-b6bb-7b348b2d98e5",
+      "title": "Chronus: enterprise production hardening, native GPU substrates and explicit delivery modes",
+      "url": "https://app.notion.com/p/7cbb9c98216248c4b6bb7b348b2d98e5?pvs=204",
+      "query_matches": [
+        "Geodesic Tensor",
+        "Chronus"
+      ]
+    },
+    {
+      "id": "ac615fb7-1caa-4fac-b962-2fbc47293335",
+      "title": "Chronos GPU — Mathematical Quantum Graphics Engine Implementation Record",
+      "url": "https://app.notion.com/p/ac615fb71caa4facb9622fbc47293335?pvs=204",
+      "query_matches": [
+        "Chronus",
+        "Artifact Repository"
+      ]
+    },
+    {
+      "id": "3772c88a-c0ee-4148-9d47-43ac3bbad590",
+      "title": "PHI-1 Local Elevation Plan — IDE Executable",
+      "url": "https://app.notion.com/p/3772c88ac0ee41489d4743ac3bbad590?pvs=204",
+      "query_matches": [
+        "PHI-1",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "16004723-e012-4432-abb0-baa877179322",
+      "title": "NED Briefing Pack — Non-Executive Directors (HYBA Data)",
+      "url": "https://app.notion.com/p/16004723e0124432abb0baa877179322?pvs=204",
+      "query_matches": [
+        "PHI-1",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "0bcb8580-e67b-423e-ab47-5d4919866560",
+      "title": "COO Handover — Chief Operating Officer (HYBA Data)",
+      "url": "https://app.notion.com/p/0bcb8580e67b423eab475d4919866560?pvs=204",
+      "query_matches": [
+        "PHI-1",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "31c54504-aec9-464e-ab78-699130b7e654",
+      "title": "HYBA Data — Capabilities (Evidence-Tiered)",
+      "url": "https://app.notion.com/p/31c54504aec9464eab78699130b7e654?pvs=204",
+      "query_matches": [
+        "data folding",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "95fa95ba-9792-45f9-8cd2-290a22d54423",
+      "title": "Gartner & McKinsey Joint Synthesis: The HYBA Data Overmatch",
+      "url": "https://app.notion.com/p/95fa95ba979245f98cd2290a22d54423?pvs=204",
+      "query_matches": [
+        "data folding",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "1f0e6489-1a2a-42b4-85d7-ce665e775a51",
+      "title": "HYBA Data: The Three Orders of Magnitude",
+      "url": "https://app.notion.com/p/1f0e64891a2a42b485d7ce665e775a51?pvs=204",
+      "query_matches": [
+        "data folding",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "1e7c5404-a054-49dd-8626-c8b77951bd51",
+      "title": "HYBA Data MCP Server (OVID Data Edition)",
+      "url": "https://app.notion.com/p/1e7c5404a05449dd8626c8b77951bd51?pvs=204",
+      "query_matches": [
+        "data folding",
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "84caeeca-271d-4cfd-b106-922da5fc9e47",
+      "title": "Port quantum_compute_substrate v0.4.2 — PULVINI + 1000-qubit MPS + X-Infinity tensor (verified 1,488 tests)",
+      "url": "https://app.notion.com/p/84caeeca271d4cfdb106922da5fc9e47?pvs=204",
+      "query_matches": [
+        "PULVINI"
+      ]
+    },
+    {
+      "id": "58d9e34e-abc0-43b2-b55c-35b6377501cf",
+      "title": "MIDAS — VQC for φ-Grover Mining: 32-Face Implementation Record (24 July 2026)",
+      "url": "https://app.notion.com/p/58d9e34eabc043b2b55c35b6377501cf?pvs=204",
+      "query_matches": [
+        "PULVINI"
+      ]
+    },
+    {
+      "id": "345f8879-3f28-431a-9833-02c07ff67b8c",
+      "title": "PYTHAGORAS / VQC — Findings in HYBA_Unified_Backend",
+      "url": "https://app.notion.com/p/345f88793f28431a983302c07ff67b8c?pvs=204",
+      "query_matches": [
+        "PULVINI"
+      ]
+    },
+    {
+      "id": "cdf7e66e-b5d5-4af2-b308-091881f58f56",
+      "title": "Chronos GPU — Complete End-to-End Render Pipeline Example (3 Aug 2026)",
+      "url": "https://app.notion.com/p/cdf7e66eb5d54af2b308091881f58f56?pvs=204",
+      "query_matches": [
+        "PULVINI"
+      ]
+    },
+    {
+      "id": "e788538c-7869-4c9c-9805-11140e4c5e25",
+      "title": "Chronos QGPU — VC Pitch Deck (Mathematical Reframe, 3 Aug 2026)",
+      "url": "https://app.notion.com/p/e788538c78694c9c980511140e4c5e25?pvs=204",
+      "query_matches": [
+        "PULVINI"
+      ]
+    },
+    {
+      "id": "334295bc-eed9-4cf1-b63a-3f2d0e133aef",
+      "title": "Chronos QGPU — VC Pitch Deck (Mathematical Reframe, 3 Aug 2026)",
+      "url": "https://app.notion.com/p/334295bceed94cf1b63a3f2d0e133aef?pvs=204",
+      "query_matches": [
+        "PULVINI"
+      ]
+    },
+    {
+      "id": "1f7a96bc-1a38-4918-9029-dbf78789318b",
+      "title": "The Virtual Quantum Computer (VQC)",
+      "url": "https://app.notion.com/p/1f7a96bc1a3849189029dbf78789318b?pvs=204",
+      "query_matches": [
+        "HERMES"
+      ]
+    },
+    {
+      "id": "de5e0468-21df-410b-8d4f-b14ee7a37c3a",
+      "title": "Chronos QGPU — Market Positioning & Competitive Analysis (Mathematical Reframe, 3 Aug 2026)",
+      "url": "https://app.notion.com/p/de5e046821df410b8d4fb14ee7a37c3a?pvs=204",
+      "query_matches": [
+        "HERMES"
+      ]
+    },
+    {
+      "id": "71bc0d9d-49f9-400e-bfea-c54727549d30",
+      "title": "feat(security): add AL HARAS and exact math-folding boundary",
+      "url": "https://app.notion.com/p/71bc0d9d49f9400ebfeac54727549d30?pvs=204",
+      "query_matches": [
+        "fold"
+      ]
+    },
+    {
+      "id": "3e138a94-a210-46c3-861a-6a47edcc60a6",
+      "title": "feat: integrate geodesic tensor engine + VQC features into plane packages",
+      "url": "https://app.notion.com/p/3e138a94a21046c3861a6a47edcc60a6?pvs=204",
+      "query_matches": [
+        "Geodesic Tensor"
+      ]
+    },
+    {
+      "id": "ee251fae-a060-47fb-b6a9-506d4b69d000",
+      "title": "Integrate exact geodesic tensor engine and Turing φ-machine",
+      "url": "https://app.notion.com/p/ee251faea06047fbb6a9506d4b69d000?pvs=204",
+      "query_matches": [
+        "Geodesic Tensor"
+      ]
+    },
+    {
+      "id": "60581e09-bd08-425a-a4c5-e27d989654c7",
+      "title": "Add canonical tensor/ package: contracts, backend router, runtime, and mining-safe advisory bridge",
+      "url": "https://app.notion.com/p/60581e09bd08425aa4c5e27d989654c7?pvs=204",
+      "query_matches": [
+        "Geodesic Tensor"
+      ]
+    },
+    {
+      "id": "b107feaf-9116-444b-93ee-ed99bc6790bf",
+      "title": "Evolution Engine — Layered 384-Parameter QAOA on M32 (Chronos GPU, 3 Aug 2026)",
+      "url": "https://app.notion.com/p/b107feaf9116444b93eeed99bc6790bf?pvs=204",
+      "query_matches": [
+        "Geodesic Tensor"
+      ]
+    },
+    {
+      "id": "98f5b565-4f14-4e19-b8a4-791d83103629",
+      "title": "Implement measured tensor, iGPU/GPU and ASIC runtime boundary",
+      "url": "https://app.notion.com/p/98f5b5654f144e19b8a4791d83103629?pvs=204",
+      "query_matches": [
+        "Geodesic Tensor"
+      ]
+    },
+    {
+      "id": "ac57d36c-ac4c-4652-82bc-433ff434c0bb",
+      "title": "VQC Deep Ansatz — Real 384-Parameter Extension & Integration Package (3 Aug 2026)",
+      "url": "https://app.notion.com/p/ac57d36cac4c465282bc433ff434c0bb?pvs=204",
+      "query_matches": [
+        "Geodesic Tensor"
+      ]
+    },
+    {
+      "id": "1bf0bd5a-2721-4766-9e1d-317b84f66918",
+      "title": "Integrate GPU, tensor, VQC, manifold and L-HRAS package boundaries",
+      "url": "https://app.notion.com/p/1bf0bd5a272147669e1d317b84f66918?pvs=204",
+      "query_matches": [
+        "Geodesic Tensor"
+      ]
+    },
+    {
+      "id": "ace3240e-47c1-4c51-9c17-8b47bb1f21cd",
+      "title": "audit: quantum truth, tensor safety, and real QPU boundary",
+      "url": "https://app.notion.com/p/ace3240e47c14c519c178b47bb1f21cd?pvs=204",
+      "query_matches": [
+        "Geodesic Tensor"
+      ]
+    },
+    {
+      "id": "3f0bcc6f-a499-81cf-b54e-cce36cab9a70",
+      "title": "Chronus Workflow 02 — Hardware & Accelerator Certification",
+      "url": "https://app.notion.com/p/3f0bcc6fa49981cfb54ecce36cab9a70?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "3f0bcc6f-a499-81a1-91bc-c8a423e28d79",
+      "title": "Chronus Workflow 01 — Production Workload Admission & Promotion",
+      "url": "https://app.notion.com/p/3f0bcc6fa49981a191bcc8a423e28d79?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "3f0bcc6f-a499-81f9-a501-c3ddbeb65507",
+      "title": "Chronus Workflow 03 — Benchmark & Claim Promotion",
+      "url": "https://app.notion.com/p/3f0bcc6fa49981f9a501c3ddbeb65507?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "3f0bcc6f-a499-81e7-ad37-f18235679bb0",
+      "title": "Chronus Workflow 04 — Release, Artifact & Provenance",
+      "url": "https://app.notion.com/p/3f0bcc6fa49981e7ad37f18235679bb0?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "4818a4b0-62f6-41a2-9d9c-53697621364a",
+      "title": "mining: promote canonical 600-way Chronus 11D search fabric",
+      "url": "https://app.notion.com/p/4818a4b062f641a29d9c53697621364a?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "3f0bcc6f-a499-81a1-86c0-d5314bec7a6d",
+      "title": "Turing Workflow 03 — Chronus Backend Execution Certification",
+      "url": "https://app.notion.com/p/3f0bcc6fa49981a186c0d5314bec7a6d?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "3f0bcc6f-a499-81e1-bfc2-cbeb5144f068",
+      "title": "Chronus Workflow 05 — Deployment Admission by Profile",
+      "url": "https://app.notion.com/p/3f0bcc6fa49981e1bfc2cbeb5144f068?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "3f0bcc6f-a499-8132-b7b1-c12ce9b153a1",
+      "title": "Chronus Workflow 07 — Change Control & Owner Approval",
+      "url": "https://app.notion.com/p/3f0bcc6fa4998132b7b1c12ce9b153a1?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "3f0bcc6f-a499-81b0-bb28-caa7aad60adb",
+      "title": "Chronus Workflow 06 — Incident, Recovery & Rollback",
+      "url": "https://app.notion.com/p/3f0bcc6fa49981b0bb28caa7aad60adb?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "3f0bcc6f-a499-8196-a304-ec190ff50525",
+      "title": "Chronus Workflow 08 — Weekly Operational Risk Review",
+      "url": "https://app.notion.com/p/3f0bcc6fa4998196a304ec190ff50525?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "180f7838-df6e-48d5-887f-659538b80a48",
+      "title": "Feat/chronus consolidation",
+      "url": "https://app.notion.com/p/180f7838df6e48d5887f659538b80a48?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "6bacea21-6b05-4389-be98-cc39aff80d3a",
+      "title": "Consolidate Chronus as the sole iGPU implementation; fold MLA1517 under chronus/",
+      "url": "https://app.notion.com/p/6bacea216b054389be98cc39aff80d3a?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "5624c02b-0392-49e9-9df6-2c401b52bf9f",
+      "title": "Activate Chronus on Intel integrated GPUs",
+      "url": "https://app.notion.com/p/5624c02b039249e99df62c401b52bf9f?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "8797b218-7f8d-433c-9c5c-80ec79e57cc7",
+      "title": "#105 CROSS_VERIFICATION: qualify Chronus backends against one authority",
+      "url": "https://app.notion.com/p/8797b2187f8d433c9c5c80ec79e57cc7?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "2e28f4fa-ea25-4612-bc4c-75529ae140d3",
+      "title": "Define Chronus-1 ISA and implement its fail-closed reference emulator",
+      "url": "https://app.notion.com/p/2e28f4faea254612bc4c75529ae140d3?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "fd72384a-1d90-4dc5-b3c7-97dd31c6f15b",
+      "title": "feat(chronus): establish executable QX command contract",
+      "url": "https://app.notion.com/p/fd72384a1d904dc5b3c797dd31c6f15b?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "7387b78f-ecf1-4e59-8a2c-b4022aef6a3b",
+      "title": "Close Chronus executable, ABI, emulator and evidence gaps",
+      "url": "https://app.notion.com/p/7387b78fecf14e598a2cb4022aef6a3b?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "0192f4c5-bcf3-4bc9-9e4b-9d08ebdeac28",
+      "title": "#104 CONFORMANCE_SUITE: portable immutable Chronus authority",
+      "url": "https://app.notion.com/p/0192f4c5bcf34bc99e4b9d08ebdeac28?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "a7a122f5-6f8f-4e20-a832-40fb0905079f",
+      "title": "Elevate Chronus into an evidence-bound portable compute substrate",
+      "url": "https://app.notion.com/p/a7a122f56f8f4e20a83240fb0905079f?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "8c45f5f8-98ec-4bf7-ba08-b948c284cb60",
+      "title": "Implement Chronus assembler, disassembler and container round-trip",
+      "url": "https://app.notion.com/p/8c45f5f898ec4bf7ba08b948c284cb60?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "87db573e-17d4-434c-a5ce-413c46efcb0c",
+      "title": "Implement typed Chronus subset compiler and semantic proofs",
+      "url": "https://app.notion.com/p/87db573e17d4434ca5ce413c46efcb0c?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "9018e2fc-6f06-48bf-ad28-a41b2b1bee48",
+      "title": "surface the Chronus contract device on operator surfaces; fix Windows…",
+      "url": "https://app.notion.com/p/9018e2fc6f0648bfad28a41b2b1bee48?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "97929749-cd6d-47ae-ad1f-efa7055ad698",
+      "title": "Build canonical Chronus Virtual iGPU runtime",
+      "url": "https://app.notion.com/p/97929749cd6d47aead1fefa7055ad698?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "d4139c6c-17d4-45e0-925e-3210623e59d4",
+      "title": "chronus: surface contract device on operator surfaces; fix Windows heartbeat dir",
+      "url": "https://app.notion.com/p/d4139c6c17d445e0925e3210623e59d4?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "8b6d1a34-c6fd-447c-96df-da0c71c6471e",
+      "title": "Integrate Chronus substrate across CPU, GPU, ASIC and Super ASIC mining",
+      "url": "https://app.notion.com/p/8b6d1a34c6fd447c96dfda0c71c6471e?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "1c24a3b0-24a5-4ae3-9183-e8ddb80070bb",
+      "title": "Elevate Chronus iGPU support with physical evidence capture",
+      "url": "https://app.notion.com/p/1c24a3b024a54ae39183e8ddb80070bb?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "39761490-2c60-41b9-a2c5-28517649e6ef",
+      "title": "chronus: enumerate contract device as system GPU; event-driven mining waits",
+      "url": "https://app.notion.com/p/397614902c6041b9a2c528517649e6ef?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "c28bc45a-5bca-404e-81c4-dadf4bcb86c0",
+      "title": "Integrate complete July Chronus v3.3 and HYBA mining intelligence",
+      "url": "https://app.notion.com/p/c28bc45a5bca404e81c4dadf4bcb86c0?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "a49a9b09-fa46-4486-a3fa-fc02b6513f96",
+      "title": "#106 MATHEMATICAL_INTRINSICS: typed exact and approximate Chronus semantics",
+      "url": "https://app.notion.com/p/a49a9b09fa464486a3fafc02b6513f96?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "f621f689-9dc8-4ac1-95d6-72e6b18e7429",
+      "title": "chronus/measurement: 11-layer iGPU tech-stack measurement — attested, replayable, nothing fabricated",
+      "url": "https://app.notion.com/p/f621f6899dc84ac195d672e6b18e7429?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "d42be229-814a-4b90-9914-05f58b3bea45",
+      "title": "Super-GPU elevation gap-fill on the Chronus substrate",
+      "url": "https://app.notion.com/p/d42be229814a4b90991405f58b3bea45?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "41ecee48-832b-4d7b-a0a2-aa6126a57e63",
+      "title": "#107 PRODUCTION_MINING_INTEGRATION: certified Chronus path and mining recovery",
+      "url": "https://app.notion.com/p/41ecee48832b4d7ba0a2aa6126a57e63?pvs=204",
+      "query_matches": [
+        "Chronus"
+      ]
+    },
+    {
+      "id": "ca34d97d-2132-447a-acd3-600da8ee429d",
+      "title": "The PHI-1 Sovereign Computation Portfolio",
+      "url": "https://app.notion.com/p/ca34d97d2132447aacd3600da8ee429d?pvs=204",
+      "query_matches": [
+        "PHI-1"
+      ]
+    },
+    {
+      "id": "f69aaeb1-4cdf-4631-9bb7-3900c0ed3164",
+      "title": "Topological Data Protection: An Alternative Architecture to Traditional Encryption",
+      "url": "https://app.notion.com/p/f69aaeb14cdf46319bb73900c0ed3164?pvs=204",
+      "query_matches": [
+        "data folding"
+      ]
+    },
+    {
+      "id": "f197e12b-e5b1-4872-b3ea-3e208652b20e",
+      "title": "Architecture & Reproduction Guide",
+      "url": "https://app.notion.com/p/f197e12be5b14872b3ea3e208652b20e?pvs=204",
+      "query_matches": [
+        "Artifact Repository"
+      ]
+    },
+    {
+      "id": "080cf1c0-58b1-4a86-92d9-431695ed928f",
+      "title": "HYBA Data — Code Elevation Pack (Engineering Standard)",
+      "url": "https://app.notion.com/p/080cf1c058b14a8692d9431695ed928f?pvs=204",
+      "query_matches": [
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "0e1ae824-e89b-4da8-9090-83ac89697443",
+      "title": "HYBA Data — DIFC Innovation Licence Impact Deck",
+      "url": "https://app.notion.com/p/0e1ae824e89b4da8909083ac89697443?pvs=204",
+      "query_matches": [
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "601ef7c5-3bd0-4c66-9138-5e8b6639d941",
+      "title": "HYBA Data Only — Mining Purge & Claim Closures",
+      "url": "https://app.notion.com/p/601ef7c53bd04c6691385e8b6639d941?pvs=204",
+      "query_matches": [
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "e932ee22-4fde-4aac-8b8e-6f71a671e04e",
+      "title": "HYBA Data Plane Launch Announcement",
+      "url": "https://app.notion.com/p/e932ee224fde4aac8b8e6f71a671e04e?pvs=204",
+      "query_matches": [
+        "HYBA Data"
+      ]
+    },
+    {
+      "id": "67f4bcfa-e088-43ce-bea3-d658a1214dc5",
+      "title": "HYBA Data — Lab Protocol: Keeping Claims Current & Trackable (Agent Instructions)",
+      "url": "https://app.notion.com/p/67f4bcfae08843cebea3d658a1214dc5?pvs=204",
+      "query_matches": [
+        "HYBA Data"
+      ]
+    }
+  ],
+  "known_artifacts": [
+    {
+      "source": "https://app.notion.com/p/2539733ebb7848c9a84ae4e3d7429822",
+      "name": "pulvini_v3_phases_11_13_14_20260724.zip",
+      "state": "NOT_DOWNLOADED_OR_INSPECTED"
+    },
+    {
+      "source": "https://app.notion.com/p/2539733ebb7848c9a84ae4e3d7429822",
+      "name": "pulvini_v3_enterprise_production_20260724.zip",
+      "state": "USER_SUPPLIED_COPY_INSPECTED"
+    },
+    {
+      "source": "https://app.notion.com/p/ffd11e5552144c30ad38a5aaab0b5fcb",
+      "name": "PULVINI_V3_HERMES_COMPLETION_20260724.zip",
+      "state": "USER_SUPPLIED_COPY_INSPECTED"
+    },
+    {
+      "source": "https://app.notion.com/p/0f9aedc5b415479cb34a9b1646f006b4",
+      "name": "HYBA_DATA_WITH_AUTH.zip",
+      "state": "NOT_DOWNLOADED_OR_INSPECTED"
+    },
+    {
+      "source": "https://app.notion.com/p/0f9aedc5b415479cb34a9b1646f006b4",
+      "name": "HYBA_TESTIMONY_WITH_AUTH.zip",
+      "state": "NOT_DOWNLOADED_OR_INSPECTED"
+    }
+  ],
+  "authority_register": "https://app.notion.com/p/3f0bcc6fa49981c68659c178cbb72a19"
+}
