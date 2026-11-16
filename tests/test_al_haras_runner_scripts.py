@@ -17,6 +17,12 @@ Standard library only (no fastapi). Nothing here loads BPF programs, touches
 
 Every check here is local. Behaviour on a real host (kernel, bpftool, systemd,
 actions runner) is not covered.
+
+The scripts are Linux/systemd units: they are owned by ``github-runner``, read
+``/proc`` and ``/sys``, and assert POSIX owner and mode bits (``stat -c '%u %a'``).
+Those semantics do not exist on Windows, so the whole module is skipped there
+rather than reported as a failure. The pure-text checks (README layout, unit
+file contents, environment variables) are portable and run everywhere.
 """
 
 from __future__ import annotations
@@ -44,6 +50,18 @@ SCRIPTS = [BOOTSTRAP, TEARDOWN, REGISTER, PRE_JOB, POST_JOB]
 
 BASH = shutil.which("bash")
 needs_bash = pytest.mark.skipif(BASH is None, reason="bash is not installed")
+
+# The runner scripts are Linux units run by systemd as root and as
+# "github-runner". Exercising them needs POSIX owner and mode bits: os.getuid,
+# chmod(2) that the filesystem honours, and "stat -c '%u %a'". A Windows host
+# has none of these (Git for Windows bash reports a synthetic uid and ignores
+# chmod), so running the scripts there would report a platform mismatch as a
+# product defect. These checks are therefore POSIX-only; the portable text
+# checks below stay enabled everywhere.
+POSIX_ONLY = os.name == "posix"
+needs_posix = pytest.mark.skipif(
+    not POSIX_ONLY, reason="AL HARAS runner scripts require POSIX owner and mode semantics"
+)
 
 INVOCATION = "0123456789abcdef0123456789abcdef"
 BOOT_ID = "8a1b6c3e-1111-4c4c-9d9d-0123456789ab"
