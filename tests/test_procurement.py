@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import unittest
+from unittest.mock import patch
 
 from chronus.core.seal import seal_schema
 from chronus.procurement.book import Book, Refusal, admit, reserve
@@ -216,16 +217,24 @@ class ProcurementBookTests(unittest.TestCase):
         self.assertFalse(none["fee_applicable"])
 
     def test_openapi_fragment_is_sealed_from_live_app(self) -> None:
-        os.environ["CHRONUS_TENANT_TOKENS"] = json.dumps(
-            {
-                "seal-test-token": {
-                    "tenant_id": "seal",
-                    "scopes": ["workloads:read", "workloads:write"],
-                }
-            }
-        )
         from chronus.service.api import security as api_security
 
+        self.addCleanup(api_security.reset_token_cache)
+        tokens = patch.dict(
+            os.environ,
+            {
+                "CHRONUS_TENANT_TOKENS": json.dumps(
+                    {
+                        "seal-test-token": {
+                            "tenant_id": "seal",
+                            "scopes": ["workloads:read", "workloads:write"],
+                        }
+                    }
+                )
+            },
+        )
+        tokens.start()
+        self.addCleanup(tokens.stop)
         api_security.reset_token_cache()
         fragment = openapi_fragment()
         for path in CAPACITY_OPENAPI_PATHS:
@@ -238,6 +247,24 @@ class ProcurementBookTests(unittest.TestCase):
         seal_schema(fragment)
         with self.assertRaises(AssertionError):
             seal_schema({"/v1/fibonacci": {}})
+        # Referenced capacity models are sealed too (not only path keys).
+        with self.assertRaises(AssertionError):
+            capacity_openapi_fragment(
+                {
+                    "paths": {
+                        path: {"post": {"requestBody": {"$ref": "#/components/schemas/Bad"}}}
+                        for path in CAPACITY_OPENAPI_PATHS
+                    },
+                    "components": {
+                        "schemas": {
+                            "Bad": {
+                                "type": "object",
+                                "properties": {"phi": {"type": "string"}},
+                            }
+                        }
+                    },
+                }
+            )
 
 
 if __name__ == "__main__":

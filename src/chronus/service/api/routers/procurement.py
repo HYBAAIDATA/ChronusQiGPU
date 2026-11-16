@@ -189,6 +189,22 @@ CAPACITY_OPENAPI_PATHS = (
     "/v1/capacity/reserve",
     "/v1/capacity/admit",
 )
+_SCHEMA_REF_PREFIX = "#/components/schemas/"
+
+
+def _referenced_schema_names(node: Any) -> set[str]:
+    """Return component schema names referenced anywhere under ``node``."""
+    names: set[str] = set()
+    if isinstance(node, dict):
+        ref = node.get("$ref")
+        if isinstance(ref, str) and ref.startswith(_SCHEMA_REF_PREFIX):
+            names.add(ref[len(_SCHEMA_REF_PREFIX) :])
+        for value in node.values():
+            names |= _referenced_schema_names(value)
+    elif isinstance(node, list):
+        for item in node:
+            names |= _referenced_schema_names(item)
+    return names
 
 
 def capacity_openapi_fragment(openapi: dict[str, Any]) -> dict[str, Any]:
@@ -196,13 +212,29 @@ def capacity_openapi_fragment(openapi: dict[str, Any]) -> dict[str, Any]:
 
     Never hand-keep this map: the CI gate must seal what the app actually
     serves, or the fragment drifts and the gate passes on a stale copy.
+    Also seals component schemas reachable from those paths (request models
+    are typically ``$ref`` entries), without pulling unrelated legacy routes.
     """
     paths = openapi.get("paths") or {}
     missing = [path for path in CAPACITY_OPENAPI_PATHS if path not in paths]
     if missing:
         raise AssertionError(f"live OpenAPI missing capacity routes: {missing}")
     fragment = {path: paths[path] for path in CAPACITY_OPENAPI_PATHS}
-    seal_schema(fragment, context="procurement.live_capacity_openapi")
+    schemas = (openapi.get("components") or {}).get("schemas") or {}
+    sealed: dict[str, Any] = {}
+    pending = list(_referenced_schema_names(fragment))
+    while pending:
+        name = pending.pop()
+        if name in sealed:
+            continue
+        if name not in schemas:
+            raise AssertionError(f"live OpenAPI missing referenced schema: {name}")
+        sealed[name] = schemas[name]
+        pending.extend(_referenced_schema_names(schemas[name]))
+    seal_schema(
+        {"paths": fragment, "components": {"schemas": sealed}},
+        context="procurement.live_capacity_openapi",
+    )
     return fragment
 
 
