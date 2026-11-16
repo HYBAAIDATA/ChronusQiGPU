@@ -48,11 +48,17 @@ def add (x y : Cyclotomic5) : Cyclotomic5 :=
 
 /-- Exact multiplication reduced modulo x^4 + x^3 + x^2 + x + 1 -/
 def mul (x y : Cyclotomic5) : Cyclotomic5 :=
-  -- Direct product expansion reduced by zeta^4 = -1 - zeta - zeta^2 - zeta^3
-  ⟨ x.c0 * y.c0 - x.c1 * y.c3 - x.c2 * y.c2 - x.c3 * y.c1,
-    x.c0 * y.c1 + x.c1 * y.c0 - x.c2 * y.c3 - x.c3 * y.c2 - (x.c1 * y.c3 + x.c2 * y.c2 + x.c3 * y.c1),
-    x.c0 * y.c2 + x.c1 * y.c1 + x.c2 * y.c0 - x.c3 * y.c3 - (x.c1 * y.c3 + x.c2 * y.c2 + x.c3 * y.c1),
-    x.c0 * y.c3 + x.c1 * y.c2 + x.c2 * y.c1 + x.c3 * y.c0 - (x.c1 * y.c3 + x.c2 * y.c2 + x.c3 * y.c1) ⟩
+  -- Set r_k = sum_{i+j=k} x_i*y_j.
+  -- Since zeta^5=1 and zeta^4=-(1+zeta+zeta^2+zeta^3),
+  -- coefficients reduce to (r0+r5-r4,r1+r6-r4,r2-r4,r3-r4).
+  let r0 := x.c0 * y.c0
+  let r1 := x.c0 * y.c1 + x.c1 * y.c0
+  let r2 := x.c0 * y.c2 + x.c1 * y.c1 + x.c2 * y.c0
+  let r3 := x.c0 * y.c3 + x.c1 * y.c2 + x.c2 * y.c1 + x.c3 * y.c0
+  let r4 := x.c1 * y.c3 + x.c2 * y.c2 + x.c3 * y.c1
+  let r5 := x.c2 * y.c3 + x.c3 * y.c2
+  let r6 := x.c3 * y.c3
+  ⟨r0 + r5 - r4, r1 + r6 - r4, r2 - r4, r3 - r4⟩
 
 /-- Fundamental algebraic theorem: phi * phi^-1 = 1 -/
 theorem phi_mul_phi_inv_eq_one : mul phi phi_inv = one := by
@@ -152,20 +158,41 @@ theorem marked_collapses_to_one (M : F257) (hM : mean_field_shift M ≠ 0) :
   decide
 
 
-/-! ### 6. Main Theorem: Topological Univalence -/
+/-! ### 6. Proven scope and the still-open equivalence obligation -/
 
 /--
-  TOPOLOGICAL UNIVALENCE THEOREM:
-  The harmonic consensus of the Hodge Sheaf Laplacian ker(L_F) == H^0(X; F) is
-  topologically univalent to the fixed point algebraic resolution of the
-  F_257 Galois Oracle operator.
+  The kernel of the discrete coboundary is exactly the condition defining
+  `in_harmonic_kernel`. This theorem does not assert an identification
+  with target membership, a Hilbert-space equivalence, or physical
+  Yang-Mills univalence.
 -/
-theorem topological_univalence
+theorem harmonic_kernel_characterization
+    (n : Nat)
+    (edges : List (Fin n × Fin n))
+    (s : Cochain0 n) :
+    in_harmonic_kernel edges s ↔
+      coboundary0 edges s = edges.map (fun _ => (0 : F257)) := by
+  rfl
+
+/-- Oracle Boolean normalization, independent of geometric consensus. -/
+theorem oracle_boolean_characterization (is_valid_share : Bool) :
+    ((if is_valid_share then (1 : F257) else (0 : F257)) = 1) ↔
+      is_valid_share = true := by
+  cases is_valid_share <;> decide
+
+/--
+  A cross-subsystem equivalence can be used ONLY when a separate explicit
+  witness linking the two predicates has already been supplied. The input
+  witness is the mathematical obligation, not a theorem proved here.
+-/
+theorem conditional_topological_univalence
     (n : Nat)
     (edges : List (Fin n × Fin n))
     (s : Cochain0 n)
-    (is_valid_share : Bool) :
-    in_harmonic_kernel edges s ↔ (if is_valid_share then (1 : F257) else (0 : F257)) = 1 := by
-  sorry
+    (is_valid_share : Bool)
+    (h : in_harmonic_kernel edges s ↔ is_valid_share = true) :
+    in_harmonic_kernel edges s ↔
+      (if is_valid_share then (1 : F257) else (0 : F257)) = 1 := by
+  exact h.trans (oracle_boolean_characterization is_valid_share).symm
 
 end Chronus.Formal

@@ -14,7 +14,7 @@ from chronus.execution.structural import (
 )
 
 POLYHEDRAL_FACES = 12  # dodecahedron face centroids
-POLYHEDRAL_VERTICES = 20  # icosahedron vertices; 12 + 20 = 32 lanes
+POLYHEDRAL_ICO_FACES = 20  # icosahedron faces; 12 + 20 = 32 domains
 
 
 def polyhedral_lane(lane: int) -> dict[str, Any]:
@@ -22,13 +22,13 @@ def polyhedral_lane(lane: int) -> dict[str, Any]:
     lanes = _lanes()
     if not isinstance(lane, int) or isinstance(lane, bool) or not 0 <= lane < lanes:
         raise ValueError(f"lane must be an integer in [0, {lanes})")
-    if lanes != POLYHEDRAL_FACES + POLYHEDRAL_VERTICES:
+    if lanes != POLYHEDRAL_FACES + POLYHEDRAL_ICO_FACES:
         return {"lane": lane, "polyhedral": None}
     if lane < POLYHEDRAL_FACES:
         return {"lane": lane, "polyhedral": "dodecahedron-face", "index": lane}
     return {
         "lane": lane,
-        "polyhedral": "icosahedron-vertex",
+        "polyhedral": "icosahedron-face",
         "index": lane - POLYHEDRAL_FACES,
     }
 
