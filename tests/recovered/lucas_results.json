@@ -1,0 +1,43 @@
+{
+  "classification": "MEASURED",
+  "backend": "python-exact-reference",
+  "hardware_accelerated": false,
+  "commit_sha": "UNVERSIONED-WORKTREE",
+  "lucas_sanity": {
+    "L_0": 2,
+    "L_10": 123,
+    "L_100": 792070839848372253127
+  },
+  "batches": [
+    {
+      "batch_size": 8,
+      "records": 13696,
+      "seconds": 0.3500547029999552,
+      "records_per_second": 39125.31350850542,
+      "us_per_record": 25.55890062791729
+    },
+    {
+      "batch_size": 32,
+      "records": 5536,
+      "seconds": 0.35103813300008824,
+      "records_per_second": 15770.366463288501,
+      "us_per_record": 63.410067377183566
+    },
+    {
+      "batch_size": 64,
+      "records": 2816,
+      "seconds": 0.35187508799992884,
+      "records_per_second": 8002.839916875757,
+      "us_per_record": 124.95564204542927
+    }
+  ],
+  "limitations": [
+    "Virtual device; no accelerator present or required. This is the exact scalar reference path of the virtual iGPU namespace over quantum maths, not a degraded GPU run.",
+    "The OpenCL adapter is the optional physical path (escape hatch for provisioned client hardware), not the default route.",
+    "Batch inversion is a fixed ~350 ms window, not throughput scaling: batch 8 = 25.6 us/record, batch 64 = 125.0 us/record. Read us_per_record, not records/s.",
+    "Records include Cassini, Zeckendorf, Pisot, Binet-fold, and prime-address verification.",
+    "Do not convert records/sec into FLOPS or EH/s.",
+    "Provenance: UNVERSIONED-WORKTREE. This record is not bound to a commit, manifest, or falsifier; treat as unverified until rerun under exact-commit evidence."
+  ],
+  "artifact_sha256": "d1d7f16d4b93be5fff78ed5fb5a47451db6cfc71d5c4676878fb4cb29ff4d0fc"
+}

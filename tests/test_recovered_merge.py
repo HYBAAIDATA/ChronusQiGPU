@@ -1,0 +1,50 @@
+"""Recovered-module regression: QSDL grammar, benchmark record, provenance.
+
+Provenance: owner-disk ZIPs staged under recovery_merge/ (see
+recovery_merge/README.md for hashes and dedupe verdicts). These tests
+pin the payable behavior — real parse, honest benchmark shape,
+no engine wiring for reference-only modules — not the archives' prose.
+"""
+
+import json
+from pathlib import Path
+
+from chronus.qsdl.qsdl_compiler import QSDLCompiler
+
+
+def test_qsdl_real_grammar_parses_scene():
+    scene = QSDLCompiler().compile(
+        "scene sunset { camera { position = (0, 0, 5) } }"
+    )
+    assert type(scene).__name__ == "QScene"
+
+
+def test_qsdl_legacy_label_still_resolves():
+    first = QSDLCompiler().compile("phi_tier_10")
+    second = QSDLCompiler().compile("phi_tier_10")
+    assert type(first).__name__ == type(second).__name__ == "QScene"
+
+
+def test_lucas_benchmark_record_shape_and_provenance():
+    record = json.loads(
+        Path(__file__).parent.joinpath("recovered", "lucas_results.json").read_text()
+    )
+    assert record["commit_sha"] == "UNVERSIONED-WORKTREE"
+    for batch in record["batches"]:
+        assert batch["seconds"] > 0 and batch["records"] > 0
+        assert abs(
+            batch["us_per_record"]
+            - batch["seconds"] / batch["records"] * 1e6
+        ) < 1e-6
+    assert any("us_per_record" in line for line in record["limitations"])
+    assert any(
+        "Virtual device; no accelerator present or required" in line
+        for line in record["limitations"]
+    )
+
+
+def test_recovered_reference_modules_not_imported_by_engine():
+    import chronus.tensor as tensor
+
+    for name in ("geodesic_tensor_engine", "quantum_formalism"):
+        assert not hasattr(tensor, name), name
