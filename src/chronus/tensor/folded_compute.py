@@ -156,6 +156,14 @@ class FoldedTensorExecutor:
             raise ValueError("replacement shape or finite contract failed")
         if not np.can_cast(items.dtype, array.dtype, casting="safe"):
             raise ValueError("replacement would silently truncate numerical precision")
+        # dtype-level "safe" casting is insufficient: NumPy permits int64 ->
+        # float64 although values beyond 2**53 are not exactly representable.
+        # Compare in the ORIGINAL dtype after round-tripping the candidate.
+        with np.errstate(over="ignore", invalid="ignore"):
+            candidate = np.asarray(items, dtype=array.dtype)
+            roundtripped = candidate.astype(items.dtype)
+        if not np.array_equal(roundtripped, items):
+            raise ValueError("replacement would silently truncate numerical precision")
         changed = array.copy().reshape(-1)
         changed[start:stop] = items
         folded = self.fold(changed.reshape(array.shape))
