@@ -19,7 +19,7 @@ Provide an operator-controlled YAML file using `chronus.real-workload-manifest/1
 
 - Tensor format: `.npy` only, loaded with NumPy `allow_pickle=False`. Unspecified raw `.bin` headers, PyTorch pickle/checkpoints, ONNX graphs and custom tensor formats are rejected until an independently validated safe decoder contract exists.
 - Snapshot formats: `.snapshot`, `.state`, `.fold` or `.checkpoint` interpreted as opaque bytes. The test is byte-equivalent reversible representation, *not* semantic recovery of an unknown application state.
-- Assets must be nonempty, regular, non-symlinked files, each at most 16 MiB (default and absolute cap); arrays must be numeric, finite and at most 1,000,000 elements. Duplicate file paths and checksum mismatch fail closed.
+- Assets must be nonempty, regular, non-symlinked files, each at most 16 MiB (absolute cap) and at most the effective custody payload limit `CHRONUS_MAX_PAYLOAD_BYTES` (default 1 MiB, applied after OVID padding of odd-length inputs to an even length, so an odd-length input may be at most `limit - 1` bytes); arrays must be numeric, finite and at most 1,000,000 elements. Duplicate file paths and checksum mismatch fail closed.
 - No recursive directory scanning and no implicit fallback to simulated or generated data. Explicit allowlisting prevents accidentally selecting fixtures, sensitive unrelated files or inconsistent snapshots.
 
 Copy `benchmarks/data_manifest.example.yaml` to a private operator manifest, fill in *actual* input paths and verified SHA-256 hashes, and keep customer/private data outside Git. The example intentionally contains no populated source data.

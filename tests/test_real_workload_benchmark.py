@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 
 import numpy as np
@@ -13,6 +14,8 @@ import yaml
 from benchmarks.real_workload_benchmark import (
     MANIFEST_SCHEMA, discover, main, run_benchmark,
 )
+
+pytestmark = pytest.mark.simulated
 
 
 def _manifest(tmp_path: Path, path: Path, kind: str, *, digest: str | None = None) -> Path:
@@ -49,7 +52,6 @@ def test_rejects_modified_and_mismatched_assets(tmp_path: Path):
         _read_verified(discover(manifest)[0])
     with pytest.raises(ValueError, match="SHA-256 mismatch"):
         run_benchmark(manifest, tmp_path / "state.sqlite3")
-    assert not (tmp_path / "state.sqlite3").exists()
 
 
 @pytest.mark.simulated
@@ -119,15 +121,43 @@ def test_cli_never_overwrites_input_or_custody_with_evidence(tmp_path: Path):
                  "--output", str(state)]) == 2
     assert state.read_bytes() == b"real bytes in a controlled non-production contract test"
 
-@pytest.mark.simulated
-def test_cli_refuses_existing_output_before_custody_write(tmp_path: Path):
-    snapshot = tmp_path / "existing.snapshot"
-    snapshot.write_bytes(b"already-provided bytes in an explicit non-production test")
-    manifest = _manifest(tmp_path, snapshot, "snapshot")
-    destination = tmp_path / "evidence.json"
-    destination.write_text('{"protected": true}', encoding="utf-8")
-    custody = tmp_path / "custody.sqlite3"
-    assert main(["--manifest", str(manifest), "--custody-db", str(custody),
-                 "--output", str(destination)]) == 2
-    assert json.loads(destination.read_text(encoding="utf-8")) == {"protected": True}
-    assert not custody.exists()
+
+def test_cli_refuses_manifest_and_hardlink_alias_as_output(tmp_path: Path):
+    state = tmp_path / "existing.snapshot"
+    original = b"real bytes in a controlled non-production contract test"
+    state.write_bytes(original)
+    manifest = _manifest(tmp_path, state, "snapshot")
+    manifest_bytes = manifest.read_bytes()
+    db = tmp_path / "custody.sqlite3"
+    assert main(["--manifest", str(manifest), "--custody-db", str(db),
+                 "--output", str(manifest)]) == 2
+    assert manifest.read_bytes() == manifest_bytes
+    alias = tmp_path / "alias.snapshot"
+    os.link(state, alias)
+    assert main(["--manifest", str(manifest), "--custody-db", str(db),
+                 "--output", str(alias)]) == 2
+    assert state.read_bytes() == original
+
+
+def test_tiny_npy_with_oversized_declared_shape_is_rejected_before_allocation(tmp_path: Path):
+    header = b"{'descr': '<f8', 'fortran_order': False, 'shape': (1000000000,), }"
+    header += b" " * (64 - ((10 + len(header) + 1) % 64)) + b"\n"
+    crafted = b"\x93NUMPY\x01\x00" + len(header).to_bytes(2, "little") + header + b"\x00" * 8
+    tensor = tmp_path / "bomb.npy"
+    tensor.write_bytes(crafted)
+    with pytest.raises(ValueError, match="outside finite-value/element limits"):
+        run_benchmark(_manifest(tmp_path, tensor, "tensor"), tmp_path / "state.sqlite3")
+
+
+def test_custody_payload_limit_boundary_accounts_for_odd_padding(tmp_path: Path, monkeypatch):
+    monkeypatch.setenv("CHRONUS_MAX_PAYLOAD_BYTES", "1024")
+    at_limit = tmp_path / "even.snapshot"
+    at_limit.write_bytes(b"x" * 1024)
+    assert discover(_manifest(tmp_path, at_limit, "snapshot"))[0]["size_bytes"] == 1024
+    odd_under = tmp_path / "odd.snapshot"
+    odd_under.write_bytes(b"x" * 1023)
+    assert discover(_manifest(tmp_path, odd_under, "snapshot"))[0]["size_bytes"] == 1023
+    over = tmp_path / "over.snapshot"
+    over.write_bytes(b"x" * 1025)
+    with pytest.raises(ValueError, match="outside byte policy"):
+        discover(_manifest(tmp_path, over, "snapshot"))

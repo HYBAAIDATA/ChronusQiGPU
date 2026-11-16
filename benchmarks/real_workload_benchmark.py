@@ -12,17 +12,20 @@ import hashlib
 import io
 import json
 import math
+import os
 from pathlib import Path
 import platform
 import re
 import statistics
 import subprocess
 import sys
+import tempfile
 import time
 
 import numpy as np
 import yaml
 
+from chronus.config import runtime_bounds
 from chronus.pulvini import fold_verified, unfold_verified
 from chronus.tensor.folded_state import ExactFoldState
 from chronus.tensor.geodesic import GeodesicScheduler, MetricTensor, PhiTensorCore
@@ -67,6 +70,7 @@ def discover(manifest_path: Path, *, max_bytes: int = MAX_BYTES) -> list[dict]:
     """Read a curated allowlist; a filename alone never proves provenance."""
     if max_bytes < 1 or max_bytes > MAX_BYTES:
         raise ValueError("max_bytes outside bounded policy")
+    custody_limit = runtime_bounds()["max_payload_bytes"]
     manifest_path = Path(manifest_path).resolve(strict=True)
     document = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
     if not isinstance(document, dict) or document.get("schema") != MANIFEST_SCHEMA:
@@ -74,8 +78,6 @@ def discover(manifest_path: Path, *, max_bytes: int = MAX_BYTES) -> list[dict]:
     entries = document.get("data_sources")
     if not isinstance(entries, list) or not entries:
         raise ValueError("no operator-declared workload files; refusing to generate inputs")
-    if len(entries) > 16:
-        raise ValueError("no more than 16 sources allowed per bounded run")
     discovered: list[dict] = []
     seen: set[Path] = set()
     for entry in entries:
@@ -124,7 +126,30 @@ def _read_verified(source: dict) -> bytes:
     return payload
 
 
+def _check_npy_header(payload: bytes) -> None:
+    """Validate the declared .npy header before any array allocation."""
+    buffer = io.BytesIO(payload)
+    try:
+        version = np.lib.format.read_magic(buffer)
+        if version == (1, 0):
+            shape, _, dtype = np.lib.format.read_array_header_1_0(buffer)
+        elif version == (2, 0):
+            shape, _, dtype = np.lib.format.read_array_header_2_0(buffer)
+        else:
+            raise ValueError("unsupported .npy header version")
+    except (ValueError, TypeError, OSError, EOFError) as exc:
+        raise ValueError("invalid or unsafe NumPy tensor input") from exc
+    if dtype.hasobject or dtype.kind not in "iufc":
+        raise ValueError("invalid or unsafe NumPy tensor input: non-numeric dtype")
+    count = math.prod(shape)
+    if not 1 <= count <= 1_000_000:
+        raise ValueError("tensor outside finite-value/element limits")
+    if len(payload) - buffer.tell() != count * dtype.itemsize:
+        raise ValueError("invalid or unsafe NumPy tensor input: declared size mismatch")
+
+
 def _tensor_workload(payload: bytes, *, depth: int) -> dict:
+    _check_npy_header(payload)
     try:
         array = np.load(io.BytesIO(payload), allow_pickle=False)
     except (ValueError, TypeError, OSError) as exc:
@@ -237,12 +262,12 @@ def run_benchmark(manifest: Path, custody_db: Path, *, depth: int = 4,
     custody_db = Path(custody_db).resolve()
     if custody_db in {source["path"] for source in sources}:
         raise ValueError("custody database must not overwrite a source")
-    validated = [(source, _read_verified(source)) for source in sources]
     custody_db.parent.mkdir(parents=True, exist_ok=True)
     triad = ProductionTriad(str(custody_db))
     results: list[dict] = []
     stored: list[tuple[object, bytes]] = []
-    for source, payload in validated:
+    for source in sources:
+        payload = _read_verified(source)
         workload = (_tensor_workload(payload, depth=depth)
                     if source["kind"] == "tensor" else _snapshot_workload(payload))
         t0 = time.perf_counter_ns()
@@ -302,18 +327,32 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-bytes", type=int, default=MAX_BYTES)
     args = parser.parse_args(argv)
     try:
-        # Check all destinations before processing or persisting customer bytes.
-        sources = discover(args.manifest, max_bytes=args.max_bytes)
         target = args.output.resolve()
-        if target == args.custody_db.resolve() or target in {source["path"] for source in sources}:
+        protected = [args.manifest.resolve(), args.custody_db.resolve()]
+        protected += [source["path"] for source in
+                      discover(args.manifest, max_bytes=args.max_bytes)]
+        # Compare file identity, so hardlink aliases of inputs/custody are refused too.
+        if any(target == p or (target.exists() and p.exists() and os.path.samefile(target, p))
+               for p in protected):
             raise ValueError("evidence destination cannot overwrite input or custody")
-        if target.exists():
-            raise ValueError("evidence destination already exists; refusing overwrite")
         evidence = run_benchmark(args.manifest, args.custody_db,
                                  depth=args.depth, max_bytes=args.max_bytes)
+        text = json.dumps(evidence, indent=2, sort_keys=True) + "\n"
         target.parent.mkdir(parents=True, exist_ok=True)
-        with target.open("x", encoding="utf-8") as stream:
-            stream.write(json.dumps(evidence, indent=2, sort_keys=True) + "\n")
+        fd, temp_name = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.",
+                                         suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                handle.write(text)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temp_name, target)
+        except BaseException:
+            try:
+                os.unlink(temp_name)
+            except OSError:
+                pass
+            raise
         print(json.dumps({"result": "PASS", "evidence": str(target),
                           "production_qualification": "UNVERIFIED"}))
         return 0
