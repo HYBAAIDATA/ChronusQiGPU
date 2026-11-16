@@ -57,3 +57,22 @@ def test_invalid_coefficients_rejected(scalar):
     left=executor.fold(np.ones(8,dtype=float))
     with pytest.raises(ValueError,match="scalar"):
         executor.execute_folded_linear(left,left,alpha=scalar)
+
+
+def test_corrupted_final_size_fails_before_folded_arithmetic():
+    from dataclasses import replace
+    from chronus.tensor.folded_compute import VerifiedFoldedOperand
+
+    executor=FoldedTensorExecutor(depth=1)
+    left=executor.fold(np.arange(5,dtype=float))
+    assert left.state.sizes == (5,3)
+    broken=VerifiedFoldedOperand(replace(left.state,sizes=(5,2)),left.evidence)
+    with pytest.raises(ValueError,match="chronology"):
+        executor.execute_folded_linear(broken,broken)
+
+
+def test_large_integer_scalar_cannot_round_before_composition():
+    executor=FoldedTensorExecutor(depth=2)
+    operand=executor.fold(np.arange(12,dtype=float))
+    with pytest.raises(ValueError,match="exactly representable"):
+        executor.execute_folded_linear(operand,operand,alpha=np.int64(2**53+1))
