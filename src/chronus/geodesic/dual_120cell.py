@@ -15,7 +15,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import lru_cache
 from itertools import combinations
-from typing import Tuple
 
 from chronus.ns_dec import build_h4_600_cell_polytope
 
