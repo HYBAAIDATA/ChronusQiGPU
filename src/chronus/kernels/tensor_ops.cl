@@ -26,8 +26,11 @@ __kernel void tensor_matmul(
     const uint m,
     const uint k,
     const uint n) {
-    size_t row = get_global_id(0);
-    size_t col = get_global_id(1);
+    // Adjacent x-lanes access adjacent columns of B and output C.
+    // y-lanes advance rows; this is an indexing improvement, not a
+    // measured device throughput or tiled GEMM claim.
+    size_t col = get_global_id(0);
+    size_t row = get_global_id(1);
     if (row >= m || col >= n) return;
     float acc = 0.0f;
     for (uint t = 0; t < k; ++t) {
