@@ -141,7 +141,8 @@ class DurableReceiptLog(ReceiptLog):
             return False, "trusted public key mismatch"
         try:
             recovered = self._read_verified()
-        except (ReceiptCustodyError, ValueError, RuntimeError):
+        except Exception:
+            # Any unavailable storage or replay dependency must deny verification.
             return False, "THESEUS receipt custody failed verification"
         if recovered != self._entries:
             return False, "THESEUS receipt stream disagrees with local chain"
