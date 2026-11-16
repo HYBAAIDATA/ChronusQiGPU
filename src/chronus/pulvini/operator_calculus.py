@@ -115,6 +115,8 @@ class PulviniOperatorCalculus:
         x = np.asarray(vector)
         if x.ndim != 1 or A.ndim != 2 or A.shape != (x.size,x.size):
             raise ValueError("operator and vector shape mismatch")
+        if not np.issubdtype(A.dtype,np.number) or not np.all(np.isfinite(A)):
+            raise ValueError("operator must have finite numeric original input dtype")
         if not np.issubdtype(x.dtype,np.number) or not np.all(np.isfinite(x)):
             raise ValueError("vector outside finite numerical contract")
         # Integer matrix products may wrap before the comparator runs.
