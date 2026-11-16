@@ -178,3 +178,40 @@ def test_m32_public_exact_partition_and_numeric_ridges():
     assert not np.any(np.diag(adjacency))
     assert int(adjacency.sum()) == 180
     assert m32.adjacency_classification.startswith("APPROXIMATE_FLOAT64_")
+
+
+def test_discovery_rational_determinant_extreme_integer_regression():
+    n = 2**54
+    matrix = ((n, n-1),(n-1,n-1))
+    assert exact_determinant(matrix) == n-1
+    assert is_spd(matrix)
+    only_graph = ManifoldDiscovery.propose_manifold(
+        graph_vertices=120,graph_edges=720,regular_degree=12)
+    assert only_graph["candidates"] == ["H4_600_CELL_GRAPH"]
+    unknown_graph = ManifoldDiscovery.propose_manifold(
+        graph_vertices=50,graph_edges=70,regular_degree=3)
+    assert unknown_graph["candidates"] == []
+
+
+def test_fiber_transition_mutation_cannot_bypass_inverse_link():
+    from types import MappingProxyType
+    supplied = {(0,1): IDENTITY}
+    bundle = FiniteH4FiberBundle(supplied)
+    supplied[(1,0)] = inversion_transition()
+    assert bundle.transport((0,1,0), 5) == 5
+    assert len(bundle.transitions) == 1
+    with pytest.raises(TypeError):
+        bundle.transitions[(1,0)] = inversion_transition()
+
+
+def test_exact_icosa_face_normal_support_is_three_vertices():
+    from chronus.geodesic.m32 import build_m32_domains
+    d = build_m32_domains()
+    for domain in d[12:]:
+        dots = [sum((a*b for a,b in zip(domain.normal, v.normal)), Q5(0))
+                for v in d[:12]]
+        high = dots[0]
+        for val in dots[1:]:
+            if (val - high).sign() > 0:
+                high = val
+        assert sum((val - high).is_zero() for val in dots) == 3
