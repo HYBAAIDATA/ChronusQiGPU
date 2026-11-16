@@ -21,6 +21,61 @@
 
 Zip members were listed and archived source class definitions inspected. Archive SHA-256 means the source archive was read intact; it **does not** establish current implementation equivalence, execution or historical benchmark reproduction.
 
+## PULVINI owner handoff: exact Git-blob equivalence
+
+The recovered `HYBA_PULVINI_V3_OWNER_RESEARCH_HANDOFF_20261115.zip` was
+unpacked offline and its `integration_seam/` files compared with the active
+private repository using Git blob SHA-1 (the same hashing rule GitHub exposes
+on its `fetch_file` API). This comparison is stronger than a class-name match:
+
+| Recovered file | Git blob SHA-1 | Active tree |
+| --- | --- | --- |
+| `src/chronus/pulvini/formal.py` | `863c0397e9c9e8ee9935183f4b736153b8160f8b` | **IDENTICAL** |
+| `src/chronus/pulvini/interop.py` | `6b6a9d848799235de1427c2d31e04cf33a6139c7` | **IDENTICAL** |
+| `src/chronus/pulvini/__init__.py` | `7710d94658f7bae88f202866214fc23f4343c062` | **IDENTICAL** |
+| `tests/test_pulvini_research_locked.py` | `5a907423a0da88927ffca0278868e55a81ad9939` | **IDENTICAL** |
+| `tools/verify_pulvini_lock.py` | `417d3fb7ba5068bbf8c7cfc885f719b0354ae539` | **IDENTICAL** |
+| `.github/workflows/pulvini-research-guard.yml` | `66c6189e165a4e18b17243053b360d0d240ee7b0` | **IDENTICAL** |
+
+The archived `docs/research/PULVINI_V3_FOLD_AUTHORITY.md` differs from the
+current maintained document, which contains later amendments. **Do not overwrite
+the later source-of-truth document with the older handoff.** Repository ruleset
+enforcement and green CI are separate from byte equivalence; issues #98 and #92
+remain open.
+
+The recovered October `HYBA_Library_Millennium_Recovery_2026-10-28.zip`,
+`HYBA_1000_QUBIT_VQC_20260724.zip`, `hyba_final.zip` and
+`HYBA_Consolidation_Elevation_2026-10-28.zip` were also inventoried offline.
+Their filenames alone do not establish compatibility or transfer authority.
+The available archive inventories contain no `kellogg/` source package.
+Notion records identify formerly merged Kellogg implementations at
+`QuantumPhiEnterprise/PYTHIPhiMiner` PRs #55 and #59, but the historical
+private repository is currently not accessible through the GitHub connection.
+**Kellogg source recovery/compatibility remains UNAVAILABLE**, not restored.
+
+## Newly wired security and governance paths
+
+- `src/chronus/security/durable_receipts.py` provides versioned, signed
+  receipt custody/restart replay against canonical `DurableTheseusService`,
+  without transferring custody authority to AL HARAS or preserving private keys
+  in the store. `src/chronus/core/facade.py` Gate G2 now exercises restart,
+  signature, wrong-key and tamper negatives.
+- `src/chronus/service/mining_operator.py` is the AL HARAS authorisation
+  dependency on **all eleven** shared mining-administration routes (nine
+  mutating and two read-only). It derives a verified JWT identity from the
+  maintained authentication middleware; requires exact system-admin, subject
+  allowlist and owning tenant; rejects legacy tenant-only tokens; records
+  durable operator **admission**, not success.
+- Both Kubernetes manifests now use `/health/ready`, not an authenticated
+  global mining endpoint masquerading as readiness.
+- Tests cover genuine JWT admission and denial, tenant isolation, missing
+  custody, receipt restart, spoofing, mutation and tamper. See
+  [operational contract](../security/mining-operator-admission-and-receipt-custody.md).
+- The legacy `src/chronus/access_control.py` remains **UNBOUND / NOT
+  AUTHORITATIVE** under issue #91. The new routes do not import it. No fabricated
+  default exposure is promoted and no new competing security authority is
+  introduced.
+
 ## Active code reconciliation
 
 | Capability / authority | Current repository source | Regression surface | Disposition |
