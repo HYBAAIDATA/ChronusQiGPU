@@ -113,6 +113,13 @@ def load_env_config() -> Tuple[str, PoolEndpoint, str, str]:
     scheme, separator, bare_host = host_raw.partition("://")
     if not separator:
         scheme, bare_host = "stratum+tcp", host_raw
+        # Braiins and ViaBTC document "x" and "123" as ignored placeholders.
+        if password.strip() not in {"", "x", "123"}:
+            logger.warning(
+                "MINING_%s_HOST has no scheme, so this password is sent on cleartext "
+                "stratum+tcp. Use a stratum+ssl:// host when the password is a secret.",
+                active_pool,
+            )
     # Only bolt the port on when the host does not already carry one.
     if port_raw and ":" not in bare_host.rsplit("]", 1)[-1]:
         bare_host = f"{bare_host}:{port_raw}"
