@@ -8,6 +8,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+
+pytestmark = pytest.mark.simulated
 import yaml
 
 from benchmarks.real_workload_benchmark import (
@@ -131,3 +133,60 @@ def test_cli_refuses_existing_output_before_custody_write(tmp_path: Path):
                  "--output", str(destination)]) == 2
     assert json.loads(destination.read_text(encoding="utf-8")) == {"protected": True}
     assert not custody.exists()
+
+def test_malformed_yaml_produces_structured_fail(tmp_path: Path, capsys):
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text("schema: [unterminated", encoding="utf-8")
+    output = tmp_path / "evidence.json"
+    assert main(["--manifest", str(manifest), "--custody-db",
+                 str(tmp_path / "custody.sqlite3"), "--output", str(output)]) == 2
+    assert not output.exists()
+    assert "invalid YAML" in json.loads(capsys.readouterr().err)["reason"]
+
+
+def test_npy_header_must_be_bounded_before_numpy_load():
+    from benchmarks.real_workload_benchmark import _load_bounded_npy
+    header = b"{'descr': '<f8', 'fortran_order': False, 'shape': (1000000000,), }"
+    payload = b"\\x93NUMPY" + bytes((1, 0)) + len(header).to_bytes(2, "little") + header
+    with pytest.raises(ValueError, match="outside bounded policy"):
+        _load_bounded_npy(payload)
+
+
+def test_custody_payload_limit_applies_before_reads_or_writes(tmp_path: Path):
+    from chronus.config import runtime_bounds
+    from benchmarks.real_workload_benchmark import MAX_BYTES
+    effective = runtime_bounds()["max_payload_bytes"]
+    if effective > MAX_BYTES:
+        pytest.skip("configured custody exceeds benchmark's smaller absolute cap")
+    snapshot = tmp_path / "large.snapshot"
+    snapshot.write_bytes(b"x" * (effective + 1))
+    manifest = _manifest(tmp_path, snapshot, "snapshot")
+    with pytest.raises(ValueError, match="custody limit"):
+        discover(manifest)
+    assert not (tmp_path / "custody.sqlite3").exists()
+
+
+def test_cli_refuses_manifest_as_output(tmp_path: Path):
+    source = tmp_path / "a.snapshot"
+    source.write_bytes(b"intentionally operator-declared test bytes")
+    manifest = _manifest(tmp_path, source, "snapshot")
+    original = manifest.read_bytes()
+    db = tmp_path / "custody.sqlite3"
+    assert main(["--manifest", str(manifest), "--custody-db", str(db),
+                 "--output", str(manifest)]) == 2
+    assert manifest.read_bytes() == original
+    assert not db.exists()
+
+
+def test_cli_refuses_hardlink_alias_output(tmp_path: Path):
+    import os
+    source = tmp_path / "a.snapshot"
+    source.write_bytes(b"nonproduction byte fixture for path-collision testing")
+    alias = tmp_path / "hardlink-to-source.json"
+    os.link(source, alias)
+    manifest = _manifest(tmp_path, source, "snapshot")
+    db = tmp_path / "custody.sqlite3"
+    assert main(["--manifest", str(manifest), "--custody-db", str(db),
+                 "--output", str(alias)]) == 2
+    assert alias.read_bytes() == source.read_bytes()
+    assert not db.exists()
