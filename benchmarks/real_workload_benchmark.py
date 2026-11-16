@@ -74,6 +74,8 @@ def discover(manifest_path: Path, *, max_bytes: int = MAX_BYTES) -> list[dict]:
     entries = document.get("data_sources")
     if not isinstance(entries, list) or not entries:
         raise ValueError("no operator-declared workload files; refusing to generate inputs")
+    if len(entries) > 16:
+        raise ValueError("no more than 16 sources allowed per bounded run")
     discovered: list[dict] = []
     seen: set[Path] = set()
     for entry in entries:
@@ -235,12 +237,12 @@ def run_benchmark(manifest: Path, custody_db: Path, *, depth: int = 4,
     custody_db = Path(custody_db).resolve()
     if custody_db in {source["path"] for source in sources}:
         raise ValueError("custody database must not overwrite a source")
+    validated = [(source, _read_verified(source)) for source in sources]
     custody_db.parent.mkdir(parents=True, exist_ok=True)
     triad = ProductionTriad(str(custody_db))
     results: list[dict] = []
     stored: list[tuple[object, bytes]] = []
-    for source in sources:
-        payload = _read_verified(source)
+    for source, payload in validated:
         workload = (_tensor_workload(payload, depth=depth)
                     if source["kind"] == "tensor" else _snapshot_workload(payload))
         t0 = time.perf_counter_ns()
@@ -300,15 +302,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-bytes", type=int, default=MAX_BYTES)
     args = parser.parse_args(argv)
     try:
+        # Check all destinations before processing or persisting customer bytes.
+        sources = discover(args.manifest, max_bytes=args.max_bytes)
+        target = args.output.resolve()
+        if target == args.custody_db.resolve() or target in {source["path"] for source in sources}:
+            raise ValueError("evidence destination cannot overwrite input or custody")
+        if target.exists():
+            raise ValueError("evidence destination already exists; refusing overwrite")
         evidence = run_benchmark(args.manifest, args.custody_db,
                                  depth=args.depth, max_bytes=args.max_bytes)
-        target = args.output.resolve()
-        if target == args.custody_db.resolve() or target in {
-                source["path"] for source in discover(args.manifest, max_bytes=args.max_bytes)}:
-            raise ValueError("evidence destination cannot overwrite input or custody")
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n",
-                          encoding="utf-8")
+        with target.open("x", encoding="utf-8") as stream:
+            stream.write(json.dumps(evidence, indent=2, sort_keys=True) + "\n")
         print(json.dumps({"result": "PASS", "evidence": str(target),
                           "production_qualification": "UNVERIFIED"}))
         return 0
