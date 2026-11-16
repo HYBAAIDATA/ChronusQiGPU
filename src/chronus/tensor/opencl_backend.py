@@ -172,11 +172,20 @@ class OpenCLTensorBackend:
         elif op == "scale":
             if len(arrays) != 1 or scalar is None:
                 raise ValueError("scale requires one tensor and scalar")
+            if isinstance(scalar, (str, bytes, bool)) or not np.isscalar(scalar):
+                raise ValueError("float32 scale scalar must be finite and numeric")
+            try:
+                converted_scalar = np.float32(scalar)
+            except (ValueError, TypeError, OverflowError) as exc:
+                raise ValueError("float32 scale scalar outside numerical policy") from exc
+            if (not np.isfinite(converted_scalar) or not np.isfinite(scalar)
+                    or float(converted_scalar) != float(scalar)):
+                raise ValueError("scale scalar would lose precision in float32")
             out = np.empty_like(arrays[0])
             out_buf = cl.Buffer(self._context, mf.WRITE_ONLY, out.nbytes)
             self._program.tensor_scale(
                 self._queue, (out.size,), None, buffers[0], out_buf,
-                np.float32(scalar), np.uint32(out.size)
+                converted_scalar, np.uint32(out.size)
             )
         elif op == "matmul":
             if len(arrays) != 2 or arrays[0].ndim != 2 or arrays[1].ndim != 2:
@@ -218,6 +227,10 @@ class OpenCLTensorBackend:
 
         cl.enqueue_copy(self._queue, out, out_buf).wait()
         self._queue.finish()
+        if not np.all(np.isfinite(out)):
+            raise OpenCLTensorUnavailable(
+                f"OpenCL tensor {op} returned non-finite numerical output"
+            )
         # Verify the complete produced result, not just an unrelated startup
         # test. Host reference checks are deliberately included in the call
         # boundary and must not be reported as accelerator-only throughput.
