@@ -37,3 +37,7 @@ The draft returned a **target supplied by the caller** from its purported geodes
 ## Next experiments
 
 Produce independent reproducible physical measurement datasets only where target hardware is present. Compare competitors on identical useful work and include losing configurations. Use THESEUS to retain provenance and AL HARAS for required authorization. Do not alter locked PULVINI formal research without owner-controlled change approval.
+
+## Demonstrated new bounded capability: direct PULVINI partial reconstruction
+
+`chronus.tensor.pulvini_selective.unfold_partial_recursive` traverses only the requested indices through the exact protected fold chronology and the retained kernel entries. Unlike a full-unfold-and-slice compatibility path, it does not reconstruct unselected tensor values. Direct comparison against the original formally protected implementation passed sixteen focused real/complex unit cases and three public observed data workloads. Complexity for a bounded flat interval is O(depth x requested values); no O(1) claim or full-source checksum proof is inferred from a partial selection. This is numerical PULVINI output, not bit-exact M15 representation or net compression.
