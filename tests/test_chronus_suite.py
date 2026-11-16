@@ -15,7 +15,7 @@ from chronus.config import (
 
 
 class TestChronusMasterSuite(unittest.TestCase):
-    def test_full_verification_suite(self):
+    def test_full_verification_suite_fails_closed_without_external_evidence(self):
         res = ChronusVerificationOrchestrator.run_complete_verification_suite()
         # A local diagnostic is never independent release qualification.
         self.assertEqual(res["qualification_status"], "NOT_QUALIFIED")

@@ -1,5 +1,7 @@
 # Chronus Elevation Roadmap
 
+> **15 Nov close-out update:** The generic fleet CUDA adapter remains probe/gate-only, but the maintained tensor package now has explicit fail-closed CUDA C and Metal/MLX execution backends, alongside the OpenCL tensor backend. These tensor routes are implemented software surfaces; physical performance and promotion remain device-evidence gated. Durable THESEUS custody and the OVID transform/materialisation contract are now implemented under the canonical triad. See [TRIAD_PRODUCTION_CLOSEOUT.md](production/TRIAD_PRODUCTION_CLOSEOUT.md).
+
 **Product owner:** HYBA Data
 **Original roadmap date:** 2026-10-08
 **Audited and elevated:** 2026-11-13
@@ -97,7 +99,7 @@ This revision **replaces rather than deletes** every proposed expansion surface:
 | Native C++ SIMD | Optional implemented route | Hardware/library-dependent tests only | Load identified library; known answers and tile parity |
 | Intel / other OpenCL GPU | Kernels and adapter implemented | **Not executed on OpenCL GPU silicon here** | Device/driver identity, all applicable known answers, exact fleet result, raw receipt |
 | Apple Metal (MLX / PyObjC) | Kernels and adapter implemented | CPU stand-in arithmetic tests only; **not executed on Apple GPU silicon here** | Identified Apple device, both applicable engines as supported, known answers and raw receipt |
-| NVIDIA CUDA | Probe exists; no CUDA kernel implementation | Fails closed | Implement kernels, then repeat full hardware conformance; probe alone is insufficient |
+| NVIDIA CUDA | Generic fleet route remains probe-only; explicit tensor CUDA C backend is implemented in `src/chronus/tensor/cuda_backend.py` | Software route present; physical device not evidenced here | Identified CUDA device, parity, current timings and raw receipt before promotion |
 | AMD ROCm | No active fleet route | **Unavailable / NOT_RUN** | New route contract, real kernels, known answers, hardware receipt |
 | Intel oneAPI | No active fleet route | **Unavailable / NOT_RUN** | New route contract, real kernels, known answers, hardware receipt |
 | Docker control | Environment row retained | `DOCKER_ENVIRONMENT_NOT_EXECUTED` | Build and run the declared container; retain image digest and raw log |

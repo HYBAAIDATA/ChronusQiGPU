@@ -1,4 +1,4 @@
-"""Package-level production qualification orchestrator and verification facade.
+"""Chronus verification facade.
 
 Runs bounded local diagnostics. Does not certify production qualification or
 assert unverified architectural invariants.
