@@ -55,3 +55,16 @@ def test_complex_selective_reconstruction():
     index = VerifiedFoldIndex.compile(executor.fold(original))
     np.testing.assert_allclose(index.read(50,62),original[50:62],
                                rtol=1e-12,atol=1e-12)
+
+
+def test_corrupt_final_fold_size_cannot_misroute_partial_reads():
+    from dataclasses import replace
+    from chronus.tensor.folded_compute import VerifiedFoldedOperand
+    executor = FoldedTensorExecutor(depth=1)
+    original = executor.fold(np.arange(5, dtype=float))
+    assert original.state.sizes == (5, 3)
+    corrupted = VerifiedFoldedOperand(
+        replace(original.state, sizes=(5, 2)), original.evidence
+    )
+    with pytest.raises(ValueError, match="chronology"):
+        VerifiedFoldIndex.compile(corrupted)
