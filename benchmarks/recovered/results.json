@@ -1,0 +1,184 @@
+{
+  "platform": "Linux-6.12.76-x86_64-with-glibc2.34",
+  "python": "3.13.13",
+  "numpy": "2.5.1",
+  "manifold_construction_seconds": {
+    "32": 0.000606,
+    "64": 0.000109,
+    "128": 0.000191,
+    "256": 0.000647
+  },
+  "qsdl_parse_compile": {
+    "parse_seconds": 0.000288,
+    "compile_seconds_including_parse": 0.000649,
+    "source_bytes": 441
+  },
+  "full_render_at_scale": {
+    "32": {
+      "wall_seconds": 4.0364,
+      "energy": -7.337994,
+      "rendered_pixels_hit": 1832112,
+      "total_pixels": 33177600,
+      "frame_shape": [
+        4320,
+        7680,
+        3
+      ],
+      "raster_compression_ratio": 3628800.0,
+      "distinct_distribution_values": 32
+    },
+    "64": {
+      "wall_seconds": 4.1696,
+      "energy": -7.337994,
+      "rendered_pixels_hit": 1832112,
+      "total_pixels": 33177600,
+      "frame_shape": [
+        4320,
+        7680,
+        3
+      ],
+      "raster_compression_ratio": 3628800.0,
+      "distinct_distribution_values": 32
+    },
+    "128": {
+      "wall_seconds": 4.0792,
+      "energy": -7.337994,
+      "rendered_pixels_hit": 1832112,
+      "total_pixels": 33177600,
+      "frame_shape": [
+        4320,
+        7680,
+        3
+      ],
+      "raster_compression_ratio": 3628800.0,
+      "distinct_distribution_values": 32
+    },
+    "256": {
+      "wall_seconds": 4.0995,
+      "energy": -7.337994,
+      "rendered_pixels_hit": 1832112,
+      "total_pixels": 33177600,
+      "frame_shape": [
+        4320,
+        7680,
+        3
+      ],
+      "raster_compression_ratio": 3628800.0,
+      "distinct_distribution_values": 32
+    }
+  },
+  "bcs_gap_solver": {
+    "tc_kelvin": 9.2,
+    "delta0_joules": 2.2355468608e-22,
+    "points": [
+      {
+        "temperature_k": 0.0,
+        "gap_joules": 2.2355468608e-22,
+        "solve_seconds": 4e-06
+      },
+      {
+        "temperature_k": 2.76,
+        "gap_joules": 2.229018796170237e-22,
+        "solve_seconds": 0.00237
+      },
+      {
+        "temperature_k": 5.52,
+        "gap_joules": 2.0255192619272945e-22,
+        "solve_seconds": 0.001814
+      },
+      {
+        "temperature_k": 8.28,
+        "gap_joules": 1.1638167146458835e-22,
+        "solve_seconds": 0.001784
+      },
+      {
+        "temperature_k": 9.108,
+        "gap_joules": 3.316805897319851e-23,
+        "solve_seconds": 0.001677
+      }
+    ]
+  },
+  "theory_self_tests": {
+    "total_seconds": 2.9225,
+    "results": {
+      "oscillator_array": "oscillator_array._self_test: PASS",
+      "cryogenics": "cryogenics._self_test: PASS",
+      "superconductivity": "superconductivity._self_test: PASS",
+      "photonics": "photonics._self_test: PASS",
+      "anyons": "anyons._self_test: PASS",
+      "metrology": "metrology._self_test: PASS",
+      "qcd": "qcd._self_test: PASS",
+      "control": "control._self_test: PASS",
+      "error_correction": "error_correction._self_test: PASS",
+      "chemistry": "chemistry._self_test: PASS"
+    }
+  },
+  "academic_suite": {
+    "total_seconds": 12.3471,
+    "nist_benchmark_average_score": 65.44281149060363,
+    "tensor_train_compression_ratio": 1.3407264854683024e+297
+  },
+  "phi_power_scaling": {
+    "total_seconds": 14.6356,
+    "empirical_scaling_exponent": 1.9592611979426033,
+    "tiers": [
+      {
+        "power": 10,
+        "n_faces_exact_lucas_check": 122.99186938124426,
+        "n_faces": 123,
+        "measured": true,
+        "wall_time_seconds": 4.040164885000081,
+        "eigh_seconds": 0.0033153220000485817,
+        "energy": -19.235312990988128
+      },
+      {
+        "power": 12,
+        "n_faces_exact_lucas_check": 321.996894379985,
+        "n_faces": 322,
+        "measured": true,
+        "wall_time_seconds": 4.430164366999975,
+        "eigh_seconds": 0.017430370999932165,
+        "energy": -48.04383065005868
+      },
+      {
+        "power": 15,
+        "n_faces_exact_lucas_check": 1364.0007331374366,
+        "n_faces": 1364,
+        "measured": true,
+        "wall_time_seconds": 6.162293631000011,
+        "eigh_seconds": 0.35934593299998596,
+        "energy": -205.6467013785448
+      },
+      {
+        "power": 18,
+        "n_faces_exact_lucas_check": 5777.999826929732,
+        "n_faces": 5778,
+        "measured": false,
+        "wall_time_seconds": NaN,
+        "eigh_seconds": 5.7461219834916335,
+        "energy": NaN
+      },
+      {
+        "power": 20,
+        "n_faces_exact_lucas_check": 15126.999933893048,
+        "n_faces": 15127,
+        "measured": false,
+        "wall_time_seconds": NaN,
+        "eigh_seconds": 37.87019735029584,
+        "energy": NaN
+      }
+    ]
+  },
+  "total_benchmark_wall_seconds": 46.316,
+  "promotion": {
+    "promoted_by": "owner-direction-20261116",
+    "status": "RECOVERED_MEASURED",
+    "scope": "8K end-to-end render at 7680x4320 on CPU reference (deterministic energy -7.337994, wall fixed by resolution not manifold size); BCS gap solver; theory self-tests; phi-scaling measured tiers only (phi18/phi20 are projections, not measurements).",
+    "device": "virtual-device-by-design",
+    "bound_to_commit": null,
+    "source_archive": "chronos-one-igpu-v3.4",
+    "source_archive_sha256": "406a6b499ecee14a93e172ce274ae92c69381953cabadbd69903d326cc55642d",
+    "re_measured_on_head": false,
+    "promoted_at": "2026-11-16"
+  }
+}

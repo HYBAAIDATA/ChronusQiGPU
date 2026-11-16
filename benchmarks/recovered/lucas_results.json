@@ -5,9 +5,14 @@
   "commit_sha": "UNVERSIONED-WORKTREE",
   "promotion": {
     "promoted_by": "owner-direction-20261116",
-    "status": "internal-release",
+    "status": "RECOVERED_MEASURED",
     "scope": "Lucas-engine scalar reference: exact integer verification rates for the virtual iGPU path. Not GPU throughput, not FLOPS/EH/s.",
-    "device": "virtual-device-by-design"
+    "device": "virtual-device-by-design",
+    "bound_to_commit": null,
+    "source_archive": "chronos-one-igpu-v3.4",
+    "source_archive_sha256": "406a6b499ecee14a93e172ce274ae92c69381953cabadbd69903d326cc55642d",
+    "re_measured_on_head": false,
+    "promoted_at": "2026-11-16"
   },
   "lucas_sanity": {
     "L_0": 2,

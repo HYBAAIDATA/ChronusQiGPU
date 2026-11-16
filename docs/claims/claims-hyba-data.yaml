@@ -75,6 +75,13 @@ claims:
     owner: —
     notes: "Say this first on every call: payload is unchanged."
 
+  - id: HD-10
+    claim: recovered benchmark record (benchmarks/recovered/lucas_results.json, results.json), commit-unbound
+    status: recovered
+    falsifier: rerun recovery_merge/chronos-one-igpu-v3.4/benchmarks/lucas_engine_benchmark.py on HEAD and compare us_per_record
+    owner: benchmark
+    notes: "Promotion is not re-measurement. bound_to_commit=null, re_measured_on_head=false, source_archive_sha256 406a6b49…642d."
+
 refusals_schedule:
   description: >
     Every Refusal.code the procurement surface can emit is an exclusion in the

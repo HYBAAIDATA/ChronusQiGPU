@@ -7,9 +7,12 @@ no engine wiring for reference-only modules — not the archives' prose.
 """
 
 import json
+import re
 from pathlib import Path
 
 from chronus.qsdl.qsdl_compiler import QSDLCompiler
+
+RECOVERED = Path(__file__).resolve().parents[1] / "benchmarks" / "recovered"
 
 
 def test_qsdl_real_grammar_parses_scene():
@@ -27,7 +30,7 @@ def test_qsdl_legacy_label_still_resolves():
 
 def test_lucas_benchmark_record_shape_and_provenance():
     record = json.loads(
-        Path(__file__).parent.joinpath("recovered", "lucas_results.json").read_text()
+        RECOVERED.joinpath("lucas_results.json").read_text()
     )
     assert record["commit_sha"] == "UNVERSIONED-WORKTREE"
     for batch in record["batches"]:
@@ -45,9 +48,9 @@ def test_lucas_benchmark_record_shape_and_provenance():
 
 def test_8k_benchmark_record_promoted_with_scope():
     record = json.loads(
-        Path(__file__).parent.joinpath("recovered", "results.json").read_text()
+        RECOVERED.joinpath("results.json").read_text()
     )
-    assert record["promotion"]["status"] == "internal-release"
+    assert record["promotion"]["status"] == "RECOVERED_MEASURED"
     assert record["promotion"]["device"] == "virtual-device-by-design"
     render32 = record["full_render_at_scale"]["32"]
     assert render32["total_pixels"] == 7680 * 4320
@@ -56,6 +59,17 @@ def test_8k_benchmark_record_promoted_with_scope():
     measured = [t for t in record["phi_power_scaling"]["tiers"] if t["measured"]]
     projected = [t for t in record["phi_power_scaling"]["tiers"] if not t["measured"]]
     assert len(measured) == 3 and len(projected) == 2
+
+
+def test_promoted_records_stay_commit_unbound():
+    """Promotion is not re-measurement: these fields must never drift to 'current'."""
+    for name in ("lucas_results.json", "results.json"):
+        promotion = json.loads(RECOVERED.joinpath(name).read_text())["promotion"]
+        assert promotion["status"] == "RECOVERED_MEASURED", name
+        assert promotion["bound_to_commit"] is None, name
+        assert promotion["re_measured_on_head"] is False, name
+        assert promotion["source_archive"] == "chronos-one-igpu-v3.4", name
+        assert re.fullmatch(r"[0-9a-f]{64}", promotion["source_archive_sha256"]), name
 
 
 def test_recovered_reference_modules_not_imported_by_engine():
