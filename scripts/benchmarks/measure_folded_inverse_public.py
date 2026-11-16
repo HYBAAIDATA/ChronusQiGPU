@@ -119,6 +119,10 @@ def main(argv=None):
     parser.add_argument("--samples",type=int,default=61)
     args=parser.parse_args(argv)
     try:
+        # A portable, durable Windows directory-publication protocol is not
+        # implemented; refuse BEFORE any output is opened or created.
+        if os.name != "posix" or not hasattr(os, "O_DIRECTORY"):
+            raise ValueError("durable evidence publication requires POSIX directory fsync")
         target=args.output.resolve()
         if target.exists() or target==args.data.resolve():
             raise ValueError("refusing to overwrite evidence or its source")
@@ -139,9 +143,18 @@ def main(argv=None):
             os.unlink(staged)
         # The file is durable only after the new directory entry is synced.
         # A sync failure returns FAIL rather than claiming persistent evidence.
-        dir_fd = os.open(target.parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+        dir_fd = os.open(target.parent, os.O_RDONLY | os.O_DIRECTORY)
         try:
-            os.fsync(dir_fd)
+            try:
+                os.fsync(dir_fd)
+            except OSError:
+                # Do not leave a file explicitly reported FAIL when possible.
+                target.unlink(missing_ok=True)
+                try:
+                    os.fsync(dir_fd)
+                except OSError:
+                    pass
+                raise
         finally:
             os.close(dir_fd)
         print(json.dumps({"result":"PASS","output":str(target),
