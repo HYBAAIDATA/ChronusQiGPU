@@ -54,6 +54,79 @@ def _head() -> str | None:
         return None
 
 
+
+def _paired_verified_work(array: np.ndarray, core: PhiTensorCore, *, depth: int,
+                          repetitions: int = 13, warmup: int = 2) -> dict:
+    """Measure matched useful work including ALL verified folding overhead.
+
+    Both routes compute x+x on the same observed numeric tensor. The candidate
+    folds, verifies, independently unfolds, then executes through Chronus.
+    The reference directly computes the same addition through NumPy. This is
+    a CPU software comparison, never a quantum or device acceleration proof.
+    """
+    if type(repetitions) is not int or not 3 <= repetitions <= 201:
+        raise ValueError("matched repetitions must be within 3..201")
+    if type(warmup) is not int or not 0 <= warmup <= 20:
+        raise ValueError("warmup outside policy")
+    reference_output = np.add(array, array)
+    candidate_ns, reference_ns = [], []
+    maximum_error = 0.0
+
+    def _candidate() -> np.ndarray:
+        state, receipt = fold_verified(array, depth=depth)
+        if receipt.retained_bytes != receipt.folded_bytes + receipt.kernel_bytes:
+            raise ValueError("incomplete PULVINI retained-state accounting")
+        reconstructed = unfold_verified(state, receipt=receipt)
+        operation = core.execute("add", reconstructed, reconstructed)
+        if operation["backend"] != "numpy-reference":
+            raise ValueError("unexpected or unverified tensor backend")
+        return operation["output"]
+
+    def _reference() -> np.ndarray:
+        return np.add(array, array)
+
+    for i in range(warmup + repetitions):
+        measured = i >= warmup
+        calls = ((_candidate, candidate_ns), (_reference, reference_ns)) if i % 2 else (
+            (_reference, reference_ns), (_candidate, candidate_ns))
+        for execute, samples in calls:
+            start = time.perf_counter_ns()
+            output = execute()
+            elapsed = time.perf_counter_ns() - start
+            if not np.allclose(output, reference_output, rtol=1e-12, atol=1e-12):
+                raise ValueError("matched useful-work output parity failed")
+            maximum_error = max(maximum_error, float(np.max(np.abs(output - reference_output))))
+            if measured:
+                samples.append(elapsed)
+
+    direct_median = statistics.median(reference_ns)
+    candidate_median = statistics.median(candidate_ns)
+    if direct_median <= 0 or candidate_median <= 0:
+        raise ValueError("timing clock resolution insufficient for comparison")
+    speedup = direct_median / candidate_median
+    return {
+        "classification": "MATCHED_CPU_REFERENCE_WORK_NOT_QUANTUM_ACCELERATION",
+        "useful_work": "add same observed tensor to itself with output tolerance 1e-12",
+        "reference_path": "direct NumPy add, same input",
+        "candidate_path": "verified PULVINI fold, verified unfold, PhiTensorCore add",
+        "candidate_backend": "numpy-reference",
+        "fold_and_verification_in_timed_candidate": True,
+        "input_generated": False,
+        "same_result_within_tolerance": True,
+        "maximum_absolute_output_error": maximum_error,
+        "warmups_per_path": warmup,
+        "measured_pairs": repetitions,
+        "direct_add_ns": _stats(reference_ns),
+        "fold_unfold_add_ns": _stats(candidate_ns),
+        "raw_direct_add_ns": reference_ns,
+        "raw_fold_unfold_add_ns": candidate_ns,
+        "observed_speedup_direct_over_folded": speedup,
+        "target_speedup": 13.0,
+        "meets_13x_target": speedup >= 13.0,
+        "physical_or_quantum_advantage_claimed": False,
+        "production_qualification": "UNVERIFIED",
+    }
+
 def _measure_source(path: Path, expected: str, kind: str, *, depth: int) -> dict:
     if path.is_symlink() or not path.is_file() or path.stat().st_size > (1 << 20):
         raise ValueError("missing, linked or oversize public dataset")
@@ -126,6 +199,7 @@ def _measure_source(path: Path, expected: str, kind: str, *, depth: int) -> dict
             "pulvini_bitwise_identical": restored.tobytes() == array.tobytes(),
             "net_compression_claim": False,
         }
+        result["matched_useful_work"] = _paired_verified_work(array, core, depth=depth)
     elif kind != "snapshot":
         raise ValueError("unsupported public input kind")
 
@@ -191,6 +265,7 @@ def run(manifest: Path, depth: int = 4) -> dict:
         "logical_cpus": os.cpu_count(), "input_data_generated": False,
         "warmup_fold_calls": 3, "samples_verified_fold": 31,
         "warmup_add_calls": 10, "samples_add": 201,
+        "matched_workload_repetitions": 13, "matched_workload_warmups": 2,
         "samples_byte_fold": 5, "samples_partial_read_per_fold": 31,
         "full_triad_execution": "NOT TESTED", "accelerator": "NOT MEASURED",
         "production_qualification": "UNVERIFIED", "measurements": results,
