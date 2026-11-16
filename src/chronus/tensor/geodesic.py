@@ -73,7 +73,8 @@ class TopologicalIntegrityGate:
     ) -> IntegrityVerdict:
         """Check GPU float32 GEMM against a bounded componentwise Higham bound.
 
-        gamma_k = k*u/(1-k*u), u=2**-24. The operands are the exact
+        Conservatively gamma_(2k) = 2k*u/(1-2k*u), u=2**-24,
+        covering non-fused multiplication followed by accumulation. The operands are the exact
         float32 input values promoted to float64 for the reference product.
         This tests output numerical integrity; it does NOT certify hardware,
         prove an error-free algorithm, or supply a speedup observation.
@@ -94,7 +95,7 @@ class TopologicalIntegrityGate:
             return IntegrityVerdict(False, float("inf"), shape_ok, dtype_ok)
         k = a.shape[1]
         unit_roundoff = 2.0 ** -24
-        if not k or k * unit_roundoff >= 1.0 or result.size > 16_777_216:
+        if not k or 2 * k * unit_roundoff >= 1.0 or result.size > 16_777_216:
             return IntegrityVerdict(False, float("inf"), shape_ok, dtype_ok)
         if not (np.all(np.isfinite(a)) and np.all(np.isfinite(b))
                 and np.all(np.isfinite(result))):
@@ -103,10 +104,10 @@ class TopologicalIntegrityGate:
         with np.errstate(over="ignore", invalid="ignore"):
             reference = aa @ bb
             magnitude = np.abs(aa) @ np.abs(bb)
-            gamma_k = (k * unit_roundoff) / (1.0 - k * unit_roundoff)
+            gamma_k = (2 * k * unit_roundoff) / (1.0 - 2 * k * unit_roundoff)
             # Reference float64 GEMM also rounds; its error budget is
             # explicitly included rather than assumed to be exact.
-            gamma64 = (k * 2.0 ** -53) / (1.0 - k * 2.0 ** -53)
+            gamma64 = (2 * k * 2.0 ** -53) / (1.0 - 2 * k * 2.0 ** -53)
             bound = (gamma_k + gamma64) * magnitude
             difference = np.abs(result.astype(np.float64) - reference)
         if not (np.all(np.isfinite(reference)) and np.all(np.isfinite(bound))
