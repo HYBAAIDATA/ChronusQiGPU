@@ -233,3 +233,26 @@ def test_sidecar_paths_are_not_evidence_destinations(tmp_path: Path, suffix: str
                  "--output", str(path)]) == 2
     assert not db.exists()
     assert not path.exists()
+
+
+def test_explicit_empty_source_selection_never_opens_custody(tmp_path: Path):
+    manifest = tmp_path / 'manifest.yaml'
+    manifest.write_text(yaml.safe_dump({
+        'schema': MANIFEST_SCHEMA, 'data_sources': []}))
+    database = tmp_path / 'custody.sqlite3'
+    with pytest.raises(ValueError, match='no operator-declared'):
+        run_benchmark(manifest, database, sources=[])
+    assert not database.exists()
+
+
+def test_custody_hardlink_to_input_fails_before_writing(tmp_path: Path):
+    import os
+    source = tmp_path / 'actual.snapshot'
+    source.write_bytes(b'file collected for deterministic nonproduction custody boundary tests')
+    manifest = _manifest(tmp_path, source, 'snapshot')
+    alias = tmp_path / 'alias.sqlite3'
+    os.link(source, alias)
+    original = source.read_bytes()
+    with pytest.raises(ValueError, match='aliases a protected source'):
+        run_benchmark(manifest, alias)
+    assert source.read_bytes() == original
