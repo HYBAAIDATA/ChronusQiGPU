@@ -82,3 +82,19 @@ A measured PULVINI source-only result must never be labelled as full
 Chronus execution, physical acceleration, customer production data or an
 independently signed deployment report. Full `ProductionTriad` evidence
 requires running the entire maintained checkout on the named target host.
+
+## Direct PULVINI selective recovery — public observational validation
+
+The bounded tensor-level API `chronus.tensor.pulvini_selective.unfold_partial_recursive` directly walks only the requested folded/kernel indices. It never invokes full unfolding internally, and partial output does **not** verify a full original SHA-256. The protected formal operator was not modified.
+
+Three genuine UCI observational datasets redistributed with scikit-learn 1.8.0 were used. Inputs are SHA-pinned and both executed modules were validated against their **exact Git blobs** (formal 863c0397e9c9e8ee9935183f4b736153b8160f8b, selective 69c20486cd4c36eb7339d0de3c9972e7e4350c8c). Each had 31 local measurements of a 64-value partial extraction at depth 4.
+
+| Dataset | Observations | Partial-recovery median | Numeric correctness |
+| --- | ---: | ---: | --- |
+| UCI digits | 1,797 x 64 | 0.393 ms | Within 1e-12 |
+| UCI wine | 178 x 13 | 0.374 ms | Within 1e-12 |
+| UCI breast cancer (WDBC) | 569 x 30 | 0.375 ms | Within 1e-12 |
+
+Reproduce with the script `scripts/benchmarks/measure_selective_public.py` and a *new* output path; the source blob and input digest checks fail closed. Raw per-call data is retained in `evidence/benchmarks/selective-public-observed-20261116.json`.
+
+These are isolated Linux CPU software observations only: no physical iGPU, device bandwidth, net compression, quantum advantage, production-traffic qualification, independent signing or total energy result is inferred.
