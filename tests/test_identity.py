@@ -119,6 +119,14 @@ def test_dotted_key_is_not_a_nested_path():
     assert nested[0].changed_keys == ("a.b",)
 
 
+def test_empty_key_is_not_dropped_from_the_path():
+    faces = assert_ovid(
+        {"": {"x": 1}, "x": 1},
+        [Transformation("edit", lambda record: {"": {"x": 2}, "x": 2}, False)],
+    )
+    assert faces[0].changed_keys == (".x", "x")
+
+
 def test_ovid_snapshots_an_in_place_edit():
     record = {"amount": 1250.0, "nested": {"x": 0}}
     original = copy.deepcopy(record)
@@ -153,6 +161,32 @@ def test_chain_is_tied_to_the_record_and_rejects_a_reroot():
     )
     with pytest.raises(IdentityError, match="record origin"):
         truncated.verify()
+
+
+def test_expected_head_rejects_a_tail_edit():
+    one = assert_ovid(RECORD, [_swap("amount", 1).as_breaking()])
+    single = Chain.for_record(RECORD)
+    single.append(one[0])
+    stored = single.head()
+    assert single.verify(stored) == 1
+    link = single.links[0]
+    single.links[0] = (link[0], link[1], link[2] - 5.0, link[3], link[4], link[5])
+    with pytest.raises(IdentityError, match="chain head"):
+        single.verify(stored)
+
+    two = assert_ovid(
+        RECORD,
+        [_swap("amount", 1).as_breaking(), _swap("verified", False).as_breaking()],
+    )
+    chain = Chain.for_record(RECORD)
+    for face in two:
+        chain.append(face)
+    stored = chain.head()
+    last = chain.links[-1]
+    chain.links[-1] = (last[0], last[1], last[2], last[3], last[4], "f" * 64)
+    with pytest.raises(IdentityError, match="chain head"):
+        chain.verify(stored)
+    assert chain.verify() == 2
 
 
 def test_chain_rejects_a_gap():

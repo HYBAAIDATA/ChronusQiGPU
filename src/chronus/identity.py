@@ -121,11 +121,11 @@ def _segment(key: str) -> str:
     return key.replace("\\", "\\\\").replace(".", "\\.")
 
 
-def _changed(before: dict, after: dict, prefix: str = "") -> tuple[str, ...]:
+def _changed(before: dict, after: dict, prefix: str | None = None) -> tuple[str, ...]:
     changed: list[str] = []
     for key in sorted(set(before) | set(after)):
         segment = _segment(key)
-        path = f"{prefix}.{segment}" if prefix else segment
+        path = segment if prefix is None else f"{prefix}.{segment}"
         if (key in before) != (key in after):
             changed.append(path)
             continue
@@ -235,7 +235,13 @@ class Chain:
             (face.index, face.transformation, face.at, face.before, recorded, face.after)
         )
 
-    def verify(self) -> int:
+    def head(self) -> str:
+        """Digest a caller can keep outside the chain and pass back to verify."""
+        if not self.links:
+            return self.origin
+        return self._bound(self.links[-1])
+
+    def verify(self, expected_head: str | None = None) -> int:
         """Recompute the chain. Returns the length; raises on any gap."""
         previous = self.origin
         for expected, link in enumerate(self.links):
@@ -249,6 +255,8 @@ class Chain:
             if expected and self.links[expected - 1][5] != before:
                 raise IdentityError(f"{name} does not start where {expected - 1} ended")
             previous = _link_digest(index, name, at, before, previous, after)
+        if expected_head is not None and previous != expected_head:
+            raise IdentityError("chain head does not match")
         return len(self.links)
 
 
