@@ -43,6 +43,14 @@ test = [
     "pytest>=8.0",
 ]
 mining = ["hyba-turing==0.2.0.dev0"]
+# Optional local mathematical workbench, dependent on the separately built
+# TURING distribution; install its wheel in the environment first.
+workbench = [
+    "hyba-turing==0.2.0.dev0",
+    "ipywidgets>=8,<9",
+    "ipython>=8,<10",
+    "matplotlib>=3.8,<4",
+]
 dev = [
     "prometheus-client>=0.20,<1",
     "pyyaml>=6,<7",

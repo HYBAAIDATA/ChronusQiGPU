@@ -6,7 +6,7 @@
 
 ## Phase 2 — 32-lane polyhedral scheduler: DONE (software), RTL verified
 
-- Lanes carry polyhedral identity: 12 dodecahedron face lanes + 20 icosahedron vertex lanes (`polyhedral_lane`).
+- Lanes carry polyhedral identity: 12 dodecahedron face lanes + 20 icosahedron face-normal lanes (`polyhedral_lane`).
 - Lane partitioning supports uniform and **Lucas-weighted strides** (`partition: "lucas"`) — lane boundaries advance by PV-scaled widths with exact disjoint coverage, tested.
 - Traversal supports carry-free Zeckendorf stepping (`step: "zeckendorf"`), bijective and match-identical to binary order.
 - The **unrolled 64-round bitwise SHA-256 engine** (`execution/asic_sha256.py`) is bit-identical to FIPS 180-4 and hashlib on standard vectors including the genesis header — the software reference for the silicon pipeline; selectable via `engine: "unrolled"`.

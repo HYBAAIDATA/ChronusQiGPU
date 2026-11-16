@@ -103,11 +103,6 @@ class TuringMiningScheduler:
             "engine": "turing-exact", "phase": phase,
             "born_weights": [str(left), str(right)], "lane_order": order,
             "transmission_stride": self._stride_seed,
-            "geodesic": {"scheduler": "GeodesicScheduler", "backend": "numpy-reference",
-                         "memory": "PhiMemoryHierarchy", "integrity": "PASS",
-                         "representation_bytes": len(state.folded),
-                         "source_bytes": state.original_length,
-                         "coverage": "exact_permutation", "hashrate_multiplier": None},
             "overlay": {"dodecahedron_faces": 12, "icosahedron_faces": 20}
             if lane_count == 32 else None,
         }

@@ -317,11 +317,13 @@ class Polychoron600Cell:
 
 
 class QuantumGeometricTensor:
-    """Computes Q_ij = g_ij + (i/2) Omega_ij on CP^(2^n-1) over F_257.
+    """Legacy bilinear finite-field geometric proxy, NOT physical QGT.
 
-    g_ij: Fubini-Study Riemannian metric (real part)
-    Omega_ij: Berry curvature symplectic 2-form (imaginary part)
-    Over F_257, i = 16 and (1/2) = 129.
+    The scalar dot product is symmetric and has no Hermitian imaginary part;
+    hence Omega_ij from this legacy real-subfield path is identically zero.
+    Use evaluate_hermitian for an actual alternating component over the
+    quadratic extension F_257[phi]. Neither API proves Berry curvature on a
+    complex projective Hilbert space or a Yang-Mills continuum mass gap.
     """
 
     HALF = 129  # 129 * 2 = 258 = 1 mod 257
@@ -333,9 +335,11 @@ class QuantumGeometricTensor:
         d_psi_i: List[int],
         d_psi_j: List[int],
     ) -> Tuple[int, int, int]:
-        """Evaluates (g_ij, Omega_ij, Q_ij) over F_257.
+        """Legacy bilinear proxy over F_257, with Omega identically zero.
 
-        Inner product: <u | v> = sum_k u_k * v_k mod 257.
+        Inner product is symmetric: <u|v> = sum u_k*v_k mod 257.
+        This overload is preserved for existing callers, not promoted as a
+        quantum-geometric tensor on complex projective space.
         """
         # <psi | psi>
         norm_sq = sum((x * x) % P for x in psi) % P
@@ -364,6 +368,21 @@ class QuantumGeometricTensor:
         q_ij = (g_ij + i_half_omega) % P
 
         return g_ij, omega_ij, q_ij
+
+    @classmethod
+    def evaluate_hermitian(
+        cls,
+        psi: Sequence[F257Phi],
+        d_psi_i: Sequence[F257Phi],
+        d_psi_j: Sequence[F257Phi],
+    ):
+        """Compute exact extension-field Hermitian and alternating components.
+
+        Frobenius conjugation is phi -> 1-phi. This is finite-field
+        algebra and carries NO claim of a complex-Born metric.
+        """
+        from chronus.geodesic.hermitian import FiniteHermitianTensor
+        return FiniteHermitianTensor.evaluate(psi, d_psi_i, d_psi_j)
 
 
 # ---------------------------------------------------------------------------
