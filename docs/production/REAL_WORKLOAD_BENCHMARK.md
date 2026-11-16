@@ -19,7 +19,7 @@ Provide an operator-controlled YAML file using `chronus.real-workload-manifest/1
 
 - Tensor format: `.npy` only, loaded with NumPy `allow_pickle=False`. Unspecified raw `.bin` headers, PyTorch pickle/checkpoints, ONNX graphs and custom tensor formats are rejected until an independently validated safe decoder contract exists.
 - Snapshot formats: `.snapshot`, `.state`, `.fold` or `.checkpoint` interpreted as opaque bytes. The test is byte-equivalent reversible representation, *not* semantic recovery of an unknown application state.
-- Assets must be nonempty, regular, non-symlinked files, each at most 16 MiB (default and absolute cap); arrays must be numeric, finite and at most 1,000,000 elements. Duplicate file paths and checksum mismatch fail closed.
+- Assets must be nonempty, regular, non-symlinked files, each at most 16 MiB **and** at most the effective THESEUS payload bound (1 MiB by default through `runtime_bounds()`), allowing for an extra OVID padding byte on odd-length input. The smaller bound applies; larger production data requires independently reviewed bounded chunking rather than bypassing custody limits. NPY headers are validated before decoding (4 KiB header cap; numeric data; at most 1,000,000 elements). Duplicate file paths and checksum mismatch fail closed.
 - No recursive directory scanning and no implicit fallback to simulated or generated data. Explicit allowlisting prevents accidentally selecting fixtures, sensitive unrelated files or inconsistent snapshots.
 
 Copy `benchmarks/data_manifest.example.yaml` to a private operator manifest, fill in *actual* input paths and verified SHA-256 hashes, and keep customer/private data outside Git. The example intentionally contains no populated source data.
@@ -54,7 +54,7 @@ The NumPy baseline and Chronus `PhiTensorCore` both use software NumPy; their ti
 
 `integrity_sha256` is a deterministic digest of the JSON record **not a signature**. Actual authenticated evidence requires THESEUS/AL HARAS-backed attestation and independent source/runtime qualification, outside this script's scope.
 
-`result=PASS` only means the executed software operations and integrity checks completed for the selected inputs. The report always records `production_qualification=UNVERIFIED`, `device_execution=UNVERIFIED`, `external_source_attestation=UNVERIFIED` and `signed_evidence=false`. Missing, modified, incompatible or absent assets fail closed, without writing a success evidence file.
+`result=PASS` only means the executed software operations and integrity checks completed for the selected inputs. The report always records `production_qualification=UNVERIFIED`, `device_execution=UNVERIFIED`, `external_source_attestation=UNVERIFIED` and `signed_evidence=false`. Missing, modified, incompatible or absent assets fail closed, without writing a success evidence file. Existing evidence outputs are never overwritten; the operator manifest and source files must never be destinations.
 
 ## Next qualification gate
 
