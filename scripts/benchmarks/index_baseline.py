@@ -48,15 +48,20 @@ def measure(n: int = 200_000, per_record: int = 3, probes: int = 20_000) -> dict
         sys.getsizeof(key) + sys.getsizeof(value) for key, value in table.items()
     )
 
-    keys = list(table)[:probes]
+    # Like-for-like probe: dict lookup by precomputed key vs rebuild address
+    # from the same label triple then membership. Rebuild cost is real work
+    # the prime index pays; do not compare dict[key] to `key in table`.
+    probe_rows = records[:probes]
+    probe_keys = [address(row) for row in probe_rows]
+
     started = time.perf_counter()
-    for key in keys:
+    for key in probe_keys:
         _ = table[key]
     dict_ns = (time.perf_counter() - started) / probes * 1e9
 
     started = time.perf_counter()
-    for key in keys:
-        _ = key in table
+    for row in probe_rows:
+        _ = address(row) in table
     prime_ns = (time.perf_counter() - started) / probes * 1e9
 
     return {
@@ -75,7 +80,10 @@ def measure(n: int = 200_000, per_record: int = 3, probes: int = 20_000) -> dict
         // 8,
         "notes": (
             "int64 array holds one key; a prime address holds a three-label set — "
-            "compare like for like. Payload bytes are unchanged and not measured."
+            "compare like for like. Probe times: dict uses a precomputed key; "
+            "prime rebuilds the address from labels then membership-checks. "
+            "Payload bytes are unchanged and not measured. HD-01 footprint "
+            "ratio is storage, not probe latency."
         ),
     }
 
