@@ -82,7 +82,7 @@ def get_mining_admin_operator(
         custody.append_journal_event(identity.tenant_id, _ADMISSION_EVENT, payload)
         if not custody.verify_journal_continuity(identity.tenant_id):
             raise RuntimeError("mining administration audit journal invalid")
-    except (OSError, RuntimeError, ValueError, TypeError) as exc:
+    except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="AL HARAS admission denied: durable audit unavailable",
