@@ -24,6 +24,23 @@ _SCHEMA_VERSION = 1
 _ZERO_HASH = "0" * 64
 
 
+def _journal_hash_v2(
+    ovid_namespace: str,
+    sequence: int,
+    event_type: str,
+    object_id: str,
+    prev_entry_hash: str,
+    timestamp_ns: int,
+    coordinate: PhyllotaxisCoordinate,
+) -> str:
+    material = (
+        f"v2|{ovid_namespace}|{sequence}|{event_type}|{object_id}|{prev_entry_hash}|"
+        f"{timestamp_ns}|{coordinate.sequence}|{coordinate.golden_turns_numerator}|"
+        f"{coordinate.golden_turns_denominator}|{coordinate.lane}"
+    ).encode("utf-8")
+    return hashlib.sha256(material).hexdigest()
+
+
 class CustodyUnavailableError(RuntimeError):
     """Durable custody cannot be opened or verified."""
 
@@ -329,12 +346,11 @@ class DurableTheseusService:
             sequence = 0 if previous is None else int(previous["sequence"]) + 1
             prev_hash = _ZERO_HASH if previous is None else str(previous["entry_hash"])
             timestamp_ns = time.time_ns()
-            material = (
-                f"{ovid_namespace}|{sequence}|{event_type}|{record.object_id}|"
-                f"{prev_hash}|{timestamp_ns}"
-            ).encode("utf-8")
-            entry_hash = hashlib.sha256(material).hexdigest()
             c = record.coordinate
+            entry_hash = _journal_hash_v2(
+                ovid_namespace, sequence, event_type, record.object_id,
+                prev_hash, timestamp_ns, c,
+            )
             db.execute(
                 """
                 INSERT INTO journal(
@@ -415,11 +431,19 @@ class DurableTheseusService:
             if entry.coordinate != coordinate:
                 return False
             self.reconstruct(tenant_id, entry.object_id)
-            material = (
+            # v2 hashes bind the journal coordinate; legacy (pre-coordinate) rows
+            # still verify against the original material for compatibility.
+            v2_hash = _journal_hash_v2(
+                entry.ovid_namespace, entry.sequence, entry.event_type,
+                entry.object_id, entry.prev_entry_hash, entry.timestamp_ns,
+                entry.coordinate,
+            )
+            legacy_material = (
                 f"{entry.ovid_namespace}|{entry.sequence}|{entry.event_type}|"
                 f"{entry.object_id}|{entry.prev_entry_hash}|{entry.timestamp_ns}"
             ).encode("utf-8")
-            if hashlib.sha256(material).hexdigest() != entry.entry_hash:
+            legacy_hash = hashlib.sha256(legacy_material).hexdigest()
+            if entry.entry_hash not in (v2_hash, legacy_hash):
                 return False
             expected_prev = entry.entry_hash
         return True
