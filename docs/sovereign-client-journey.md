@@ -145,3 +145,33 @@ It returns the **25% calculated value-share preview**, not a
 provider-authorised reconciliation, with
 `settlement_status=CALCULATED_UNVERIFIED` and no proof certificate.
 The result is deliberately not a financial settlement receipt.
+
+## Durable tenant-profile custody (CIaaSStore)
+
+`CIaaSStore` now supports THESEUS-backed replay of tenant upserts,
+CCE changes and removals. The authoritative journal is
+`chronus-ciaas-registry` in `DurableTheseusService`, using the same
+WAL/content-addressed integrity model as other THESEUS records.
+Mutation appends to durable custody **before** changing process state.
+A restart reconstructs the tenant registry in journal order and fails
+on corrupted records or unknown registry event types.
+
+- Set `CHRONUS_CIAAS_DURABLE_PATH` to a persistent, access-restricted
+  SQLite/WAL path to enable this mode.
+- When `CHRONUS_ENV=production` is set, that path is **required**;
+  start-up fails closed without it.
+- Only local reference mode (no durable path and no production flag)
+  seeds the three illustrative enterprises. A new durable registry
+  starts **empty**; it never treats seeded client personas as genuine.
+- The durable profile stores administrative metadata and key *references*,
+  not SDK bearer secrets. Ensure filesystem encryption, secure backup,
+  permissions, retention and incident recovery are arranged by deployment.
+- This is a **single-writer local custody layer**. Multi-replica
+  transactional tenant reconciliation, durable authentication credentials,
+  customer-held KMS proof and distributed tenancy are still unresolved.
+  No multi-node production claim follows from local SQLite replay.
+
+Evidence: `tests/test_ciaas_durable_registry.py` uses a real local
+THESEUS store for restart replay, tamper rejection and fail-closed
+mutation checks. It is not a simulated production deployment or a
+substitute for operational restore and tenant isolation evidence.
