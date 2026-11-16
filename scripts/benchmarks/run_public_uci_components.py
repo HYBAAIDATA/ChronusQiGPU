@@ -26,12 +26,12 @@ from chronus.pulvini import fold_verified, unfold_verified
 from chronus.tensor.folded_state import ExactFoldState
 from chronus.tensor.geodesic import PhiTensorCore
 
-PUBLIC_SHA256 = frozenset({
-    "0f1c225bbabf3d4eaccd81f73c9594ceec77d84c9b425ef0e4cc815743050529",
-    "09af9db3ce2a52b3f168d5d9eb1d4d4ceba584fad9e0e9aba63ff536c192c6a6",
-    "602e781b91843b0ea3dc8bf3ff3e63055985230cad47c45a5099780e3c33459f",
-    "10e8a802908b34f86e5da8ce962f3c806694bc98450a18f61851af59f324bede",
-})
+PINNED_INPUTS = {
+    "uci_digits.npy": ("0f1c225bbabf3d4eaccd81f73c9594ceec77d84c9b425ef0e4cc815743050529", "tensor"),
+    "uci_wine.npy": ("09af9db3ce2a52b3f168d5d9eb1d4d4ceba584fad9e0e9aba63ff536c192c6a6", "tensor"),
+    "uci_breast_cancer.npy": ("602e781b91843b0ea3dc8bf3ff3e63055985230cad47c45a5099780e3c33459f", "tensor"),
+    "uci_wine_packaged_file.snapshot": ("10e8a802908b34f86e5da8ce962f3c806694bc98450a18f61851af59f324bede", "snapshot"),
+}
 
 
 def _stats(samples: list[int]) -> dict:
@@ -47,6 +47,7 @@ def _stats(samples: list[int]) -> dict:
 def _head() -> str | None:
     try:
         sha = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True,
+                                      cwd=Path(__file__).resolve().parents[2],
                                       stderr=subprocess.DEVNULL).strip()
         return sha if len(sha) in (40, 64) else None
     except (OSError, subprocess.CalledProcessError):
@@ -175,11 +176,13 @@ def run(manifest: Path, depth: int = 4) -> dict:
         if not isinstance(entry, dict) or entry.get("source_class") != "PUBLIC_OBSERVED_DATASET":
             raise ValueError("public observed source identity missing")
         sha, kind, filename = entry.get("sha256"), entry.get("kind"), entry.get("path")
-        if (sha not in PUBLIC_SHA256 or not isinstance(filename, str) or
-                "/" in filename or "\\" in filename or filename in seen):
-            raise ValueError("unverified public source or duplicate filename")
+        if (not isinstance(filename, str) or filename not in PINNED_INPUTS or
+                PINNED_INPUTS[filename] != (sha, kind) or filename in seen):
+            raise ValueError("public source name, digest, type or uniqueness mismatch")
         seen.add(filename)
         results.append(_measure_source(manifest.parent / filename, sha, kind, depth=depth))
+    if seen != set(PINNED_INPUTS):
+        raise ValueError("missing required public observational input")
     evidence = {
         "schema": "chronus.public-uci-components/1",
         "classification": "OBSERVED_PUBLIC_INPUT_SOURCE_VERIFIED_LOCAL_SOFTWARE",
