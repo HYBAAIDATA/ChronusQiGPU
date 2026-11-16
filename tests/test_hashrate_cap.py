@@ -174,6 +174,24 @@ def test_a_fresh_admin_keeps_a_lower_published_rate(tmp_path, monkeypatch):
             process_cap().set_rate(before)
 
 
+def test_a_rate_below_one_hash_per_second_does_not_stop_startup(tmp_path, monkeypatch):
+    from chronus.execution.hashrate_cap import process_cap, read_published_limit
+    from chronus.execution.mining_admin import MiningAdminEngine
+
+    path = tmp_path / "hashrate-cap"
+    path.write_text("1e-19\n", encoding="ascii")
+    monkeypatch.setenv("CHRONUS_HASHRATE_LIMIT_FILE", str(path))
+    before = process_cap().cap_h_s
+    try:
+        assert read_published_limit() is None
+        engine = MiningAdminEngine()
+        assert engine.config.stealth_target_eh_s == 1.0
+        assert path.read_text(encoding="ascii").strip() == "1.0"
+    finally:
+        if process_cap().cap_h_s != before:
+            process_cap().set_rate(before)
+
+
 def test_a_non_ascii_limit_file_leaves_the_rate_unchanged(tmp_path, monkeypatch):
     from chronus.execution.hashrate_cap import apply_published_limit, process_cap
 

@@ -178,9 +178,11 @@ def read_published_limit() -> float | None:
     except (OSError, UnicodeError):
         return None
     try:
-        return require_eh_s(float(text.strip()))
+        eh_s = require_eh_s(float(text.strip()))
+        hashes_per_second(eh_s)
     except ValueError:
         return None
+    return eh_s
 
 
 def apply_published_limit() -> None:
