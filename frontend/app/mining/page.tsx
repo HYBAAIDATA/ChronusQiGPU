@@ -252,14 +252,15 @@ export default function MiningDashboardPage() {
               Hashrate Intelligence &amp; Resonance Observatory
             </h1>
             <p className="mt-1 max-w-3xl text-sm leading-6 text-neutral-400">
-              Unified mathematical substrate for Bitcoin mining: Spectral Mass Gap (<span className="font-mono text-emerald-400">Δ = 229.14</span>),
-              11D Lie-Poisson routing, O(1) structured addressing, and exact Galois Field <span className="font-mono text-amber-300">F_257[x]</span> 1-shot nonce collapse.
+              Internal mining control and mathematical research observatory. Configured limits and structural diagnostics
+              are not measured hashrate, live pool acceptance, independent proof or hardware qualification.
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <StatusPill status={h1Obstruction ? 'WARNING' : 'PASS'} label={h1Obstruction ? 'H¹ Obstruction ([c] ≠ 0)' : 'ker(L_ℱ) = H⁰ Harmonic'} showDot={true} />
+            <StatusPill status={backendConnected ? 'PASS' : 'WARNING'} label={backendConnected ? 'Operator status received' : 'Operational status unverified'} showDot={true} />
             <button
               onClick={handleToggleMining}
+              disabled={!operatorJwt.trim() || !backendConnected}
               className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
                 isRunning
                   ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30'
@@ -269,6 +270,28 @@ export default function MiningDashboardPage() {
               {isRunning ? <RotateCcw className="h-4 w-4" /> : <Play className="h-4 w-4" />}
               <span>{isRunning ? 'Stop Mining Engine' : 'Engage Mining Engine'}</span>
             </button>
+          </div>
+        </div>
+        <div className="mt-4 space-y-2 rounded-lg border border-neutral-700 bg-neutral-900/50 p-3">
+          <label htmlFor="mining-operator-jwt" className="block text-xs font-semibold text-neutral-300">
+            Mining operator JWT (session only; not stored)
+          </label>
+          <input
+            id="mining-operator-jwt"
+            type="password"
+            autoComplete="off"
+            spellCheck={false}
+            value={operatorJwt}
+            onChange={(event) => setOperatorJwt(event.target.value)}
+            placeholder="Paste a short-lived, verified system-admin token"
+            className="w-full rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100"
+          />
+          <p className="text-xs text-neutral-400">
+            AL HARAS must admit the signed operator identity and THESEUS must record admission.
+            Missing credentials or unavailable backend evidence leave controls disabled.
+          </p>
+          <div role="status" aria-live="polite" className="text-xs text-amber-300">
+            {controlError ?? 'Operator-authenticated backend status received; production qualification is separate.'}
           </div>
         </div>
       </header>
