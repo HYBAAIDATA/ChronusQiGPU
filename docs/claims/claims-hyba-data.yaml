@@ -10,16 +10,20 @@ claims:
   - id: HD-01
     claim: index memory falls by >30x versus a keyed table
     status: measured
-    falsifier: rerun scripts/benchmarks/index_baseline.py at 1M records; ratio < 10
+    falsifier: >
+      rerun scripts/benchmarks/index_baseline.py at 1M records; claim fails if
+      prime_vs_dict_ratio < 30 (addresses-only vs CPython dict). A separate
+      minimum floor of 10x may be tracked later; it does not approve >30x.
     owner: benchmark
     evidence:
       - scripts/benchmarks/index_baseline.py
       - evidence/benchmarks/index-baseline-200k.json
     notes: >
       At 200k records / 3 labels under CPython getsizeof accounting the ratio is
-      ~19.8x (see evidence JSON) — below the >30x claim threshold. int64 array
-      comparison is not like-for-like. Re-run at 1M before a hyperscaler call;
-      do not quote >30x until that falsifier is cleared.
+      ~19.8x (see evidence JSON) — below the >30x claim threshold. prime_index_bytes
+      counts packed addresses only; dict_bytes includes keyed-table overhead, so
+      the ratio is an upper bound. Re-run at 1M before a hyperscaler call; do not
+      quote >30x until the falsifier clears.
 
   - id: HD-02
     claim: fold is lossless by determinant

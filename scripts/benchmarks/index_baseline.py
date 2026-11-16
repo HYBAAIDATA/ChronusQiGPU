@@ -51,18 +51,23 @@ def measure(n: int = 200_000, per_record: int = 3, probes: int = 20_000) -> dict
     # Like-for-like probe: dict lookup by precomputed key vs rebuild address
     # from the same label triple then membership. Rebuild cost is real work
     # the prime index pays; do not compare dict[key] to `key in table`.
+    if probes <= 0:
+        raise ValueError("probes must be positive")
     probe_rows = records[:probes]
+    if not probe_rows:
+        raise ValueError("no records available to probe")
+    executed = len(probe_rows)
     probe_keys = [address(row) for row in probe_rows]
 
     started = time.perf_counter()
     for key in probe_keys:
         _ = table[key]
-    dict_ns = (time.perf_counter() - started) / probes * 1e9
+    dict_ns = (time.perf_counter() - started) / executed * 1e9
 
     started = time.perf_counter()
     for row in probe_rows:
         _ = address(row) in table
-    prime_ns = (time.perf_counter() - started) / probes * 1e9
+    prime_ns = (time.perf_counter() - started) / executed * 1e9
 
     return {
         "records": n,
@@ -74,13 +79,17 @@ def measure(n: int = 200_000, per_record: int = 3, probes: int = 20_000) -> dict
         "prime_vs_numpy_ratio": round(arr_bytes / max(1, prime_bytes), 2),
         "prime_probe_ns": round(prime_ns, 1),
         "dict_probe_ns": round(dict_ns, 1),
+        "probes_executed": executed,
         "address_bytes_at_4096_labels": (
             address([4095, 4094, 4093]).bit_length() + 7
         )
         // 8,
         "notes": (
             "int64 array holds one key; a prime address holds a three-label set — "
-            "compare like for like. Probe times: dict uses a precomputed key; "
+            "compare like for like. prime_index_bytes counts packed addresses only "
+            "(not a full address→record map); dict_bytes includes CPython table "
+            "overhead — the ratio is therefore an upper bound, not a like-for-like "
+            "keyed-store comparison. Probe times: dict uses a precomputed key; "
             "prime rebuilds the address from labels then membership-checks. "
             "Payload bytes are unchanged and not measured. HD-01 footprint "
             "ratio is storage, not probe latency."

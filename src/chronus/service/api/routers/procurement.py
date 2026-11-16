@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,7 @@ from chronus.procurement.quote import CONTRACT_VERSION, live_evidence_hash
 from chronus.service.api.errors import ApiError
 from chronus.service.api.security import Principal, require
 
+LOG = logging.getLogger("chronus.procurement")
 router = APIRouter()
 
 _book: Book | None = None
@@ -112,8 +114,15 @@ async def quote(
 ) -> dict[str, Any]:
     try:
         return build_quote(body.size, tier=body.tier)
-    except ValueError as exc:
-        raise ApiError(400, "invalid_quote", "Invalid quote request", str(exc)) from exc
+    except (ValueError, AssertionError) as exc:
+        # Never echo seal/mechanism diagnostics to the client.
+        LOG.info("quote refused: %s", exc)
+        raise ApiError(
+            400,
+            "invalid_quote",
+            "Invalid quote request",
+            "size or tier is outside the sealed envelope",
+        ) from exc
 
 
 @router.post("/reserve", summary="Bind a reservation to a quote")
@@ -161,7 +170,15 @@ async def admit_route(
         )
     except Refusal as exc:
         raise _refusal_to_api(exc) from exc
-    _ledger_singleton().record(result, tenant_id=principal.tenant_id)
+    # Admission is already stored on the reservation for idempotent retry.
+    # A durable ledger miss must not strand the client on already_consumed.
+    try:
+        _ledger_singleton().record(result, tenant_id=principal.tenant_id)
+    except OSError:
+        LOG.exception(
+            "utilisation ledger write failed for %s; retry will re-record",
+            body.reservation_id,
+        )
     return result
 
 

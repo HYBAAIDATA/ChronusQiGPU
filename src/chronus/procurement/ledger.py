@@ -76,12 +76,14 @@ class UtilisationLedger:
             for existing in self._rows:
                 if existing.reservation == reservation_id:
                     return existing
-            self._rows.append(row)
+            # Persist first; only then keep the in-memory row so a disk failure
+            # leaves nothing that would suppress a later retry write.
             if self._path is not None:
                 self._path.parent.mkdir(parents=True, exist_ok=True)
                 with self._path.open("a", encoding="utf-8") as handle:
                     handle.write(json.dumps(asdict(row), sort_keys=True) + "\n")
                     handle.flush()
+            self._rows.append(row)
         return row
 
     def rows(self, *, tenant_id: str | None = None) -> list[UtilisationRecord]:
@@ -93,12 +95,19 @@ class UtilisationLedger:
     def quarterly_line(
         self,
         *,
+        tenant_id: str,
         baseline_accelerator_hours: float | None,
         since: float,
         until: float,
-        tenant_id: str | None = None,
     ) -> dict[str, Any]:
-        """True-up against a declared baseline. No baseline → no fee."""
+        """True-up against a declared baseline for one tenant. No baseline → no fee."""
+        if not tenant_id:
+            return {
+                "fee_applicable": False,
+                "reason": "tenant_required",
+                "utilised_space_bytes": 0,
+                "tenant_id": tenant_id,
+            }
         if baseline_accelerator_hours is None:
             return {
                 "fee_applicable": False,

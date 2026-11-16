@@ -175,20 +175,20 @@ class ProcurementBookTests(unittest.TestCase):
         ledger.record(other, tenant_id=OTHER)
 
         line = ledger.quarterly_line(
+            tenant_id=TENANT,
             baseline_accelerator_hours=10.0,
             since=0.0,
             until=1e18,
-            tenant_id=TENANT,
         )
         self.assertTrue(line["fee_applicable"])
         self.assertEqual(line["utilised_space_bytes"], 8_000_000)
         self.assertEqual(line["tenant_id"], TENANT)
 
         none = ledger.quarterly_line(
+            tenant_id=TENANT,
             baseline_accelerator_hours=None,
             since=0.0,
             until=1e18,
-            tenant_id=TENANT,
         )
         self.assertFalse(none["fee_applicable"])
 
