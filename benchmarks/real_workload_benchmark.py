@@ -27,7 +27,7 @@ import yaml
 from chronus.config import runtime_bounds
 from chronus.pulvini import fold_verified, unfold_verified
 from chronus.tensor.folded_state import ExactFoldState
-from chronus.tensor.geodesic import GeodesicScheduler, MetricTensor, PhiTensorCore
+from chronus.tensor.geodesic import PhiTensorCore
 from chronus.triad import ProductionTriad
 
 SCHEMA = "chronus.real-workload/1"
@@ -197,30 +197,13 @@ def _tensor_workload(payload: bytes, *, depth: int) -> dict:
     if not np.all(np.isfinite(reference)):
         raise ValueError("non-finite tensor operation output")
 
-    # The maintained tensor scheduler uses an explicit Euclidean reference
-    # metric, not a claimed H4 manifold or physical accelerator.
-    geodesic = None
-    if array.size >= 8 and not np.iscomplexobj(array):
-        flat = array.reshape(-1)
-        a = np.asarray(flat[:4], dtype=np.float64)
-        b = np.asarray(flat[-4:], dtype=np.float64)
-        metric = MetricTensor.euclidean(4)
-        scheduler = GeodesicScheduler()
-        started = time.perf_counter_ns()
-        distance = metric.distance(a, b)
-        if not math.isfinite(distance):
-            geodesic = {"status": "UNAVAILABLE",
-                        "reason": "Euclidean metric overflow for finite source values",
-                        "metric": "euclidean-reference-4d"}
-        else:
-            scheduler.submit((a, b), distance)
-            selected_a, selected_b = scheduler.pop()
-            path = metric.walk_manifold(selected_a, selected_b, 8)
-            geo_ns = time.perf_counter_ns() - started
-            if not np.allclose(path[0], a, rtol=0, atol=1e-12) or not np.allclose(path[-1], b, rtol=0, atol=1e-12):
-                raise ValueError("geodesic endpoints are not preserved")
-            geodesic = {"status": "VERIFIED", "metric": "euclidean-reference-4d",
-                        "steps": 8, "call_ns": geo_ns, "endpoint_verified": True}
+    # Exact H4/tensor itinerary is not established for arbitrary NPY inputs.
+    # Do not substitute floating-point Euclidean interpolation or claim a
+    # geodesic/H4 production measurement.
+    geodesic = {
+        "status": "UNAVAILABLE",
+        "reason": "no verified exact tensor-to-H4 geodesic workload contract",
+    }
 
     started = time.perf_counter_ns()
     state, receipt = fold_verified(array, depth=depth, max_elements=1_000_000)
@@ -288,11 +271,12 @@ def _snapshot_workload(payload: bytes) -> dict:
 
 
 def run_benchmark(manifest: Path, custody_db: Path, *, depth: int = 4,
-                  max_bytes: int = MAX_BYTES) -> dict:
+                  max_bytes: int = MAX_BYTES, sources: list[dict] | None = None) -> dict:
     """Execute on supplied bytes only; never create or choose inputs."""
     if not 0 <= depth <= 32:
         raise ValueError("depth must be 0..32")
-    sources = discover(manifest, max_bytes=max_bytes)
+    if sources is None:
+        sources = discover(manifest, max_bytes=max_bytes)
     custody_db = Path(custody_db).resolve()
     if custody_db in {source["path"] for source in sources}:
         raise ValueError("custody database must not overwrite a source")
@@ -369,7 +353,8 @@ def main(argv: list[str] | None = None) -> int:
         if target.exists():
             raise ValueError("evidence destination already exists; refusing overwrite")
         evidence = run_benchmark(args.manifest, args.custody_db,
-                                 depth=args.depth, max_bytes=args.max_bytes)
+                                 depth=args.depth, max_bytes=args.max_bytes,
+                                 sources=sources)
         target.parent.mkdir(parents=True, exist_ok=True)
         with target.open("x", encoding="utf-8") as stream:
             stream.write(json.dumps(evidence, indent=2, sort_keys=True) + "\n")
