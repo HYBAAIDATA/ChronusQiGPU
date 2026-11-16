@@ -55,3 +55,18 @@ def test_equal_input_yields_identical_digest():
     a = TT.factor((2, 2), source)
     b = TT.factor((2, 2), tuple(source))
     assert a.digest == b.digest
+
+
+def test_mutated_tensor_core_fingerprint_fails():
+    t = TT.factor((2, 2), [1, 2, 3, 4])
+    cores = list(t.cores)
+    outer = list(cores[0])
+    physical = list(outer[0])
+    bond = list(physical[0])
+    bond[0] += 1
+    physical[0] = tuple(bond)
+    outer[0] = tuple(physical)
+    cores[0] = tuple(outer)
+    mutated = replace(t, cores=tuple(cores))
+    with pytest.raises(ValueError, match="digest"):
+        mutated.verify()
