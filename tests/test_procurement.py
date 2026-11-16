@@ -2,13 +2,20 @@
 
 from __future__ import annotations
 
+import json
+import os
 import unittest
+from unittest.mock import patch
 
 from chronus.core.seal import seal_schema
 from chronus.procurement.book import Book, Refusal, admit, reserve
 from chronus.procurement.ledger import UtilisationLedger
 from chronus.procurement.quote import CONTRACT_VERSION, build_quote, live_evidence_hash
-from chronus.service.api.routers.procurement import openapi_fragment
+from chronus.service.api.routers.procurement import (
+    CAPACITY_OPENAPI_PATHS,
+    capacity_openapi_fragment,
+    openapi_fragment,
+)
 
 TENANT = "tenant-a"
 OTHER = "tenant-b"
@@ -209,11 +216,129 @@ class ProcurementBookTests(unittest.TestCase):
         )
         self.assertFalse(none["fee_applicable"])
 
-    def test_openapi_fragment_is_sealed(self) -> None:
+    def test_openapi_fragment_is_sealed_from_live_app(self) -> None:
+        from chronus.service.api import security as api_security
+
+        self.addCleanup(api_security.reset_token_cache)
+        tokens = patch.dict(
+            os.environ,
+            {
+                "CHRONUS_TENANT_TOKENS": json.dumps(
+                    {
+                        "seal-test-token": {
+                            "tenant_id": "seal",
+                            "scopes": ["workloads:read", "workloads:write"],
+                        }
+                    }
+                )
+            },
+        )
+        tokens.start()
+        self.addCleanup(tokens.stop)
+        api_security.reset_token_cache()
         fragment = openapi_fragment()
+        for path in CAPACITY_OPENAPI_PATHS:
+            self.assertIn(path, fragment)
+        # Same fragment must come from a live schema extraction.
+        from chronus.service.api.app import create_app
+
+        again = capacity_openapi_fragment(create_app().openapi())
+        self.assertEqual(set(fragment), set(again))
         seal_schema(fragment)
         with self.assertRaises(AssertionError):
             seal_schema({"/v1/fibonacci": {}})
+        # Referenced capacity models are sealed too (not only path keys).
+        with self.assertRaises(AssertionError):
+            capacity_openapi_fragment(
+                {
+                    "paths": {
+                        path: {"post": {"requestBody": {"$ref": "#/components/schemas/Bad"}}}
+                        for path in CAPACITY_OPENAPI_PATHS
+                    },
+                    "components": {
+                        "schemas": {
+                            "Bad": {
+                                "type": "object",
+                                "properties": {"phi": {"type": "string"}},
+                            }
+                        }
+                    },
+                }
+            )
+        # Reusable response/requestBody refs must also pull nested schemas.
+        with self.assertRaises(AssertionError):
+            capacity_openapi_fragment(
+                {
+                    "paths": {
+                        path: {
+                            "post": {
+                                "responses": {
+                                    "200": {"$ref": "#/components/responses/Tainted"}
+                                }
+                            }
+                        }
+                        for path in CAPACITY_OPENAPI_PATHS
+                    },
+                    "components": {
+                        "responses": {
+                            "Tainted": {
+                                "description": "ok",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "$ref": "#/components/schemas/TaintedBody"
+                                        }
+                                    }
+                                },
+                            }
+                        },
+                        "schemas": {
+                            "TaintedBody": {
+                                "type": "object",
+                                "properties": {"fibonacci": {"type": "integer"}},
+                            }
+                        },
+                    },
+                }
+            )
+        # Response → reusable header → schema must also be sealed.
+        with self.assertRaises(AssertionError):
+            capacity_openapi_fragment(
+                {
+                    "paths": {
+                        path: {
+                            "get": {
+                                "responses": {
+                                    "200": {
+                                        "description": "ok",
+                                        "headers": {
+                                            "X-Quota": {
+                                                "$ref": "#/components/headers/Quota"
+                                            }
+                                        },
+                                    }
+                                }
+                            }
+                        }
+                        for path in CAPACITY_OPENAPI_PATHS
+                    },
+                    "components": {
+                        "headers": {
+                            "Quota": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/QuotaBody"
+                                }
+                            }
+                        },
+                        "schemas": {
+                            "QuotaBody": {
+                                "type": "object",
+                                "properties": {"phi": {"type": "number"}},
+                            }
+                        },
+                    },
+                }
+            )
 
 
 if __name__ == "__main__":

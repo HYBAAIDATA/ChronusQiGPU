@@ -183,40 +183,81 @@ async def admit_route(
     return result
 
 
-def openapi_fragment() -> dict[str, Any]:
-    """Live route fragment for the OpenAPI seal gate (not a hand-kept copy)."""
-    fragment = {
-        "/v1/capacity/quote": {
-            "post": {
-                "body": ["size", "tier"],
-                "returns": ["verdict", "space_bytes", "is_binding", "tier"],
-            }
+CAPACITY_OPENAPI_PATHS = (
+    "/v1/capacity/pool",
+    "/v1/capacity/quote",
+    "/v1/capacity/reserve",
+    "/v1/capacity/admit",
+)
+# Follow local component refs used by FastAPI OpenAPI (schemas, reusable
+# requestBodies/responses/parameters). Unrelated legacy routes stay out.
+_COMPONENT_SECTIONS = (
+    "schemas",
+    "responses",
+    "requestBodies",
+    "parameters",
+    "headers",
+)
+_COMPONENT_REF_PREFIX = "#/components/"
+
+
+def _referenced_components(node: Any) -> set[tuple[str, str]]:
+    """Return ``(section, name)`` pairs for ``#/components/<section>/<name>`` refs."""
+    found: set[tuple[str, str]] = set()
+    if isinstance(node, dict):
+        ref = node.get("$ref")
+        if isinstance(ref, str) and ref.startswith(_COMPONENT_REF_PREFIX):
+            parts = ref[len(_COMPONENT_REF_PREFIX) :].split("/", 1)
+            if len(parts) == 2 and parts[0] in _COMPONENT_SECTIONS and parts[1]:
+                found.add((parts[0], parts[1]))
+        for value in node.values():
+            found |= _referenced_components(value)
+    elif isinstance(node, list):
+        for item in node:
+            found |= _referenced_components(item)
+    return found
+
+
+def capacity_openapi_fragment(openapi: dict[str, Any]) -> dict[str, Any]:
+    """Extract sealed capacity routes from a live OpenAPI document.
+
+    Never hand-keep this map: the CI gate must seal what the app actually
+    serves, or the fragment drifts and the gate passes on a stale copy.
+    Also seals every component reachable from those paths (schemas,
+    requestBodies, responses, parameters), without pulling unrelated routes.
+    """
+    paths = openapi.get("paths") or {}
+    missing = [path for path in CAPACITY_OPENAPI_PATHS if path not in paths]
+    if missing:
+        raise AssertionError(f"live OpenAPI missing capacity routes: {missing}")
+    fragment = {path: paths[path] for path in CAPACITY_OPENAPI_PATHS}
+    components = openapi.get("components") or {}
+    sealed: dict[str, dict[str, Any]] = {section: {} for section in _COMPONENT_SECTIONS}
+    pending = list(_referenced_components(fragment))
+    while pending:
+        section, name = pending.pop()
+        if name in sealed[section]:
+            continue
+        bucket = components.get(section) or {}
+        if name not in bucket:
+            raise AssertionError(
+                f"live OpenAPI missing referenced component: {section}/{name}"
+            )
+        sealed[section][name] = bucket[name]
+        pending.extend(_referenced_components(bucket[name]))
+    seal_schema(
+        {
+            "paths": fragment,
+            "components": {k: v for k, v in sealed.items() if v},
         },
-        "/v1/capacity/reserve": {
-            "post": {
-                "body": ["quote", "idempotency_key"],
-                "returns": ["id", "expires_at"],
-            }
-        },
-        "/v1/capacity/admit": {
-            "post": {
-                "body": ["reservation_id", "actual_size"],
-                "returns": ["utilisation"],
-            }
-        },
-        "/v1/capacity/pool": {
-            "get": {
-                "returns": ["pool_bytes", "source", "replenishment", "committed_bytes"],
-            }
-        },
-        "quote": {
-            "verdict": [
-                "within_envelope",
-                "out_of_range",
-                "degenerate",
-                "suspended",
-            ]
-        },
-    }
-    seal_schema(fragment, context="procurement.open_api_fragment")
+        context="procurement.live_capacity_openapi",
+    )
     return fragment
+
+
+def openapi_fragment() -> dict[str, Any]:
+    """Seal capacity routes from the live API app OpenAPI document."""
+    # Local import: creating the app pulls auth env that tests may set late.
+    from chronus.service.api.app import create_app
+
+    return capacity_openapi_fragment(create_app().openapi())
