@@ -101,6 +101,11 @@ chronus_complete_system_master_v36 (1)/
 data/
 *.sqlite3
 
+# Recovered-archive staging (owner-disk ZIP contents, untracked by design).
+# Promotion into src/ is explicit per-file with provenance ledger at
+# recovery_merge/README.md. Never commit or publish the staging tree.
+/recovery_merge/
+
 # Generated Stratum smoke transcripts (schema chronus.smoke/1)
 evidence/smoke/*.json
 
