@@ -100,3 +100,33 @@ def test_settlement_uses_exact_integer_cents_for_large_amounts():
     assert result.proof_certificate is None
     with pytest.raises(ValueError):
         store.calculate_hermiten_settlement("any", counterfactual_cost=-1)
+
+def test_capacity_expansion_does_not_mutate_active_quota_on_custody_failure(
+    tmp_path, monkeypatch
+):
+    from chronus.service.instant_provisioning import (
+        InstantProvisioningEngine, CapacityExpansionRequest,
+    )
+
+    monkeypatch.delenv("CHRONUS_ENV", raising=False)
+    store = CIaaSStore(durable_path=str(tmp_path / "capacity.sqlite3"))
+    profile = store.onboard_tenant(
+        tenant_id="capacity-fail-closed",
+        organization_name="Test Only",
+        admin_email="test@example.invalid",
+    )
+    initial = profile.cce.concurrency_limit
+    engine = InstantProvisioningEngine(store=store)
+
+    def unavailable(*args, **kwargs):
+        raise RuntimeError("durable custody is unavailable")
+
+    monkeypatch.setattr(store._custody, "append_journal_event", unavailable)
+    with pytest.raises(RuntimeError, match="durable custody"):
+        engine.expand_capacity(
+            profile.tenant_id,
+            CapacityExpansionRequest(requested_warp_capacity=initial + 1),
+        )
+
+    assert store.get_tenant(profile.tenant_id).cce.concurrency_limit == initial
+    assert store.get_tenant(profile.tenant_id).o1_structural_memory_gb == 256

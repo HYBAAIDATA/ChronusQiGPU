@@ -187,3 +187,10 @@ A mismatching digest for the same workload/account is rejected with
 acknowledgements may be retried with a stable idempotency key; deployment
 still **must verify** the real provider's idempotency and reconciliation
 contract. This local safeguard is not a cross-process distributed lock.
+
+The existing `InstantProvisioningEngine.expand_capacity()` now builds
+a detached tenant-profile copy and submits that to the custody-backed
+store *before* it replaces the live tenant record. This closes an
+in-memory quota mutation on custody failure. A regression test exercises
+a real local tenant and deliberately unavailable custody; the
+authoritative live quota remains unchanged.

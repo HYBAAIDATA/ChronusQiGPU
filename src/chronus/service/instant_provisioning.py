@@ -683,10 +683,14 @@ class InstantProvisioningEngine:
                 compute_intensity_ccu=new_warps * 16,
                 concurrency_limit=new_warps,
             )
-            tenant.cce = updated_cce
-            tenant.o1_structural_memory_gb = new_o1_mem
-            self._store.save_tenant(tenant)
-            assigned_cce_id = tenant.assigned_cce_id or f"cce_{tenant_id}"
+            # Never mutate the store's live TenantProfile before THESEUS
+            # has accepted the authoritative update. Otherwise a failed
+            # custody append would still change active quotas in memory.
+            proposed_tenant = tenant.model_copy(deep=True)
+            proposed_tenant.cce = updated_cce
+            proposed_tenant.o1_structural_memory_gb = new_o1_mem
+            self._store.save_tenant(proposed_tenant)
+            assigned_cce_id = proposed_tenant.assigned_cce_id or f"cce_{tenant_id}"
 
         journal_payload = json.dumps(
             {
