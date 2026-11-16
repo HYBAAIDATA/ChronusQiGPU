@@ -22,6 +22,17 @@ The maintained runtime also contains:
 - service/API surfaces under `src/chronus/service/`;
 - internal treasury mining support, which is not a customer product.
 
+## Mining web console authentication
+
+The mining console uses an in-memory, short-lived system-admin JWT supplied by
+the authorised operator, forwarded through the maintained
+`/api/chronus` Next.js proxy to the AL HARAS-gated API. It does not
+save the token in local storage or a URL. Until authenticated backend status
+is obtained, control buttons are disabled; failed actions cannot be presented
+as executed. This is an operator-control API only, **not** live mining proof.
+The UI still has historical design/research diagnostic panels that must not
+be treated as measured runtime or physical-backend qualification.
+
 ## AL HARAS mining operator and signed evidence wiring
 
 The shared `/v1/mining/admin` API now has an explicit **verified system-admin
