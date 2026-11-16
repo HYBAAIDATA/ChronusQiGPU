@@ -97,7 +97,11 @@ class PulviniOperatorCalculus:
         if denom <= 0:
             raise ValueError("non-injective fold geometry")
         # Pseudoinverse is M* / c when M* M = c I.
-        return M @ A @ (M.conj().T/denom)
+        with np.errstate(over="ignore", invalid="ignore"):
+            lifted = M @ A @ (M.conj().T / denom)
+        if not np.all(np.isfinite(lifted)):
+            raise ValueError("lifted operator overflowed finite numerical contract")
+        return lifted
 
     def verify_action(self, operator: np.ndarray, vector: np.ndarray) -> dict:
         A = np.asarray(operator)
@@ -106,10 +110,26 @@ class PulviniOperatorCalculus:
             raise ValueError("operator and vector shape mismatch")
         if not np.issubdtype(x.dtype,np.number) or not np.all(np.isfinite(x)):
             raise ValueError("vector outside finite numerical contract")
+        # Integer matrix products may wrap before the comparator runs.
+        # Promote to the same reference scalar dtype as the lifted path;
+        # reject integers/floats that cannot survive conversion exactly.
+        dtype = np.dtype("complex128") if (
+            np.iscomplexobj(A) or np.iscomplexobj(x)) else np.dtype("float64")
+        with np.errstate(over="ignore", invalid="ignore"):
+            cast_A = A.astype(dtype)
+            cast_x = x.astype(dtype)
+            back_A = cast_A.astype(A.dtype)
+            back_x = cast_x.astype(x.dtype)
+        if (not np.array_equal(A, back_A) or not np.array_equal(x, back_x)):
+            raise ValueError("input values not exactly representable in numerical reference dtype")
+        A, x = cast_A, cast_x
         M = self.fold_matrix(x.size)
         lifted = self.lift(A)
-        expected = M @ (A @ x)
-        actual = lifted @ (M @ x)
+        with np.errstate(over="ignore", invalid="ignore"):
+            expected = M @ (A @ x)
+            actual = lifted @ (M @ x)
+        if not np.all(np.isfinite(expected)) or not np.all(np.isfinite(actual)):
+            raise ValueError("lifted action overflowed finite numerical contract")
         denom = max(float(np.linalg.norm(expected)),np.finfo(float).eps)
         error = float(np.linalg.norm(actual-expected)/denom)
         return {"schema":"chronus.pulvini.lifted-action/1",
