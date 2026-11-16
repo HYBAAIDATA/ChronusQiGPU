@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Activity,
   CheckCircle2,
@@ -30,6 +30,7 @@ export default function MiningDashboardPage() {
   // Mining Engine Administration State
   const [isRunning, setIsRunning] = useState<boolean>(true);
   const [hashrateCap, setHashrateCap] = useState<number>(1);
+  const operatorEdited = useRef(false);
   const [baseHashrate, setBaseHashrate] = useState<number>(1);
   const [activeWarps, setActiveWarps] = useState<number>(72);
   const [coreVoltage, setCoreVoltage] = useState<number>(1.10);
@@ -85,11 +86,11 @@ export default function MiningDashboardPage() {
         if (typeof data.status === 'string') setIsRunning(data.status === 'RUNNING');
         const cap = typeof data.hashrate_cap_eh_s === 'number' ? data.hashrate_cap_eh_s : 1;
         setHashrateCap(cap);
-        if (typeof data.base_hashrate_eh_s === 'number') {
+        if (!operatorEdited.current && typeof data.base_hashrate_eh_s === 'number') {
           setBaseHashrate(Math.min(data.base_hashrate_eh_s, cap));
         }
         const throttle = data.patroclus?.stealth_target_eh_s;
-        if (typeof throttle === 'number') {
+        if (!operatorEdited.current && typeof throttle === 'number') {
           setStealthActiveEhs(Math.min(throttle, cap));
         }
         if (typeof data.active_warps === 'number') setActiveWarps(data.active_warps);
@@ -123,9 +124,10 @@ export default function MiningDashboardPage() {
 
   // No synthetic obstruction — system is in harmonic consensus
   const h1Obstruction = false
-  const effectiveHashrate = Number(
-    Math.min(baseHashrate, hashrateCap, stealthActiveEhs).toFixed(1),
-  );
+  const effectiveHashrate = Math.min(baseHashrate, hashrateCap, stealthActiveEhs)
+    .toFixed(2)
+    .replace(/0+$/, "")
+    .replace(/\.$/, "");
 
   // Admin Actions with API Integration
   async function handleToggleMining() {
@@ -143,6 +145,7 @@ export default function MiningDashboardPage() {
   }
 
   async function handleUpdateCapacity(newBase: number, newWarps: number, newV: number, newFan: number) {
+    operatorEdited.current = true;
     setBaseHashrate(newBase);
     setActiveWarps(newWarps);
     setCoreVoltage(newV);
@@ -181,13 +184,14 @@ export default function MiningDashboardPage() {
   }
 
   async function handleUpdateStealth(maxCap?: number, targetEhs?: number, consecutive?: boolean, presence?: boolean) {
+    operatorEdited.current = true;
     if (maxCap !== undefined) setMaxConfiguredEhs(maxCap);
     if (targetEhs !== undefined) setStealthActiveEhs(targetEhs);
     if (consecutive !== undefined) setNeverConsecutive(consecutive);
     if (presence !== undefined) setPersistentPresence(presence);
     try {
       await ChronusAPIClient.configureMiningStealth(
-        maxCap ?? maxConfiguredEhs,
+        maxCap,
         targetEhs ?? stealthActiveEhs,
         consecutive ?? neverConsecutive,
         presence ?? persistentPresence
