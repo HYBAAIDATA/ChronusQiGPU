@@ -85,3 +85,18 @@ def test_production_must_configure_durable_registry(monkeypatch):
     monkeypatch.delenv("CHRONUS_CIAAS_DURABLE_PATH", raising=False)
     with pytest.raises(RuntimeError, match="CHRONUS_CIAAS_DURABLE_PATH"):
         CIaaSStore()
+
+def test_settlement_uses_exact_integer_cents_for_large_amounts():
+    store = CIaaSStore(durable_path=None)  # Reference arithmetic only.
+    result = store.calculate_hermiten_settlement(
+        "nonexistent-reference-tenant",
+        counterfactual_cost=9007199254740993,
+        actual_cost=0,
+        incremental_cost=0,
+    )
+    assert result.counterfactual_cost_usd == "9007199254740993.00"
+    assert result.chronus_value_share_usd == "2251799813685248.25"
+    assert result.settlement_status == "CALCULATED_UNVERIFIED"
+    assert result.proof_certificate is None
+    with pytest.raises(ValueError):
+        store.calculate_hermiten_settlement("any", counterfactual_cost=-1)

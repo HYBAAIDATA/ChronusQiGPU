@@ -355,6 +355,9 @@ class CIaaSStore:
                 raise ValueError("Amounts must be finite nonnegative numbers")
             return int((amount * 100).quantize(Decimal("1"), rounding=ROUND_HALF_EVEN))
 
+        def money(value_cents: int) -> str:
+            return f"{value_cents // 100}.{value_cents % 100:02d}"
+
         cf_cents = cents(counterfactual_cost)
         act_cents = cents(actual_cost)
         inc_cents = cents(incremental_cost)
@@ -369,12 +372,12 @@ class CIaaSStore:
 
         return HermitenSettlement(
             tenant_id=tenant_id,
-            counterfactual_cost_usd=f"{cf_cents / 100:.2f}",
-            actual_cost_usd=f"{act_cents / 100:.2f}",
-            incremental_cost_usd=f"{inc_cents / 100:.2f}",
-            net_avoided_cost_usd=f"{net_avoided_cents / 100:.2f}",
-            chronus_value_share_usd=f"{value_share_cents / 100:.2f}",
-            client_retained_usd=f"{client_retained_cents / 100:.2f}",
+            counterfactual_cost_usd=money(cf_cents),
+            actual_cost_usd=money(act_cents),
+            incremental_cost_usd=money(inc_cents),
+            net_avoided_cost_usd=money(net_avoided_cents),
+            chronus_value_share_usd=money(value_share_cents),
+            client_retained_usd=money(client_retained_cents),
             settlement_status="CALCULATED_UNVERIFIED",
             proof_certificate=None,
         )
