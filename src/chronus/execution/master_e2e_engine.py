@@ -453,102 +453,110 @@ async def execute_master_end_to_end():
 
     for pool_name, port in pools:
         server = LocalStratumTestServer(pool_name, port)
-        await server.start()
-        await asyncio.sleep(0.1)
+        writer = None
+        try:
+            await server.start()
+            await asyncio.sleep(0.1)
 
-        reader, writer = await asyncio.open_connection("127.0.0.1", port)
-        logger.info(f"\n--- [EXECUTION] INITIATING SOCKET SESSION WITH {pool_name.upper()} ({port}) ---")
+            reader, writer = await asyncio.open_connection("127.0.0.1", port)
+            logger.info(f"\n--- [EXECUTION] INITIATING SOCKET SESSION WITH {pool_name.upper()} ({port}) ---")
 
-        # Step 1: mining.configure (ASICBoost Version-Rolling)
-        cfg_req = {"id": 1, "method": "mining.configure", "params": [["version-rolling"], {"version-rolling.mask": "1fffe000", "version-rolling.min-bit-count": 16}]}
-        writer.write((json.dumps(cfg_req) + "\n").encode("utf-8"))
-        await writer.drain()
-        cfg_res = json.loads((await reader.readline()).decode("utf-8").strip())
-        logger.info(f"[Step 1] mining.configure: Negotiated Mask={cfg_res['result']['version-rolling.mask']}")
+            # Step 1: mining.configure (ASICBoost Version-Rolling)
+            cfg_req = {"id": 1, "method": "mining.configure", "params": [["version-rolling"], {"version-rolling.mask": "1fffe000", "version-rolling.min-bit-count": 16}]}
+            writer.write((json.dumps(cfg_req) + "\n").encode("utf-8"))
+            await writer.drain()
+            cfg_res = json.loads((await reader.readline()).decode("utf-8").strip())
+            logger.info(f"[Step 1] mining.configure: Negotiated Mask={cfg_res['result']['version-rolling.mask']}")
 
-        # Step 2: mining.subscribe
-        sub_req = {"id": 2, "method": "mining.subscribe", "params": ["ChronusPatroclus/v36.0"]}
-        writer.write((json.dumps(sub_req) + "\n").encode("utf-8"))
-        await writer.drain()
-        sub_res = json.loads((await reader.readline()).decode("utf-8").strip())
-        extranonce1 = sub_res["result"][1]
-        extranonce2_size = sub_res["result"][2]
-        logger.info(f"[Step 2] mining.subscribe: ExtraNonce1={extranonce1}, ExtraNonce2_Size={extranonce2_size}")
+            # Step 2: mining.subscribe
+            sub_req = {"id": 2, "method": "mining.subscribe", "params": ["ChronusPatroclus/v36.0"]}
+            writer.write((json.dumps(sub_req) + "\n").encode("utf-8"))
+            await writer.drain()
+            sub_res = json.loads((await reader.readline()).decode("utf-8").strip())
+            extranonce1 = sub_res["result"][1]
+            extranonce2_size = sub_res["result"][2]
+            logger.info(f"[Step 2] mining.subscribe: ExtraNonce1={extranonce1}, ExtraNonce2_Size={extranonce2_size}")
 
-        # Step 3: mining.extranonce.subscribe
-        xns_req = {"id": 3, "method": "mining.extranonce.subscribe", "params": []}
-        writer.write((json.dumps(xns_req) + "\n").encode("utf-8"))
-        await writer.drain()
-        xns_res = json.loads((await reader.readline()).decode("utf-8").strip())
-        logger.info(f"[Step 3] mining.extranonce.subscribe: Result={xns_res['result']}")
+            # Step 3: mining.extranonce.subscribe
+            xns_req = {"id": 3, "method": "mining.extranonce.subscribe", "params": []}
+            writer.write((json.dumps(xns_req) + "\n").encode("utf-8"))
+            await writer.drain()
+            xns_res = json.loads((await reader.readline()).decode("utf-8").strip())
+            logger.info(f"[Step 3] mining.extranonce.subscribe: Result={xns_res['result']}")
 
-        # Step 4: mining.authorize (with stealth difficulty hint)
-        auth_req = {"id": 4, "method": "mining.authorize", "params": ["chronus_head_worker", "d=131072"]}
-        writer.write((json.dumps(auth_req) + "\n").encode("utf-8"))
-        await writer.drain()
-        auth_res = json.loads((await reader.readline()).decode("utf-8").strip())
-        logger.info(f"[Step 4] mining.authorize: Result={auth_res['result']} (Diff Hint='d=131072')")
+            # Step 4: mining.authorize (with stealth difficulty hint)
+            auth_req = {"id": 4, "method": "mining.authorize", "params": ["chronus_head_worker", "d=131072"]}
+            writer.write((json.dumps(auth_req) + "\n").encode("utf-8"))
+            await writer.drain()
+            auth_res = json.loads((await reader.readline()).decode("utf-8").strip())
+            logger.info(f"[Step 4] mining.authorize: Result={auth_res['result']} (Diff Hint='d=131072')")
 
-        # Step 5 & 6: Server pushes set_difficulty and notify
-        diff_line = json.loads((await reader.readline()).decode("utf-8").strip())
-        share_diff = diff_line["params"][0]
-        logger.info(f"[Step 5] mining.set_difficulty PUSH: Share Difficulty={share_diff}")
+            # Step 5 & 6: Server pushes set_difficulty and notify
+            diff_line = json.loads((await reader.readline()).decode("utf-8").strip())
+            share_diff = diff_line["params"][0]
+            logger.info(f"[Step 5] mining.set_difficulty PUSH: Share Difficulty={share_diff}")
 
-        notify_line = json.loads((await reader.readline()).decode("utf-8").strip())
-        job_params = notify_line["params"]
-        job_id, prevhash_stratum, coinb1, coinb2, merkle_branch, base_version, nbits, ntime, clean_jobs = job_params
-        logger.info(f"[Step 6] mining.notify PUSH: Job_ID={job_id}, NBits={nbits}, Version={base_version}")
+            notify_line = json.loads((await reader.readline()).decode("utf-8").strip())
+            job_params = notify_line["params"]
+            job_id, prevhash_stratum, coinb1, coinb2, merkle_branch, base_version, nbits, ntime, clean_jobs = job_params
+            logger.info(f"[Step 6] mining.notify PUSH: Job_ID={job_id}, NBits={nbits}, Version={base_version}")
 
-        # Step 7: Internal Myrmidon Search & F_257 Galois Phase Matching
-        alpha, beta = F257GaloisOracle.compute_phases(M=1)
-        logger.info(f"[Step 7] F_257 Galois Phase Matching: Alpha={alpha}, Beta(M=1)={beta}")
+            # Step 7: Internal Myrmidon Search & F_257 Galois Phase Matching
+            alpha, beta = F257GaloisOracle.compute_phases(M=1)
+            logger.info(f"[Step 7] F_257 Galois Phase Matching: Alpha={alpha}, Beta(M=1)={beta}")
 
-        # Genesis Block #0 Merkle Root — computed from coinbase transaction data
-        prevhash_le = swap_endian_words(prevhash_stratum)
-        extranonce2_hex = format_extranonce2(1, extranonce2_size)
-        merkle_root_bytes = compute_merkle_root(coinb1, extranonce1, extranonce2_hex, coinb2, list(merkle_branch))
+            # Genesis Block #0 Merkle Root — computed from coinbase transaction data
+            prevhash_le = swap_endian_words(prevhash_stratum)
+            extranonce2_hex = format_extranonce2(1, extranonce2_size)
+            merkle_root_bytes = compute_merkle_root(coinb1, extranonce1, extranonce2_hex, coinb2, list(merkle_branch))
 
-        # Apply Version Rolling
-        final_ver_int, ver_bits_submit = roll_version(base_version, "1fffe000", 0x00000000)
+            # Apply Version Rolling
+            final_ver_int, ver_bits_submit = roll_version(base_version, "1fffe000", 0x00000000)
 
-        # Candidate nonce search — verify the known valid Bitcoin Genesis nonce 2083236893 (0x7c2bac1d)
-        target_nonce = 2083236893
-        logger.info(f"[Step 7] Candidate nonce: {hex(target_nonce)} (Bitcoin Genesis Block #0 nonce)")
+            # Candidate nonce search — verify the known valid Bitcoin Genesis nonce 2083236893 (0x7c2bac1d)
+            target_nonce = 2083236893
+            logger.info(f"[Step 7] Candidate nonce: {hex(target_nonce)} (Bitcoin Genesis Block #0 nonce)")
 
-        # Step 8: 80-Byte Block Header Assembly & Gatekeeper Verification
-        header_80b = build_block_header(final_ver_int, prevhash_le, merkle_root_bytes, ntime, nbits, target_nonce)
-        is_valid, block_hash_be, hash_int, target_int = check_share_difficulty_exact(header_80b, share_diff)
+            # Step 8: 80-Byte Block Header Assembly & Gatekeeper Verification
+            header_80b = build_block_header(final_ver_int, prevhash_le, merkle_root_bytes, ntime, nbits, target_nonce)
+            is_valid, block_hash_be, hash_int, target_int = check_share_difficulty_exact(header_80b, share_diff)
 
-        gatekeeper_passed = gateway.pre_submit_gatekeeper(header_80b, target_int)
-        if not gatekeeper_passed:
-            raise RuntimeError("Pre-submit local gatekeeper failed")
-        logger.info(f"[LOCAL GATEKEEPER] SHA-256d Check: Hash={block_hash_be[:16]}... <= Target ({gatekeeper_passed}); latency not measured")
+            gatekeeper_passed = gateway.pre_submit_gatekeeper(header_80b, target_int)
+            if not gatekeeper_passed:
+                raise RuntimeError("Pre-submit local gatekeeper failed")
+            logger.info(f"[LOCAL GATEKEEPER] SHA-256d Check: Hash={block_hash_be[:16]}... <= Target ({gatekeeper_passed}); latency not measured")
 
-        # Stealth Rule Verification (Block #850000)
-        stealth_ok = gateway.stealth.can_submit_block(850000)
-        if not stealth_ok:
-            raise RuntimeError("Stealth policy failed")
-        gateway.stealth.record_mined_block(850000)
+            # Stealth Rule Verification (Block #850000)
+            stealth_ok = gateway.stealth.can_submit_block(850000)
+            if not stealth_ok:
+                raise RuntimeError("Stealth policy failed")
+            gateway.stealth.record_mined_block(850000)
 
-        # Step 9: 6-Parameter Wire Submit Payload
-        submit_payload = gateway.build_mining_submit_payload("chronus_head_worker", job_id, extranonce2_hex, ntime, target_nonce, ver_bits_submit)
-        writer.write((json.dumps(submit_payload) + "\n").encode("utf-8"))
-        await writer.drain()
+            # Step 9: 6-Parameter Wire Submit Payload
+            submit_payload = gateway.build_mining_submit_payload("chronus_head_worker", job_id, extranonce2_hex, ntime, target_nonce, ver_bits_submit)
+            writer.write((json.dumps(submit_payload) + "\n").encode("utf-8"))
+            await writer.drain()
 
-        submit_res = json.loads((await reader.readline()).decode("utf-8").strip())
-        local_fixture_accepted = (
-            isinstance(submit_res, dict)
-            and submit_res.get("result") is True
-            and not submit_res.get("error")
-        )
+            submit_res = json.loads((await reader.readline()).decode("utf-8").strip())
+            local_fixture_accepted = (
+                isinstance(submit_res, dict)
+                and submit_res.get("result") is True
+                and not submit_res.get("error")
+            )
 
-        writer.close()
-        await writer.wait_closed()
-        await server.stop()
-        if not local_fixture_accepted:
-            raise RuntimeError(f"Local loopback server rejected mining.submit for {pool_name}")
-        logger.info("[LOCAL FIXTURE] mining.submit accepted by in-process loopback server only")
-        logger.info(f"=== PASSED END-TO-END PIPELINE FOR {pool_name.upper()} ===")
+            if not local_fixture_accepted:
+                raise RuntimeError(f"Local loopback server rejected mining.submit for {pool_name}")
+            logger.info("[LOCAL FIXTURE] mining.submit accepted by in-process loopback server only")
+            logger.info(f"=== PASSED END-TO-END PIPELINE FOR {pool_name.upper()} ===")
+        finally:
+            if writer is not None:
+                writer.close()
+                try:
+                    await writer.wait_closed()
+                finally:
+                    await server.stop()
+            else:
+                await server.stop()
 
     logger.info("\n========================================================================")
     logger.info(f"   END-TO-END PIPELINE COMPLETE FOR {pool_name.upper()}")
