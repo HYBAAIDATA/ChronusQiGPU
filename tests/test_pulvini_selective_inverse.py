@@ -68,3 +68,15 @@ def test_corrupt_final_fold_size_cannot_misroute_partial_reads():
     )
     with pytest.raises(ValueError, match="chronology"):
         VerifiedFoldIndex.compile(corrupted)
+
+
+def test_compiled_inverse_requires_canonical_full_precision_dtype():
+    from dataclasses import replace
+    from chronus.tensor.folded_compute import VerifiedFoldedOperand
+    executor = FoldedTensorExecutor(depth=1)
+    operand = executor.fold(np.arange(13, dtype=float))
+    state = replace(operand.state,
+                    folded=operand.state.folded.astype(np.float32),
+                    kernels=tuple(x.astype(np.float32) for x in operand.state.kernels))
+    with pytest.raises(ValueError, match="canonical"):
+        VerifiedFoldIndex.compile(VerifiedFoldedOperand(state, operand.evidence))
