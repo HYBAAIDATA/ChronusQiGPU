@@ -90,7 +90,7 @@ class TestEnhancedTensorInitialization(unittest.TestCase):
         """Asserts chi_max exceeding hardware hard cap raises AssertionError."""
         cap = HARD_CAP("cpu")
         cfg = Config(n_sites=4, topology="MPS", chi_max=cap + 100, target_dim=4)
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             _initialize_tensor_network(cfg)
 
 
@@ -104,11 +104,11 @@ class TestContractionPlanner(unittest.TestCase):
     def test_search_and_select_best_tree(self) -> None:
         """Verifies candidate tree evaluation and selection."""
         candidates = search_contraction_trees(self.net, budget=1024 * 1024)
-        self.assertGreaterEqual(len(candidates), 3)
+        self.assertEqual(len(candidates), 2)
 
         best = select_best_tree(candidates, budget=1024 * 1024)
         self.assertIsInstance(best, ContractionTree)
-        self.assertIn(best.strategy, ["greedy_rank_minimization", "dynamic_programming_path", "hierarchical_bisection"])
+        self.assertIn(best.strategy, ["mps_norm_left_to_right", "mps_norm_right_to_left"])
 
     def test_parallel_evaluate_classical_labeling(self) -> None:
         """Verifies parallel evaluation is labeled classical."""
@@ -116,7 +116,7 @@ class TestContractionPlanner(unittest.TestCase):
         res = parallel_evaluate(candidates, devices=["cuda:0", "cuda:1"])
         self.assertEqual(len(res), len(candidates))
         for r in res:
-            self.assertEqual(r["parallel_evaluation_mode"], "classical_gpu_or_multithreaded")
+            self.assertEqual(r["parallel_evaluation_mode"], "classical_path_cost_estimation_only")
 
 
 class TestSearchWorkload(unittest.TestCase):
@@ -139,7 +139,7 @@ class TestSearchWorkload(unittest.TestCase):
 
         self.assertIsInstance(result, SearchResult)
         self.assertFalse(result.is_quantum)  # MANDATORY
-        self.assertEqual(result.method, "tensor_network_inner_product")
+        self.assertEqual(result.method, "numpy_cosine_similarity")
         self.assertEqual(result.ids[0], "doc1")
         self.assertAlmostEqual(result.scores[0], 1.0, places=4)
         self.assertGreater(result.latency_ms, 0.0)  # MEASURED
@@ -161,12 +161,18 @@ class TestMultiGPUSharding(unittest.TestCase):
     def test_execute_sharded_contraction(self) -> None:
         cfg = Config(n_sites=4, topology="MPS", chi_max=16, target_dim=4)
         net = _initialize_tensor_network(cfg)
-        plan = plan_gpu_shards(net, devices=["cuda:0"], policy="replicate")
-        tree = ContractionTree(name="test", order=[(0, 1)], flops=1000, peak_mem=4096, strategy="test")
-        res = execute_sharded_contraction(plan, tree)
+        tree = select_best_tree(search_contraction_trees(net, 1 << 20), 1 << 20)
+        plan = plan_gpu_shards(net, devices=["cpu"], policy="replicate")
+        result = execute_sharded_contraction(plan, tree, network=net)
+        self.assertEqual(result["status"], "CONTRACTION_EXECUTED_CPU")
+        self.assertAlmostEqual(result["result_norm_squared"], 1.0)
+        self.assertFalse(result["is_quantum"])
+        with self.assertRaises(ValueError):
+            execute_sharded_contraction(plan, tree)
+        with self.assertRaises(NotImplementedError):
+            gpu_plan = plan_gpu_shards(net, ["cuda:0"], "replicate")
+            execute_sharded_contraction(gpu_plan, tree, net)
 
-        self.assertEqual(res["status"], "SHARDED_CONTRACTION_EXECUTED")
-        self.assertFalse(res["is_quantum"])
 
 
 class TestProductionHRAPIv2Endpoints(unittest.TestCase):

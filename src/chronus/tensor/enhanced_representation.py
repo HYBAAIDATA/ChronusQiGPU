@@ -57,7 +57,8 @@ FORBIDDEN_HYPE_STRINGS: List[str] = [
 
 def program_entry_charter_check(module_name: str = "EnhancedTensorRepresentation") -> bool:
     """Verifies module name and that claims are classical and labeled."""
-    assert module_name == "EnhancedTensorRepresentation", f"Module name mismatch: {module_name}"
+    if module_name != "EnhancedTensorRepresentation":
+        raise ValueError(f"Module name mismatch: {module_name}")
     return True
 
 
@@ -212,10 +213,10 @@ def topology_formula(topology: str, n: int, chi: int) -> int:
 
 def _initialize_tensor_network(cfg: Config) -> TensorNetwork:
     """Constructs real MPS/MPO/PEPS/MERA network with audited memory and error bounds."""
-    assert cfg.chi_max <= HARD_CAP(cfg.device), (
-        f"Charter violation: chi_max={cfg.chi_max} exceeds hardware hard cap {HARD_CAP(cfg.device)}"
-    )
-    assert cfg.target_dim >= 2, f"target_dim must be >= 2, got {cfg.target_dim}"
+    if cfg.chi_max > HARD_CAP(cfg.device):
+        raise ValueError("bond dimension exceeds configured bound")
+    if cfg.target_dim < 2:
+        raise ValueError("target_dim must be at least two")
 
     network, ledger = build_network(
         n_nodes=cfg.n_sites,
@@ -280,46 +281,50 @@ class ContractionTree:
     strategy: str
 
 
-def search_contraction_trees(network: TensorNetwork, budget: int) -> List[ContractionTree]:
-    """NP-hard contraction search. We search; we do not 'superpose'."""
-    candidates = []
+
+def _mps_sites(network: TensorNetwork) -> List[np.ndarray]:
+    if network.topology != "MPS" or not network.nodes:
+        raise NotImplementedError("only actual MPS norm transfer is implemented")
     n = len(network.nodes)
-    chi = network.chi_max
+    if set(network.nodes) != set(range(n)):
+        raise ValueError("MPS site indices must be contiguous")
+    sites = [np.asarray(network.node_for(i).tensor.to_dense(), dtype=np.complex128)
+             for i in range(n)]
+    for i, site in enumerate(sites):
+        if site.ndim != 3 or site.shape[1] != 2 or not np.all(np.isfinite(site)):
+            raise ValueError("non-finite or invalid qubit MPS tensor")
+        if (i == 0 and site.shape[0] != 1) or (i == n-1 and site.shape[-1] != 1):
+            raise ValueError("invalid MPS boundary bond dimension")
+        if i+1 < n and site.shape[-1] != sites[i+1].shape[0]:
+            raise ValueError("adjacent MPS bonds are incompatible")
+    return sites
 
-    # 1. Greedy
-    candidates.append(
-        ContractionTree(
-            name="greedy",
-            order=[(i, i + 1) for i in range(n - 1)],
-            flops=n * (chi ** 2) * 2,
-            peak_mem=min(budget, n * (chi ** 2) * 16),
-            strategy="greedy_rank_minimization",
-        )
-    )
 
-    # 2. Opt-Einsum
-    candidates.append(
-        ContractionTree(
-            name="opt_einsum",
-            order=list(reversed([(i, i + 1) for i in range(n - 1)])),
-            flops=int(n * (chi ** 2) * 1.7),
-            peak_mem=min(budget, int(n * (chi ** 2) * 14)),
-            strategy="dynamic_programming_path",
-        )
-    )
-
-    # 3. Balanced Hierarchical Tree
-    candidates.append(
-        ContractionTree(
-            name="balanced_tree",
-            order=[(0, n - 1)],
-            flops=int(n * (chi ** 2) * 2.1),
-            peak_mem=min(budget, int(n * (chi ** 2) * 18)),
-            strategy="hierarchical_bisection",
-        )
-    )
-
-    return candidates
+def search_contraction_trees(network: TensorNetwork, budget: int) -> List[ContractionTree]:
+    """Dimension-derived real MPS norm-transfer alternatives; NO fake dynamic programming."""
+    if type(budget) is not int or budget < 1:
+        raise ValueError("positive byte budget required")
+    sites = _mps_sites(network)
+    resident = sum(a.nbytes for a in sites)
+    options = []
+    for forward, name, strategy in (
+        (True, "left_transfer", "mps_norm_left_to_right"),
+        (False, "right_transfer", "mps_norm_right_to_left"),
+    ):
+        predicted_flops, predicted_peak = 0, resident + 16
+        for site in sites if forward else reversed(sites):
+            l, d, r = site.shape
+            inner, outer = (l, r) if forward else (r, l)
+            predicted_flops += 8 * d * (inner*inner*outer + inner*outer*outer)
+            predicted_peak = max(predicted_peak, resident + 16*(inner*inner + outer*outer))
+        path = [(i,i+1) for i in range(len(sites)-1)]
+        if not forward:
+            path.reverse()
+        options.append(ContractionTree(
+            name=name, order=path, flops=predicted_flops,
+            peak_mem=predicted_peak, strategy=strategy,
+        ))
+    return options
 
 
 def select_best_tree(candidates: List[ContractionTree], budget: int) -> ContractionTree:
@@ -343,7 +348,7 @@ def parallel_evaluate(candidates: List[ContractionTree], devices: List[str]) -> 
             "flops": c.flops,
             "peak_memory_bytes": c.peak_mem,
             "device": target_dev,
-            "parallel_evaluation_mode": "classical_gpu_or_multithreaded",
+            "parallel_evaluation_mode": "classical_path_cost_estimation_only",
         })
     return results
 
@@ -406,7 +411,7 @@ def search(query: Dict[str, Any], index: SearchIndex, top_k: int = 5) -> SearchR
     return SearchResult(
         ids=[index.documents[i] for i in order],
         scores=scores[order],
-        method="tensor_network_inner_product",
+        method="numpy_cosine_similarity",
         is_quantum=False,  # MANDATORY
         error_bound=index.ledger.global_bound,
         latency_ms=round(measured_wall_time_ms, 4),  # MEASURED, not claimed
@@ -460,14 +465,42 @@ def plan_gpu_shards(network: TensorNetwork, devices: List[str], policy: str = "s
     return ShardPlan(policy=policy, shards=shards, memory_per_device=mem)
 
 
-def execute_sharded_contraction(plan: ShardPlan, tree: ContractionTree) -> Dict[str, Any]:
-    """Executes sharded tensor contraction across assigned device plans."""
+def execute_sharded_contraction(
+    plan: ShardPlan, tree: ContractionTree, network: TensorNetwork | None = None,
+) -> Dict[str, Any]:
+    """Actually contract the MPS norm on CPU; unsupported GPU shards fail closed."""
+    if network is None:
+        raise ValueError("tensor network is required; plan-only cannot execute")
+    if set(plan.shards) != {"cpu"}:
+        raise NotImplementedError("multi-GPU contraction is not a qualified execution path")
+    sites = _mps_sites(network)
+    if tree.strategy not in {"mps_norm_left_to_right", "mps_norm_right_to_left"}:
+        raise ValueError("unknown contraction path")
+    start = time.perf_counter_ns()
+    env = np.ones((1,1), dtype=np.complex128)
+    if tree.strategy == "mps_norm_left_to_right":
+        for site in sites:
+            env = np.einsum("ab,asc,bsd->cd", env, site.conj(), site, optimize=True)
+    else:
+        for site in reversed(sites):
+            env = np.einsum("asc,bsd,cd->ab", site.conj(), site, env, optimize=True)
+    elapsed = time.perf_counter_ns() - start
+    scalar = env[0,0]
+    if not np.isfinite(scalar) or abs(scalar.imag) > 1e-10 * max(1., abs(scalar.real)) or scalar.real < -1e-12:
+        raise ArithmeticError("invalid MPS squared norm")
     return {
-        "status": "SHARDED_CONTRACTION_EXECUTED",
+        "status": "CONTRACTION_EXECUTED_CPU",
+        "operation": "MPS_NORM_SQUARED",
+        "result_norm_squared": float(max(0., scalar.real)),
+        "execution_elapsed_ns": elapsed,
+        "execution_device": "cpu",
         "policy": plan.policy,
         "tree_strategy": tree.strategy,
-        "measured_flops": tree.flops,
+        "flops_estimated_not_measured": tree.flops,
+        "peak_memory_estimate_bytes": tree.peak_mem,
         "is_quantum": False,
+        "physical_gpu_claimed": False,
+        "symmetry_speedup_claimed": False,
     }
 
 
@@ -563,22 +596,18 @@ class EnhancedTensorRepresentation:
         return select_best_tree(candidates, budget)
 
     def optimize_contraction(self, query_payload: Dict[str, Any]) -> Dict[str, Any]:
-        """Dynamically evaluates and executes the optimal contraction route."""
-        t0_ns = time.perf_counter_ns()
+        """Execute the chosen actual MPS norm transfer, or refuse other workloads."""
+        if query_payload not in ({}, {"operation": "norm"}):
+            raise NotImplementedError("only MPS norm contraction is implemented")
+        start = time.perf_counter_ns()
         trees = self.parallel_pathway_search()
-        best_tree = self.weighted_pathway_aggregation(trees)
-        _sharded_res = execute_sharded_contraction(self.shard_plan, best_tree)
-        t1_ns = time.perf_counter_ns()
-        latency_ms = (t1_ns - t0_ns) / 1_000_000.0
-
+        best = self.weighted_pathway_aggregation(trees)
+        result = execute_sharded_contraction(self.shard_plan, best, self.network)
         return {
-            "status": "OPTIMAL_CONTRACTION_EXECUTED",
-            "selected_strategy": best_tree.strategy,
-            "flops": best_tree.flops,
-            "peak_mem_bytes": best_tree.peak_mem,
-            "measured_latency_ms": round(latency_ms, 4),
-            "is_quantum": False,  # MANDATORY
-            "method": "classical_tensor_network",
+            **result,
+            "selected_strategy": best.strategy,
+            "measured_latency_ms": round((time.perf_counter_ns()-start)/1e6, 4),
+            "method": "finite_precision_mps_norm_transfer",
             "error_bound": self.ledger.global_bound,
             "refused_claims": ["0.01ms latency", "708x speedup", "100X information density"],
         }
