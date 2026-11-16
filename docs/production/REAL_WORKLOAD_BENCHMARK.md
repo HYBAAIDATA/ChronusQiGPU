@@ -6,7 +6,7 @@
 
 The supplied draft referenced APIs that do not exist in the maintained tree (`chronus.compute.pulvini.PULVINIV3`, `chronus.manifold.h4.H4Manifold`, `chronus.unfold.partial.TruePartialUnfold`, and a `PhyllotaxisStorage.write/read` service). This implementation uses the maintained APIs without modifying their authority:
 
-- Chronus: `PhiTensorCore`, `GeodesicScheduler`, `MetricTensor`, `ExactFoldState`; software NumPy reference execution.
+- Chronus: `PhiTensorCore` and `ExactFoldState`; software NumPy reference execution. Exact H4 geodesic traversal is withheld rather than approximated.
 - PULVINI V3: existing protected `fold_verified` / `unfold_verified`; float64/complex128 numerical reconstruction, with the **full retained kernel state** counted. Not net compression.
 - OVID: representation transforms/materialisation through `ProductionTriad`.
 - THESEUS: durable tenant-scoped SQLite/WAL custody, restart readback and journal continuity through `ProductionTriad`.
@@ -48,9 +48,9 @@ These tests deliberately use marked non-production fixtures to validate safety a
 
 ## What is and is not measured
 
-The report contains input SHA-256, explicit provenance status, git commit when locally available, wall-clock `perf_counter_ns` application-call timings, independent NumPy addition output comparison, deterministic Euclidean-4D reference path endpoints when applicable, full PULVINI kernel accounting, exact partial snapshot reconstruction and durable custody readback from a fresh service instance.
+The report contains input SHA-256, explicit provenance status, git commit when locally available, wall-clock `perf_counter_ns` application-call timings, independent NumPy addition output comparison, an explicit UNAVAILABLE status for exact H4 traversal on arbitrary tensor inputs, full PULVINI kernel accounting, exact partial snapshot reconstruction and durable custody readback from a fresh service instance.
 
-The NumPy baseline and Chronus `PhiTensorCore` both use software NumPy; their timings do not establish quantum or physical acceleration. Euclidean-4D endpoints do **not** establish H4 execution. PULVINI working-set ratio is **not** net storage compression. Partial-access latency samples do not prove constant-time complexity. SQLite/WAL application-call timings do not prove NVMe throughput or power-loss recovery. No scaled tableau baseline, fabricated 13x ratio, random H4 target, hardware claim or unconditional success receipt is generated.
+The NumPy baseline and Chronus `PhiTensorCore` both use software NumPy; their timings do not establish quantum or physical acceleration. Floating-point Euclidean traversal is deliberately excluded from the exact H4 path; the exact tensor-to-H4 itinerary is **UNAVAILABLE**. PULVINI working-set ratio is **not** net storage compression. Partial-access latency samples do not prove constant-time complexity. SQLite/WAL application-call timings do not prove NVMe throughput or power-loss recovery. No scaled tableau baseline, fabricated 13x ratio, random H4 target, hardware claim or unconditional success receipt is generated.
 
 `integrity_sha256` is a deterministic digest of the JSON record **not a signature**. Actual authenticated evidence requires THESEUS/AL HARAS-backed attestation and independent source/runtime qualification, outside this script's scope.
 
