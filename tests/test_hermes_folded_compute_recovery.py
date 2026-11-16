@@ -80,3 +80,16 @@ def test_matrix_result_budget_before_allocation():
     b = executor.fold(np.arange(400, dtype=float).reshape(1, 400))
     with pytest.raises(ValueError, match="output exceeds"):
         executor.execute("matmul", a, b)
+
+
+@pytest.mark.parametrize("replacement", [
+    np.array([2**53+1], dtype=np.int64),
+    np.array([np.longdouble("1.0000000000000000001")], dtype=np.longdouble),
+])
+def test_window_rejects_numerical_precision_narrowing(replacement):
+    executor = FoldedTensorExecutor(depth=2)
+    operand = executor.fold(np.arange(12, dtype=np.float64))
+    if np.can_cast(replacement.dtype, np.dtype("float64"), casting="safe"):
+        pytest.skip("host platform considers this scalar type a safe widening input")
+    with pytest.raises(ValueError, match="truncate"):
+        executor.update_window(operand, replacement, start=1, stop=2)
