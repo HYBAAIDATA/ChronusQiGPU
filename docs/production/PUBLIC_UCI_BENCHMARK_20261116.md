@@ -138,3 +138,25 @@ Run any published benchmarks on a pinned release commit and identified host;
 collect original timing distributions, detailed environment and independent
 attestation. **Do not conflate a verified module-local benchmark with a
 production-ready integrated service.**
+
+
+### Unified component remeasurement (direct maintained source)
+
+After installing the repository, run the exact same CPU-reference component
+workloads against the SHA-256-pinned public files. This command measures
+`PhiTensorCore`, `PULVINI V3` and `ExactFoldState` directly from the
+maintained `chronus` package and writes unsigned, commit-linked per-call
+distributions; it does **not** require a production tenant or represent full
+Triad deployment evidence:
+
+```bash
+python scripts/benchmarks/run_public_uci_components.py \
+  --manifest /secure/uci-observed/manifest.yaml \
+  --output /secure/uci-observed/component-measurements.json \
+  --depth 4
+```
+
+This component runner is deliberately separate from
+`benchmarks/real_workload_benchmark.py` (which additionally exercises the
+full OVID–THESEUS persistent custody path). Do not add their timings
+or compare unrelated operations to produce an artificial speedup.
