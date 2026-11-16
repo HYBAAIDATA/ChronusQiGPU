@@ -93,3 +93,20 @@ def test_optional_real_opencl_gpu_exercises_every_kernel():
         assert result["output_integrity_verified"] is True
         assert result["physical_execution"] is True
     assert backend.device_record()["integrated_gpu_verified"] is False
+
+
+def test_optional_gpu_refuses_narrowing_scale_and_overflow():
+    backend = OpenCLTensorBackend()
+    if not backend.is_available():
+        pytest.skip("NO_PHYSICAL_OPENCL_GPU: GPU evidence unavailable")
+    one = np.array([1.0, 2.0], dtype=np.float32)
+    with pytest.raises(ValueError, match="lose precision"):
+        backend.execute("scale", one, scalar=1.0 / 3.0)
+    with pytest.raises(ValueError, match="numerical policy|finite"):
+        backend.execute("scale", one, scalar=float("inf"))
+    with pytest.raises(RuntimeError, match="non-finite"):
+        backend.execute(
+            "hadamard",
+            np.array([np.finfo(np.float32).max], dtype=np.float32),
+            np.array([np.finfo(np.float32).max], dtype=np.float32),
+        )
