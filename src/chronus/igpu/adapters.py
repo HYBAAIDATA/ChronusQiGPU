@@ -193,7 +193,7 @@ def promote_adapter(backend: AdapterBackend, kernel: dict) -> bool:
         elevation_preflight(action)
         return False
 
-    # Axiom 6: record evidence digest chain
+    # Axiom 6: derive the evidence digest chain before reporting eligibility.
     from chronus.core.dataclasses import EvidenceRecord
 
     _evidence = EvidenceRecord(
@@ -203,5 +203,5 @@ def promote_adapter(backend: AdapterBackend, kernel: dict) -> bool:
         config_digest=conformance.digest_chain,
         output_digest="conformance_passed",
         trust_class=TrustClass.RUNTIME_SIGNED,
-    )
+    ).digest_chain()
     return True
