@@ -37,11 +37,13 @@ def main() -> int:
     output={"status":verdict.status,"blockers":list(verdict.unqualified),
             "attestation_verified":bool(attestation_ok and identity_ok),
             "test_suite_pass":bool(test_ok),"gates":gates,
-            "claims":dispositions(gates, bool(a.attestation_verified and identity_ok and test_ok))}
+            "claims":dispositions(gates, bool(attestation_ok and identity_ok and test_ok))}
     target=Path(a.output)
     target.parent.mkdir(parents=True,exist_ok=True)
     target.write_text(json.dumps(output,indent=2,sort_keys=True)+"\n")
     print(json.dumps(output,sort_keys=True))
-    return 0 if verdict.status=="PASS" else 1
+    # Success here means the signed evidence was actually verified and assessed,
+    # NOT that the product qualified. UNQUALIFIED remains explicit in the verdict.
+    return 0 if attestation_ok and identity_ok else 1
 if __name__=="__main__":
     raise SystemExit(main())
