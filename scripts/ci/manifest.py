@@ -55,20 +55,26 @@ def collect_release_evidence() -> dict[str, object]:
             "status": "MISSING",
             "path": None,
             "required": list(_REQUIRED_RELEASE_EVIDENCE),
-            "missing": list(_REQUIRED_RELEASE_EVIDENCE) + [
-                "CHRONUS_RELEASE_APPROVED=true",
-            ],
+            "missing": list(_REQUIRED_RELEASE_EVIDENCE),
         }
 
     root = os.path.abspath(configured)
-    missing = [
-        name for name in _REQUIRED_RELEASE_EVIDENCE
-        if not os.path.isfile(os.path.join(root, name))
-    ]
-    if os.getenv("CHRONUS_RELEASE_APPROVED", "").strip().lower() not in {
-        "1", "true", "yes",
-    }:
-        missing.append("CHRONUS_RELEASE_APPROVED=true")
+    # Existence alone is not evidence: each artifact must be a non-empty JSON
+    # object. An environment flag is never accepted as owner approval.
+    missing = []
+    for name in _REQUIRED_RELEASE_EVIDENCE:
+        path = os.path.join(root, name)
+        if not os.path.isfile(path) or os.path.getsize(path) == 0:
+            missing.append(name)
+            continue
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                content = json.load(f)
+        except (OSError, ValueError):
+            missing.append(name)
+            continue
+        if not isinstance(content, dict) or not content:
+            missing.append(name)
     return {
         "status": "PRESENT" if not missing else "MISSING",
         "path": root,
