@@ -76,3 +76,10 @@ def test_large_integer_scalar_cannot_round_before_composition():
     operand=executor.fold(np.arange(12,dtype=float))
     with pytest.raises(ValueError,match="exactly representable"):
         executor.execute_folded_linear(operand,operand,alpha=np.int64(2**53+1))
+
+
+def test_extreme_scalar_beyond_float64_cannot_be_silently_cast():
+    executor = FoldedTensorExecutor(depth=3)
+    operand = executor.fold(np.ones(16, dtype=float))
+    with pytest.raises(ValueError, match="scalar|canonical|representable"):
+        executor.execute_folded_linear(operand, operand, alpha=float("inf"))
