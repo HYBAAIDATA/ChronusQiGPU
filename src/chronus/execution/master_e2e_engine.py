@@ -536,13 +536,18 @@ async def execute_master_end_to_end():
         await writer.drain()
 
         submit_res = json.loads((await reader.readline()).decode("utf-8").strip())
-        if submit_res.get("result") is not True or submit_res.get("error"):
-            raise RuntimeError(f"Local loopback server rejected mining.submit for {pool_name}")
-        logger.info("[LOCAL FIXTURE] mining.submit accepted by in-process loopback server only")
+        local_fixture_accepted = (
+            isinstance(submit_res, dict)
+            and submit_res.get("result") is True
+            and not submit_res.get("error")
+        )
 
         writer.close()
         await writer.wait_closed()
         await server.stop()
+        if not local_fixture_accepted:
+            raise RuntimeError(f"Local loopback server rejected mining.submit for {pool_name}")
+        logger.info("[LOCAL FIXTURE] mining.submit accepted by in-process loopback server only")
         logger.info(f"=== PASSED END-TO-END PIPELINE FOR {pool_name.upper()} ===")
 
     logger.info("\n========================================================================")
