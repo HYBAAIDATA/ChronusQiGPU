@@ -128,3 +128,22 @@ def test_exact_metric_discovery_monotone_spd_and_no_false_isomorphism():
         graph_vertices=120, graph_edges=720, regular_degree=12)
     assert "H4_600_CELL_GRAPH" in proposals["candidates"]
     assert "NOT_GROUP_ISOMORPHISM" in proposals["classification"]
+
+
+def test_legacy_bilinear_proxy_and_true_alternating_extension_component():
+    from chronus.quantum.geometric_polychoron import (
+        F257Phi, QuantumGeometricTensor,
+    )
+    from chronus.geodesic.hermitian import conjugate
+    zero, one, phi = F257Phi.zero(), F257Phi.one(), F257Phi.phi()
+    state = (one,zero)
+    di = (zero,one)
+    dj = (zero,phi)
+    qij = QuantumGeometricTensor.evaluate_hermitian(state,di,dj)
+    qji = QuantumGeometricTensor.evaluate_hermitian(state,dj,di)
+    assert qij.tensor == phi
+    assert qij.alternating_coefficient == 1
+    assert qji.tensor == conjugate(phi)
+    assert qji.alternating_coefficient == (-1) % 257
+    assert qij.is_hermitian_partner_of(qji)
+    assert QuantumGeometricTensor.evaluate([1,0],[0,1],[0,2])[1] == 0
