@@ -28,6 +28,7 @@ from chronus.config import runtime_bounds
 from chronus.ovid.transform import OvidTransformService
 from chronus.pulvini import fold_verified, unfold_verified
 from chronus.tensor.folded_state import ExactFoldState
+from chronus.tensor.pulvini_selective import unfold_partial_recursive
 from chronus.tensor.geodesic import PhiTensorCore
 from chronus.triad import ProductionTriad
 
@@ -217,6 +218,16 @@ def _tensor_workload(payload: bytes, *, depth: int) -> dict:
     if (not np.all(np.isfinite(restored)) or
             not np.allclose(restored, canonical, rtol=1e-12, atol=1e-12)):
         raise ValueError("PULVINI reconstructed tensor exceeds recorded numerical tolerance")
+    # Genuine PULVINI selective recovery traces only required folded/kernel entries.
+    # This does NOT verify full-source SHA-256 and is not a hardware access timing.
+    selected_values = min(64, canonical.size)
+    started = time.perf_counter_ns()
+    partial = unfold_partial_recursive(state, 0, selected_values)
+    partial_ns = time.perf_counter_ns() - started
+    if not np.allclose(
+        partial.values, canonical.reshape(-1)[:selected_values], rtol=0, atol=1e-12
+    ):
+        raise ValueError("PULVINI genuine partial unfolding failed numerical parity")
     return {
         "operation": "tensor_reference_add_and_pulvini",
         "shape": list(array.shape), "dtype": str(array.dtype),
@@ -227,6 +238,12 @@ def _tensor_workload(payload: bytes, *, depth: int) -> dict:
         "pulvini": {
             "depth": state.depth, "normalization": state.normalization,
             "fold_ns": fold_ns, "unfold_ns": unfold_ns,
+            "selective_unfold_ns": partial_ns,
+            "selective_unfold_values": selected_values,
+            "selective_folded_entries_touched": partial.touched_folded_indices,
+            "selective_kernel_entries_touched": partial.touched_kernel_entries,
+            "selective_unfold_without_full_reconstruction": True,
+            "selective_full_source_digest_verified": False,
             "input_promoted_bytes": receipt.original_bytes,
             "working_set_bytes": receipt.folded_bytes,
             "kernel_bytes": receipt.kernel_bytes,

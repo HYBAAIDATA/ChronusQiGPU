@@ -78,6 +78,10 @@ def test_real_execution_path_with_explicit_nonproduction_tensor_fixture(tmp_path
     entry = result["entries"][0]
     assert entry["source_class"] == "TEST_FIXTURE_NON_PRODUCTION"
     assert entry["workload"]["addition_exact_match"]
+    assert entry["workload"]["pulvini"]["selective_unfold_without_full_reconstruction"] is True
+    assert entry["workload"]["pulvini"]["selective_full_source_digest_verified"] is False
+    assert entry["workload"]["pulvini"]["selective_unfold_values"] > 0
+    assert entry["workload"]["pulvini"]["selective_folded_entries_touched"] <= entry["workload"]["pulvini"]["selective_unfold_values"]
     assert entry["workload"]["pulvini"]["numerical_reconstruction_verified"]
     assert entry["workload"]["pulvini"]["complete_retained_bytes"] == (
         entry["workload"]["pulvini"]["working_set_bytes"]
