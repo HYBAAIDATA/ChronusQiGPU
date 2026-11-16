@@ -99,6 +99,10 @@ class FoldedTensorExecutor:
             raise ValueError("wrong folded operand count")
         t0 = perf_counter_ns()
         values = [self.materialise(v) for v in operands]
+        if operation == "matmul" and all(v.ndim == 2 for v in values):
+            if (values[0].shape[1] != values[1].shape[0] or
+                    values[0].shape[0] * values[1].shape[1] > self.max_elements):
+                raise ValueError("matrix multiplication output exceeds bounded policy")
         if operation == "fma":
             # Two ordinary CPU operations; NOT fused arithmetic or a GPU FMA.
             multiplied = self.tensor_core.execute("hadamard", values[0], values[1])
