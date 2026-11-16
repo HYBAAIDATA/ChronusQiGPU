@@ -66,27 +66,47 @@ def _gate_signers() -> tuple[bool, str]:
 
 
 def _gate_receipts() -> tuple[bool, str]:
+    """Verify signature, durable THESEUS restart and negative tamper controls."""
+    from tempfile import TemporaryDirectory
+
     from chronus.crypto.signers import Ed25519Signer
+    from chronus.security.durable_receipts import DurableReceiptLog
     from chronus.security.receipts import Receipt, ReceiptLog
+    from chronus.storage.durable import DurableTheseusService
 
     key = Ed25519Signer.generate("qualification-gate")
-    log = ReceiptLog()
-    receipt = Receipt(
-        "gate",
-        "tenant",
-        "0" * 64,
-        "local",
-        0,
-        "2026-01-01T00:00:00Z",
-        key.key_id,
-    )
-    signed = log.append(receipt, key)
     public_key = key.public_bytes()
-    if not log.verify(signed, public_key):
-        return False, "receipt signature verification failed"
-    if log.verify(signed, public_key, {"result_digest": "1" * 64}):
-        return False, "tampered receipt was accepted"
-    return log.verify_chain(public_key)
+    with TemporaryDirectory(prefix="chronus-receipt-check-") as root:
+        path = str(Path(root) / "receipts.sqlite3")
+        first = DurableReceiptLog(
+            DurableTheseusService(path), "tenant", "gate", public_key
+        )
+        receipt = Receipt(
+            "gate",
+            "tenant",
+            "0" * 64,
+            "local",
+            0,
+            "2026-01-01T00:00:00Z",
+            key.key_id,
+        )
+        signed = first.append(receipt, key)
+        if not ReceiptLog.verify(signed, public_key):
+            return False, "receipt signature verification failed"
+        if ReceiptLog.verify(signed, public_key, {"result_digest": "1" * 64}):
+            return False, "tampered receipt was accepted"
+
+        # This is a new THESEUS instance: replay cannot rely on the original
+        # process-local receipt chain.
+        reopened = DurableReceiptLog(
+            DurableTheseusService(path), "tenant", "gate", public_key
+        )
+        if len(reopened) != 1 or reopened.head_digest != signed.digest:
+            return False, "THESEUS restart replay did not recover signed receipt"
+        ok, detail = reopened.verify_chain(public_key)
+        if not ok or reopened.verify_chain(bytes(32))[0]:
+            return False, "THESEUS receipt chain accepted wrong key or invalid evidence"
+        return True, f"{detail}; local THESEUS restart and tamper checks passed"
 
 
 def _gate_canonical_json() -> tuple[bool, str]:
@@ -118,7 +138,7 @@ def _gate_claim_audit() -> tuple[bool, str]:
 
 GATES: tuple[tuple[str, str, Callable[[], tuple[bool, str]]], ...] = (
     ("G1", "signer conformance", _gate_signers),
-    ("G2", "receipt integrity", _gate_receipts),
+    ("G2", "signed receipt integrity + THESEUS restart replay", _gate_receipts),
     ("G3", "canonical bytes", _gate_canonical_json),
     ("G4", "purity scan", _gate_purity),
     ("G5", "claim evidence audit", _gate_claim_audit),

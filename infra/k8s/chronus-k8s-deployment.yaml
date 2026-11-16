@@ -104,13 +104,8 @@ spec:
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /v1/mining/admin/patroclus
+              path: /health/ready
               port: 8000
-              httpHeaders:
-                - name: Authorization
-                  value: "Bearer cluster-internal-token"
-                - name: X-Tenant-ID
-                  value: "cluster-internal"
             initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 3

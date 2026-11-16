@@ -28,7 +28,10 @@ interface ModeWeights {
 
 export default function MiningDashboardPage() {
   // Mining Engine Administration State
-  const [isRunning, setIsRunning] = useState<boolean>(true);
+  const [isRunning, setIsRunning] = useState<boolean>(false);
+  const [backendConnected, setBackendConnected] = useState<boolean>(false);
+  const [operatorJwt, setOperatorJwt] = useState('');
+  const [controlError, setControlError] = useState<string | null>(null);
   const [hashrateCap, setHashrateCap] = useState<number>(1);
   const baseEdited = useRef(false);
   const throttleEdited = useRef(false);
@@ -78,13 +81,21 @@ export default function MiningDashboardPage() {
   // Blockchain Resonance Horizon
   const [blockHistoryWindow, setBlockHistoryWindow] = useState<number>(256);
 
-  // Sync state from backend on mount
+  // Only an authenticated backend result may establish live control state.
   useEffect(() => {
     let mounted = true;
-    ChronusAPIClient.getMiningStatus()
+    setBackendConnected(false);
+    setIsRunning(false);
+    if (!operatorJwt.trim()) {
+      setControlError('Verified system-admin operator JWT required for mining controls.');
+      return () => { mounted = false; };
+    }
+    ChronusAPIClient.getMiningStatus(operatorJwt.trim())
       .then((data) => {
-        if (!mounted || !data) return;
-        if (typeof data.status === 'string') setIsRunning(data.status === 'RUNNING');
+        if (!mounted || !data || typeof data.status !== 'string') return;
+        setBackendConnected(true);
+        setControlError(null);
+        setIsRunning(data.status === 'RUNNING');
         const cap = typeof data.hashrate_cap_eh_s === 'number' ? data.hashrate_cap_eh_s : 1;
         setHashrateCap(cap);
         if (!baseEdited.current && typeof data.base_hashrate_eh_s === 'number') {
@@ -99,12 +110,26 @@ export default function MiningDashboardPage() {
         if (typeof data.fan_speed_pct === 'number') setFanSpeed(data.fan_speed_pct);
       })
       .catch(() => {
-        // Fallback to local default parameters when API is offline
+        if (!mounted) return;
+        setBackendConnected(false);
+        setIsRunning(false);
+        setControlError('Mining status unavailable or operator access denied; no control was applied.');
       });
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    return () => { mounted = false; };
+  }, [operatorJwt]);
+
+  function requireOperatorJwt(): string {
+    if (!operatorJwt.trim() || !backendConnected) {
+      throw new Error('Verified operator authentication and backend status required.');
+    }
+    return operatorJwt.trim();
+  }
+
+  function denyControl() {
+    setBackendConnected(false);
+    setIsRunning(false);
+    setControlError('Mining action not confirmed by backend. Reauthenticate before retrying.');
+  }
 
   // Normalization of intelligence modes
   const totalWeight = weights.predictive + weights.causal + weights.counterfactual + weights.topological + weights.geometric || 1;
@@ -130,75 +155,86 @@ export default function MiningDashboardPage() {
     .replace(/0+$/, "")
     .replace(/\.$/, "");
 
-  // Admin Actions with API Integration
+  // No optimistic operational state; update only after confirmed backend responses.
   async function handleToggleMining() {
-    const nextState = !isRunning;
-    setIsRunning(nextState);
     try {
-      if (nextState) {
-        await ChronusAPIClient.startMining(baseHashrate, activeWarps);
-      } else {
-        await ChronusAPIClient.stopMining();
+      const jwt = requireOperatorJwt();
+      const result = isRunning
+        ? await ChronusAPIClient.stopMining(jwt)
+        : await ChronusAPIClient.startMining(baseHashrate, activeWarps, jwt);
+      if (result?.status !== (isRunning ? 'STOPPED' : 'RUNNING')) {
+        denyControl();
+        return;
       }
+      setIsRunning(result.status === 'RUNNING');
+      setControlError(null);
     } catch {
-      // Local state already updated
+      denyControl();
     }
   }
 
   async function handleUpdateCapacity(newBase: number, newWarps: number, newV: number, newFan: number) {
-    baseEdited.current = true;
-    setBaseHashrate(newBase);
-    setActiveWarps(newWarps);
-    setCoreVoltage(newV);
-    setFanSpeed(newFan);
     try {
-      await ChronusAPIClient.configureMiningCapacity(newBase, newWarps, newV, newFan);
+      await ChronusAPIClient.configureMiningCapacity(
+        newBase, newWarps, newV, newFan, requireOperatorJwt()
+      );
+      baseEdited.current = true;
+      setBaseHashrate(newBase);
+      setActiveWarps(newWarps);
+      setCoreVoltage(newV);
+      setFanSpeed(newFan);
+      setControlError(null);
     } catch {
-      // Retain local state
+      denyControl();
     }
   }
 
   async function handleUpdateWeights(newWeights: ModeWeights) {
-    setWeights(newWeights);
     try {
       await ChronusAPIClient.configureMiningIntelligence(
         newWeights.predictive,
         newWeights.causal,
         newWeights.counterfactual,
         newWeights.topological,
-        newWeights.geometric
+        newWeights.geometric,
+        requireOperatorJwt()
       );
+      setWeights(newWeights);
+      setControlError(null);
     } catch {
-      // Retain local state
+      denyControl();
     }
   }
 
   async function handleIntervention(type: string) {
-    setActiveIntervention(type);
-    if (type === 'UNDERVOLT_1_10V') setCoreVoltage(1.10);
-    if (type === 'FAN_100_PCT') setFanSpeed(100);
     try {
-      await ChronusAPIClient.applyCausalIntervention(type);
+      await ChronusAPIClient.applyCausalIntervention(type, requireOperatorJwt());
+      setActiveIntervention(type);
+      if (type === 'UNDERVOLT_1_10V') setCoreVoltage(1.10);
+      if (type === 'FAN_100_PCT') setFanSpeed(100);
+      setControlError(null);
     } catch {
-      // Retain local state
+      denyControl();
     }
   }
 
   async function handleUpdateStealth(maxCap?: number, targetEhs?: number, consecutive?: boolean, presence?: boolean) {
-    if (targetEhs !== undefined) throttleEdited.current = true;
-    if (maxCap !== undefined) setMaxConfiguredEhs(maxCap);
-    if (targetEhs !== undefined) setStealthActiveEhs(targetEhs);
-    if (consecutive !== undefined) setNeverConsecutive(consecutive);
-    if (presence !== undefined) setPersistentPresence(presence);
     try {
       await ChronusAPIClient.configureMiningStealth(
         maxCap,
         targetEhs ?? stealthActiveEhs,
         consecutive ?? neverConsecutive,
-        presence ?? persistentPresence
+        presence ?? persistentPresence,
+        requireOperatorJwt()
       );
+      if (targetEhs !== undefined) throttleEdited.current = true;
+      if (maxCap !== undefined) setMaxConfiguredEhs(maxCap);
+      if (targetEhs !== undefined) setStealthActiveEhs(targetEhs);
+      if (consecutive !== undefined) setNeverConsecutive(consecutive);
+      if (presence !== undefined) setPersistentPresence(presence);
+      setControlError(null);
     } catch {
-      // Retain local state
+      denyControl();
     }
   }
 
@@ -216,14 +252,15 @@ export default function MiningDashboardPage() {
               Hashrate Intelligence &amp; Resonance Observatory
             </h1>
             <p className="mt-1 max-w-3xl text-sm leading-6 text-neutral-400">
-              Unified mathematical substrate for Bitcoin mining: Spectral Mass Gap (<span className="font-mono text-emerald-400">Δ = 229.14</span>),
-              11D Lie-Poisson routing, O(1) structured addressing, and exact Galois Field <span className="font-mono text-amber-300">F_257[x]</span> 1-shot nonce collapse.
+              Internal mining control and mathematical research observatory. Configured limits and structural diagnostics
+              are not measured hashrate, live pool acceptance, independent proof or hardware qualification.
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <StatusPill status={h1Obstruction ? 'WARNING' : 'PASS'} label={h1Obstruction ? 'H¹ Obstruction ([c] ≠ 0)' : 'ker(L_ℱ) = H⁰ Harmonic'} showDot={true} />
+            <StatusPill status={backendConnected ? 'PASS' : 'WARNING'} label={backendConnected ? 'Operator status received' : 'Operational status unverified'} showDot={true} />
             <button
               onClick={handleToggleMining}
+              disabled={!operatorJwt.trim() || !backendConnected}
               className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
                 isRunning
                   ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30'
@@ -233,6 +270,28 @@ export default function MiningDashboardPage() {
               {isRunning ? <RotateCcw className="h-4 w-4" /> : <Play className="h-4 w-4" />}
               <span>{isRunning ? 'Stop Mining Engine' : 'Engage Mining Engine'}</span>
             </button>
+          </div>
+        </div>
+        <div className="mt-4 space-y-2 rounded-lg border border-neutral-700 bg-neutral-900/50 p-3">
+          <label htmlFor="mining-operator-jwt" className="block text-xs font-semibold text-neutral-300">
+            Mining operator JWT (session only; not stored)
+          </label>
+          <input
+            id="mining-operator-jwt"
+            type="password"
+            autoComplete="off"
+            spellCheck={false}
+            value={operatorJwt}
+            onChange={(event) => setOperatorJwt(event.target.value)}
+            placeholder="Paste a short-lived, verified system-admin token"
+            className="w-full rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100"
+          />
+          <p className="text-xs text-neutral-400">
+            AL HARAS must admit the signed operator identity and THESEUS must record admission.
+            Missing credentials or unavailable backend evidence leave controls disabled.
+          </p>
+          <div role="status" aria-live="polite" className="text-xs text-amber-300">
+            {controlError ?? 'Operator-authenticated backend status received; production qualification is separate.'}
           </div>
         </div>
       </header>

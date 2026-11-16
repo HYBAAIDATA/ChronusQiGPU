@@ -30,6 +30,12 @@ Status vocabulary used here:
 
 Notion is the requirements and decision source. It is not a substitute for the repository commit, CI run, device certificate, benchmark raw output, pool acknowledgement, or signed release artifact.
 
+## 16 November 2026 source reconciliation
+
+The July 2026 Geodesic Tensor Engine source is retrievable from the ChatGPT Library and Notion engineering record. The four previously labelled missing symbols are now present in the maintained Python package; **do not copy the monolithic legacy engine into the active tree**. See [the archive reconciliation audit](audits/2026-11-16-source-archive-reconciliation.md) for source paths, archive SHA-256 values, scope and outstanding evidence.
+
+The historical PYTHIA TypeScript mining audit is a separate source lineage. Its routes, singleton state machines and RFX instructions do not exist as literal current-repository paths. Reproduce each risk against the maintained Python Stratum and security boundaries instead of treating an old line number as a current defect.
+
 ## Requirement-to-repository map
 
 | Notion requirement | Repository implementation and tests | Evidence state |
@@ -37,7 +43,7 @@ Notion is the requirements and decision source. It is not a substitute for the r
 | Exact Chronus math, Lucas/PV and Fibonacci reference workloads | `src/chronus/math/`, `src/chronus/stratum/`, `src/chronus/execution/`; tests under `tests/test_*.py`; `packages/turing/docs/SPECIFICATION.md` | SOURCE-PRESENT; CI result must be tied to the release SHA |
 | EnhancedTensorRepresentation v2 and tensor API | `src/chronus/tensor/enhanced_representation.py`, `src/chronus/igpu/tensor.py`, `tests/test_enhanced_tensor_representation_v2.py`, `tests/test_repository_layout.py` | SOURCE-PRESENT + TEST-PRESENT; no physical-backend evidence |
 | Exact MPS/TT/MPO surfaces | `src/chronus/tensor/exact_mps.py`, `src/chronus/quantum/ring_mps.py`, `src/chronus/tensor/network.py`, `src/chronus/tensor/types.py`; `tools/compare_product_mps.py` and `benchmarks/acceleration/ring_mps_benchmark.py` | SOURCE-PRESENT; the named “Kellogg” contract is not an active symbol match, so that requirement remains MISSING until mapped |
-| PhiTensorCore / GeodesicScheduler / PhiMemoryHierarchy / TopologicalIntegrityGate | No active-tree symbol match was found for these four names by the repository search at the baseline | MISSING / port check required; archive or prose is not an implementation |
+| PhiTensorCore / GeodesicScheduler / PhiMemoryHierarchy / TopologicalIntegrityGate | `src/chronus/tensor/geodesic.py` now defines all four; `src/chronus/tensor/__init__.py` exports them; `src/chronus/execution/mining_scheduler.py` imports the scheduling/integrity surfaces; `tests/test_geodesic_tensor_migration.py` exercises them | SOURCE-PRESENT + TEST-PRESENT on inspected current main (16 Nov 2026). Historical 24 July implementation and test totals are archive provenance, not current execution evidence; interface-by-interface equivalence, full current-head CI and hardware qualification remain unverified. |
 | Partial unfold and folded inference | `tests/test_folded_state.py`, `src/chronus/tensor/`, `src/chronus/opencl_folded_adapter.py` | TEST-PRESENT for folded-state surfaces; exact `unfold_partial*` contract is not proven active |
 | Typed tensor contracts, backend router and capability manifest | `src/chronus/tensor/types.py`, `src/chronus/fleet/adapters.py`, `src/chronus/fleet/backends.py`, `src/chronus/fleet/canonical.py`, `src/chronus/igpu/adapters.py`; `tests/test_fleet_adapters.py`, `tests/test_fleet_backends.py` | SOURCE-PRESENT + TEST-PRESENT; physical capability certification is separate |
 | OpenCL coverage and fail-closed behavior | `src/chronus/fleet/opencl.py`, `src/chronus/backends/opencl_pv.py`, `src/chronus/execution/opencl_sha256d.py`, `tests/test_opencl_kernel.py`, `tests/test_opencl_miner.py`, CI job `opencl-reference` | CI-OBSERVED on a CPU reference runtime only; physical GPU is UNAVAILABLE |
@@ -47,6 +53,34 @@ Notion is the requirements and decision source. It is not a substitute for the r
 | ML-DSA and receipt signing | Maintained provider API in `src/chronus/crypto/signers.py`; explicit provider tests in `tests/test_signers.py`; experimental non-conformant module remains in `src/chronus/security/signers.py` | TEST-PRESENT for provider behavior; FIPS/HSM production custody is not established |
 | Benchmarks and claim promotion | Runners in `benchmarks/` and `scripts/benchmarks/benchmark_gatekeeper.py`; withdrawn report `docs/reports/chronus_gpiu_v36_benchmark.md` | Runners are SOURCE-PRESENT; no current immutable, device-bound claim packet |
 | Release chain | `.github/workflows/ci.yml`, `.github/workflows/packages.yml`, `.github/workflows/chronus-evidence-qualification.yml`, `.github/workflows/storage-reference.yml`, `scripts/ci/manifest.py` | CI is observable; release qualification remains GATED by external evidence |
+
+## 16 November: durable receipts and AL HARAS mining controls
+
+- **SOURCE-PRESENT / TEST-PRESENT, no runtime certificate:** `src/chronus/security/durable_receipts.py`
+  now preserves signed receipt chains in the existing THESEUS journal and verifies
+  integrity, tenant separation, replay and key binding after a new service instance
+  opens the same store. Gate G2 in `src/chronus/core/facade.py` uses this path
+  rather than relying on an in-memory chain. See
+  `tests/test_durable_signed_receipts.py`.
+- **SOURCE-PRESENT / TEST-PRESENT, controls not deployed:** All nine mutating and
+  two read-only `/v1/mining/admin` routes use
+  `get_mining_admin_operator`. A verified system-admin JWT,
+  explicit subject and tenant configuration, stable signing secret and successful
+  THESEUS admission journal are mandatory. Static tenant bearer tokens do not
+  acquire global mining authority. See `tests/test_mining_admin_admission.py`.
+- **SOURCE-PRESENT:** Both Kubernetes manifests use `/health/ready` in place
+  of global mining telemetry, eliminating the static-token readiness probe.
+- **ARCHIVE-DIGEST VERIFIED:** The original November PULVINI handoff matches
+  maintained source, test, integrity guard and workflow Git blobs. The protected
+  research document contains later changes and is not overwritten. GitHub
+  ruleset enforcement and executed CI remain separate required evidence.
+- **UNAVAILABLE:** Historical Kellogg source implementation itself is not in
+  the examined archived ZIP inventories or accessible through the connected
+  old GitHub repository; its exact semantics are not represented as restored
+  without matching source and tests.
+- **OUTSTANDING:** Legacy `access_control.py` authority integration, distributed
+  receipt append, real HSM/KMS custody, accepted live shares, actual hardware
+  execution, soak/rollback and current-head CI remain unverified.
 
 ## Required mining packet
 

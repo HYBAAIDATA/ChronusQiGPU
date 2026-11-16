@@ -31,12 +31,18 @@ def admin_engine():
 
 
 @pytest.fixture
-def client():
-    from chronus.service.dependencies import auth_service
-    try:
-        auth_service.register_tenant("test-tenant", "test-token")
-    except ValueError:
-        pass
+def client(monkeypatch, tmp_path):
+    from chronus.service.auth_middleware import Role, create_jwt_token
+
+    monkeypatch.setenv("CHRONUS_JWT_SECRET", "mining-control-suite-secret-must-be-32-bytes-minimum")
+    monkeypatch.setenv("CHRONUS_MINING_ADMIN_TENANT_ID", "test-tenant")
+    monkeypatch.setenv("CHRONUS_MINING_ADMIN_SUBJECTS", '["test-operator"]')
+    monkeypatch.setenv(
+        "CHRONUS_MINING_ADMIN_CUSTODY_PATH", str(tmp_path / "mining-admin-audit.sqlite3")
+    )
+    AUTH_HEADERS["Authorization"] = "Bearer " + create_jwt_token(
+        "test-tenant", "test-operator", role=Role.SYSTEM_ADMIN
+    )
     return TestClient(app)
 
 
