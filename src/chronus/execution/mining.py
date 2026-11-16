@@ -165,6 +165,10 @@ def search_nonce_range(
         raise ValueError("target must be an unsigned 256-bit integer")
     if not 1 <= workers <= _lanes():
         raise ValueError(f"workers must be between 1 and {_lanes()}")
+    if not (0 <= start <= stop <= 1 << 32):
+        raise ValueError("nonce range must be within [0, 2**32]")
+    if partition not in ("uniform", "lucas"):
+        raise ValueError("weights must be 'uniform' or 'lucas'")
     granted = process_cap().allow(stop - start)
     if granted <= 0:
         raise ValueError("hashrate cap allows no further hashes in this window")

@@ -110,6 +110,14 @@ class OpenCLSha256dMinerBackend:
 
     def search(self, header: bytes, start: int, stop: int, target: int) -> List[int]:
         """Search [start, stop) on the OpenCL device; return matching nonces."""
+        matches, width = self._search_span(header, start, stop, target)
+        self._last_span = width
+        return matches
+
+    def _search_span(
+        self, header: bytes, start: int, stop: int, target: int
+    ) -> tuple[List[int], int]:
+        """Search within the shared budget. The returned width belongs to this call."""
         if not self._available:
             raise HardwareUnavailableError(
                 "OpenCL iGPU miner is not available; set "
@@ -118,14 +126,11 @@ class OpenCLSha256dMinerBackend:
         if not 0 <= start <= stop <= 1 << 32:
             raise ValueError("nonce range must be within [0, 2**32]")
         midstate, tail, target_words = self.build_kernel_args(header, target, start)
+        width = process_cap().allow(stop - start)
+        if width == 0:
+            return [], 0
 
         import pyopencl as cl
-
-        width = process_cap().allow(stop - start)
-        self._last_span = width
-        if width == 0:
-            return []
-        stop = start + width
 
         found = cl.Buffer(
             self._ctx, cl.mem_flags.WRITE_ONLY, size=4 * self.max_reported
@@ -155,22 +160,22 @@ class OpenCLSha256dMinerBackend:
         cl.enqueue_copy(self._queue, count_buf, count).wait()
         hit_count = min(int(count_buf[0]), self.max_reported)
         if hit_count == 0:
-            return []
+            return [], width
         result_buf = np.zeros(hit_count, dtype=np.uint32)
         cl.enqueue_copy(self._queue, result_buf, found).wait()
-        return sorted(int(n) for n in result_buf)
+        return sorted(int(n) for n in result_buf), width
 
     def execute(self, payload: bytes, workload_type: str) -> Dict[str, Any]:
         """Dispatcher entry point: payload is the 80-byte header."""
         if workload_type not in self.supported_workloads:
             raise ValueError(f"Backend does not support {workload_type}")
-        matches = self.search(payload, 0, 1 << 32, target=(1 << 256) - 1)
+        matches, tested = self._search_span(payload, 0, 1 << 32, (1 << 256) - 1)
         return {
             "execution_mode": self.execution_mode,
             "runtime_classification": self.runtime_classification,
             "backend": self.name,
             "device": self._device_info,
-            "tested": self._last_span,
+            "tested": tested,
             "match_count": len(matches),
             "matches": matches,
         }

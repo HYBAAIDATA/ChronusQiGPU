@@ -95,6 +95,28 @@ def test_galois_search_and_cpu_range_stop_at_the_cap():
             search_nonce_range(GENESIS_HEADER, 0, 10, (1 << 256) - 1, workers=1)
 
 
+def test_an_invalid_range_does_not_spend_the_cap():
+    cap = HashrateCap(3, clock=lambda: 0)
+    with override_process_cap(cap):
+        with pytest.raises(ValueError):
+            search_nonce_range(GENESIS_HEADER, -1, 0, 1)
+        with pytest.raises(ValueError):
+            search_nonce_range(GENESIS_HEADER, (1 << 32) - 3, (1 << 32) + 7, 1)
+        with pytest.raises(ValueError):
+            search_nonce_range(GENESIS_HEADER, 0, 4, 1, partition="spiral")
+    assert cap.available() == 3
+
+
+def test_backend_execute_stops_at_the_cap():
+    from chronus.execution.geometric_galois_miner import GeometricGaloisMinerBackend
+
+    cap = HashrateCap(4, clock=lambda: 0)
+    with override_process_cap(cap):
+        result = GeometricGaloisMinerBackend().execute(b"")
+    assert result["tested"] == 4
+    assert cap.available() == 0
+
+
 def test_cpu_range_searches_only_the_granted_prefix():
     cap = HashrateCap(3, clock=lambda: 0)
     with override_process_cap(cap):

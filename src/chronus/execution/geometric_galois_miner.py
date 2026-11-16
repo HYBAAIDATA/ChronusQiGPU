@@ -470,21 +470,29 @@ class GeometricGaloisMinerBackend:
         seed_hash = hashlib.sha256(header_prefix).digest()
         vertex_idx = int.from_bytes(seed_hash[:2], "big") % len(self.miner.vertices_f257)
 
+        granted = process_cap().allow(100)
         matches = []
-        for n in range(100):
-            h = sha256d(header_prefix + n.to_bytes(4, "little"))
-            if int.from_bytes(h, "little") <= target:
-                matches.append(n)
+        tested = 0
+        try:
+            for n in range(granted):
+                tested = n + 1
+                h = sha256d(header_prefix + n.to_bytes(4, "little"))
+                if int.from_bytes(h, "little") <= target:
+                    matches.append(n)
+        finally:
+            unused = granted - tested
+            if unused > 0:
+                process_cap().refund(unused)
 
         _amplitudes = ExactGaloisOracleF257.execute_one_shot_collapse(
-            list(range(100)), set(matches)
+            list(range(tested)), set(matches)
         )
 
         return {
             "execution_mode": self.execution_mode,
             "runtime_classification": self.runtime_classification,
             "backend": self.name,
-            "tested": 100,
+            "tested": tested,
             "match_count": len(matches),
             "matches": matches,
             "galois_collapsed": True,
