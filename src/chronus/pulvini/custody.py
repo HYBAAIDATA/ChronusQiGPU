@@ -35,6 +35,8 @@ def encode_complete_fold(operand: VerifiedFoldedOperand) -> bytes:
     if not isinstance(operand, VerifiedFoldedOperand):
         raise ValueError("verified complete fold required")
     state, evidence = operand.state, operand.evidence
+    if len(state.original_shape) > 8:
+        raise ValueError("fold artifact tensor rank exceeds supported limit")
     if state.depth != evidence.depth or state.normalization != evidence.normalization:
         raise ValueError("fold chronology and receipt disagree")
     unfolded = unfold_verified(state, receipt=evidence)
