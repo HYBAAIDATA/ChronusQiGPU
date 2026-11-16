@@ -88,3 +88,53 @@ The integration test uses an explicit test double for the unconfigured
 external provider. Its result demonstrates protocol logic, **not**
 connection to a live provider or a live sovereign tenant. No example
 customer or hardware metric is treated as a measurement.
+
+## CIaaS security and claims hardening (2026-11-16)
+
+The existing `/v1/auth/token` endpoint was able to create privileged
+tokens without an authenticated caller. It now requires an AL HARAS
+`system_admin` principal. The same requirement protects
+`GET /v1/tenants` and regular `POST /v1/tenants/onboard`.
+No new identity store was introduced. The token endpoint is an
+administrator-only helper and **is not an OIDC/OAuth2 identity provider**.
+
+Tenant reads, pricing, capacity, entitlement mutation and settlement
+previews now enforce that the authenticated principal is entitled to
+the requested tenant. Changing CCE or calculating a settlement is
+restricted to tenant/system administrators; role possession alone
+does not permit cross-tenant access.
+
+The previous `CIaaSStore.get_pods_fleet()` returned fixed node counts,
+100% bus saturation, 130 Tb/s bandwidth, zero stalled packets and
+a one-cycle healer as if measured. It now returns the declared
+alpha–delta topology but marks actual node counts, health and
+performance as **UNVERIFIED**. The prior sovereign profile returned
+`FULLY_COMPLIANT` with 14/14 NCSC principles despite the independent
+AL HARAS register showing zero assessed. It now uses the AL HARAS
+register and distinguishes no assessment from certified compliance.
+An execution backend appearing in discovery is not hardware proof.
+
+The existing `POST /v1/fabric/clusters/register` and
+`POST /v1/fabric/pools/schedule` were success-shaped placeholders
+that never admitted a signed fleet worker or dispatched a verified
+workload. They now require system-admin authority and fail closed
+with `503 fleet_execution_unverified` until linked to the existing
+`FleetCoordinator` and authorised signing/grant path. This **does not
+remove** fleet scheduling or signed scale grants; it prevents
+false execution evidence through the HTTP façade.
+
+The `POST /v1/billing/hermiten/settlement` caller-input preview retains
+the existing **25%** value-share computation but now returns
+`CALCULATED_UNVERIFIED`, no invoice and no fabricated settlement
+certificate. The economic terms and independently verified
+comparative baseline remain external commercial evidence requirements.
+
+### Evidence and acceptance
+
+The source and updated regression assertions are committed in
+PR #125. GitHub Actions jobs have had unavailable runner logs, including
+on the unchanged `main` baseline. Accordingly, **test execution,
+real-world deployment, HSM operation, Hermiten API connectivity,
+fleet dispatch and sovereign accreditation are not verified here**.
+Do not treat a simulated test fixture or hard-coded reference
+capacity as accepted production performance.
