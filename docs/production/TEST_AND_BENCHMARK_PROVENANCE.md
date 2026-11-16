@@ -57,3 +57,20 @@ Historical UHD 620 numbers are not automatically promoted to the current tensor/
 ## Promotion rule
 
 A historical result is useful for three things: capability discovery, regression target definition and provenance. It becomes current release evidence only when the relevant implementation is present at the release SHA and the defined current gate reproduces or independently reconciles it.
+
+
+## Real workload manifest runner (16 Nov 2026 — proposed)
+
+The bounded operator-manifest benchmark is implemented in
+`benchmarks/real_workload_benchmark.py`, with contract checks in
+`tests/test_real_workload_benchmark.py` and an execution/claim contract in
+`docs/production/REAL_WORKLOAD_BENCHMARK.md`.
+
+**Implementation:** present on the proposed feature branch. **Contract tests:** 
+committed but not certified as executed while GitHub Actions jobs fail or remain
+queued without worker steps. **Real production data:** unavailable to this review;
+therefore **measured production outcome: UNAVAILABLE**. No source, host, device,
+durability or signature claims are accepted without independently gathered
+current-commit evidence. The controlled test fixtures are explicitly labelled
+non-production. The branch does not alter historical benchmark results, the
+protected PULVINI V3 formal operator, or the Chronus/OVID/THESEUS authority map.
