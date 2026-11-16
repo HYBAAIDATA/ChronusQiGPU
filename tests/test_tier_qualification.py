@@ -580,12 +580,22 @@ class ForgeryAndPrecisionTests(unittest.TestCase):
                 seed_path.parent.mkdir(parents=True, exist_ok=True)
                 target = Path(tmp) / "attacker.seed"
                 target.write_text("aa" * 32, encoding="ascii")
-                os.symlink(str(target), str(seed_path))
-                with self.assertRaises(ValueError):
-                    get_qualification_signer()
-                seed_path.unlink()
-                reset_qualification_signer()
+                # Symlink creation needs SeCreateSymbolicLinkPrivilege / Developer
+                # Mode on Windows; skip only that gate when unavailable.
+                try:
+                    os.symlink(str(target), str(seed_path))
+                except OSError as exc:
+                    symlink_exc = exc
+                else:
+                    symlink_exc = None
+                if symlink_exc is None:
+                    with self.assertRaises(ValueError):
+                        get_qualification_signer()
+                    seed_path.unlink()
+                    reset_qualification_signer()
                 # Incomplete / empty seed left by a crashed writer must fail closed.
+                if seed_path.exists() or seed_path.is_symlink():
+                    seed_path.unlink()
                 fd = os.open(
                     str(seed_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600
                 )
@@ -595,6 +605,13 @@ class ForgeryAndPrecisionTests(unittest.TestCase):
                 seed_path.unlink()
                 reset_qualification_signer()
                 # Group/world-readable seed is refused.
+                if not hasattr(os, "fchmod"):
+                    if symlink_exc is not None:
+                        self.skipTest(
+                            f"symlink unavailable ({symlink_exc}); "
+                            "os.fchmod unavailable on this platform"
+                        )
+                    self.skipTest("os.fchmod unavailable on this platform")
                 fd = os.open(
                     str(seed_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600
                 )
@@ -607,12 +624,55 @@ class ForgeryAndPrecisionTests(unittest.TestCase):
                     get_qualification_signer()
             reset_qualification_signer()
 
-    def test_concurrent_seed_publish_converges(self) -> None:
+    def test_concurrent_seed_publish_loser_returns_winner_bytes(self) -> None:
         import tempfile
         import threading
 
         from chronus.qualification.signing import (
-            QualificationSigner,
+            _publish_seed_file,
+            _seed_file_path,
+            read_trusted,
+            reset_qualification_signer,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            db = str(Path(tmp) / "qualification.sqlite3")
+            with _qualification_env(
+                CHRONUS_QUALIFICATION_DB_PATH=db,
+                CHRONUS_QUALIFICATION_SIGNING_SEED_HEX=None,
+            ):
+                reset_qualification_signer()
+                seed_path = _seed_file_path()
+                barrier = threading.Barrier(2)
+                results: list[bytes] = []
+                errors: list[BaseException] = []
+
+                def worker() -> None:
+                    try:
+                        barrier.wait(timeout=5)
+                        results.append(_publish_seed_file(seed_path))
+                    except BaseException as exc:  # noqa: BLE001 — collect for assert
+                        errors.append(exc)
+
+                threads = [threading.Thread(target=worker) for _ in range(2)]
+                for thread in threads:
+                    thread.start()
+                for thread in threads:
+                    thread.join(timeout=10)
+                self.assertEqual(errors, [])
+                self.assertEqual(len(results), 2)
+                self.assertEqual(results[0], results[1])
+                self.assertEqual(results[0], read_trusted(seed_path))
+                # Exactly one durable final file; temps must be gone.
+                leftovers = list(seed_path.parent.glob(".*.tmp"))
+                self.assertEqual(leftovers, [])
+            reset_qualification_signer()
+
+    def test_seed_publish_kill_before_link_leaves_no_final(self) -> None:
+        import tempfile
+        from unittest.mock import patch
+
+        from chronus.qualification.signing import (
             _publish_seed_file,
             _seed_file_path,
             reset_qualification_signer,
@@ -626,32 +686,64 @@ class ForgeryAndPrecisionTests(unittest.TestCase):
             ):
                 reset_qualification_signer()
                 seed_path = _seed_file_path()
-                barrier = threading.Barrier(2)
-                results: list[str] = []
-                errors: list[BaseException] = []
 
-                def worker() -> None:
-                    try:
-                        barrier.wait(timeout=5)
-                        # Call publish directly so threads compete on os.link,
-                        # not on the process-wide signer cache lock.
-                        seed = _publish_seed_file(seed_path)
-                        results.append(
-                            QualificationSigner(
-                                seed, custody="test-concurrent"
-                            ).key_id
-                        )
-                    except BaseException as exc:  # noqa: BLE001 — collect for assert
-                        errors.append(exc)
+                def kill_after_durable_write(src: str, dst: str) -> None:
+                    # Simulate process death after fsync+close, before link.
+                    raise OSError("simulated kill between write and link")
 
-                threads = [threading.Thread(target=worker) for _ in range(2)]
-                for thread in threads:
-                    thread.start()
-                for thread in threads:
-                    thread.join(timeout=10)
-                self.assertEqual(errors, [])
-                self.assertEqual(len(results), 2)
-                self.assertEqual(results[0], results[1])
+                with patch("os.link", side_effect=kill_after_durable_write):
+                    with self.assertRaises(OSError):
+                        _publish_seed_file(seed_path)
+                self.assertFalse(seed_path.exists())
+                leftovers = list(seed_path.parent.glob(".*.tmp"))
+                self.assertEqual(leftovers, [])
+            reset_qualification_signer()
+
+    @unittest.skipIf(not hasattr(__import__("os"), "geteuid"), "geteuid unavailable")
+    def test_seed_rejects_foreign_uid(self) -> None:
+        import os
+        import tempfile
+        from unittest.mock import patch
+
+        from chronus.qualification.signing import (
+            _seed_file_path,
+            read_trusted,
+            reset_qualification_signer,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            db = str(Path(tmp) / "qualification.sqlite3")
+            with _qualification_env(
+                CHRONUS_QUALIFICATION_DB_PATH=db,
+                CHRONUS_QUALIFICATION_SIGNING_SEED_HEX=None,
+            ):
+                reset_qualification_signer()
+                seed_path = _seed_file_path()
+                seed_path.parent.mkdir(parents=True, exist_ok=True)
+                fd = os.open(str(seed_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+                try:
+                    os.write(fd, ("cc" * 32).encode("ascii"))
+                finally:
+                    os.close(fd)
+                foreign_uid = os.geteuid() + 1
+
+                class _ForeignStat:
+                    def __init__(self, real: os.stat_result) -> None:
+                        self._real = real
+
+                    def __getattr__(self, name: str):
+                        if name == "st_uid":
+                            return foreign_uid
+                        return getattr(self._real, name)
+
+                real_fstat = os.fstat
+
+                def fstat_foreign(fd: int) -> object:
+                    return _ForeignStat(real_fstat(fd))
+
+                with patch("os.fstat", side_effect=fstat_foreign):
+                    with self.assertRaises(ValueError):
+                        read_trusted(seed_path)
             reset_qualification_signer()
 
     def test_remember_does_not_let_clean_replace_suspension(self) -> None:

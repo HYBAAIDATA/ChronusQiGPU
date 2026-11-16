@@ -5,6 +5,15 @@ round trip. Writes a transcript that doubles as a reproducible fixture
 (job, extranonce1/2, target, nonce, header, digest).
 
 Share search targets the SET_DIFFICULTY target (diff1 / difficulty), not nbits —
+nbits is the network target and is harder than a pool share.
+Expected hashes is difficulty * 2^32; difficulty 1 is ~4e9 and will not be
+found in 30s. Error 23 is then the correct result.
+
+Exit 0 smoke passed, 2 protocol failure, 3 endpoint unreachable, 4 config error.
+Add --require-accept to demand a literal true (implies --submit-share).
+
+    PYTHONPATH=src python scripts/smoke/stratum_smoke.py --target fake \\
+        --submit-share --require-accept
 nbits is the network target and is harder than a pool share. At Bitcoin
 difficulty 1 expect ~2^32 SHA-256d evaluations; use --search geometric|opencl
 (Chronus structured search / QiGPU Mode A) or scale via fleet for wall-clock.
