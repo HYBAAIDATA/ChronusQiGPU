@@ -147,7 +147,7 @@ def test_malformed_yaml_produces_structured_fail(tmp_path: Path, capsys):
 def test_npy_header_must_be_bounded_before_numpy_load():
     from benchmarks.real_workload_benchmark import _load_bounded_npy
     header = b"{'descr': '<f8', 'fortran_order': False, 'shape': (1000000000,), }"
-    payload = b"\\x93NUMPY" + bytes((1, 0)) + len(header).to_bytes(2, "little") + header
+    payload = b"\x93NUMPY" + bytes((1, 0)) + len(header).to_bytes(2, "little") + header
     with pytest.raises(ValueError, match="outside bounded policy"):
         _load_bounded_npy(payload)
 
