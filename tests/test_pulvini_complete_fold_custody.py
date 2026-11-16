@@ -71,3 +71,9 @@ def test_over_limit_fold_rejected_before_custody(tmp_path):
     adapter = PulviniCustodyAdapter(ProductionTriad(str(tmp_path / "triad.sqlite3")))
     with pytest.raises(ValueError, match="payload bound"):
         adapter.put("a", np.ones((1_000, 120), dtype=float))
+
+
+def test_reject_unsupported_tensor_rank_before_custody(tmp_path):
+    adapter = PulviniCustodyAdapter(ProductionTriad(str(tmp_path / "rank.sqlite3")), depth=1)
+    with pytest.raises(ValueError, match="rank"):
+        adapter.put("tenant", np.ones((1,) * 9, dtype=float))
