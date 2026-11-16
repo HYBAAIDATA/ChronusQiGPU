@@ -29,6 +29,7 @@ class PulviniCustodyRecord:
     artifact_sha256: str
     original_sha256: str
     fold_depth: int
+    source_attestation: str = "UNVERIFIED_UNSIGNED_ORIGIN"
 
 
 def encode_complete_fold(operand: VerifiedFoldedOperand) -> bytes:
@@ -57,6 +58,7 @@ def encode_complete_fold(operand: VerifiedFoldedOperand) -> bytes:
         "scalar_dtype": dtype.str,
         "array_lengths": [int(a.size) for a in arrays],
         "evidence": asdict(evidence),
+        "input_digest_authentication": "UNVERIFIED_UNSIGNED_ORIGIN",
     }
     raw_header = json.dumps(header, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
     if len(raw_header) > MAX_HEADER:
@@ -75,6 +77,8 @@ def decode_complete_fold(payload: bytes, *, max_elements: int = 1_000_000) -> Ve
     h = json.loads(payload[8:8+hlen])
     if not isinstance(h, dict) or h.get('schema') != 'chronus.pulvini.complete-fold/1':
         raise ValueError("unrecognised fold contract")
+    if h.get("input_digest_authentication") != "UNVERIFIED_UNSIGNED_ORIGIN":
+        raise ValueError("unsigned embedded source digest must not claim independent attestation")
     sizes = h.get('sizes')
     lengths = h.get('array_lengths')
     shape = h.get('original_shape')
@@ -113,7 +117,10 @@ def decode_complete_fold(payload: bytes, *, max_elements: int = 1_000_000) -> Ve
     unfolded = unfold_verified(state, receipt=evidence)
     if unfolded.size != sizes[0]:
         raise ValueError("recovery changed element count")
-    return VerifiedFoldedOperand(state=state, evidence=evidence)
+    return VerifiedFoldedOperand(
+        state=state, evidence=evidence,
+        source_digest_authentication="UNVERIFIED_UNSIGNED_ORIGIN"
+    )
 
 
 class PulviniCustodyAdapter:
@@ -143,12 +150,17 @@ class PulviniCustodyAdapter:
     def read(self, record: PulviniCustodyRecord) -> VerifiedFoldedOperand:
         if not isinstance(record, PulviniCustodyRecord):
             raise ValueError("record required")
+        if record.source_attestation != "UNVERIFIED_UNSIGNED_ORIGIN":
+            raise ValueError("unsigned source provenance cannot be promoted")
         if self.triad.verify(record.triad_receipt) is not True:
             raise ValueError("custody continuity not verified")
         content = self.triad.materialise(record.triad_receipt)
         if hashlib.sha256(content).hexdigest() != record.artifact_sha256:
             raise ValueError("custody fold artifact hash mismatch")
         operand = decode_complete_fold(content, max_elements=self.executor.max_elements)
+        # This checks unsigned, operator-recorded consistency, NOT an independent
+        # attestation of original source bytes (which can differ numerically
+        # after permitted floating-point reconstruction).
         if operand.evidence.input_sha256 != record.original_sha256 or operand.state.depth != record.fold_depth:
             raise ValueError("source digest/depth mismatch")
         return operand
