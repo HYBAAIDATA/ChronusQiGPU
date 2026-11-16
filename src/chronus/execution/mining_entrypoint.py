@@ -114,7 +114,8 @@ def load_env_config() -> Tuple[str, PoolEndpoint, str, str]:
     if not separator:
         scheme, bare_host = "stratum+tcp", host_raw
         # Braiins and ViaBTC document "x" and "123" as ignored placeholders.
-        if password.strip() not in {"", "x", "123"}:
+        # Match the password that is sent. Surrounding whitespace is a different value.
+        if password not in {"x", "123"}:
             logger.warning(
                 "MINING_%s_HOST has no scheme, so this password is sent on cleartext "
                 "stratum+tcp. Use a stratum+ssl:// host when the password is a secret.",
