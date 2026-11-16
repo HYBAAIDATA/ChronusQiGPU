@@ -109,3 +109,16 @@ All work remains private until the owner explicitly approves any commercial
 publication or deployment. A data branch is not a secrecy boundary for shared
 mining Git history; externally distributed packages must undergo independent
 content/history review.
+
+## Architecture reconciliation hold
+
+A separate historical HYBAEnterprise QC note supplied for this closeout assigns
+authoritative enduring custody to OVID and rebuildable projection/index roles
+to THESEUS. The **maintained ChronusQiGPU repository**, however, implements
+OVID representation transformation/materialisation and THESEUS durable custody
+in `src/chronus/triad.py`. This is a concrete authority-map discrepancy
+between artifacts, not permission to silently invert production ownership.
+Before customer contractual documentation or an architectural migration,
+reconcile the current owner-approved register, existing data migration and
+recovery guarantees, and the runtime's actual ownership. **No authority
+change is made by this benchmark or demonstration report.**
