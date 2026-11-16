@@ -50,6 +50,10 @@ def decode_labels(address: int) -> tuple[int, ...]:
     """Factor only against the specified domain; reject invalid addresses."""
     if not isinstance(address, int) or isinstance(address, bool) or address < 1:
         raise ValueError("address must be a positive integer")
+    # A valid address contains at most 32 distinct primes smaller than 2**16.
+    # Reject overlong untrusted values before repeated arbitrary-precision modulo.
+    if address.bit_length() > MAX_LABELS * 16:
+        raise ValueError("prime address exceeds supported bit length")
     remaining = address
     labels: list[int] = []
     for i, p in enumerate(_primes()):

@@ -429,6 +429,11 @@ class DurableTheseusService:
             integrity = str(db.execute("PRAGMA integrity_check").fetchone()[0])
             if integrity.lower() != "ok":
                 raise CustodyUnavailableError(f"SQLite integrity check failed: {integrity}")
+            # integrity_check is not a foreign-key check. Fail closed on orphaned
+            # records/journal pointers even if SQLite page integrity is fine.
+            foreign_key_errors = db.execute("PRAGMA foreign_key_check").fetchall()
+            if foreign_key_errors:
+                raise StorageIntegrityError("THESEUS durable foreign-key integrity failed")
             objects = db.execute("SELECT object_id,payload FROM objects").fetchall()
             for row in objects:
                 payload = bytes(row["payload"])
