@@ -85,6 +85,19 @@ class PhiTensorCore:
         arrays = [np.asarray(v) for v in values]
         if not arrays:
             raise ValueError("at least one tensor input is required")
+        # Recover the input/output memory and finite-data gates from the archived
+        # Chronos ONE iGPU v3.10 tensor_runtime.py. This is a host reference
+        # execution budget, not a claimed physical SRAM/HBM measurement.
+        max_elements = 1_000_000
+        if any(a.size > max_elements or not np.issubdtype(a.dtype, np.number)
+               or not np.isfinite(a).all() for a in arrays):
+            raise ValueError("reference tensor input exceeds finite numeric policy")
+        if op == "kron" and len(arrays) == 2 and arrays[0].size * arrays[1].size > max_elements:
+            raise ValueError("reference tensor Kronecker output exceeds element budget")
+        if op == "matmul" and len(arrays) == 2 and arrays[0].ndim == arrays[1].ndim == 2 and arrays[0].shape[0] * arrays[1].shape[1] > max_elements:
+            raise ValueError("reference tensor matrix output exceeds element budget")
+        if op == "scale" and scalar is not None and not np.isfinite(scalar):
+            raise ValueError("reference tensor scale must be finite")
         t0 = time.perf_counter_ns()
         if op == "add":
             if len(arrays) != 2 or arrays[0].shape != arrays[1].shape:
@@ -112,6 +125,8 @@ class PhiTensorCore:
             if len(arrays) != 1:
                 raise ValueError("reduce_sum requires one tensor")
             result = np.asarray(arrays[0].sum())
+        if result.size > max_elements or not np.isfinite(result).all():
+            raise ValueError("reference tensor output exceeds finite numeric policy")
         elapsed = time.perf_counter_ns() - t0
         return {
             "output": result,
