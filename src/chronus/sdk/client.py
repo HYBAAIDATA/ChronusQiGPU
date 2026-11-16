@@ -740,11 +740,17 @@ class ChronusAPISDK:
         return self._request("POST", "/v1/mining/admin/stealth", json=payload)
 
     def simulate_patroclus_mining(self, pools: Optional[list] = None) -> Dict[str, Any]:
-        """Simulate multi-pool Stratum V1 handshake and share acceptance."""
+        """Run fixed local Stratum fixtures; never evidence live pool acceptance.
+
+        The pools parameter is retained for source compatibility, but caller-
+        selected pools are rejected before making any network request.
+        """
+        if pools is not None:
+            raise ValueError("Only fixed local-loopback fixtures are supported; omit pools.")
         return self._request(
             "POST",
             "/v1/mining/admin/patroclus/simulate",
-            json={"pools": pools},
+            json={},
         )
 
     def get_metrics(self) -> str:
