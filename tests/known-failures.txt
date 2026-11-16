@@ -20,8 +20,6 @@
 # Remove a line as soon as the test passes, in the same commit as the fix.
 #
 # --- collection failures (the module cannot be imported) ---
-collection:tests/test_signers.py
-collection:tests/test_al_haras_runner_scripts.py
 #
 # --- tests/test_facade.py ---
 tests/test_facade.py::test_mldsa_blocks
