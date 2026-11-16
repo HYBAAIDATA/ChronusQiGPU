@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from fractions import Fraction
-from typing import Iterable, Sequence
+from typing import Sequence
 
 from chronus.geodesic.root_systems import catalog
 
