@@ -79,7 +79,7 @@ class TuringMiningScheduler:
             "engine": "turing-exact", "phase": phase,
             "born_weights": [str(left), str(right)], "lane_order": order,
             "transmission_stride": self._stride_seed,
-            "overlay": {"dodecahedron_faces": 12, "icosahedron_vertices": 20}
+            "overlay": {"dodecahedron_faces": 12, "icosahedron_faces": 20}
             if lane_count == 32 else None,
         }
         self.steps += 1
