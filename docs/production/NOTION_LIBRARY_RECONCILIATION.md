@@ -19,7 +19,8 @@ not copied into production source.
 PR [#136](https://github.com/HYBAAIDATA/ChronusQiGPU/pull/136) adds the missing
 exact-current glue and test fixes, including the local TURING installation seam
 required by HYBA Mine and the clean-checkout qualification import path. Local
-verification passes the full Python suite and focused product gates. The
+verification passes the full Python suite (`2340 passed, 38 skipped, 1 xfailed`)
+and focused product gates. The
 generated evidence remains non-qualifying because hosted Actions logs are
 unavailable and the Notion-required device, live-pool, soak/recovery,
 SBOM/provenance/rollback and owner-approval packet is absent.

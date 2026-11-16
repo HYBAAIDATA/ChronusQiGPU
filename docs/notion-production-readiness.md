@@ -52,7 +52,7 @@ main baseline without weakening the fail-closed release boundary:
   and keep the existing security checks intact. Unused imports and the exact
   mathematical claim-token policy are corrected.
 
-Local exact-current evidence is `2302 passed, 38 skipped, 1 xfailed` on Python
+Local exact-current evidence is `2340 passed, 38 skipped, 1 xfailed` on Python
 3.12.14, plus the focused package, acceleration, storage, build, Bandit,
 purity and mutation checks. The PR's hosted Actions jobs fail before usable
 steps/logs are retained (`BlobNotFound` on sampled log downloads), so hosted CI
@@ -136,10 +136,11 @@ The historical main baseline had concrete failures, not a qualification result:
 - Storage run [43669370069](https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/43669370069): claim-token script could not import the source package.
 
 PR #71 records an earlier remediation attempt. PR #136 is the current closing
-branch and contains the exact-current fixes listed above. Its hosted Actions
-attempts (`43843368808`, `43843368771`, `43843368770`, `43843368824`,
-`43843368861`, `43843368812`) fail before usable job steps/logs are retained;
-run `43843368789` was queued when observed. No hosted result is promoted to
+branch and contains the exact-current fixes listed above. Its latest hosted
+Actions attempts (`43844663572`, `43844663589`, `43844663557`, `43844663725`,
+`43844663665`, `43844663583`) fail before usable job steps/logs are retained;
+the CI run `43844663637` was still partly queued when observed. Sampled log
+downloads return Azure `BlobNotFound`; no hosted result is promoted to
 qualification.
 
 ## Promotion rule
