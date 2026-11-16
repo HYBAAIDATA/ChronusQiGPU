@@ -218,9 +218,37 @@ class OpenCLTensorBackend:
 
         cl.enqueue_copy(self._queue, out, out_buf).wait()
         self._queue.finish()
+        # Verify the complete produced result, not just an unrelated startup
+        # test. Host reference checks are deliberately included in the call
+        # boundary and must not be reported as accelerator-only throughput.
+        if op == "matmul":
+            from chronus.tensor.geodesic import TopologicalIntegrityGate
+            verdict = TopologicalIntegrityGate().verify_float32_matmul(
+                out, arrays[0], arrays[1]
+            )
+            verified = bool(verdict.passed)
+            method = "higham_componentwise_gamma_k"
+        else:
+            if op == "add":
+                reference = arrays[0] + arrays[1]
+            elif op == "hadamard":
+                reference = arrays[0] * arrays[1]
+            elif op == "scale":
+                reference = arrays[0] * np.float32(scalar)
+            else:
+                reference = np.kron(a, b)
+            verified = bool(np.array_equal(out, reference))
+            method = "float32_same_operation_reference_exact"
+        if not verified:
+            raise OpenCLTensorUnavailable(
+                f"OpenCL tensor {op} result failed host numerical integrity"
+            )
         return {
             "output": out,
             "backend": self.name,
             "device": self.device_record(),
             "physical_execution": True,
+            "output_integrity_verified": True,
+            "verification_method": method,
+            "performance_measurement": "UNAVAILABLE_HOST_REFERENCE_INCLUDED",
         }
