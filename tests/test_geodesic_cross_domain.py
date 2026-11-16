@@ -56,3 +56,18 @@ def test_jupyter_workbench_starts_from_real_turing_state_and_updates_exactly():
     assert next_state["norm_squared"] == "1"
     with pytest.raises(ValueError):
         explorer.inject_phase(space.index((3,119)),"sqrt(2)")
+
+
+def test_workbench_phase_injection_is_atomic_for_large_exact_state():
+    from turing.exact.geometry.hilbert import ExactComplex
+    sp = TensorHilbert((1024,))
+    amp = ExactComplex(Fraction(1,32))
+    state = SparseState(sp,{i:amp for i in range(1024)})
+    explorer = MathematicalWorkbench(state,max_entries=1024)
+    assert explorer.inspect()["nonzero_amplitudes"] == 1024
+    with pytest.raises(ValueError):
+        explorer.inject_phase(0,"i",max_entries=256)
+    assert explorer.state == state
+    changed = explorer.inject_phase(0,"i",max_entries=1024)
+    assert changed["nonzero_amplitudes"] == 1024
+    assert changed["basis"][0]["imag"] == "1/32"
