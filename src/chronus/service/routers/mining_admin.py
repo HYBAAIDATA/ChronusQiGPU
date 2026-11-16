@@ -1,5 +1,6 @@
 """REST API routes for Hashrate Intelligence & Mining Administration."""
 
+import logging
 from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -7,6 +8,7 @@ from pydantic import BaseModel, Field
 from chronus.execution.mining_admin import MiningAdminEngine
 from chronus.service.mining_operator import get_mining_admin_operator
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/v1/mining/admin", tags=["mining_admin"])
 _engine = MiningAdminEngine.get_instance()
 
@@ -51,7 +53,7 @@ class ConfigureStealthRequest(BaseModel):
 
 
 class SimulatePatroclusRequest(BaseModel):
-    pools: Optional[list] = Field(default=None, description="List of target pools to simulate (default: ViaBTC, Braiins, NiceHash, CKPool)")
+    pools: Optional[list] = Field(default=None, description="Deprecated and unsupported: local loopback fixture names are fixed; omit pools")
 
 
 @router.get("/status", summary="Get real-time mining administration status")
@@ -184,6 +186,7 @@ async def simulate_patroclus_session(
     try:
         await execute_master_end_to_end()
     except Exception as exc:
+        logger.exception("Local loopback Stratum rehearsal failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Local-loopback Stratum rehearsal failed; no production evidence.",
