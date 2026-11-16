@@ -167,7 +167,10 @@ class ProcurementBookTests(unittest.TestCase):
             "utilisation": 1.0,
             "tenant_id": TENANT,
         }
-        ledger.record(admission, tenant_id=TENANT)
+        first = ledger.record(admission, tenant_id=TENANT)
+        again = ledger.record(admission, tenant_id=TENANT)
+        self.assertIs(first, again)
+        self.assertEqual(len(ledger.rows()), 1)
         other = {**admission, "reservation": "r2", "tenant_id": OTHER}
         ledger.record(other, tenant_id=OTHER)
 

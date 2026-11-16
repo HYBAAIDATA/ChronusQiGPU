@@ -58,8 +58,9 @@ class UtilisationLedger:
                 space * utilisation,
             )
         )
+        reservation_id = str(admission["reservation"])
         row = UtilisationRecord(
-            reservation=str(admission["reservation"]),
+            reservation=reservation_id,
             tier=str(admission["tier"]),
             reserved=int(admission["reserved"]),
             actual=int(admission["actual"]),
@@ -70,6 +71,11 @@ class UtilisationLedger:
             tenant_id=tenant_id if tenant_id is not None else admission.get("tenant_id"),
         )
         with self._lock:
+            # Idempotent on reservation id so a retry after a failed write
+            # (admit already stores the admission) does not double-bill.
+            for existing in self._rows:
+                if existing.reservation == reservation_id:
+                    return existing
             self._rows.append(row)
             if self._path is not None:
                 self._path.parent.mkdir(parents=True, exist_ok=True)

@@ -34,6 +34,21 @@ This agent cannot merge pull requests (`gh` is read-only; ManagePullRequest has 
 
 **Owner:** merge the intended stack in GitHub UI (or squash into the migration target), then continue cleanup in the new repository. Do not treat red CI on older branches as release evidence.
 
+## Qodo Fix PR #108 (evaluated, not blindly merged)
+
+Automated remediation on `fix/remediation-9247aee8-17f447` (#108, closed for cherry-pick):
+
+| Finding | Disposition |
+|---------|-------------|
+| Tenant scoping / cross-tenant admit | Already fixed on #107 (`tenant_id` required; scoped idempotency) |
+| Server-side quote rebuild | Already fixed on #107 (`_server_quote`) |
+| Persist ledger on compose volume | Cherry-picked: `CHRONUS_PROCUREMENT_LEDGER` in `docker-compose.yml` |
+| Deploy app missing routes | Already fixed: `chronus.service.app` mounts `/v1/capacity/*` |
+| OpenAPI seal only checks api.app | Fixed: seal script seals api OpenAPI + deploy `/v1/capacity/*` |
+| Mechanism seal / full deploy scrub | Deferred — legacy AL HARAS/Euclid routes still carry tokens |
+| Workload gate requiring reservation | Deferred to new repo (pilot surface is advisory→binding book only) |
+| In-memory book lost on restart | Deferred (ledger durable on compose volume; book remains process-local) |
+
 ## Explicit non-claims
 
 - The millennium bridge does not solve any Millennium problem; link labels are honest (PROVED / OPEN / ANALOGY / …).
