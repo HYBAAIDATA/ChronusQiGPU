@@ -147,3 +147,34 @@ def test_legacy_bilinear_proxy_and_true_alternating_extension_component():
     assert qji.alternating_coefficient == (-1) % 257
     assert qij.is_hermitian_partner_of(qji)
     assert QuantumGeometricTensor.evaluate([1,0],[0,1],[0,2])[1] == 0
+
+
+def test_public_120cell_facade_exact_tetrahedron_dual_bijection():
+    from chronus.geodesic.dual_120cell import Polychoron120Cell
+    cell = Polychoron120Cell()
+    assert len(cell.vertices) == 600
+    assert len(cell.edges) == 1200
+    assert len(cell.pentagonal_faces) == 720
+    assert len(cell.dodecahedral_cells) == 120
+    assert cell.coordinate_denominator == 16
+    for i, tetra in enumerate(build_dual_120_cell().primal_tetrahedra):
+        assert cell.index_of_tetrahedron(tetra) == i
+    with pytest.raises(ValueError):
+        cell.index_of_tetrahedron((0,0,1,2))
+
+
+def test_m32_public_exact_partition_and_numeric_ridges():
+    from chronus.geodesic.m32 import M32DomainPartition
+    import numpy as np
+
+    m32 = M32DomainPartition()
+    assert len(m32.dodeca_faces) == 12
+    assert len(m32.icosa_faces) == 20
+    assert len(m32.all_normals) == 32
+    assert m32.assign_lane(m32.all_normals[0]) == 0
+    adjacency = m32.adjacency
+    assert adjacency.shape == (32,32)
+    assert np.array_equal(adjacency, adjacency.T)
+    assert not np.any(np.diag(adjacency))
+    assert int(adjacency.sum()) == 180
+    assert m32.adjacency_classification.startswith("APPROXIMATE_FLOAT64_")
