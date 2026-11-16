@@ -15,6 +15,7 @@ from chronus.execution.hashrate_cap import (
     hashes_per_second,
     process_cap,
     publish_limit_file,
+    read_published_limit,
     require_eh_s,
     set_process_limit_eh_s,
 )
@@ -78,6 +79,9 @@ class MiningAdminEngine:
                 "is_quantum": False,
             })()
         })()
+        published = read_published_limit()
+        if published is not None and published < self.config.stealth_target_eh_s:
+            self.config.stealth_target_eh_s = published
         self.stealth_engine = type("StealthEngine", (), {
             "max_cap_eh": float(HASHRATE_CAP_EH_S),
             "active_stealth_eh": self.config.stealth_target_eh_s,

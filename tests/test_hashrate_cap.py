@@ -156,6 +156,65 @@ def test_unavailable_igpu_search_does_not_spend_the_cap(monkeypatch):
         assert cap.available() == 3
 
 
+def test_a_fresh_admin_keeps_a_lower_published_rate(tmp_path, monkeypatch):
+    from chronus.execution.hashrate_cap import process_cap, publish_limit_file
+    from chronus.execution.mining_admin import MiningAdminEngine
+
+    path = tmp_path / "hashrate-cap"
+    monkeypatch.setenv("CHRONUS_HASHRATE_LIMIT_FILE", str(path))
+    publish_limit_file(0.25)
+    before = process_cap().cap_h_s
+    try:
+        engine = MiningAdminEngine()
+        assert engine.config.stealth_target_eh_s == 0.25
+        assert path.read_text(encoding="ascii").strip() == "0.25"
+        assert list(tmp_path.glob("*.tmp")) == []
+    finally:
+        if process_cap().cap_h_s != before:
+            process_cap().set_rate(before)
+
+
+def test_a_non_ascii_limit_file_leaves_the_rate_unchanged(tmp_path, monkeypatch):
+    from chronus.execution.hashrate_cap import apply_published_limit, process_cap
+
+    path = tmp_path / "hashrate-cap"
+    path.write_bytes(b"\xff\xfe")
+    monkeypatch.setenv("CHRONUS_HASHRATE_LIMIT_FILE", str(path))
+    cap = HashrateCap(10, clock=lambda: 0)
+    with override_process_cap(cap):
+        apply_published_limit()
+        assert process_cap().cap_h_s == 10
+
+
+def test_concurrent_publish_keeps_a_valid_rate(tmp_path, monkeypatch):
+    import threading
+
+    from chronus.execution.hashrate_cap import publish_limit_file
+
+    path = tmp_path / "hashrate-cap"
+    monkeypatch.setenv("CHRONUS_HASHRATE_LIMIT_FILE", str(path))
+    errors: list[BaseException] = []
+
+    def publish(value: float) -> None:
+        try:
+            for _ in range(20):
+                publish_limit_file(value)
+        except BaseException as exc:
+            errors.append(exc)
+
+    threads = [
+        threading.Thread(target=publish, args=(0.25,)),
+        threading.Thread(target=publish, args=(0.5,)),
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert errors == []
+    assert path.read_text(encoding="ascii").strip() in {"0.25", "0.5"}
+    assert list(tmp_path.glob("*.tmp")) == []
+
+
 def test_a_second_process_adopts_the_published_limit(tmp_path, monkeypatch):
     import os
     import subprocess

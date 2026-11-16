@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import math
 import os
+import tempfile
 import threading
 import time
 from contextlib import contextmanager
@@ -159,21 +160,33 @@ def publish_limit_file(eh_s: float) -> None:
     require_eh_s(eh_s)
     path = limit_file()
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(path.name + ".tmp")
-    temporary.write_text(f"{eh_s}\n", encoding="ascii")
-    os.replace(temporary, path)
+    descriptor, name = tempfile.mkstemp(prefix=f"{path.name}.", suffix=".tmp", dir=path.parent)
+    os.close(descriptor)
+    temporary = Path(name)
+    try:
+        temporary.write_text(f"{eh_s}\n", encoding="ascii")
+        os.replace(temporary, path)
+    except Exception:
+        temporary.unlink(missing_ok=True)
+        raise
+
+
+def read_published_limit() -> float | None:
+    """Return the shared rate, or None when the file is missing or not a valid rate."""
+    try:
+        text = limit_file().read_bytes().decode("ascii")
+    except (OSError, UnicodeError):
+        return None
+    try:
+        return require_eh_s(float(text.strip()))
+    except ValueError:
+        return None
 
 
 def apply_published_limit() -> None:
     """Adopt the shared file when another process published a new rate."""
-    path = limit_file()
-    try:
-        text = path.read_text(encoding="ascii")
-    except OSError:
-        return
-    try:
-        eh_s = require_eh_s(float(text.strip()))
-    except ValueError:
+    eh_s = read_published_limit()
+    if eh_s is None:
         return
     if process_cap().cap_h_s != hashes_per_second(eh_s):
         set_process_limit_eh_s(eh_s)
