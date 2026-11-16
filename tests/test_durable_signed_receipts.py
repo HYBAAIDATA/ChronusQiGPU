@@ -1,6 +1,7 @@
 """THESEUS custody regression for AL HARAS signed receipt streams."""
 from __future__ import annotations
 
+import json
 import sqlite3
 
 import pytest
@@ -127,3 +128,36 @@ def test_signed_receipts_do_not_advance_on_failed_custody_write(tmp_path, monkey
         stream.append(receipt(stream, signer), signer)
     assert len(stream) == 0
     assert stream.head_digest is None
+
+
+def test_signed_envelope_cannot_be_replayed_into_another_stream(tmp_path):
+    store = DurableTheseusService(str(tmp_path / "custody.sqlite3"))
+    signer = Ed25519Signer.generate("key")
+    source = DurableReceiptLog(store, "tenant-a", "source-stream", signer.public_bytes())
+    source.append(receipt(source, signer), signer)
+    original = store.get_journal("tenant-a")[0]
+    forged_envelope = json.loads(store.reconstruct("tenant-a", original.object_id))
+    forged_envelope["stream_id"] = "other-stream"
+    store.append_journal_event(
+        "tenant-a",
+        "AL_HARAS_SIGNED_RECEIPT_V1",
+        canonical_bytes(forged_envelope),
+    )
+    assert store.verify_journal_continuity("tenant-a")
+    with pytest.raises(ReceiptCustodyError, match="invalid stored"):
+        DurableReceiptLog(store, "tenant-a", "other-stream", signer.public_bytes())
+
+
+def test_signed_envelope_requires_stream_binding_signature(tmp_path):
+    store = DurableTheseusService(str(tmp_path / "custody.sqlite3"))
+    signer = Ed25519Signer.generate("key")
+    first = DurableReceiptLog(store, "tenant-a", "stream", signer.public_bytes())
+    signed = first.append(receipt(first, signer), signer)
+    data = json.loads(
+        store.reconstruct("tenant-a", store.get_journal("tenant-a")[0].object_id)
+    )
+    assert data["digest"] == signed.digest
+    data.pop("stream_binding_signature")
+    store.append_journal_event("tenant-a", "AL_HARAS_SIGNED_RECEIPT_V1", canonical_bytes(data))
+    with pytest.raises(ReceiptCustodyError):
+        DurableReceiptLog(store, "tenant-a", "stream", signer.public_bytes())
