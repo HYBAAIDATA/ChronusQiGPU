@@ -27,6 +27,14 @@ def test_componentwise_higham_accepts_actual_float32_result():
     assert gate.checks_passed == 1
 
 
+def test_higham_bound_accounts_for_float32_subnormal_rounding():
+    a = np.array([[1e-20]], dtype=np.float32)
+    b = np.array([[1e-20]], dtype=np.float32)
+    result = a @ b
+    assert result[0, 0] > 0
+    assert TopologicalIntegrityGate().verify_float32_matmul(result, a, b).passed
+
+
 def test_componentwise_higham_rejects_corrupt_output():
     a = np.arange(1, 7, dtype=np.float32).reshape(2, 3)
     b = np.arange(1, 7, dtype=np.float32).reshape(3, 2)
@@ -73,9 +81,24 @@ def test_opencl_kernel_lane_mapping_and_operation_coverage():
 
 
 def test_optional_real_opencl_gpu_exercises_every_kernel():
+    # Distinguish absence of OpenCL hardware from failure to qualify a
+    # discovered GPU. Once a GPU is discovered, startup MUST raise/fail.
+    cl = pytest.importorskip("pyopencl", reason="No physical OpenCL runtime")
+    try:
+        platforms = cl.get_platforms()
+    except cl.LogicError as exc:
+        if "PLATFORM_NOT_FOUND" in str(exc).upper():
+            pytest.skip("NO_PHYSICAL_OPENCL_GPU: platform unavailable")
+        raise
+    gpu_devices = [
+        device for platform in platforms
+        for device in platform.get_devices()
+        if int(device.type) & int(cl.device_type.GPU)
+    ]
+    if not gpu_devices:
+        pytest.skip("NO_PHYSICAL_OPENCL_GPU: GPU device unavailable")
     backend = OpenCLTensorBackend()
-    if not backend.is_available():
-        pytest.skip("NO_PHYSICAL_OPENCL_GPU: GPU evidence unavailable")
+    backend._initialize()  # must FAIL if a discovered GPU cannot qualify
     a = np.array([[1., 2.], [3., 4.]], dtype=np.float32)
     b = np.array([[5., 6.], [7., 8.]], dtype=np.float32)
     m = np.array([[1., 2., 3.], [4., 5., 6.]], dtype=np.float32)
@@ -96,9 +119,24 @@ def test_optional_real_opencl_gpu_exercises_every_kernel():
 
 
 def test_optional_gpu_refuses_narrowing_scale_and_overflow():
+    # Distinguish absence of OpenCL hardware from failure to qualify a
+    # discovered GPU. Once a GPU is discovered, startup MUST raise/fail.
+    cl = pytest.importorskip("pyopencl", reason="No physical OpenCL runtime")
+    try:
+        platforms = cl.get_platforms()
+    except cl.LogicError as exc:
+        if "PLATFORM_NOT_FOUND" in str(exc).upper():
+            pytest.skip("NO_PHYSICAL_OPENCL_GPU: platform unavailable")
+        raise
+    gpu_devices = [
+        device for platform in platforms
+        for device in platform.get_devices()
+        if int(device.type) & int(cl.device_type.GPU)
+    ]
+    if not gpu_devices:
+        pytest.skip("NO_PHYSICAL_OPENCL_GPU: GPU device unavailable")
     backend = OpenCLTensorBackend()
-    if not backend.is_available():
-        pytest.skip("NO_PHYSICAL_OPENCL_GPU: GPU evidence unavailable")
+    backend._initialize()  # must FAIL if a discovered GPU cannot qualify
     one = np.array([1.0, 2.0], dtype=np.float32)
     with pytest.raises(ValueError, match="lose precision"):
         backend.execute("scale", one, scalar=1.0 / 3.0)
