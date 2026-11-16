@@ -10,6 +10,7 @@ services:
       - "127.0.0.1:18000:8000"
     environment:
       CHRONUS_WORKLOAD_DB_PATH: /var/lib/chronus/workloads.sqlite3
+      CHRONUS_PROCUREMENT_LEDGER: /var/lib/chronus/procurement_ledger.jsonl
       CHRONUS_TENANT_TOKENS: ${CHRONUS_TENANT_TOKENS:-{}}
     volumes:
       - chronus_data:/var/lib/chronus
