@@ -1,0 +1,135 @@
+{
+  "schema": "chronus.notional-library-artifacts/1",
+  "review_date": "2026-11-16",
+  "governing_repository": "HYBAAIDATA/ChronusQiGPU",
+  "disposition": "REVIEW_BRANCH_NOT_PRODUCTION_QUALIFIED",
+  "archive_integrity_check": "zip.testzip and archive path validation, seven local user-provided ZIP archives",
+  "archives": [
+    {
+      "name": "PULVINI_V3_HERMES_COMPLETION_20260724(3).zip",
+      "sha256": "a307f93ed32c1ba97ab6241b44f8789b16b33bab6f603e7bab1f9a0eef923277",
+      "entries": 17,
+      "integrity": "PASS",
+      "disposition": "Notion file block resolved; locally supplied bytes verified"
+    },
+    {
+      "name": "pulvini_v3_enterprise_production_20260724(1).zip",
+      "sha256": "00b79a99c01e88a4e02d458a76c2bea3af1f7cc0c7b1af3be43e0193a8bd038a",
+      "entries": 86,
+      "integrity": "PASS",
+      "disposition": "PULVINI tensor train source recovered; original complex cast fails equality"
+    },
+    {
+      "name": "HYBA_Library_Millennium_Recovery_2026-10-28_(2).zip",
+      "sha256": "6da5feb060b0e81287072632f45c980a40e4cf7919b277333da78568b39ca0db",
+      "entries": 37,
+      "integrity": "PASS",
+      "disposition": "Historical mathematical evidence, not current release proof"
+    },
+    {
+      "name": "HYBA-recovery-evidence-20261029.zip",
+      "sha256": "93d6d6da22201c366a33d7396e840a83df63c4065d594500f5e5059781d0a427",
+      "entries": 7,
+      "integrity": "PASS",
+      "disposition": "Historical recovery summary and negative regression evidence"
+    },
+    {
+      "name": "HYBA_1000_QUBIT_VQC_20260724(3).zip",
+      "sha256": "7b4ef03683de8bf03a189293bb72e4493c9a408c5722b38f4a1e2ca8f05e9038",
+      "entries": 10,
+      "integrity": "PASS",
+      "disposition": "Clifford/stabilizer source and 22 historical software regressions"
+    },
+    {
+      "name": "chronos-one-igpu-v3.4.zip",
+      "sha256": "406a6b499ecee14a93e172ce274ae92c69381953cabadbd69903d326cc55642d",
+      "entries": 105,
+      "integrity": "PASS",
+      "disposition": "Chronos graphics QSDL/parser source, original iGPU and 10 focused software regressions"
+    },
+    {
+      "name": "private-supplementary-qc-evidence.zip",
+      "sha256": "149d1d054b3b71050023a26a22debd8b229630db2272c92e4a7cf805f6b67a27",
+      "entries": 22,
+      "integrity": "PASS",
+      "disposition": "Historical supplementary QC (not current implementation qualification)"
+    }
+  ],
+  "notion_artifact_shelves": [
+    {
+      "page": "https://app.notion.com/p/ffd11e5552144c30ad38a5aaab0b5fcb",
+      "file": "PULVINI_V3_HERMES_COMPLETION_20260724.zip",
+      "download_url_resolution": "PASS",
+      "byte_equivalence_to_local_archive": "NOT_CHECKED"
+    },
+    {
+      "page": "https://app.notion.com/p/4af52dc709194c5ea68e6d08736a9863",
+      "file": "HYBA_1000_QUBIT_VQC_20260724.zip",
+      "download_url_resolution": "PASS",
+      "byte_equivalence_to_local_archive": "NOT_CHECKED"
+    },
+    {
+      "page": "https://app.notion.com/p/0f9aedc5b415479cb34a9b1646f006b4",
+      "file": "HYBA_DATA_WITH_AUTH.zip",
+      "download_url_resolution": "PASS",
+      "bytes_materialized": "NO"
+    },
+    {
+      "page": "https://app.notion.com/p/2539733ebb7848c9a84ae4e3d7429822",
+      "file": "EUCLID_POSTERITY_RESEARCH_ARCHIVE_20260718.zip",
+      "bytes_materialized": "NO"
+    }
+  ],
+  "recovered_sources": [
+    {
+      "archive": "pulvini_v3_enterprise_production_20260724(1).zip",
+      "path": "pulvini_v3/src/euclid/pythagoras/quantum/operators/tensor_train.py",
+      "sha256": "1ff3bd42c4fd33c509e2f86c9360cd55801b2b5b7c708a89f1ef1b5e92edade9",
+      "reconciled_to": "src/chronus/tensor/exact_rational_tt.py",
+      "action": "elevate same tensor train contract to bounded exact rational algorithm, preserve original source as archived evidence"
+    },
+    {
+      "archive": "chronos-one-igpu-v3.10-resident-projection-elevation.zip",
+      "path": "chronos-one-igpu-v3.10/src/chronos/igpu/tensor_runtime.py",
+      "sha256": "768d9cef438af868929163216a18a35518535790afb44d3109387dffcc38a92a",
+      "reconciled_to": "src/chronus/tensor/geodesic.py",
+      "action": "port finite numeric, output quota and nonfinite-result gates"
+    },
+    {
+      "archive": "chronos-one-igpu-v3.4.zip",
+      "path": "chronos-completed/src/chronos/qsdl_parser.py",
+      "sha256": "86dd6f29da513e23d0ce32ba0b8a122b05adae5cdd45ded0cad20f09e8bba585",
+      "reconciled_to": null,
+      "action": "source inventoried; full QSDL parser/compiler dependency chain NOT YET PORTED"
+    },
+    {
+      "archive": "HYBA_1000_QUBIT_VQC_20260724(3).zip",
+      "path": "phi_quantum_machine.py",
+      "reconciled_to": "packages/turing/src/turing/algorithms/clifford.py",
+      "action": "do not duplicate existing native exact stabilizer engine and 1000/2500-qubit GHZ regression"
+    }
+  ],
+  "tests": [
+    {
+      "scope": "user-uploaded Chronos v3.4 original modules",
+      "suite": "test_one_igpu.py, test_lucas_engine.py, test_lucas_runtime.py",
+      "tests_passed": 10,
+      "executed": "YES",
+      "qualifies_current_repo": "NO"
+    },
+    {
+      "scope": "user-uploaded VQC and PULVINI formal composite fixture",
+      "suite": "test_phi_quantum_machine.py, test_vqc_phi_grover.py",
+      "tests_passed": 22,
+      "executed": "YES",
+      "qualifies_current_repo": "NO"
+    },
+    {
+      "scope": "new exact rational tensor-train standalone module",
+      "suite": "test_exact_rational_tt.py",
+      "tests_passed": 6,
+      "executed": "YES",
+      "qualifies_current_repo": "NO"
+    }
+  ]
+}

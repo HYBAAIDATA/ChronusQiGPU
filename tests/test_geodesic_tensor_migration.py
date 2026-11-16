@@ -204,3 +204,28 @@ def test_folded_arrays_reject_process_local_object_pointers():
         ExactFoldState.from_array(np.array([object()], dtype=object))
     with pytest.raises(ValueError):
         ExactFoldState.from_array(np.zeros(2, dtype=[("x", np.int32)]))
+
+
+def test_archived_tensor_runtime_finite_numeric_guards_are_wired():
+    core = PhiTensorCore()
+    with pytest.raises(ValueError, match="finite numeric policy"):
+        core.execute("add", np.array([float("nan")]), np.array([1.0]))
+    with pytest.raises(ValueError, match="finite numeric policy"):
+        core.execute("hadamard", np.array(["x"]), np.array(["y"]))
+    with pytest.raises(ValueError, match="element budget"):
+        core.execute("kron", np.ones(1001), np.ones(1000))
+    with pytest.raises(ValueError, match="element budget"):
+        core.execute("matmul", np.ones((1001, 2)), np.ones((2, 1000)))
+    with pytest.raises(ValueError, match="scale must be finite"):
+        core.execute("scale", np.array([1.0]), scalar=float("inf"))
+    with pytest.raises(ValueError, match="output exceeds finite numeric policy"):
+        core.execute("scale", np.array([1e308]), scalar=1e308)
+
+
+def test_archived_tensor_guard_keeps_complex_reference_execution():
+    core = PhiTensorCore()
+    a = np.array([[1 + 1j, 2 - 2j]], dtype=np.complex128)
+    b = np.array([[3 - 4j], [5 + 2j]], dtype=np.complex128)
+    out = core.execute("matmul", a, b)
+    np.testing.assert_array_equal(out["output"], a @ b)
+    assert out["backend"] == "numpy-reference"

@@ -1,11 +1,29 @@
 # Notion and Library Reconciliation — TRIAD Close-Out
 
-**Date:** 15 November 2026  
-**Candidate:** PR #93 / `closeout/triad-production-posture-20261115`
+**Date:** 16 November 2026
+**Candidate:** PR #136 / `codex/production-readiness-20261116`
 
 This register reconciles the maintained Chronus repository against the governing Notion records and the historical test/benchmark material retained in the ChatGPT Library.
 
 The rule is simple: **capability is preserved or superseded in maintained source; historical evidence is preserved as provenance; current release credit comes only from current exact-commit execution.**
+
+## 0. Current implementation closeout
+
+The Library/Notion reconciliation found that the four named Geodesic/Tensor
+surfaces are already implemented in the maintained tree:
+`PhiTensorCore`, `GeodesicScheduler`, `PhiMemoryHierarchy` and
+`TopologicalIntegrityGate` in `src/chronus/tensor/geodesic.py`, with exports,
+scheduler integration and focused tests. The historical monolithic engine was
+not copied into production source.
+
+PR [#136](https://github.com/HYBAAIDATA/ChronusQiGPU/pull/136) adds the missing
+exact-current glue and test fixes, including the local TURING installation seam
+required by HYBA Mine and the clean-checkout qualification import path. Local
+verification passes the full Python suite (`2340 passed, 38 skipped, 1 xfailed`)
+and focused product gates. The
+generated evidence remains non-qualifying because hosted Actions logs are
+unavailable and the Notion-required device, live-pool, soak/recovery,
+SBOM/provenance/rollback and owner-approval packet is absent.
 
 ## 1. Governing Notion records
 
@@ -91,6 +109,10 @@ The software-base profile may therefore be admitted without promoting deployment
 
 ## 5. Current external execution boundary
 
-The source reconciliation is complete on PR #93. Exact-current execution is not yet available because the GitHub Actions jobs for this repository are failing before usable job logs are retained; sampled log downloads return Azure `BlobNotFound`. This condition is recorded as infrastructure unavailable, not as a software PASS or software FAIL.
+The source reconciliation is carried forward on PR #136. Exact-current hosted
+execution is not yet available because the GitHub Actions jobs for this
+repository fail before usable job logs are retained; sampled log downloads
+return Azure `BlobNotFound`. This condition is recorded as infrastructure
+unavailable, not as a software PASS or software FAIL.
 
 The branch must remain evidence-gated until a usable exact-current runner execution exists.

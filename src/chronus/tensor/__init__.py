@@ -62,6 +62,7 @@ from chronus.tensor.adaptive_contraction import (
 from chronus.tensor.causal_intelligence import (
     CausalInterferenceEngine,
 )
+from chronus.tensor.exact_rational_tt import ExactRationalTensorTrain
 from chronus.tensor.folded_state import ExactFoldState
 from chronus.tensor.folded_inference import FoldedInferencePilot
 from chronus.tensor.geodesic import (
@@ -161,6 +162,7 @@ __all__ = [
     "E3_honest_1000_node_claim",
     "PUBLISH",
     "reference_statevector_simulation",
+    "ExactRationalTensorTrain",
     "ExactFoldState",
     "FoldedInferencePilot",
     "BackendProfile",

@@ -6,10 +6,11 @@ import { performance } from 'node:perf_hooks';
 
 const port = 31_000 + Math.floor(Math.random() * 5_000);
 const baseUrl = `http://127.0.0.1:${port}`;
+const nextCommand = process.platform === 'win32' ? 'node_modules/.bin/next.cmd' : './node_modules/.bin/next';
 let server;
 
 before(async () => {
-  server = spawn('pnpm', ['exec', 'next', 'start', '--hostname', '127.0.0.1', '--port', String(port)], {
+  server = spawn(nextCommand, ['start', '--hostname', '127.0.0.1', '--port', String(port)], {
     cwd: process.cwd(),
     env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1' },
     stdio: 'ignore',

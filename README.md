@@ -1,3 +1,24 @@
+## Notion / Library recovery: exact tensor-train and archived safety guards (2026-11-16)
+
+The source archives in the connected Notion artifact shelves and ChatGPT
+Library are actively reconciled, not treated as production evidence. The
+current tensor package now exports `ExactRationalTensorTrain` for bounded,
+integrity-checked rational tensor-train decomposition with exact
+reconstruction. The legacy July PULVINI TT-SVD was *not* copied verbatim:
+a reproduced `astype(float)` path discards complex components.
+
+The existing `PhiTensorCore` also applies finite-data, bounded-output
+and nonfinite-result checks recovered from the Chronos ONE iGPU v3.10 tensor
+runtime. No second GPU/tensor scheduler is installed. This does not prove
+physical GPU acceleration or a commercial hardware performance claim.
+
+See [Notion/Library source recovery](docs/audits/2026-11-16-notion-library-source-recovery.md),
+the [archive register](evidence/migration/2026-11-16-notion-library-artifact-register.json),
+and the [executed historical tests](evidence/migration/2026-11-16-archive-focused-test-replay.md).
+The full QSDL graphics parser/compiler chain and historical Kellogg source
+remain unported/unavailable for current acceptance. Release remains
+**NOT QUALIFIED**.
+
 # Chronus
 
 Chronus is HYBA Data's computational infrastructure platform. This repository contains the maintained execution runtime, software-defined iGPU/fleet, tensor runtime, enterprise connector plane, OVID representation services, THESEUS custody services, APIs, frontend, tests, evidence tooling and release controls.
