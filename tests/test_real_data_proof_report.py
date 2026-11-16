@@ -22,7 +22,8 @@ def _sealed(source_class='TEST_FIXTURE_NON_PRODUCTION', recovered=True):
         'device_execution': 'UNVERIFIED', 'external_source_attestation': 'UNVERIFIED',
         'git_commit': 'a' * 40,
         'measured_at_utc': '2026-11-16T06:00:00+00:00',
-        'entries': [{'source_class': source_class, 'source_sha256': 'b' * 64,
+        'entries': [{'source_class': source_class, 'source_sha256': ('0f1c225bbabf3d4eaccd81f73c9594ceec77d84c9b425ef0e4cc815743050529'
+                                       if source_class == 'PUBLIC_OBSERVED_DATASET' else 'b' * 64),
                      'input_bytes': 512, 'custody_restart_roundtrip_verified': recovered,
                      'workload': {'operation': 'exact_snapshot_partial_unfold',
                                   'byte_exact_roundtrip_verified': True}}],
@@ -87,3 +88,42 @@ def test_mixed_public_and_customer_proofs_fail_closed():
     ).hexdigest()
     with pytest.raises(ValueError, match='must be reported separately'):
         verified_report(proof)
+
+
+def _redigest(proof: dict) -> dict:
+    proof.pop('integrity_sha256', None)
+    proof['integrity_sha256'] = hashlib.sha256(
+        json.dumps(proof, sort_keys=True, separators=(',', ':')).encode()
+    ).hexdigest()
+    return proof
+
+
+@pytest.mark.parametrize('field', ['custody_restart_roundtrip_verified',
+                                    'byte_exact_roundtrip_verified'])
+def test_truthy_strings_are_not_valid_custody_or_recovery_proof(field):
+    p = _sealed('OPERATOR_DECLARED_PRODUCTION')
+    if field == 'custody_restart_roundtrip_verified':
+        p['entries'][0][field] = 'false'
+    else:
+        p['entries'][0]['workload'][field] = 'false'
+    with pytest.raises(ValueError, match='verified|verification'):
+        verified_report(_redigest(p))
+
+
+@pytest.mark.parametrize('value', [None, [], 'true', 17])
+def test_malformed_pulvini_record_fails_cleanly(value):
+    p = _sealed('OPERATOR_DECLARED_PRODUCTION')
+    p['entries'][0]['workload'] = {
+        'operation': 'tensor_reference_add_and_pulvini',
+        'addition_exact_match': True,
+        'pulvini': value,
+    }
+    with pytest.raises(ValueError, match='tensor reconstruction'):
+        verified_report(_redigest(p))
+
+
+def test_unverified_claimed_public_hash_is_rejected():
+    p = _sealed('PUBLIC_OBSERVED_DATASET')
+    p['entries'][0]['source_sha256'] = 'd' * 64
+    with pytest.raises(ValueError, match='unverified claimed public'):
+        verified_report(_redigest(p))
