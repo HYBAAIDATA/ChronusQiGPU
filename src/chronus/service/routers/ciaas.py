@@ -59,6 +59,28 @@ router = APIRouter(prefix="/v1", tags=["ciaas"])
 _hardware_dispatcher = HardwareAcceleratorDispatcher()
 
 
+def _require_matching_tenant(tenant_id: str, identity: AuthenticatedIdentity) -> None:
+    """Roles govern actions; verified tenant identity governs resource scope."""
+    if identity.has_any_role({Role.SYSTEM_ADMIN, Role.ADMIN}):
+        return
+    if identity.tenant_id != tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"error": "tenant_isolation_violation",
+                    "message": "Tenant scope does not match the authenticated principal."},
+        )
+
+
+def _unbound_fleet_action(action: str) -> None:
+    """Don't certify a fleet action that never reached the authoritative coordinator."""
+    raise HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail={"error": "fleet_execution_unverified",
+                "message": f"{action} requires an authorised measured Chronus fleet."},
+    )
+
+
+
 class OnboardTenantRequest(BaseModel):
     tenant_id: str = Field(..., description="Unique tenant identifier e.g. tenant-acme")
     organization_name: str = Field(..., description="Legal entity name")
@@ -135,7 +157,10 @@ async def get_rbac_matrix() -> Dict[str, Any]:
     summary="Mint scoped JWT access token",
     description="Generate a signed JWT bearer token with specific AL HARAS role claims.",
 )
-async def issue_token(request: TokenRequest) -> Dict[str, Any]:
+async def issue_token(
+    request: TokenRequest,
+    _admin: AuthenticatedIdentity = Depends(require_roles(Role.SYSTEM_ADMIN)),
+) -> Dict[str, Any]:
     try:
         role_enum = Role(request.role.lower())
     except ValueError:
@@ -165,7 +190,9 @@ async def issue_token(request: TokenRequest) -> Dict[str, Any]:
     summary="List all onboarded enterprise tenants",
     description="Retrieve all tenant profiles under AL HARAS authority.",
 )
-async def list_tenants() -> List[TenantProfile]:
+async def list_tenants(
+    _admin: AuthenticatedIdentity = Depends(require_roles(Role.SYSTEM_ADMIN)),
+) -> List[TenantProfile]:
     return ciaas_store.list_tenants()
 
 
@@ -175,7 +202,10 @@ async def list_tenants() -> List[TenantProfile]:
     status_code=status.HTTP_201_CREATED,
     summary="Onboard new enterprise tenant",
 )
-async def onboard_tenant(request: OnboardTenantRequest) -> TenantProfile:
+async def onboard_tenant(
+    request: OnboardTenantRequest,
+    _admin: AuthenticatedIdentity = Depends(require_roles(Role.SYSTEM_ADMIN)),
+) -> TenantProfile:
     existing = ciaas_store.get_tenant(request.tenant_id)
     if existing:
         raise HTTPException(
@@ -301,7 +331,11 @@ async def simulate_instant_onboarding_load(
     response_model=TenantProfile,
     summary="Retrieve tenant profile and CCE status",
 )
-async def get_tenant_profile(tenant_id: str) -> TenantProfile:
+async def get_tenant_profile(
+    tenant_id: str,
+    identity: AuthenticatedIdentity = Depends(get_current_identity),
+) -> TenantProfile:
+    _require_matching_tenant(tenant_id, identity)
     tenant = ciaas_store.get_tenant(tenant_id)
     if not tenant:
         raise HTTPException(
@@ -316,7 +350,13 @@ async def get_tenant_profile(tenant_id: str) -> TenantProfile:
     response_model=TenantCapacityStatusResponse,
     summary="Inspect Enduring Capacity Addendum (ECA), active warps, and Hermiten settlement",
 )
-async def get_tenant_capacity_status(tenant_id: str) -> TenantCapacityStatusResponse:
+async def get_tenant_capacity_status(
+    tenant_id: str,
+    identity: AuthenticatedIdentity = Depends(
+        require_roles(Role.TENANT_ADMIN, Role.SYSTEM_ADMIN)
+    ),
+) -> TenantCapacityStatusResponse:
+    _require_matching_tenant(tenant_id, identity)
     try:
         return instant_provisioning_engine.get_capacity_status(tenant_id)
     except KeyError as exc:
@@ -388,7 +428,11 @@ async def expand_tenant_capacity(
 async def update_tenant_cce(
     tenant_id: str,
     cce: ChronusCapacityEntitlement,
+    identity: AuthenticatedIdentity = Depends(
+        require_roles(Role.TENANT_ADMIN, Role.SYSTEM_ADMIN)
+    ),
 ) -> TenantProfile:
+    _require_matching_tenant(tenant_id, identity)
     updated = ciaas_store.update_cce(tenant_id, cce)
     if not updated:
         raise HTTPException(
@@ -404,8 +448,10 @@ async def update_tenant_cce(
     summary="Calculate 4-part pricing breakdown",
 )
 async def get_pricing_breakdown(
-    tenant_id: str, consumed_ccu: int = 128
+    tenant_id: str, consumed_ccu: int = 128,
+    identity: AuthenticatedIdentity = Depends(get_current_identity),
 ) -> PricingBreakdown:
+    _require_matching_tenant(tenant_id, identity)
     return ciaas_store.calculate_pricing(tenant_id=tenant_id, consumed_ccu=consumed_ccu)
 
 
@@ -417,7 +463,11 @@ async def get_pricing_breakdown(
 async def reconcile_settlement(
     tenant_id: str,
     request: SettlementRequest,
+    identity: AuthenticatedIdentity = Depends(
+        require_roles(Role.TENANT_ADMIN, Role.SYSTEM_ADMIN)
+    ),
 ) -> HermitenSettlement:
+    _require_matching_tenant(tenant_id, identity)
     return ciaas_store.calculate_hermiten_settlement(
         tenant_id=tenant_id,
         counterfactual_cost=request.counterfactual_cost,
@@ -432,7 +482,11 @@ async def reconcile_settlement(
 )
 async def billing_hermiten_settlement(
     request: HermitenBillingSettlementPayload,
+    identity: AuthenticatedIdentity = Depends(
+        require_roles(Role.TENANT_ADMIN, Role.SYSTEM_ADMIN)
+    ),
 ) -> Dict[str, Any]:
+    _require_matching_tenant(request.tenant_id, identity)
     import hashlib
 
     cf = float(request.counterfactual_cloud_spend_usd)
@@ -453,9 +507,12 @@ async def billing_hermiten_settlement(
         "net_avoided_cost_usd": net_savings,
         "chronus_value_share_usd": value_share,
         "client_retained_savings_usd": client_retained,
-        "settlement_certificate": f"cert_hermiten_{cert_hash}",
+        "settlement_certificate": None,
+        "calculation_reference": cert_hash,
+        "settlement_evidence": "UNVERIFIED_INPUTS",
+        "invoice": False,
         "value_share_percentage": 25,
-        "status": "RECONCILED",
+        "status": "CALCULATED_UNVERIFIED",
     }
 
 
@@ -464,7 +521,9 @@ async def billing_hermiten_settlement(
     summary="Disaggregated hyperscale fleet pods status",
     description="Inspect Pods alpha..delta, DEC Lie-Poisson routing, and DSW 4D Instanton Self-Healer.",
 )
-async def get_fabric_pods() -> Dict[str, Any]:
+async def get_fabric_pods(
+    _admin: AuthenticatedIdentity = Depends(require_roles(Role.SYSTEM_ADMIN)),
+) -> Dict[str, Any]:
     return ciaas_store.get_pods_fleet()
 
 
@@ -475,7 +534,8 @@ async def get_fabric_pods() -> Dict[str, Any]:
 async def discover_hardware_accelerators() -> Dict[str, Any]:
     backends = _hardware_dispatcher.discover_backends()
     return {
-        "status": "OPERATIONAL",
+        "status": "BACKENDS_DISCOVERED_NOT_HARDWARE_PROOF",
+        "physical_hardware_verified": False,
         "total_discovered": len(backends),
         "execution_targets": backends,
         "runtime_classes": [
@@ -493,7 +553,9 @@ async def discover_hardware_accelerators() -> Dict[str, Any]:
 )
 async def register_fabric_cluster(
     request: ClusterRegistrationRequest,
+    _admin: AuthenticatedIdentity = Depends(require_roles(Role.SYSTEM_ADMIN)),
 ) -> Dict[str, Any]:
+    _unbound_fleet_action("Cluster registration")
     discovered = _hardware_dispatcher.discover_backends()
     return {
         "status": "CLUSTER_REGISTERED_ZERO_STALL",
@@ -514,7 +576,11 @@ async def register_fabric_cluster(
     "/fabric/pools/schedule",
     summary="Disaggregated Prefill, Decode, and Cryo-Quantum Pool Scheduling",
 )
-async def schedule_disaggregated_pools(request: PoolScheduleRequest) -> Dict[str, Any]:
+async def schedule_disaggregated_pools(
+    request: PoolScheduleRequest,
+    _admin: AuthenticatedIdentity = Depends(require_roles(Role.SYSTEM_ADMIN)),
+) -> Dict[str, Any]:
+    _unbound_fleet_action("Disaggregated pool dispatch")
     return {
         "status": "POOLS_SCHEDULED_CONCURRENT",
         "schedule_status": "DISPATCHED_TO_POOLS",
