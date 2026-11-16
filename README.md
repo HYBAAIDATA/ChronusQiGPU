@@ -22,6 +22,23 @@ The maintained runtime also contains:
 - service/API surfaces under `src/chronus/service/`;
 - internal treasury mining support, which is not a customer product.
 
+## AL HARAS mining operator and signed evidence wiring
+
+The shared `/v1/mining/admin` API now has an explicit **verified system-admin
+JWT + operator subject allowlist + owning-tenant + THESEUS audit** admission
+dependency across its nine mutating and two read-only routes. Tenant-only
+tokens, unsigned developer-mode tokens and missing custody cannot authorise
+global mining control. See
+[security operator and receipt contracts](docs/security/mining-operator-admission-and-receipt-custody.md)
+for mandatory environment settings, negative tests and limitations. This
+interface is **not** the live mining execution path.
+
+The original in-memory `ReceiptLog` is retained for compatibility.
+`DurableReceiptLog` adds independently verifiable signed receipt replay
+through THESEUS custody, and local verification Gate G2 now checks
+fresh-instance restart. This is software source integration, not remote key
+custody, a signed production release or a live-share certificate.
+
 ## Definitive production posture
 
 The source is being closed out under an **evidence-gated production posture**.
