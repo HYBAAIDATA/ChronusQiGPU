@@ -62,7 +62,6 @@ from chronus.execution.stealth_orchestrator import (
 )
 from chronus.sdk.client import ChronusClient
 from chronus.service.app import app
-from chronus.service.dependencies import auth_service
 
 
 AUTH_HEADERS = {"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenant"}
