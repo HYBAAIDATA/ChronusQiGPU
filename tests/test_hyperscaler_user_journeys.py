@@ -264,38 +264,26 @@ def test_user_journey_2_hyperscale_ai_factory_flow(api_client):
     assert "OpenCLSha256dMinerBackend" in backend_class_names
     assert "GeometricGaloisMinerBackend" in backend_class_names
 
-    # 2. Physical AI Factory Cluster Registration via POST /v1/fabric/clusters/register
-    reg_resp = api_client.post(
-        "/v1/fabric/clusters/register",
-        json={
-            "cluster_id": "cluster_dgx_b200_superpod_01",
-            "cloud_provider": "NVIDIA_DGX_CLOUD",
-            "region": "us-east-1",
-            "blade_count": 64,
-            "interconnect": "130_TBPS_H4_POLYTOPE_CROSSBAR",
-        },
+    # 2. Registry is a declared design, not a measured or authorised fleet.
+    admin = {"Authorization": "Bearer " + create_jwt_token(
+        "chronus-root", "local-admin", Role.SYSTEM_ADMIN
+    )}
+    registration = {"cluster_id": "unregistered-superpod-01", "blade_count": 64}
+    unauth = api_client.post("/v1/fabric/clusters/register", json=registration)
+    assert unauth.status_code == 401
+    response = api_client.post(
+        "/v1/fabric/clusters/register", json=registration, headers=admin,
     )
-    assert reg_resp.status_code == 201
-    reg_data = reg_resp.json()
-    assert reg_data["cluster_id"] == "cluster_dgx_b200_superpod_01"
-    assert reg_data["status"] in ("REGISTERED_ONLINE", "CLUSTER_REGISTERED_ZERO_STALL")
+    assert response.status_code == 503
+    assert response.json()["detail"]["error"] == "fleet_execution_unverified"
 
-    # 3. Disaggregated Prefill, Decode, and Cryo-Quantum Pool Scheduling
-    pool_resp = api_client.post(
-        "/v1/fabric/pools/schedule",
-        json={
-            "workload_id": "wkld_llm_hybrid_70b_01",
-            "prefill_tokens": 131072,
-            "decode_tokens": 4096,
-            "quantum_hilbert_dim": 64,
-            "require_zero_stall": True,
-        },
+    # 3. No misleading pool dispatch confirmation without coordinator receipts.
+    response = api_client.post(
+        "/v1/fabric/pools/schedule", headers=admin,
+        json={"workload_id": "unverified-pool-workload"},
     )
-    assert pool_resp.status_code == 200
-    pool_data = pool_resp.json()
-    assert pool_data["schedule_status"] == "DISPATCHED_TO_POOLS"
-    assert pool_data["virtual_crossbar"]["dma_packet_stalls"] == 0
-    assert pool_data["virtual_crossbar"]["bus_saturation_pct"] == 100
+    assert response.status_code == 503
+    assert response.json()["detail"]["error"] == "fleet_execution_unverified"
 
     # 4. AL HARAS trace repair (Reed-Solomon over GF(257); the class keeps its legacy name)
     heal_result = DSW4DInstantonMonopoleHealer.inspect_and_heal(
@@ -377,6 +365,9 @@ def test_user_journey_4_finops_metering_and_hermiten_settlement(api_client):
     # 1. Reconcile Hermiten 25% Value-Share Settlement ($520,000.00 counterfactual vs $317,500.00 actual)
     settle_resp = api_client.post(
         "/v1/billing/hermiten/settlement",
+        headers={"Authorization": "Bearer " + create_jwt_token(
+            "tenant_apex_9921a", "test-finops", Role.TENANT_ADMIN
+        )},
         json={
             "tenant_id": "tenant_apex_9921a",
             "period": "2026-Q1",
@@ -392,7 +383,10 @@ def test_user_journey_4_finops_metering_and_hermiten_settlement(api_client):
     assert settle_data["net_avoided_cost_usd"] == 202500.00
     assert settle_data["chronus_value_share_usd"] == 50625.00
     assert settle_data["client_retained_savings_usd"] == 151875.00
-    assert settle_data["settlement_certificate"].startswith("cert_hermiten_")
+    assert settle_data["settlement_certificate"] is None
+    assert settle_data["status"] == "CALCULATED_UNVERIFIED"
+    assert settle_data["settlement_evidence"] == "UNVERIFIED_INPUTS"
+    assert settle_data["invoice"] is False
     assert settle_data["value_share_percentage"] == 25
 
     # 2. Scaling ceiling: 160,000 Warps and 100 PB storage
