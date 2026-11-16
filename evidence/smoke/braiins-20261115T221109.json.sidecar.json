@@ -1,0 +1,10 @@
+{
+  "artifact": "evidence/smoke/braiins-20261115T221109.json",
+  "bound_at": "2026-11-15T23:10:58Z",
+  "bound_commit": "a9ab6aed146f7076ef71bd88c16fb1b34393f2fd",
+  "execution_commit": null,
+  "execution_started": "20261115T221109",
+  "exit_code": 0,
+  "host": "cursor",
+  "sha256": "31f4eee1164c12360f96ef74a9292d9f746cba8edd0a0f95e7d0105a5bc1ed0f"
+}

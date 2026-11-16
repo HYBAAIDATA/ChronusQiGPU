@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Order preflight — stamp begin/end evidence for a work order.
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+python3 "$ROOT/scripts/ci/order_preflight.py" "$@"
