@@ -22,6 +22,9 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
+SRC_DIR = ROOT / 'src'
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
 POLICY_FILE = 'scripts/ci/claim_token_policy.json'
 TOKEN_FILE = 'scripts/ci/claim_token_bytes.json'
 BASES = frozenset({'mathematical-term', 'refusal-or-denial', 'evidence', 'claim-under-implementation'})

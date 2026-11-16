@@ -129,7 +129,7 @@ def read_record(
     conn = conn or _connect()
     try:
         row = conn.execute(
-            f"SELECT record_json FROM api_{table} WHERE record_id = ?",
+            f"SELECT record_json FROM api_{table} WHERE record_id = ?",  # nosec B608: table is whitelist-validated
             (record_id,),
         ).fetchone()
         return json.loads(row[0]) if row else None
@@ -145,7 +145,9 @@ def all_records(table: str) -> list[dict]:
         with _MEMORY_LOCK:
             return [dict(record) for record in _MEMORY[table].values()]
     with connection() as conn:
-        rows = conn.execute(f"SELECT record_json FROM api_{table}").fetchall()
+        rows = conn.execute(  # nosec B608: table is whitelist-validated
+            f"SELECT record_json FROM api_{table}"
+        ).fetchall()
     return [json.loads(row[0]) for row in rows]
 
 
@@ -167,7 +169,7 @@ def write_record(
     conn = conn or _connect()
     try:
         conn.execute(
-            f"INSERT INTO api_{table} "
+            f"INSERT INTO api_{table} "  # nosec B608: table is whitelist-validated
             "(record_id, tenant_id, state, created_at, record_json) "
             "VALUES (?, ?, ?, ?, ?) ON CONFLICT(record_id) DO UPDATE SET "
             "tenant_id=excluded.tenant_id, state=excluded.state, "
@@ -193,7 +195,7 @@ def clear_records(table: str) -> None:
             _MEMORY[table].clear()
         return
     with connection() as conn:
-        conn.execute(f"DELETE FROM api_{table}")
+        conn.execute(f"DELETE FROM api_{table}")  # nosec B608: table is whitelist-validated
 
 
 def get_idempotency(
