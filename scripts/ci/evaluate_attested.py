@@ -37,7 +37,7 @@ def main() -> int:
     output={"status":verdict.status,"blockers":list(verdict.unqualified),
             "attestation_verified":bool(attestation_ok and identity_ok),
             "test_suite_pass":bool(test_ok),"gates":gates,
-            "claims":dispositions(gates, bool(a.attestation_verified and identity_ok and test_ok))}
+            "claims":dispositions(gates, bool(attestation_ok and identity_ok and test_ok))}
     target=Path(a.output)
     target.parent.mkdir(parents=True,exist_ok=True)
     target.write_text(json.dumps(output,indent=2,sort_keys=True)+"\n")

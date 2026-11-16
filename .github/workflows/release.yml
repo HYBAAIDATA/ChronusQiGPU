@@ -16,7 +16,9 @@ jobs:
   build-attest-release:
     name: Build, attest and publish release
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     permissions:
+      actions: read
       contents: write       # create the GitHub Release
       id-token: write       # Sigstore/Fulcio OIDC signing
       attestations: write   # publish in-toto attestations
@@ -29,6 +31,16 @@ jobs:
 
       - name: Install build tooling
         run: python -m pip install -e . build twine cyclonedx-bom
+
+      - name: Enforce signed, commit-matched PASS qualification
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python scripts/ci/require_release_qualification.py
+          --repository '${{ github.repository }}'
+          --commit '${{ github.sha }}'
+          --verified-verdict-output qualification-evidence/ci-verdict.json
+          --provenance-output qualification-evidence/attestation-verification-receipt.json
 
       - name: Build distribution
         run: python -m build
@@ -43,7 +55,10 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dossier
-          cp -r manifests dossier/manifests
+          # Include only the exact signed verdict checked above, not stale checkout manifests.
+          test -s qualification-evidence/ci-verdict.json
+          test -s qualification-evidence/attestation-verification-receipt.json
+          cp -r qualification-evidence dossier/qualification-evidence
           cp sbom.cdx.json dossier/
           (cd dist && sha256sum *) | tee dossier/SHA256SUMS.txt
           tar -czf chronus-${{ github.ref_name }}-qualification-dossier.tar.gz -C dossier .
@@ -60,12 +75,8 @@ jobs:
             cosign sign-blob --yes --bundle "${artifact}.sigstore.json" "${artifact}"
           done
 
-      # Artifact attestations require a public repo or org with GHAS; on
-      # user-owned private repos the API rejects them. continue-on-error
-      # keeps the release green and the step activates automatically once
-      # the repository qualifies.
+      # Missing release provenance is a failed release, not a green warning.
       - name: Attest build provenance (SLSA)
-        continue-on-error: true
         uses: actions/attest-build-provenance@96b4a1ef7235a096b17240c259729fdd70c83d45 # v2
         with:
           subject-path: |
