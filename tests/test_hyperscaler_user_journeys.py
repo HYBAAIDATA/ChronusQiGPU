@@ -365,6 +365,9 @@ def test_user_journey_4_finops_metering_and_hermiten_settlement(api_client):
     # 1. Reconcile Hermiten 25% Value-Share Settlement ($520,000.00 counterfactual vs $317,500.00 actual)
     settle_resp = api_client.post(
         "/v1/billing/hermiten/settlement",
+        headers={"Authorization": "Bearer " + create_jwt_token(
+            "tenant_apex_9921a", "test-finops", Role.TENANT_ADMIN
+        )},
         json={
             "tenant_id": "tenant_apex_9921a",
             "period": "2026-Q1",
@@ -380,7 +383,10 @@ def test_user_journey_4_finops_metering_and_hermiten_settlement(api_client):
     assert settle_data["net_avoided_cost_usd"] == 202500.00
     assert settle_data["chronus_value_share_usd"] == 50625.00
     assert settle_data["client_retained_savings_usd"] == 151875.00
-    assert settle_data["settlement_certificate"].startswith("cert_hermiten_")
+    assert settle_data["settlement_certificate"] is None
+    assert settle_data["status"] == "CALCULATED_UNVERIFIED"
+    assert settle_data["settlement_evidence"] == "UNVERIFIED_INPUTS"
+    assert settle_data["invoice"] is False
     assert settle_data["value_share_percentage"] == 25
 
     # 2. Scaling ceiling: 160,000 Warps and 100 PB storage
