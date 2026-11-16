@@ -1,0 +1,93 @@
+# HYBA Data hyperscaler claim sheet.
+# Every row needs a status and a falsifier before a hyperscaler call.
+# Anything not on this sheet → answer "not measured yet".
+version: 1
+owner: HYBA Data
+product: Chronus
+reviewed_at: 2026-11-16
+
+claims:
+  - id: HD-01
+    claim: index memory falls by >30x versus a keyed table
+    status: measured
+    falsifier: rerun scripts/benchmarks/index_baseline.py at 1M records; ratio < 10
+    owner: benchmark
+    evidence:
+      - scripts/benchmarks/index_baseline.py
+      - evidence/benchmarks/index-baseline-200k.json
+    notes: >
+      At 200k records / 3 labels under CPython getsizeof accounting the ratio is
+      ~19.8x (see evidence JSON) — below the >30x claim threshold. int64 array
+      comparison is not like-for-like. Re-run at 1M before a hyperscaler call;
+      do not quote >30x until that falsifier is cleared.
+
+  - id: HD-02
+    claim: fold is lossless by determinant
+    status: specified
+    falsifier: a round-trip that differs by one bit
+    owner: regression
+    notes: "Not wired to this branch's procurement surface; keep specified until the fold bench lands."
+
+  - id: HD-03
+    claim: no accelerator on the decision path
+    status: measured
+    falsifier: a dependency on CUDA, Metal or any GPU runtime in procurement admit
+    owner: environment
+    evidence:
+      - src/chronus/procurement/book.py
+
+  - id: HD-04
+    claim: search is constant stride, no tree
+    status: specified
+    falsifier: p99 latency grows with record count
+    owner: benchmark
+    notes: "Requires HD-04 p99 at 1M before a hyperscaler call."
+
+  - id: HD-05
+    claim: addresses never collide above Carmichael floor
+    status: proved
+    falsifier: two indices sharing a primitive divisor
+    owner: regression
+    evidence:
+      - tests/test_carmichael_address.py
+      - src/chronus/math/carmichael_address.py
+
+  - id: HD-06
+    claim: ~27% of raw size held
+    status: specified
+    falsifier: re-measure on the larger tables
+    owner: benchmark
+
+  - id: HD-07
+    claim: 11x fold
+    status: specified
+    falsifier: the bench that would show it
+    owner: benchmark
+
+  - id: HD-08
+    claim: payload bytes reduced
+    status: not_claimed
+    falsifier: —
+    owner: —
+    notes: "Say this first on every call: payload is unchanged."
+
+refusals_schedule:
+  description: >
+    Every Refusal.code the procurement surface can emit is an exclusion in the
+    commercial schedule. A documented refusal is never a later defect claim.
+  codes:
+    - quote_not_binding
+    - stale_envelope
+    - version_mismatch
+    - evidence_mismatch
+    - pool_exhausted
+    - unknown_reservation
+    - already_consumed
+    - expired
+    - overage
+    - invalid_quote
+
+before_hyperscaler_call:
+  - HD-01 at 1M records
+  - HD-04 p99 at 1M
+  - HD-06 re-run on larger tables
