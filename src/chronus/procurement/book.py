@@ -1,7 +1,22 @@
-"""Reservation book: reserve against a quote, admit against a reservation.
+"""Procurement surface: reserve against a quote, admit against a reservation.
 
-Every rule fails closed. Quotes are rebuilt server-side before trust.
-Reservations and idempotency keys are tenant-scoped.
+A quote is advisory. An SLA needs a binding, an expiry, and a refusal when
+the actual run exceeds what was reserved. Every rule fails closed:
+
+  * a quote older than the current contract version must be re-quoted
+  * a quote must match the live evidence hash, not just the version
+  * quotes are rebuilt server-side; client economics are never trusted
+  * one reservation binds one quote, one size, one expiry, one
+    tenant-scoped idempotency key
+  * an expired, consumed or foreign reservation is refused
+  * admission refuses when the actual size exceeds the reservation
+  * the pool refuses when committed bytes would exceed it
+
+``ADMISSION_GRACE`` (default 2%) absorbs measurement jitter without letting
+a genuinely larger run through. Tighten to 1% when the harness is stable.
+
+The OpenAPI seal covers live route paths, field names and enum values — not
+a hand-kept fragment — so a mechanism token fails CI before deploy.
 """
 
 from __future__ import annotations

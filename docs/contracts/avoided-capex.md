@@ -33,15 +33,18 @@ A documented refusal is never a later defect claim.
 
 Current codes: `quote_not_binding`, `stale_envelope`, `version_mismatch`,
 `evidence_mismatch`, `pool_exhausted`, `unknown_reservation`,
-`already_consumed`, `expired`, `overage`, `invalid_quote`.
+`already_consumed`, `expired`, `overage`, `invalid_quote`,
+`idempotency_conflict`.
 
 ## Binding vs advisory
 
 - A **quote** is advisory until `is_binding` is true and it matches the live
-  `contract_version` and `evidence_hash`.
-- A **reservation** binds one quote, one size, one expiry, one idempotency key.
+  `contract_version` and `evidence_hash` (server rebuilds economics).
+- A **reservation** binds one quote, one size, one expiry, one tenant-scoped
+  idempotency key.
 - **Admission** refuses when actual size exceeds the reservation
-  (`ADMISSION_GRACE` = 2% by default).
+  (`ADMISSION_GRACE` = 2% by default — absorbs measurement jitter; tighten
+  to 1% when the harness is stable).
 
 ## Pool
 

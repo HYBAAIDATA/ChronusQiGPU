@@ -183,40 +183,32 @@ async def admit_route(
     return result
 
 
-def openapi_fragment() -> dict[str, Any]:
-    """Live route fragment for the OpenAPI seal gate (not a hand-kept copy)."""
-    fragment = {
-        "/v1/capacity/quote": {
-            "post": {
-                "body": ["size", "tier"],
-                "returns": ["verdict", "space_bytes", "is_binding", "tier"],
-            }
-        },
-        "/v1/capacity/reserve": {
-            "post": {
-                "body": ["quote", "idempotency_key"],
-                "returns": ["id", "expires_at"],
-            }
-        },
-        "/v1/capacity/admit": {
-            "post": {
-                "body": ["reservation_id", "actual_size"],
-                "returns": ["utilisation"],
-            }
-        },
-        "/v1/capacity/pool": {
-            "get": {
-                "returns": ["pool_bytes", "source", "replenishment", "committed_bytes"],
-            }
-        },
-        "quote": {
-            "verdict": [
-                "within_envelope",
-                "out_of_range",
-                "degenerate",
-                "suspended",
-            ]
-        },
-    }
-    seal_schema(fragment, context="procurement.open_api_fragment")
+CAPACITY_OPENAPI_PATHS = (
+    "/v1/capacity/pool",
+    "/v1/capacity/quote",
+    "/v1/capacity/reserve",
+    "/v1/capacity/admit",
+)
+
+
+def capacity_openapi_fragment(openapi: dict[str, Any]) -> dict[str, Any]:
+    """Extract sealed capacity routes from a live OpenAPI document.
+
+    Never hand-keep this map: the CI gate must seal what the app actually
+    serves, or the fragment drifts and the gate passes on a stale copy.
+    """
+    paths = openapi.get("paths") or {}
+    missing = [path for path in CAPACITY_OPENAPI_PATHS if path not in paths]
+    if missing:
+        raise AssertionError(f"live OpenAPI missing capacity routes: {missing}")
+    fragment = {path: paths[path] for path in CAPACITY_OPENAPI_PATHS}
+    seal_schema(fragment, context="procurement.live_capacity_openapi")
     return fragment
+
+
+def openapi_fragment() -> dict[str, Any]:
+    """Seal capacity routes from the live API app OpenAPI document."""
+    # Local import: creating the app pulls auth env that tests may set late.
+    from chronus.service.api.app import create_app
+
+    return capacity_openapi_fragment(create_app().openapi())
