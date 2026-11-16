@@ -156,6 +156,33 @@ def test_unavailable_igpu_search_does_not_spend_the_cap(monkeypatch):
         assert cap.available() == 3
 
 
+def test_a_second_process_adopts_the_published_limit(tmp_path, monkeypatch):
+    import os
+    import subprocess
+    import sys
+
+    path = tmp_path / "hashrate-cap"
+    monkeypatch.setenv("CHRONUS_HASHRATE_LIMIT_FILE", str(path))
+    from chronus.execution.hashrate_cap import publish_limit_file
+
+    publish_limit_file(0.25)
+    env = os.environ.copy()
+    env["CHRONUS_HASHRATE_LIMIT_FILE"] = str(path)
+    env["PYTHONPATH"] = "src"
+    out = subprocess.check_output(
+        [
+            sys.executable,
+            "-c",
+            "from chronus.execution.hashrate_cap import apply_published_limit, process_cap\n"
+            "apply_published_limit()\n"
+            "print(process_cap().cap_h_s)",
+        ],
+        env=env,
+        text=True,
+    )
+    assert int(out.strip()) == hashes_per_second(0.25)
+
+
 def test_stealth_engine_cannot_raise_the_ceiling():
     with pytest.raises(ValueError):
         StealthEngine(max_cap_eh=10.0)

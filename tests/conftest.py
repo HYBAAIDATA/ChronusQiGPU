@@ -18,8 +18,16 @@ visible without stopping the suite.
 
 from __future__ import annotations
 
+import os
 import sys
+import tempfile
 from pathlib import Path
+
+# Keep published hashrate limits out of the operator's home directory.
+os.environ.setdefault(
+    "CHRONUS_HASHRATE_LIMIT_FILE",
+    str(Path(tempfile.gettempdir()) / f"chronus-hashrate-cap-{os.getpid()}"),
+)
 
 import pytest
 

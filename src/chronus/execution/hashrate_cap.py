@@ -8,10 +8,12 @@ limit on work started here. It is not a measurement of device hashrate.
 from __future__ import annotations
 
 import math
+import os
 import threading
 import time
 from contextlib import contextmanager
 from decimal import Decimal, ROUND_HALF_UP
+from pathlib import Path
 from typing import Callable, Iterator
 
 HASHRATE_CAP_EH_S = 1
@@ -142,6 +144,39 @@ def set_process_limit_eh_s(eh_s: float) -> HashrateCap:
     cap = process_cap()
     cap.set_rate(hashes_per_second(eh_s))
     return cap
+
+
+def limit_file() -> Path:
+    """File shared by the API process and a separately started miner."""
+    override = os.environ.get("CHRONUS_HASHRATE_LIMIT_FILE", "").strip()
+    if override:
+        return Path(override)
+    return Path.home() / ".local/share/hyba-mine/hashrate-cap"
+
+
+def publish_limit_file(eh_s: float) -> None:
+    """Write the active EH/s limit for other processes to read."""
+    require_eh_s(eh_s)
+    path = limit_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + ".tmp")
+    temporary.write_text(f"{eh_s}\n", encoding="ascii")
+    os.replace(temporary, path)
+
+
+def apply_published_limit() -> None:
+    """Adopt the shared file when another process published a new rate."""
+    path = limit_file()
+    try:
+        text = path.read_text(encoding="ascii")
+    except OSError:
+        return
+    try:
+        eh_s = require_eh_s(float(text.strip()))
+    except ValueError:
+        return
+    if process_cap().cap_h_s != hashes_per_second(eh_s):
+        set_process_limit_eh_s(eh_s)
 
 
 @contextmanager

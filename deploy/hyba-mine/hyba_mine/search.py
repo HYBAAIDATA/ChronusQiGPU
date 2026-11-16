@@ -59,6 +59,9 @@ class LaneSearchMixin:
         if self._pending:
             return self._pending.popleft()
 
+        from chronus.execution.hashrate_cap import apply_published_limit
+
+        apply_published_limit()
         shards = self.partitioner.ranges
         shard_count = len(shards)
         shard = shards[self._next_shard % shard_count]

@@ -14,6 +14,7 @@ from chronus.execution.hashrate_cap import (
     HASHRATE_CAP_EH_S,
     hashes_per_second,
     process_cap,
+    publish_limit_file,
     require_eh_s,
     set_process_limit_eh_s,
 )
@@ -99,6 +100,7 @@ class MiningAdminEngine:
         target = hashes_per_second(active)
         if process_cap().cap_h_s != target:
             set_process_limit_eh_s(active)
+        publish_limit_file(active)
 
     def inject_anomaly(self) -> Dict[str, Any]:
         """Inject a reorg/stratum poisoning perturbation."""

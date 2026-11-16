@@ -14,7 +14,7 @@ import time
 from typing import Optional, Tuple
 
 from chronus.execution.geometric_galois_miner import GeometricGaloisMiner
-from chronus.execution.hashrate_cap import process_cap
+from chronus.execution.hashrate_cap import apply_published_limit, process_cap
 from chronus.execution.mining_scheduler import TuringMiningScheduler
 from chronus.stratum.endian_engine import swap_prevhash_words, compute_merkle_root_stratum, build_header80
 from chronus.stratum.bip310 import (
@@ -363,6 +363,7 @@ class ChronusRealMiningEngine:
         """Continuously hash assigned nonce subranges and verify target hits."""
         logger.info("Starting bounded SHA-256d nonce search across disjoint shards.")
         while self.running:
+            apply_published_limit()
             if not self.gateway.jobs:
                 await asyncio.sleep(0.2)
                 continue
