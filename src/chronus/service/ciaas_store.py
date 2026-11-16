@@ -19,6 +19,7 @@ Manages:
 
 import secrets
 import threading
+from decimal import Decimal, InvalidOperation, ROUND_HALF_EVEN
 import time
 from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, Field
@@ -90,8 +91,8 @@ class HermitenSettlement(BaseModel):
     net_avoided_cost_usd: str  # S_net
     chronus_value_share_usd: str  # F_Chronus = 0.25 * max(0, S_net)
     client_retained_usd: str  # S_net - F_Chronus (75%)
-    settlement_status: str = "RECONCILED"
-    proof_certificate: str
+    settlement_status: str = "CALCULATED_UNVERIFIED"
+    proof_certificate: Optional[str] = None
     formula: str = "S_net = C_counterfactual - C_actual - C_incremental; F_Chronus = 0.25 * max(0, S_net)"
 
 
@@ -276,10 +277,22 @@ class CIaaSStore:
         actual_cost: Union[int, float] = 317500,
         incremental_cost: Union[int, float] = 0,
     ) -> HermitenSettlement:
-        """Calculate exact cent-level 25% Hermiten value-share settlement: F_Chronus = 0.25 * max(0, S_net)."""
-        cf_cents = int(round(float(counterfactual_cost) * 100))
-        act_cents = int(round(float(actual_cost) * 100))
-        inc_cents = int(round(float(incremental_cost) * 100))
+        """Calculate a non-authoritative, exact-cent preview, not a provider settlement."""
+
+        def cents(value: Union[int, float]) -> int:
+            if isinstance(value, bool):
+                raise ValueError("Amounts must be finite nonnegative numbers")
+            try:
+                amount = Decimal(str(value))
+            except (InvalidOperation, ValueError, TypeError) as exc:
+                raise ValueError("Amounts must be finite nonnegative numbers") from exc
+            if not amount.is_finite() or amount < 0:
+                raise ValueError("Amounts must be finite nonnegative numbers")
+            return int((amount * 100).quantize(Decimal("1"), rounding=ROUND_HALF_EVEN))
+
+        cf_cents = cents(counterfactual_cost)
+        act_cents = cents(actual_cost)
+        inc_cents = cents(incremental_cost)
         net_avoided_cents = cf_cents - act_cents - inc_cents
         if net_avoided_cents > 0:
             value_share_cents = (net_avoided_cents * 25) // 100
@@ -289,8 +302,6 @@ class CIaaSStore:
             value_share_cents = 0
             client_retained_cents = 0
 
-        proof_cert = f"cert_hermiten_{secrets.token_hex(16)}"
-
         return HermitenSettlement(
             tenant_id=tenant_id,
             counterfactual_cost_usd=f"{cf_cents / 100:.2f}",
@@ -299,8 +310,8 @@ class CIaaSStore:
             net_avoided_cost_usd=f"{net_avoided_cents / 100:.2f}",
             chronus_value_share_usd=f"{value_share_cents / 100:.2f}",
             client_retained_usd=f"{client_retained_cents / 100:.2f}",
-            settlement_status="RECONCILED",
-            proof_certificate=proof_cert,
+            settlement_status="CALCULATED_UNVERIFIED",
+            proof_certificate=None,
         )
 
     def get_pods_fleet(self) -> Dict[str, Any]:

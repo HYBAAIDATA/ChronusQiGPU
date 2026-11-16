@@ -147,8 +147,8 @@ class TestCIaaSRBAC(unittest.TestCase):
         self.assertEqual(float(settlement["chronus_value_share_usd"]), 20000.0)
         # Client retained 75% = 60000
         self.assertEqual(float(settlement["client_retained_usd"]), 60000.0)
-        self.assertEqual(settlement["settlement_status"], "RECONCILED")
-        self.assertTrue(settlement["proof_certificate"].startswith("cert_hermiten_"))
+        self.assertEqual(settlement["settlement_status"], "CALCULATED_UNVERIFIED")
+        self.assertIsNone(settlement["proof_certificate"])
 
     def test_fabric_pods_fleet(self):
         """Inspect regional fleet pods alpha..delta, DEC fluid routing, and DSW instanton healer."""

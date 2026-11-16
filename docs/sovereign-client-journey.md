@@ -138,3 +138,10 @@ real-world deployment, HSM operation, Hermiten API connectivity,
 fleet dispatch and sovereign accreditation are not verified here**.
 Do not treat a simulated test fixture or hard-coded reference
 capacity as accepted production performance.
+
+The shared `CIaaSStore.calculate_hermiten_settlement()` now uses
+`Decimal` cent arithmetic and rejects non-finite or negative amounts.
+It returns the **25% calculated value-share preview**, not a
+provider-authorised reconciliation, with
+`settlement_status=CALCULATED_UNVERIFIED` and no proof certificate.
+The result is deliberately not a financial settlement receipt.
