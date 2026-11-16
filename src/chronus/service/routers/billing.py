@@ -90,7 +90,7 @@ async def usage_receipt(tenant_id: Optional[str] = Depends(get_current_tenant)) 
     missing = 0
     for item in completed:
         try:
-            amounts.append(_reported_ccu(item.ccu_cost))
+            amounts.append(_reported_ccu(item.reported_ccu))
         except ValueError:
             missing += 1
     usage = {
@@ -194,7 +194,7 @@ async def deliver_hermiten_usage(
     if record.status != "COMPLETED" or not record.verification_receipt:
         raise HTTPException(status_code=409, detail="Workload has no completed receipt reference.")
     try:
-        reported_ccu = _reported_ccu(record.ccu_cost)
+        reported_ccu = _reported_ccu(record.reported_ccu)
     except ValueError:
         raise HTTPException(status_code=409, detail="Recorded CCU is unavailable or invalid.") from None
     endpoint, api_token, custody_path, account_id = _hermiten_config(tenant_id)

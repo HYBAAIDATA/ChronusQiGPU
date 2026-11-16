@@ -184,7 +184,11 @@ class WorkloadResponse(BaseModel):
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     ccu_cost: Optional[float] = Field(
-        None, description="Chronus Compute Units consumed"
+        None, description="Chronus Compute Units consumed (price-adjusted cost)"
+    )
+    reported_ccu: Optional[float] = Field(
+        None,
+        description="Raw reported CCU meter, before tier price weighting; used for usage",
     )
     result: Optional[Dict[str, Any]] = None
     error_message: Optional[str] = None

@@ -419,6 +419,8 @@ async def submit_workload(
         metadata["qualification_scope"] = qualification_scope
     if submission_index_probed is not None:
         metadata["submission_index_probed"] = submission_index_probed
+    # Keep the raw meter for usage reporting; ccu_cost below is price-adjusted.
+    reported_ccu = ccu_cost
     # Relative price weight is a multiplier on a measured/base CCU only.
     # Do not invent an absolute cost from the weight when no meter exists.
     if economics is not None and ccu_cost is not None:
@@ -433,6 +435,7 @@ async def submit_workload(
         tenant_id=request.tenant_id,
         region=request.region,
         ccu_cost=ccu_cost,
+        reported_ccu=reported_ccu,
         result=result,
         verification_receipt=receipt,
         callback_url=request.callback_url,
