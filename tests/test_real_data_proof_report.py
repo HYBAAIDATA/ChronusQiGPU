@@ -64,3 +64,26 @@ def test_cli_keeps_source_intact_on_refusal(tmp_path: Path, capsys):
     assert not output.exists()
     assert json.loads(path.read_text())['schema'] == 'chronus.real-workload/1'
     assert 'FAIL' in capsys.readouterr().err
+
+
+def test_public_dataset_proof_is_never_labelled_customer_or_production():
+    public = _sealed('PUBLIC_OBSERVED_DATASET')
+    report = verified_report(public)
+    assert '# Chronus public-data benchmark demonstration' in report
+    assert 'not customer production data' in report
+    assert 'Production/release qualification: **UNVERIFIED**' in report
+
+
+def test_mixed_public_and_customer_proofs_fail_closed():
+    proof = _sealed('PUBLIC_OBSERVED_DATASET')
+    entry = dict(proof['entries'][0])
+    entry['source_class'] = 'OPERATOR_DECLARED_PRODUCTION'
+    entry['source_sha256'] = 'c' * 64
+    proof['entries'].append(entry)
+    proof['input_count'] = 2
+    proof.pop('integrity_sha256')
+    proof['integrity_sha256'] = hashlib.sha256(
+        json.dumps(proof, sort_keys=True, separators=(',', ':')).encode()
+    ).hexdigest()
+    with pytest.raises(ValueError, match='must be reported separately'):
+        verified_report(proof)
