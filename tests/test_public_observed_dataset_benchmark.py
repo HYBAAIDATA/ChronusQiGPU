@@ -34,7 +34,7 @@ _SPEC.loader.exec_module(_M)
 
 @pytest.fixture(scope="module")
 def inputs(tmp_path_factory):
-    root = tmp_path_factory.mktemp("observed-uci")
+    root = tmp_path_factory.mktemp("observed-uci") / "verified"
     result = _M.prepare(root)
     assert result["input_data_generated"] is False
     manifest = yaml.safe_load((root / "manifest.yaml").read_text())
@@ -82,3 +82,9 @@ def test_missing_optional_dataset_not_relabelled_production(inputs):
     _, manifest = inputs
     assert all(s["source_class"] == "PUBLIC_OBSERVED_DATASET"
                for s in manifest["data_sources"])
+
+
+def test_preparation_refuses_existing_destination(tmp_path):
+    tmp_path.mkdir(exist_ok=True)
+    with pytest.raises(ValueError, match='must not already exist'):
+        _M.prepare(tmp_path)
