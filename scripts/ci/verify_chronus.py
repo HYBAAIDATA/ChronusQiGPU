@@ -8,14 +8,23 @@ import os
 import sys
 import subprocess
 import time
+from collections.abc import Sequence
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 SRC_DIR = os.path.join(REPO_ROOT, "src")
 if SRC_DIR not in sys.path:
     sys.path.insert(0, SRC_DIR)
 
-def run(cmd: str) -> str:
-    res = subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd=REPO_ROOT)
+def run(argv: Sequence[str]) -> str:
+    """Inspect a fixed executable and literal arguments without a shell."""
+    if isinstance(argv, (str, bytes)) or not argv:
+        raise TypeError("run requires a nonempty argument sequence")
+    try:
+        res = subprocess.run(
+            list(argv), shell=False, capture_output=True, text=True, cwd=REPO_ROOT
+        )
+    except OSError as exc:
+        return f"ERROR: command unavailable: {exc}"
     return res.stdout.strip() if res.returncode == 0 else (res.stdout + "\n" + res.stderr).strip()
 
 def main():
@@ -34,7 +43,7 @@ def main():
 
     # H2: Qualification Test Suite
     print("\n[H2] Running Qualification Tests:")
-    print(run(f'"{sys.executable}" scripts/ci/run_tests.py'))
+    print(run([sys.executable, "scripts/ci/run_tests.py"]))
 
     # H3: Hardware ALU Contract Inspection
     print("\n[H3] SystemVerilog Zeckendorf ALU Contract Inspection:")
@@ -46,7 +55,7 @@ def main():
 
     # H4: Gatekeeper Benchmark
     print("\n[H4] Gatekeeper Latency Benchmark:")
-    print(run(f'"{sys.executable}" scripts/benchmarks/benchmark_gatekeeper.py'))
+    print(run([sys.executable, "scripts/benchmarks/benchmark_gatekeeper.py"]))
 
     # H5: f257_search.py Head 80 lines
     print("\n[H5] Algebraic F_257 Closed-Form Engine Head 80 lines:")
@@ -61,8 +70,7 @@ def main():
     pats = ["stale_share_rate", "test_stratum_replay", "odd_count", "regtest_block0"]
     for pat in pats:
         print(f"--- Pattern: {pat} ---")
-        cmd = f'git grep -n "{pat}"'
-        print(run(cmd)[:300])
+        print(run(["git", "grep", "-n", "--", pat])[:300])
 
     print("\n========================================================================")
     print("INSPECTION COMPLETE; PRODUCTION QUALIFICATION NOT ESTABLISHED.")

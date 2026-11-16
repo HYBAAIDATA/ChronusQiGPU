@@ -4,7 +4,7 @@ Supports:
 - Public key rotation via JSON Web Key Sets (JWKS)
 - Tenant claims parsing (tenant_id / tid / sub)
 - Role-Based Access Control (RBAC) with granular permission scopes
-- Transparent fallback for development tokens
+- Fail-closed signature verification; no unsigned development-token bypass
 """
 
 import json
@@ -308,22 +308,15 @@ class JWTValidator:
                 },
             )
 
-        # Resolve verification key (JWKS or secret)
-        verification_key = None
-        if alg.startswith("HS") and self.secret:
+        # Never substitute an HMAC secret for a JWKS public key (or vice versa).
+        # Missing key material denies authentication even if an old development
+        # permissive flag is present in the environment.
+        if alg in _HMAC_ALGORITHMS:
             verification_key = self.secret
         else:
             verification_key = jwks_cache.get_signing_key(kid)
 
-        if not verification_key and self.secret:
-            verification_key = self.secret
-
         if not verification_key:
-            # If no key was configured, allow development verification if bypass allowed
-            dev_mode = os.getenv("CHRONUS_DEV_JWT_PERMISSIVE", "0") == "1"
-            if dev_mode:
-                claims = jwt.decode(token, options={"verify_signature": False})
-                return self._build_identity(claims)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail={

@@ -12,6 +12,7 @@ import os
 import subprocess
 import sys
 import time
+from pathlib import Path
 from dataclasses import dataclass
 from typing import List
 
@@ -30,7 +31,7 @@ class Mutation:
     target_rel_path: str
     original_code: str
     mutated_code: str
-    test_command: str
+    test_command: tuple[str, ...]
 
 
 MUTATIONS: List[Mutation] = [
@@ -40,7 +41,7 @@ MUTATIONS: List[Mutation] = [
         target_rel_path="src/chronus/stratum/gatekeeper.py",
         original_code="is_share_valid = (hash_int <= share_target_int)",
         mutated_code="is_share_valid = (hash_int > share_target_int)",
-        test_command=f'"{sys.executable}" -m unittest tests/test_gatekeeper.py',
+        test_command=(sys.executable, "-m", "unittest", "tests/test_gatekeeper.py"),
     ),
     Mutation(
         name="M2: Endianness PrevHash Word Swap Bypass",
@@ -48,7 +49,7 @@ MUTATIONS: List[Mutation] = [
         target_rel_path="src/chronus/stratum/endian_engine.py",
         original_code='return struct.pack("<8I", *struct.unpack(">8I", raw))',
         mutated_code="return raw",
-        test_command=f'"{sys.executable}" -m unittest tests/test_endian_engine.py',
+        test_command=(sys.executable, "-m", "unittest", "tests/test_endian_engine.py"),
     ),
     Mutation(
         name="M3: F_257 Galois Mean Field Shift Offset",
@@ -56,7 +57,7 @@ MUTATIONS: List[Mutation] = [
         target_rel_path="src/chronus/math/f257_search.py",
         original_code="alpha = (u_inv + 1) % P_PRIME",
         mutated_code="alpha = (u_inv + 2) % P_PRIME",
-        test_command=f'"{sys.executable}" -m unittest tests/test_f257_search.py',
+        test_command=(sys.executable, "-m", "unittest", "tests/test_f257_search.py"),
     ),
     Mutation(
         name="M4: Binet/Lucas Q(sqrt(5)) Conjugate Root Flip",
@@ -64,7 +65,7 @@ MUTATIONS: List[Mutation] = [
         target_rel_path="src/chronus/math/binet_lucas.py",
         original_code="PSI = QSqrt5(Fraction(1, 2), Fraction(-1, 2))",
         mutated_code="PSI = QSqrt5(Fraction(1, 2), Fraction(1, 2))",
-        test_command=f'"{sys.executable}" -m unittest tests/test_binet_lucas.py',
+        test_command=(sys.executable, "-m", "unittest", "tests/test_binet_lucas.py"),
     ),
     Mutation(
         name="M5: Zeckendorf Non-Adjacency Bit Generation",
@@ -72,7 +73,7 @@ MUTATIONS: List[Mutation] = [
         target_rel_path="src/chronus/hw/zeckendorf.py",
         original_code="if FIBONACCI_TABLE[idx] <= temp:",
         mutated_code="if FIBONACCI_TABLE[idx] < temp:",
-        test_command=f'"{sys.executable}" -m unittest tests/test_zeckendorf.py',
+        test_command=(sys.executable, "-m", "unittest", "tests/test_zeckendorf.py"),
     ),
     Mutation(
         name="M6: Token Bucket Refill Freeze",
@@ -80,7 +81,7 @@ MUTATIONS: List[Mutation] = [
         target_rel_path="src/chronus/stratum/rate_limiter.py",
         original_code="if elapsed_ns >= self.ns_per_token:",
         mutated_code="if elapsed_ns < 0:",
-        test_command=f'"{sys.executable}" -m unittest tests/test_rate_limiter.py',
+        test_command=(sys.executable, "-m", "unittest", "tests/test_rate_limiter.py"),
     ),
     Mutation(
         name="M7: BIP310 Version Mask Application Corrupter",
@@ -88,7 +89,7 @@ MUTATIONS: List[Mutation] = [
         target_rel_path="src/chronus/stratum/bip310.py",
         original_code="final_version = (base_ver & ~mask) | masked_bits",
         mutated_code="final_version = (base_ver | mask) | masked_bits",
-        test_command=f'"{sys.executable}" -m unittest tests/test_bip310.py',
+        test_command=(sys.executable, "-m", "unittest", "tests/test_bip310.py"),
     ),
 ]
 
@@ -104,27 +105,29 @@ def execute_mutation(mut: Mutation) -> bool:
         print(f"[ERROR] Target file does not exist: {full_path}")
         return False
 
-    with open(full_path, "r", encoding="utf-8") as f:
-        content = f.read()
+    # Preserve exact source bytes, including CRLF, on both success and failure.
+    source_path = Path(full_path)
+    content = source_path.read_bytes()
+    original = mut.original_code.encode("utf-8")
+    replacement = mut.mutated_code.encode("utf-8")
 
-    if mut.original_code not in content:
+    if original not in content:
         print(f"[ERROR] Target string for '{mut.name}' not found in {mut.target_rel_path}")
         return False
 
-    mutated_content = content.replace(mut.original_code, mut.mutated_code, 1)
+    mutated_content = content.replace(original, replacement, 1)
 
     try:
         # Write mutation
-        with open(full_path, "w", encoding="utf-8") as f:
-            f.write(mutated_content)
+        source_path.write_bytes(mutated_content)
 
         # Run test
         env = dict(os.environ)
         env["PYTHONPATH"] = f"{SRC_DIR}{os.pathsep}{REPO_ROOT}"
         env["PYTHONDONTWRITEBYTECODE"] = "1"
         res = subprocess.run(
-            mut.test_command,
-            shell=True,
+            list(mut.test_command),
+            shell=False,
             capture_output=True,
             text=True,
             cwd=REPO_ROOT,
@@ -141,8 +144,7 @@ def execute_mutation(mut: Mutation) -> bool:
             return False
     finally:
         # Always restore original code cleanly
-        with open(full_path, "w", encoding="utf-8") as f:
-            f.write(content)
+        source_path.write_bytes(content)
         # Invalidate any compiled bytecode generated during mutation test
         target_dir = os.path.dirname(full_path)
         pycache_dir = os.path.join(target_dir, "__pycache__")

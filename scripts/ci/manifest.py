@@ -9,9 +9,12 @@ import hashlib
 import json
 import os
 import shutil
+import shlex
 import subprocess
 import sys
 import time
+from pathlib import Path
+from collections.abc import Sequence
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 SRC_DIR = os.path.join(REPO_ROOT, "src")
@@ -22,10 +25,23 @@ if REPO_ROOT not in sys.path:
 
 
 
-def run_cmd(cmd: str) -> bool:
-    res = subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd=REPO_ROOT)
+def run_cmd(argv: Sequence[str]) -> bool:
+    """Execute literal argv, never a command string interpreted by a shell."""
+    if isinstance(argv, (str, bytes)) or not argv:
+        raise TypeError("run_cmd requires a nonempty argument sequence")
+    command = list(argv)
+    try:
+        res = subprocess.run(
+            command, shell=False, capture_output=True, text=True, cwd=REPO_ROOT
+        )
+    except OSError as exc:
+        print(f"[CMD FAIL] {shlex.join(command)}\nERROR: {exc}")
+        return False
     if res.returncode != 0:
-        print(f"[CMD FAIL] {cmd}\nSTDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}")
+        print(
+            f"[CMD FAIL] {shlex.join(command)}\n"
+            f"STDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}"
+        )
     return res.returncode == 0
 
 
@@ -81,31 +97,31 @@ def main():
     py = sys.executable
 
     # Run Gate 1: Unit & Integration Tests (F1.1-F1.10)
-    p_tests = run_cmd(f'"{py}" scripts/ci/run_tests.py')
+    p_tests = run_cmd([py, "scripts/ci/run_tests.py"])
     print(f"Gate 1 (Unit/Integration Tests): {'PASS' if p_tests else 'FAIL'}")
 
     # Run Gate 2: PCI Purity Gate Scanner (A1.2, A2.1-A2.6)
-    p_purity = run_cmd(f'"{py}" scripts/ci/purity_gate.py')
+    p_purity = run_cmd([py, "scripts/ci/purity_gate.py"])
     print(f"Gate 2 (PCI Purity Gate): {'PASS' if p_purity else 'FAIL'}")
 
     # Run Gate 3: Determinism Check (A1.3, A3)
-    p_determinism = run_cmd(f'"{py}" scripts/ci/determinism_check.py')
+    p_determinism = run_cmd([py, "scripts/ci/determinism_check.py"])
     print(f"Gate 3 (Determinism Check): {'PASS' if p_determinism else 'FAIL'}")
 
     # Run Gate 4: Endianness Fuzzer (A1.4)
-    p_fuzz = run_cmd(f'"{py}" scripts/ci/endian_fuzz.py --iters 100000')
+    p_fuzz = run_cmd([py, "scripts/ci/endian_fuzz.py", "--iters", "100000"])
     print(f"Gate 4 (Endianness Fuzzer): {'PASS' if p_fuzz else 'FAIL'}")
 
     # Run Gate 5: Stratum Replay (A1.5)
-    p_replay = run_cmd(f'"{py}" -m pytest tests/test_stratum_replay.py -q')
+    p_replay = run_cmd([py, "-m", "pytest", "tests/test_stratum_replay.py", "-q"])
     print(f"Gate 5 (Wire Replay): {'PASS' if p_replay else 'FAIL'}")
 
     # Run Gate 6: Meta-Test Invariant Mutation Harness (Test the Tests)
-    p_meta = run_cmd(f'"{py}" scripts/ci/test_the_tests.py')
+    p_meta = run_cmd([py, "scripts/ci/test_the_tests.py"])
     print(f"Gate 6 (Meta-Test Mutation Harness): {'PASS' if p_meta else 'FAIL'}")
 
     # Run Gate 7: DIFC Sovereign Capability Attestation
-    p_sovereign = run_cmd(f'"{py}" scripts/ci/sovereign_attestation.py')
+    p_sovereign = run_cmd([py, "scripts/ci/sovereign_attestation.py"])
     print(f"Gate 7 (Sovereign DIFC Attestation): {'PASS' if p_sovereign else 'FAIL'}")
 
     all_passed = p_tests and p_purity and p_determinism and p_fuzz and p_replay and p_meta and p_sovereign
@@ -113,7 +129,13 @@ def main():
     # SystemVerilog lint check (run verilator if present, otherwise set to None; never hardcode PASS)
     verilator_bin = shutil.which("verilator")
     if verilator_bin:
-        sv_lint_status = "PASS" if run_cmd("verilator --lint-only hardware/rtl/*.sv hw/*.sv") else "FAIL"
+        rtl_files = sorted(Path(REPO_ROOT, "hardware", "rtl").glob("*.sv"))
+        rtl_files += sorted(Path(REPO_ROOT, "hw").glob("*.sv"))
+        sv_lint_status = (
+            "PASS" if rtl_files and run_cmd(
+                [verilator_bin, "--lint-only", *(str(file) for file in rtl_files)]
+            ) else "FAIL"
+        )
     else:
         sv_lint_status = None
 
