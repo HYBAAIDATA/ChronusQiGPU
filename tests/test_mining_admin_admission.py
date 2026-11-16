@@ -84,7 +84,7 @@ def test_legacy_tenant_token_cannot_control_global_engine(guarded):
     assert not Path(path).exists()
 
 
-def test_missing_roster_dev_mode_and_missing_key_fail_closed(guarded, monkeypatch):
+def test_missing_roster_and_dev_mode_fail_closed(guarded, monkeypatch):
     client, _ = guarded
     monkeypatch.delenv("CHRONUS_MINING_ADMIN_SUBJECTS")
     assert client.post("/v1/mining/admin/stop", headers=signed_headers()).status_code == 403
@@ -100,3 +100,35 @@ def test_custody_failure_denies_admission_before_mutation(guarded, monkeypatch, 
     denied = client.post("/v1/mining/admin/stop", headers=signed_headers())
     assert denied.status_code == 503
     assert "durable audit unavailable" in denied.json()["detail"].lower()
+
+
+@pytest.mark.parametrize(
+    "endpoint",
+    ["/v1/mining/admin/status", "/v1/mining/admin/patroclus"],
+)
+def test_global_mining_telemetry_requires_operator_authorization(guarded, endpoint):
+    client, path = guarded
+    assert client.get(endpoint).status_code == 401
+    try:
+        auth_service.register_tenant("mining-tenant", "read-only-tenant-token")
+    except ValueError:
+        pass
+    denied = client.get(
+        endpoint, headers={"Authorization": "Bearer read-only-tenant-token"}
+    )
+    assert denied.status_code == 403
+    assert not Path(path).exists()
+    permitted = client.get(endpoint, headers=signed_headers())
+    assert permitted.status_code == 200
+    assert DurableTheseusService(path).verify_journal_continuity("mining-tenant")
+
+
+def test_configured_custody_and_operator_key_are_both_required(guarded, monkeypatch):
+    client, _ = guarded
+    monkeypatch.delenv("CHRONUS_MINING_ADMIN_CUSTODY_PATH")
+    assert client.post("/v1/mining/admin/stop", headers=signed_headers()).status_code == 403
+    monkeypatch.setenv("CHRONUS_MINING_ADMIN_CUSTODY_PATH", "/path/unused")
+    # A short key is rejected even when the identity's JWT is authentic.
+    monkeypatch.setenv("CHRONUS_JWT_SECRET", "short")
+    response = client.post("/v1/mining/admin/stop", headers=signed_headers())
+    assert response.status_code in (401, 403)
