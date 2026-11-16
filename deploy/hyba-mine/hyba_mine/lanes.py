@@ -25,6 +25,7 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 from typing import Any, Dict, List, Optional, Tuple
 
+from chronus.execution.hashrate_cap import process_cap
 from chronus.fleet.capacity import discover_host, rate_per_second
 
 GENESIS_HEADER = bytes.fromhex(
@@ -113,11 +114,20 @@ class ProcessLanes:
         return {"backend": self.name, "lanes": self.lanes, "processes": self.lanes}
 
     def search(self, header80: bytes, start: int, stop: int, target: int) -> List[int]:
-        chunks = split_range(start, stop, self.lanes)
-        futures = [self._pool.submit(reference_scan, bytes(header80), a, b, target) for a, b in chunks]
         hits: List[int] = []
-        for future in futures:
-            hits.extend(future.result())
+        cursor = start
+        while cursor < stop:
+            # Charge the process hash budget before dispatch; wait for it rather than skip nonces.
+            granted = process_cap().allow(stop - cursor)
+            if granted <= 0:
+                time.sleep(max(process_cap().wait_ns(), 1_000_000) / 1_000_000_000)
+                continue
+            chunk_stop = cursor + granted
+            chunks = split_range(cursor, chunk_stop, self.lanes)
+            futures = [self._pool.submit(reference_scan, bytes(header80), a, b, target) for a, b in chunks]
+            for future in futures:
+                hits.extend(future.result())
+            cursor = chunk_stop
         return hits
 
     def close(self) -> None:
