@@ -72,3 +72,11 @@ def test_window_update_rejects_complex_to_real_narrowing(executor):
     operand = executor.fold(np.arange(12, dtype=np.float64))
     with pytest.raises(ValueError, match="truncate"):
         executor.update_window(operand, np.array([1+4j]), start=0, stop=1)
+
+
+def test_matrix_result_budget_before_allocation():
+    executor = FoldedTensorExecutor(depth=2, max_elements=500)
+    a = executor.fold(np.arange(400, dtype=float).reshape(400, 1))
+    b = executor.fold(np.arange(400, dtype=float).reshape(1, 400))
+    with pytest.raises(ValueError, match="output exceeds"):
+        executor.execute("matmul", a, b)
