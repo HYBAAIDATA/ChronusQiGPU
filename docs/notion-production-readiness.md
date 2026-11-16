@@ -30,6 +30,12 @@ Status vocabulary used here:
 
 Notion is the requirements and decision source. It is not a substitute for the repository commit, CI run, device certificate, benchmark raw output, pool acknowledgement, or signed release artifact.
 
+## 16 November 2026 source reconciliation
+
+The July 2026 Geodesic Tensor Engine source is retrievable from the ChatGPT Library and Notion engineering record. The four previously labelled missing symbols are now present in the maintained Python package; **do not copy the monolithic legacy engine into the active tree**. See [the archive reconciliation audit](audits/2026-11-16-source-archive-reconciliation.md) for source paths, archive SHA-256 values, scope and outstanding evidence.
+
+The historical PYTHIA TypeScript mining audit is a separate source lineage. Its routes, singleton state machines and RFX instructions do not exist as literal current-repository paths. Reproduce each risk against the maintained Python Stratum and security boundaries instead of treating an old line number as a current defect.
+
 ## Requirement-to-repository map
 
 | Notion requirement | Repository implementation and tests | Evidence state |
@@ -37,7 +43,7 @@ Notion is the requirements and decision source. It is not a substitute for the r
 | Exact Chronus math, Lucas/PV and Fibonacci reference workloads | `src/chronus/math/`, `src/chronus/stratum/`, `src/chronus/execution/`; tests under `tests/test_*.py`; `packages/turing/docs/SPECIFICATION.md` | SOURCE-PRESENT; CI result must be tied to the release SHA |
 | EnhancedTensorRepresentation v2 and tensor API | `src/chronus/tensor/enhanced_representation.py`, `src/chronus/igpu/tensor.py`, `tests/test_enhanced_tensor_representation_v2.py`, `tests/test_repository_layout.py` | SOURCE-PRESENT + TEST-PRESENT; no physical-backend evidence |
 | Exact MPS/TT/MPO surfaces | `src/chronus/tensor/exact_mps.py`, `src/chronus/quantum/ring_mps.py`, `src/chronus/tensor/network.py`, `src/chronus/tensor/types.py`; `tools/compare_product_mps.py` and `benchmarks/acceleration/ring_mps_benchmark.py` | SOURCE-PRESENT; the named “Kellogg” contract is not an active symbol match, so that requirement remains MISSING until mapped |
-| PhiTensorCore / GeodesicScheduler / PhiMemoryHierarchy / TopologicalIntegrityGate | No active-tree symbol match was found for these four names by the repository search at the baseline | MISSING / port check required; archive or prose is not an implementation |
+| PhiTensorCore / GeodesicScheduler / PhiMemoryHierarchy / TopologicalIntegrityGate | `src/chronus/tensor/geodesic.py` now defines all four; `src/chronus/tensor/__init__.py` exports them; `src/chronus/execution/mining_scheduler.py` imports the scheduling/integrity surfaces; `tests/test_geodesic_tensor_migration.py` exercises them | SOURCE-PRESENT + TEST-PRESENT on inspected current main (16 Nov 2026). Historical 24 July implementation and test totals are archive provenance, not current execution evidence; interface-by-interface equivalence, full current-head CI and hardware qualification remain unverified. |
 | Partial unfold and folded inference | `tests/test_folded_state.py`, `src/chronus/tensor/`, `src/chronus/opencl_folded_adapter.py` | TEST-PRESENT for folded-state surfaces; exact `unfold_partial*` contract is not proven active |
 | Typed tensor contracts, backend router and capability manifest | `src/chronus/tensor/types.py`, `src/chronus/fleet/adapters.py`, `src/chronus/fleet/backends.py`, `src/chronus/fleet/canonical.py`, `src/chronus/igpu/adapters.py`; `tests/test_fleet_adapters.py`, `tests/test_fleet_backends.py` | SOURCE-PRESENT + TEST-PRESENT; physical capability certification is separate |
 | OpenCL coverage and fail-closed behavior | `src/chronus/fleet/opencl.py`, `src/chronus/backends/opencl_pv.py`, `src/chronus/execution/opencl_sha256d.py`, `tests/test_opencl_kernel.py`, `tests/test_opencl_miner.py`, CI job `opencl-reference` | CI-OBSERVED on a CPU reference runtime only; physical GPU is UNAVAILABLE |
