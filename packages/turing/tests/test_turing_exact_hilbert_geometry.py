@@ -43,3 +43,27 @@ def test_exact_phase_injection_and_hermitian_validation():
         SignedInvolution(space, {0:(1,1)})
     with pytest.raises(ValueError):
         TensorHilbert((32,0))
+
+
+def test_interference_and_exact_reflection_are_first_class_turing_primitives():
+    from turing.exact.geometry.operators import (
+        InterferenceEngine, amplitude_amplification_step,
+        inner_product, marked_reflection, reflect_about,
+    )
+    space = TensorHilbert((4,))
+    # Rational exactly normalized state on 4 basis vectors.
+    reference = SparseState(space,{i:ExactComplex(Fraction(1,2)) for i in range(4)})
+    assert reference.normalized()
+    flipped = marked_reflection(reference,{2})
+    assert flipped.norm2() == 1
+    assert flipped.amplitudes[2] == ExactComplex(Fraction(-1,2))
+    result = amplitude_amplification_step(reference,reference,{2})
+    assert result.norm2() == 1
+    # For N=4, M=1, one Grover iteration places exact probability 1 at target.
+    assert result.born_distribution() == {2:Fraction(1)}
+    assert inner_product(reference,reference) == ExactComplex(1)
+    assert reflect_about(reference,reference) == reference
+    engine = InterferenceEngine(reference)
+    assert engine.amplify(reference,{2}).born_distribution() == {2:Fraction(1)}
+    with pytest.raises(ValueError):
+        marked_reflection(reference,{4})
