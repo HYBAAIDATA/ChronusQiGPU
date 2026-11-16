@@ -10,8 +10,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from fractions import Fraction
 from hashlib import sha256
+from itertools import islice
 import json
-from typing import Sequence
+from typing import Iterable, Sequence
 
 MAX_ELEMENTS = 1024
 MAX_SITES = 8
@@ -65,14 +66,17 @@ class ExactRationalTensorTrain:
     digest: str
 
     @classmethod
-    def factor(cls, shape: Sequence[int], values: Sequence[object]) -> "ExactRationalTensorTrain":
+    def factor(cls, shape: Sequence[int], values: Iterable[object]) -> "ExactRationalTensorTrain":
         dims = tuple(shape)
         if (not 1 <= len(dims) <= MAX_SITES or
                 any(type(n) is not int or n < 1 for n in dims) or
                 _product(dims) > MAX_ELEMENTS):
             raise ValueError("tensor dimensions exceed exact reference policy")
-        data = tuple(_rational(v) for v in values)
-        if len(data) != _product(dims):
+        expected = _product(dims)
+        # Consume only expected + 1 entries: an infinite or oversized iterable
+        # must never bypass the memory budget before validation.
+        data = tuple(_rational(v) for v in islice(iter(values), expected + 1))
+        if len(data) != expected:
             raise ValueError("flat tensor data do not match declared shape")
         cores = []
         previous = 1
@@ -121,6 +125,10 @@ class ExactRationalTensorTrain:
         return tuple(row[0] for row in partial)
 
     def verify(self) -> None:
+        if (not 1 <= len(self.shape) <= MAX_SITES or
+                any(type(n) is not int or n < 1 for n in self.shape) or
+                _product(self.shape) > MAX_ELEMENTS):
+            raise ValueError("tensor dimensions exceed exact reference policy")
         if len(self.cores) != len(self.shape):
             raise ValueError("tensor train rank/shape mismatch")
         previous = 1
@@ -128,7 +136,7 @@ class ExactRationalTensorTrain:
             if len(core) != previous or any(len(part) != dim for part in core):
                 raise ValueError("tensor train bond or physical dimension mismatch")
             rank = len(core[0][0])
-            if rank == 0 or any(len(site) != rank for part in core for site in part):
+            if rank == 0 or rank > MAX_ELEMENTS or any(len(site) != rank for part in core for site in part):
                 raise ValueError("tensor train ragged right bond")
             if any(type(v) is not Fraction for part in core for site in part for v in site):
                 raise TypeError("tensor train core outside exact rational field")
