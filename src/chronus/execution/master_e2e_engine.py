@@ -520,12 +520,14 @@ async def execute_master_end_to_end():
         is_valid, block_hash_be, hash_int, target_int = check_share_difficulty_exact(header_80b, share_diff)
 
         gatekeeper_passed = gateway.pre_submit_gatekeeper(header_80b, target_int)
-        assert gatekeeper_passed, "Pre-submit local gatekeeper failed!"
-        logger.info(f"[GATEKEEPER] 3µs Local SHA-256d Check: Hash={block_hash_be[:16]}... <= Target ({gatekeeper_passed})")
+        if not gatekeeper_passed:
+            raise RuntimeError("Pre-submit local gatekeeper failed")
+        logger.info(f"[LOCAL GATEKEEPER] SHA-256d Check: Hash={block_hash_be[:16]}... <= Target ({gatekeeper_passed}); latency not measured")
 
         # Stealth Rule Verification (Block #850000)
         stealth_ok = gateway.stealth.can_submit_block(850000)
-        assert stealth_ok, "Stealth policy failed"
+        if not stealth_ok:
+            raise RuntimeError("Stealth policy failed")
         gateway.stealth.record_mined_block(850000)
 
         # Step 9: 6-Parameter Wire Submit Payload
@@ -534,7 +536,9 @@ async def execute_master_end_to_end():
         await writer.drain()
 
         submit_res = json.loads((await reader.readline()).decode("utf-8").strip())
-        logger.info(f"[Step 8] mining.submit (6-Param Wire Submit): Result={submit_res['result']} (Share Accepted)")
+        if submit_res.get("result") is not True or submit_res.get("error"):
+            raise RuntimeError(f"Local loopback server rejected mining.submit for {pool_name}")
+        logger.info("[LOCAL FIXTURE] mining.submit accepted by in-process loopback server only")
 
         writer.close()
         await writer.wait_closed()
@@ -543,7 +547,7 @@ async def execute_master_end_to_end():
 
     logger.info("\n========================================================================")
     logger.info(f"   END-TO-END PIPELINE COMPLETE FOR {pool_name.upper()}")
-    logger.info(f"   Share accepted by pool: {bool(submit_res.get('result'))}")
+    logger.info("   Local loopback fixture acknowledged share; live pool acceptance UNAVAILABLE")
     logger.info("========================================================================")
 
 if __name__ == "__main__":
