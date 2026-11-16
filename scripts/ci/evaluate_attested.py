@@ -1,7 +1,7 @@
 """Evaluate verified Actions artifact; verification is performed by gh attestation verify.
 
-This tool MUST be called only after the external gh attestation verify command
-returns success for the exact evidence file and expected repository.
+This tool MUST be called only after the external gh attestation verification for
+the exact evidence file and expected repository succeeds.
 """
 from __future__ import annotations
 import argparse
@@ -18,20 +18,36 @@ def main() -> int:
     p.add_argument("--expected-run-id", required=True)
     p.add_argument("--repository", required=True)
     p.add_argument("--output", default="manifests/ci-verdict.json")
+    p.add_argument("--product-gates", help="attested gate JSON; absent gates remain UNQUALIFIED")
+    p.add_argument("--key-provider", default="local-memory")
     a=p.parse_args()
+
     try:
         evidence=json.loads(Path(a.evidence).read_text())
-        identity_ok=(evidence.get("commit")==a.expected_commit and evidence.get("run_id")==a.expected_run_id and evidence.get("schema")=="chronus-ci-test-evidence-v1")
-        test_ok=evidence.get("status")=="PASS" and evidence.get("tests",{}).get("skipped")==0 and evidence.get("tests",{}).get("failed")==0 and evidence.get("tests",{}).get("total",0)>0
-    except (ValueError, OSError, TypeError) as exc:
+        identity_ok=(
+            evidence.get("commit")==a.expected_commit
+            and str(evidence.get("run_id"))==str(a.expected_run_id)
+            and evidence.get("schema")=="chronus-ci-test-evidence-v1"
+        )
+        test_ok=(
+            evidence.get("status")=="PASS"
+            and evidence.get("tests",{}).get("skipped")==0
+            and evidence.get("tests",{}).get("failed")==0
+            and evidence.get("tests",{}).get("total",0)>0
+        )
+    except (ValueError,OSError,TypeError) as exc:
         identity_ok=test_ok=False
         evidence={"error":str(exc)}
+
     try:
-        verification=subprocess.run(["gh","attestation","verify",a.evidence,"--repo",a.repository],capture_output=True,text=True,timeout=60,check=False)
+        verification=subprocess.run(
+            ["gh","attestation","verify",a.evidence,"--repo",a.repository],
+            capture_output=True,text=True,timeout=60,check=False
+        )
         attestation_ok=verification.returncode==0
-    except (OSError, subprocess.TimeoutExpired):
+    except (OSError,subprocess.TimeoutExpired):
         attestation_ok=False
-    # Individual product gates are NOT inferred from a green pytest run.
+
     gates={gate:"UNQUALIFIED" for gate in MANDATORY}
     verdict=qualify(ci_gates=gates, attestation_verified=bool(attestation_ok and identity_ok and test_ok))
     output={"status":verdict.status,"blockers":list(verdict.unqualified),

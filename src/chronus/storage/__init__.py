@@ -1,4 +1,4 @@
-"""Phyllotaxis content-addressed storage, Theseus reconstruction, and Zero-Copy Connectors."""
+"""Chronus storage surfaces with THESEUS durable custody and enterprise connectors."""
 
 from chronus.storage.connectors import (
     DATA_MOVEMENT_PLANE_SPECS,
@@ -18,6 +18,11 @@ from chronus.storage.connectors import (
     ZeroCopyConnectorManager,
     classify_memory_access_class,
     zero_copy_connector_manager,
+)
+from chronus.storage.durable import (
+    CustodyConflictError,
+    CustodyUnavailableError,
+    DurableTheseusService,
 )
 from chronus.storage.phyllotaxis import (
     GOLDEN_RATIO_CONJUGATE_64,
@@ -43,9 +48,12 @@ __all__ = [
     "ConnectorCategory",
     "ConnectorSecurityError",
     "ConnectorType",
+    "CustodyConflictError",
+    "CustodyUnavailableError",
     "DATA_MOVEMENT_PLANE_SPECS",
     "DataMovementPlaneRouter",
     "DiscoveredDataset",
+    "DurableTheseusService",
     "EnduringCapacityAddendumRecord",
     "GOLDEN_RATIO_CONJUGATE_64",
     "IngestFormat",

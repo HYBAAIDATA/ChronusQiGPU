@@ -159,10 +159,14 @@ class F257GaloisOracle:
 # =====================================================================
 class StealthEngine:
     """
-    Controls hashrate cap (10.0 EH/s max, 1.0 EH/s active),
+    Controls the hashrate cap (1.0 EH/s hard ceiling),
     prevents mining two consecutive mainnet blocks, and maintains socket presence.
     """
-    def __init__(self, max_cap_eh: float = 10.0, active_stealth_eh: float = 1.0, never_consecutive_blocks: bool = True):
+    def __init__(self, max_cap_eh: float = 1.0, active_stealth_eh: float = 1.0, never_consecutive_blocks: bool = True):
+        if not 0 < max_cap_eh <= 1.0:
+            raise ValueError(f"hashrate cap {max_cap_eh} EH/s exceeds 1 EH/s")
+        if not 0 < active_stealth_eh <= max_cap_eh:
+            raise ValueError(f"active hashrate {active_stealth_eh} EH/s exceeds the cap")
         self.max_cap_eh = max_cap_eh
         self.active_stealth_eh = active_stealth_eh
         self.never_consecutive_blocks = never_consecutive_blocks

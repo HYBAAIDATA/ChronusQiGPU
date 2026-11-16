@@ -1,0 +1,2 @@
+docs/research/golden_search.py -text
+Makefile whitespace=cr-at-eol

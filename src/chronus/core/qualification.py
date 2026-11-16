@@ -1,21 +1,39 @@
-"""Evidence-based status: only externally verified CI attestation can produce PASS."""
+"""Evidence-based production admission.
+
+Provider names, source presence and green unit tests cannot award production
+status. Only exact-commit attestation plus all mandatory product gates can.
+"""
 from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Mapping
+
 from chronus.crypto import signers
 
 MANDATORY = ("CO-SIGN", "RS-RECEIPT", "RS-REPLAY", "FN-CLAIMS", "FN-CUSTODY")
+
+
 @dataclass(frozen=True)
 class Verdict:
     status: str
     unqualified: tuple[str, ...]
 
-def qualify(require_pq: bool = True, ci_gates: Mapping[str, str] | None = None, attestation_verified: bool = False, key_provider: str = "local-memory") -> Verdict:
-    blockers = []
+
+def qualify(
+    require_pq: bool = True,
+    ci_gates: Mapping[str, str] | None = None,
+    attestation_verified: bool = False,
+    key_provider: str = "local-memory",
+) -> Verdict:
+    """Return PASS only for attested mandatory gates.
+
+    key_provider is retained for compatibility and reporting only. Custody
+    qualification belongs to the attested FN-CUSTODY gate; a caller-supplied
+    vendor/provider label cannot itself create production credit.
+    """
+    blockers: list[str] = []
     if require_pq and not signers.ml_dsa_available():
         blockers.append("ML-DSA-65 unavailable")
-    if key_provider != "azure-managed-hsm":
-        blockers.append("Azure Managed HSM not verified")
     if not attestation_verified:
         blockers.append("CI artifact attestation not verified")
     for gate in MANDATORY:

@@ -1,16 +1,21 @@
 name: Chronus V2 evidence qualification
+
 on:
   push:
   pull_request:
+
 permissions:
   contents: read
   id-token: write
   attestations: write
+
 jobs:
   test-and-attest:
+    name: Build exact-current software-base evidence
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -18,26 +23,68 @@ jobs:
       - name: Execute tests
         id: tests
         continue-on-error: true
-        run: python -m pytest -q --junitxml=junit.xml
-      - name: Derive test evidence
+        env:
+          CHRONUS_CLAIM_AUDIT: docs/claim-audit.yaml
+        run: |
+          python -m pytest -q \
+            tests/test_triad_production.py \
+            tests/test_triad_capability_manifest.py \
+            tests/test_geodesic_tensor_migration.py \
+            tests/test_crypto_signers.py \
+            tests/test_chain_durable.py \
+            tests/test_storage.py \
+            tests/test_api_contract.py \
+            tests/test_qualification.py \
+            tests/test_attested_evaluator.py \
+            tests/test_product_gates.py \
+            tests/test_release_gate.py \
+            tests/test_chronus_suite.py \
+            --junitxml=junit.xml
+
+      - name: Derive bounded test evidence
         id: evidence
         continue-on-error: true
-        run: python scripts/ci/build_evidence.py --junit junit.xml --output evidence/test-evidence.json
-      - name: Attest test evidence
+        run: >-
+          python scripts/ci/build_evidence.py
+          --junit junit.xml
+          --output evidence/test-evidence.json
+
+      - name: Execute software-base product gates
+        id: product_gates
+        continue-on-error: true
+        env:
+          CHRONUS_CLAIM_AUDIT: docs/claim-audit.yaml
+        run: >-
+          python scripts/ci/build_product_gates.py
+          --profile software-base
+          --output evidence/product-gates.json
+
+      - name: Attest bounded test evidence
         if: always() && hashFiles('evidence/test-evidence.json') != ''
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: evidence/test-evidence.json
+
+      - name: Attest executable product gates
+        if: always() && hashFiles('evidence/product-gates.json') != ''
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: evidence/product-gates.json
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: chronus-test-evidence
           path: |
             evidence/test-evidence.json
+            evidence/product-gates.json
             junit.xml
-      - name: Enforce test failures
+          if-no-files-found: error
+
+      - name: Enforce bounded evidence generation
         if: always()
         run: |
+          set -euo pipefail
           test "${{ steps.tests.outcome }}" = "success"
           test -s evidence/test-evidence.json
           python - <<'PY'
@@ -52,14 +99,17 @@ jobs:
           )
           PY
   evaluate:
+    name: Verify evidence and produce qualification verdict
     needs: test-and-attest
     if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      attestations: read
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -72,14 +122,29 @@ jobs:
       - name: Verify GitHub attestation
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh attestation verify evidence/test-evidence.json --repo "${{ github.repository }}"
+        run: >-
+          gh attestation verify evidence/test-evidence.json
+          --repo "${{ github.repository }}"
+
+      - name: Verify product-gate attestation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh attestation verify evidence/product-gates.json
+          --repo "${{ github.repository }}"
+
       - name: Evaluate verified evidence and claims
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python scripts/ci/evaluate_attested.py --evidence evidence/test-evidence.json --expected-commit "${{ github.sha }}" --expected-run-id "${{ github.run_id }}" --repository "${{ github.repository }}" --output manifests/ci-verdict.json
+      - name: Attest the evaluated qualification verdict
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: manifests/ci-verdict.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: chronus-qualification-verdict
           path: manifests/ci-verdict.json
+          if-no-files-found: error

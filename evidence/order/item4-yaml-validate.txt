@@ -1,0 +1,14 @@
+yaml_exit=0
+19:    runs-on: [self-hosted, windows]
+44:    runs-on: [self-hosted, windows]
+66:    runs-on: ubuntu-latest
+89:    runs-on: ubuntu-latest
+100:    runs-on: ubuntu-latest
+111:    runs-on: ubuntu-latest
+118:    runs-on: ubuntu-latest
+133:    runs-on: [self-hosted, windows]
+159:    runs-on: ubuntu-latest
+187:    runs-on: ubuntu-latest
+218:    runs-on: ubuntu-latest
+240:    runs-on: ubuntu-latest
+340:    runs-on: [self-hosted, windows]

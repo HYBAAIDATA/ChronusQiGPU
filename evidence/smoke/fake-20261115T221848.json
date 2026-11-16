@@ -1,0 +1,90 @@
+{
+  "schema": "chronus.smoke/1",
+  "target": "fake",
+  "started": "20261115T221848",
+  "steps": [
+    {
+      "step": "tcp_connect",
+      "ok": true,
+      "detail": "2 ms",
+      "at_ms": 13822216
+    },
+    {
+      "step": "subscribe",
+      "ok": true,
+      "detail": "extranonce1=deadbeef size=4",
+      "at_ms": 13822217
+    },
+    {
+      "step": "authorize",
+      "ok": true,
+      "detail": "accepted",
+      "at_ms": 13822217
+    },
+    {
+      "step": "job",
+      "ok": true,
+      "detail": "job_id=smokejob1 clean=True",
+      "at_ms": 13822218
+    },
+    {
+      "step": "search",
+      "ok": true,
+      "detail": "backend=geometric nonce=925 hashes=926",
+      "at_ms": 13822292
+    },
+    {
+      "step": "submit",
+      "ok": true,
+      "detail": "accepted",
+      "at_ms": 13822293
+    }
+  ],
+  "jobs": [
+    "smokejob1"
+  ],
+  "set_difficulty": [
+    {
+      "value": 5.960464477539063e-08,
+      "phase": "setup"
+    }
+  ],
+  "submits": [
+    {
+      "reply": {
+        "id": 3,
+        "result": true,
+        "error": null
+      },
+      "accepted": true
+    }
+  ],
+  "endpoint": "stratum+tcp://127.0.0.1:3333",
+  "user": "smoke.worker",
+  "tls": false,
+  "peer_loopback": true,
+  "selected_job": {
+    "job_id": "smokejob1",
+    "prevhash": "0000000000000000000000000000000000000000000000000000000000000001",
+    "coinb1": "010000000100000000000000000000000000000000000000000000000000000000000000ffffffff0100f2052a010000000151",
+    "coinb2": "ffffffff01000000",
+    "merkle_branch": [],
+    "version": "20000000",
+    "nbits": "1c00ffff",
+    "ntime": "67000000",
+    "clean_jobs": true
+  },
+  "extranonce1": "deadbeef",
+  "extranonce2_size": 4,
+  "difficulty": 5.960464477539063e-08,
+  "target_source": "notify_difficulty",
+  "target_hex": "00ffff0000000000000000000000000000000000000000000000000000000000",
+  "work_generation": 1,
+  "extranonce2": "00000000",
+  "search_backend": "geometric",
+  "difficulty_events_during_search": 0,
+  "stale_notifies": 0,
+  "share_nonce": "0000039d",
+  "header_hex": "000000200000000000000000000000000000000000000000000000000000000001000000a02659b213b60d989ead4c3aa1ab332b90a4b2afe51c7238dd889206dd8ac8f600000067ffff001c9d030000",
+  "share_hash_hex": "001ee0c93adebd40f91ba1c6d1bd19fb3927522ee31e1af2d46ad6b0033f28b6"
+}

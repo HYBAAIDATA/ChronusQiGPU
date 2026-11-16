@@ -1,4 +1,4 @@
-# Chronus GPIU v36.0 & AL HARAS OS: Irrefutable CI System Audit & Cryptographic Proof Dossier
+# Historical audit and proof dossier — superseded
 
 > **Evidence-status notice (15 November 2026): HISTORICAL / NOT CURRENTLY QUALIFIED.** The certificate, metrics, signatures, hardware timings, production and API claims below are retained as historical assertions, **not** as currently verified results. The present `ChronusVerificationOrchestrator.run_complete_verification_suite()` generates a local `NOT_QUALIFIED` diagnostic with five local gates; it does not prove 8/8 production gates, 94/94 invariants, external device performance, or deployment. Re-establish each claim against an identified commit, raw test/runtime artifacts, independent verification and release attestation before using this dossier as current certification. A successful CI workflow is not itself a production qualification.
 
@@ -7,30 +7,19 @@
 **Substrate**: Heterogeneous Accelerated Silicon (`CPU_SOFTWARE_NATIVE_MATHEMATICAL_SUBSTRATE` / `T-ISA RoCC`)  
 **Core Mandate**: *"Mathematics first. Representation second. Execution third. Evidence throughout."*
 
----
+The historical source remains available in Git history. Its useful test/benchmark provenance has been carried into:
+- `evidence/migration/chronus_historical_evidence_register.json`
+- `docs/production/TEST_AND_BENCHMARK_PROVENANCE.md`
 
-## 1. Master System Audit Certificate
+The definitive current documents are:
+- `docs/production/TRIAD_PRODUCTION_CLOSEOUT.md`
+- `docs/production/TRIAD_CAPABILITY_MATRIX.md`
+- `docs/QUALIFICATION_AND_CLAIMS.md`
+- `RELEASE_DECISION_MCKINSEY_TECH.md`
 
-```
-===================================================================================================
-           CHRONUS GPIU v36.0 & AL HARAS OS — EXECUTIVE PRODUCTION-READINESS DOSSIER
-===================================================================================================
-Release Version        : v36.0.0-SOVEREIGN
-Git Commit Head        : 21f69805267cf8bba07bb2449c6bf6f4734dce24
-Timestamp (UTC)        : 2026-11-08T13:54:21Z (ISO 8601 UTC)
-Purity Gate Status     : PASS (0 floating-point casts / 0 heuristic shortcuts / 0 theatre tokens)
-Release Qualification  : PRODUCTION_QUALIFIED (8 / 8 Release Gates, 94 / 94 Invariants Green)
-Sovereign Expansion    : PASS (37 / 37 Formal Expansion Tests Green)
-Full Pytest Suite      : PASS (370 Passed, 25 Skipped, 0 Failures)
-RFC 8785 Canonical Dig : b9c5d9b71e1473d98d3abfaae58f80822dbc7b8fe6e0c9d8262c4d61e07cbc10
-OVID Zero-Copy Handle  : ptr_ovid_b9c5d9b71e1473d98d3abfaae58f80822dbc7b8fe6e0c9d8262c4d61e07cbc10
-Post-Quantum Key Alg   : NIST FIPS 204 ML-DSA-65 (Lattice) + RFC 8032 Ed25519 (Tenant)
-Zero-Knowledge Proof   : FRI-based zk-STARK Polynomial Quotient P(x) = Q(x) * Z_H(x) Verified
-Zero-Auth Endpoint     : GET /v1/verify/{receipt_hash} -> HTTP 200 OK (valid=true, zk_stark=VERIFIED)
-===================================================================================================
-```
+## Current rule
 
----
+A historical test count, generated receipt, local benchmark, source constant or repository-authored dossier does not by itself establish production admission, external certification, physical performance, customer acceptance or deployment availability.
 
 ## 2. Six-Step Automated CI Audit Telemetry
 

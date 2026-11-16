@@ -1,33 +1,22 @@
-# ChronusQiGPU — production and release status
+# Chronus release status
 
-**Product / release decision: NOT QUALIFIED. Publication remains held.**
+**Status: NOT QUALIFIED**
 
-Review: 2026-11-15. Repository: `HYBAAIDATA/ChronusQiGPU`.
-Baseline inspected: `main` at `dc920a82c38ee408fb9698d3206631139f9d0d97`. This page is an audit snapshot, **not** a live status API or release certificate.
+- Repository: `HYBAAIDATA/ChronusQiGPU`
+- Main baseline reviewed: `dc920a82c38ee408fb9698d3206631139f9d0d97`
+- Closing branch: `codex/production-readiness-20261115`
+- Closing PR: [#71](https://github.com/HYBAAIDATA/ChronusQiGPU/pull/71)
+- Requirements map: [docs/notion-production-readiness.md](docs/notion-production-readiness.md)
+- Claim audit: [docs/claim-audit.md](docs/claim-audit.md)
 
-## What is verified
+The previous dossier claimed “100% PRODUCTION QUALIFIED” from an unrelated historical commit. It is withdrawn. Current source and tests provide useful implementation evidence, but they do not establish a production release.
 
-- The repository contains real source and GitHub Actions pipelines; some reference, frontend, container and hardware-description checks pass. This is implementation/CI evidence, not physical-device or production acceptance.
-- The baseline was red. The full-package CI, evidence and storage workflows failed at the reviewed SHA. A blank HYBA Mine workflow also produced failed runs.
-- PR [#86](https://github.com/HYBAAIDATA/ChronusQiGPU/pull/86) consolidates source/CI baseline repair; [#83](https://github.com/HYBAAIDATA/ChronusQiGPU/pull/83) addresses cross-process SQLite cold start; [#72](https://github.com/HYBAAIDATA/ChronusQiGPU/pull/72) addresses offline-validated Braiins endpoint configuration; [#85](https://github.com/HYBAAIDATA/ChronusQiGPU/pull/85) closes the unsafe release-publication pathway **when merged and verified**.
-- Local gate results and source-level checks must remain separate from GitHub-attested, exact-commit qualification. The legacy H1-H6 manifest and the historical `PRODUCTION_QUALIFIED.json` are **not** release authority.
+## Observed blockers
 
-## Outstanding qualification evidence
+- The main baseline had reproducible CI failures in collection, packaging, static security, purity, evidence installation and storage-path setup. PR #71 addresses the source-level causes and reruns the checks on its own SHA.
+- No physical GPU/device certificate, reference-vs-device differential, sustained thermal/soak run, failure/recovery record, or literal live-pool acknowledgement is present.
+- No immutable SBOM/provenance/rollback packet or explicit owner approval is present.
+- Several Notion lineage names (the four Geodesic primitives and the named Kellogg contract) have no active-tree symbol match; they remain port/missing work, not implied by archived files.
+- Historical qualification manifests and benchmark claims remain provenance only.
 
-- Exact release-commit CI verdict and independently verified attestation: **UNAVAILABLE** until produced by the required workflow.
-- Conformant signing, secure remote key custody, independent security review and signed approval: **UNAVAILABLE**.
-- Physical-device correctness and reference differential, sustained soak/recovery and deployment controls: **UNAVAILABLE**.
-- Literal Stratum pool acknowledgement and accepted-share evidence, where live mining is claimed: **UNAVAILABLE**.
-- Production operations, rollback, support and customer acceptance evidence: **UNAVAILABLE**.
-
-A passing pull-request suite removes a software regression; it does not change the product decision above. Do not publish or claim certification, FIPS 204 conformance, physical GPU performance, customer deployment or live mining without their own evidence and approved release.
-
-## Authoritative references
-
-- [Release blocker review, 15 November 2026](docs/release-blocker-audit-2026-11-15.md)
-- [Release decision](RELEASE_DECISION_MCKINSEY_TECH.md)
-- [Qualification and claims register](docs/QUALIFICATION_AND_CLAIMS.md)
-- [Claim audit](docs/claim-audit.md)
-- [GitHub Actions](https://github.com/HYBAAIDATA/ChronusQiGPU/actions)
-
-Historical `STATUS.md` language asserting “100% PRODUCTION QUALIFIED” is withdrawn; it was not bound to the current branch, commit and runtime acceptance requirements.
+The mining deployment hold in `deploy/hyba-mine/control.env` is preserved. No deployment workflow was resurrected by this review.

@@ -1,10 +1,11 @@
-"""Package-level production qualification orchestrator and verification facade.
+"""Chronus verification facade.
 
 Runs bounded local diagnostics. Does not certify production qualification or
 assert unverified architectural invariants.
 """
 
 import json
+import os
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
@@ -156,6 +157,10 @@ def main() -> int:
         print(f"[{'PASS' if gate.passed else 'FAIL'}] {gate.id}: {gate.detail}")
     print(f"{manifest.posture} ({manifest.passed}/{len(manifest.gates)}) -> {target}")
     return 0 if manifest.posture == "qualified" else 1
+
+# Where the release manifest is written. The repository is the default; an
+# override lets a caller collect the artefact somewhere disposable.
+MANIFEST_OUT_DIR = os.environ.get("CHRONUS_MANIFEST_OUT_DIR")
 
 
 class ChronusVerificationOrchestrator:

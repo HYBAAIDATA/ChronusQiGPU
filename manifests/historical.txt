@@ -1,0 +1,48 @@
+# Historical qualification manifests.
+#
+# One repository-relative path per line. A manifest listed here is a
+# record of a run made on 2026-11-06 to 2026-11-09. It is kept as it was
+# accurate for its date and is not rewritten to look current. Its defects
+# are catalogued by scripts/ci/audit_manifest.py and do not block a
+# release, because the release decision is NOT QUALIFIED
+# (docs/claim-audit.md).
+#
+# Adding a path to this list is a visible decision. A manifest cannot
+# declare itself historical: the list is the only source of truth.
+manifests/qualification_manifest_final.json
+manifests/qualification_manifest_v1.json
+manifests/qualification_manifest_v10.json
+manifests/qualification_manifest_v11.json
+manifests/qualification_manifest_v12.json
+manifests/qualification_manifest_v13.json
+manifests/qualification_manifest_v14.json
+manifests/qualification_manifest_v15.json
+manifests/qualification_manifest_v16.json
+manifests/qualification_manifest_v17.json
+manifests/qualification_manifest_v18.json
+manifests/qualification_manifest_v19.json
+manifests/qualification_manifest_v2.json
+manifests/qualification_manifest_v20.json
+manifests/qualification_manifest_v21.json
+manifests/qualification_manifest_v22.json
+manifests/qualification_manifest_v23.json
+manifests/qualification_manifest_v24.json
+manifests/qualification_manifest_v25.json
+manifests/qualification_manifest_v26.json
+manifests/qualification_manifest_v27.json
+manifests/qualification_manifest_v28.json
+manifests/qualification_manifest_v29.json
+manifests/qualification_manifest_v3.json
+manifests/qualification_manifest_v30.json
+manifests/qualification_manifest_v31.json
+manifests/qualification_manifest_v32.json
+manifests/qualification_manifest_v33.json
+manifests/qualification_manifest_v35.json
+manifests/qualification_manifest_v36.json
+manifests/qualification_manifest_v4.json
+manifests/qualification_manifest_v5.json
+manifests/qualification_manifest_v6.json
+manifests/qualification_manifest_v7.json
+manifests/qualification_manifest_v8.json
+manifests/qualification_manifest_v9.json
+PRODUCTION_QUALIFIED.json

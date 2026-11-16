@@ -1,0 +1,7 @@
+  [ok  ] tcp_connect: 2 ms
+  [ok  ] subscribe: extranonce1=deadbeef size=4
+  [ok  ] authorize: accepted
+  [ok  ] job: job_id=smokejob1 clean=True
+  [ok  ] search: backend=geometric nonce=925 hashes=926
+  [ok  ] submit: accepted
+transcript: /workspace/evidence/smoke/fake-20261115T221848.json

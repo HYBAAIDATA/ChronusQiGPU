@@ -21,7 +21,6 @@ from chronus.core.enums import (
     MemoryTier,
 )
 from chronus.core.dataclasses import CapabilityManifest
-
 from .abi import AdapterRole as RoleEnum
 
 __all__ = ["ADAPTER_TABLE", "TypedUnavailableAdapter", "promote_adapter"]
@@ -101,6 +100,7 @@ ADAPTER_TABLE: tuple[AdapterSpec, ...] = (
         trust_class=TrustClass.TYPED_UNAVAILABLE,
     ),
 )
+
 
 # ---------------------------------------------------------------------------
 # Tier 6.2 - TypedUnavailableAdapter (Axiom 7: complete fallback)
@@ -196,7 +196,7 @@ def promote_adapter(backend: AdapterBackend, kernel: dict) -> bool:
     # Axiom 6: derive the evidence digest chain before reporting eligibility.
     from chronus.core.dataclasses import EvidenceRecord
 
-    EvidenceRecord(
+    _evidence = EvidenceRecord(
         layer=str(backend),
         item_id=backend.value,
         input_digest="kernel_manifest",

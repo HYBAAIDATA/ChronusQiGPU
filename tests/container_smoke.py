@@ -32,11 +32,13 @@ if sys.argv[1] == "submit":
         },
     )
     assert result["status"] == "COMPLETED"
-    assert result["result"]["result"]["lucas"] == "123"
+    assert result["result"]["result"]["family"] == "scaling.v1"
+    assert result["result"]["result"]["sequence_value"] == "123"
     print(result["workload_id"])
 elif sys.argv[1] == "verify":
     result = request(f"/workloads/{sys.argv[2]}")
     assert result["status"] == "COMPLETED"
-    assert result["result"]["result"]["lucas"] == "123"
+    assert result["result"]["result"]["family"] == "scaling.v1"
+    assert result["result"]["result"]["sequence_value"] == "123"
 else:
     raise SystemExit("Expected submit or verify")

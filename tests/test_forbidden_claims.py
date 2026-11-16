@@ -4,6 +4,9 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+import pytest
+
+pytestmark = pytest.mark.simulated
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('claims', ROOT/'scripts/ci/check_forbidden_claims.py')
@@ -73,6 +76,28 @@ class ClaimPolicyTests(unittest.TestCase):
         d, root = _repo({'vendor/lib.c': b'bad', 'src/x.py': b'fine'}, {'excluded_prefixes': ['vendor/'], 'allowlist': []})
         with d:
             self.assertEqual(check.scan(root), [])
+
+    def test_excluded_suffix_is_not_scanned(self):
+        d, root = _repo({'page.mhtml': b'bad', 'src/x.py': b'fine'}, {'excluded_prefixes': [], 'excluded_suffixes': ['.mhtml'], 'allowlist': []})
+        with d:
+            self.assertEqual(check.scan(root), [])
+
+    def test_suffix_without_leading_dot_is_rejected(self):
+        d, root = _repo({'src/x.py': b'fine'}, {'excluded_prefixes': [], 'excluded_suffixes': ['mhtml'], 'allowlist': []})
+        with d:
+            with self.assertRaisesRegex(ValueError, 'must start with a dot'):
+                check.scan(root)
+
+    def test_excluded_suffix_is_case_insensitive(self):
+        d, root = _repo({'page.MHTML': b'bad', 'src/x.py': b'fine'}, {'excluded_prefixes': [], 'excluded_suffixes': ['.mhtml'], 'allowlist': []})
+        with d:
+            self.assertEqual(check.scan(root), [])
+
+    def test_excluded_suffix_matches_the_final_suffix_only(self):
+        # "notes.mhtml.txt" ends in .txt, so it is not a saved page.
+        d, root = _repo({'notes.mhtml.txt': b'bad', 'page.mhtml': b'fine'}, {'excluded_prefixes': [], 'excluded_suffixes': ['.mhtml'], 'allowlist': []})
+        with d:
+            self.assertEqual(check.scan(root), [('notes.mhtml.txt', 'bad')])
 
     def test_entry_without_recognised_basis_fails_closed(self):
         for bad in (_entry('doc.md', 1, basis='marketing'), _entry('doc.md', 1, note=' '), _entry('doc.md', 0)):

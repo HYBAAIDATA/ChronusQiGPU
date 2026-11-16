@@ -1,6 +1,9 @@
-"""Unit test suite for QuantumStateEngine and pure quantum mechanics linear algebra."""
+"""Historical QuantumStateEngine alias tests: classical predictive numerical methods; no device execution."""
 
 import unittest
+import pytest
+
+pytestmark = pytest.mark.simulated  # seeded synthetic training data
 import tempfile
 import shutil
 import os
