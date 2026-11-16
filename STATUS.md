@@ -16,7 +16,13 @@ The previous dossier claimed “100% PRODUCTION QUALIFIED” from an unrelated h
 - The main baseline had reproducible CI failures in collection, packaging, static security, purity, evidence installation and storage-path setup. PR #71 addresses the source-level causes and reruns the checks on its own SHA.
 - No physical GPU/device certificate, reference-vs-device differential, sustained thermal/soak run, failure/recovery record, or literal live-pool acknowledgement is present.
 - No immutable SBOM/provenance/rollback packet or explicit owner approval is present.
-- Several Notion lineage names (the four Geodesic primitives and the named Kellogg contract) have no active-tree symbol match; they remain port/missing work, not implied by archived files.
+- The four July Geodesic Tensor primitives have now been located in active `src/chronus/tensor/geodesic.py`, exported and tested by `tests/test_geodesic_tensor_migration.py` (source/test presence only; no current release qualification). The historical named Kellogg contract is not yet matched to a complete maintained implementation/certification and remains under reconciliation.
 - Historical qualification manifests and benchmark claims remain provenance only.
 
 The mining deployment hold in `deploy/hyba-mine/control.env` is preserved. No deployment workflow was resurrected by this review.
+
+## 16 November 2026 closeout supplement
+
+- The source-to-archive reconciliation is tracked in [docs/audits/2026-11-16-source-archive-reconciliation.md](docs/audits/2026-11-16-source-archive-reconciliation.md).
+- The Patroclus `/v1/mining/admin/patroclus/simulate` endpoint was found to misrepresent localhost fixture success as acceptance by four live mining pools. This review branch corrects its response classification and validates local fixture submission; this is **not** proof of external pool acceptance.
+- Mainline production qualification, CI, protected release policy and live/runtime evidence stay **NOT QUALIFIED / UNAVAILABLE** until exact-commit evidence exists.
