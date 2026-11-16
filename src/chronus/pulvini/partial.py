@@ -27,6 +27,20 @@ class VerifiedFoldIndex:
             raise ValueError("verified complete fold required")
         if operand.state.sizes[0] > max_elements:
             raise ValueError("fold exceeds compile element policy")
+        # The formal roundtrip uses sizes[:-1]; check every Fibonacci split
+        # including the final stored extent, before compiling the read index.
+        source = operand.state
+        if (not source.sizes or len(source.sizes) != len(source.kernels) + 1 or
+                source.sizes[-1] != source.folded.size):
+            raise ValueError("invalid final PULVINI fold chronology")
+        operator = PhiRecursiveOperator(normalization=source.normalization)
+        for level, kernel in enumerate(source.kernels):
+            original_dim = source.sizes[level]
+            if type(original_dim) is not int or original_dim <= 1:
+                raise ValueError("invalid PULVINI size chronology")
+            folded_dim, _ = operator.fibonacci_split(original_dim)
+            if source.sizes[level + 1] != folded_dim or kernel.size != folded_dim:
+                raise ValueError("PULVINI split geometry or kernel length mismatch")
         # Validate all kernels, chronology and full original digest just once.
         unfolded = unfold_verified(operand.state, receipt=operand.evidence)
         if unfolded.size != operand.state.sizes[0]:
