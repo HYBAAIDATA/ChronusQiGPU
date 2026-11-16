@@ -304,148 +304,67 @@ class CIaaSStore:
         )
 
     def get_pods_fleet(self) -> Dict[str, Any]:
-        """Return regional fleet status across alpha, beta, gamma, delta pods."""
+        """Return the architectural pod design, never fabricated live telemetry."""
         return {
-            "status": "OPERATIONAL",
+            "status": "RUNTIME_UNVERIFIED",
+            "evidence_scope": "declared_topology_only",
             "virtual_crossbar": {
-                "bandwidth": "130 Tb/s",
-                "routing_protocol": "H4 Polytope Discrete Exterior Calculus (DEC) Lie-Poisson Routing",
                 "polytope": "H4_POLYTOPE",
-                "vertices": 120,
-                "edges": 720,
-                "bus_saturation_percentage": 100,
-                "packet_stalls": 0,
-                "triad_resonance_blowups": 0,
-                "casimir_invariants": "ENSTROPHY_AND_HELICITY_CONSERVED",
+                "bandwidth": None,
+                "packet_stalls": None,
+                "bus_saturation_percentage": None,
             },
             "instanton_healer": {
                 "name": "DSW 4D Instanton Monopole Self-Healer",
-                "spacetime_manifold": "3D_SPATIAL_NODE_LATTICE_x_1D_EXECUTION_CLOCK",
-                "cobordism": "W: Sigma_1 -> Sigma_2",
-                "repair_latency_cycles": 1,
-                "context_rollback_bytes": 0,
-                "stream_rollback_bytes": 0,
-                "health": "ONLINE",
-            },
-            "memory_access_classes": [
-                {
-                    "class": "LOCAL_ZERO_COPY",
-                    "latency_ns": 12,
-                    "wan_transfer": False,
-                    "strategy": "Direct physical host memory mapping and co-located NVMe/HBM access with sub-microsecond latency.",
-                },
-                {
-                    "class": "SAME_HOST_SHARED_MEMORY",
-                    "latency_ns": 35,
-                    "wan_transfer": False,
-                    "strategy": "Shared address spaces between independent local process contexts on a unified host server.",
-                },
-                {
-                    "class": "DEVICE_SHARED_MEMORY",
-                    "latency_ns": 80,
-                    "wan_transfer": False,
-                    "strategy": "Direct device-to-device memory access between compatible accelerators.",
-                },
-                {
-                    "class": "REMOTE_REFERENCE",
-                    "latency_ns": 450,
-                    "wan_transfer": False,
-                    "strategy": "Lightweight, content-addressed OVID handle references pointing to external datasets without executing payload transfers.",
-                },
-                {
-                    "class": "REMOTE_TRANSFER",
-                    "latency_ms": 14,
-                    "wan_transfer": True,
-                    "strategy": "High-efficiency data streaming across cluster boundaries utilizing DEC Lie-Poisson fluid routing to eliminate packet congestion.",
-                },
-                {
-                    "class": "REMOTE_MATERIALISATION",
-                    "latency_us": 120,
-                    "wan_transfer": False,
-                    "strategy": "Targeted, on-demand reconstruction of specific state elements at the destination node.",
-                },
-            ],
-            "disaggregated_pools": {
-                "prefill_pool": {
-                    "role": "Compute-Bound",
-                    "hardware": "NVFP4 Tensor Cores",
-                    "function": "Dense context ingestion and KV attention matrix population",
-                },
-                "decode_pool": {
-                    "role": "Memory-Bandwidth-Bound",
-                    "hardware": "HBM3e Streamers",
-                    "function": "Autoregressive token generation streaming parameters from HBM one KV-row at a time",
-                },
-                "cryo_quantum_pool": {
-                    "role": "Hilbert State & Holonomy Evaluation",
-                    "bridge": "Sub-microsecond NVQLink Bridge",
-                    "function": "Quantum attention subroutines evaluating Hilbert space state vectors and Wilczek-Zee holonomies",
-                },
+                "health": "UNVERIFIED",
+                "repair_latency_cycles": None,
             },
             "pods": [
-                {
-                    "pod": "alpha",
-                    "region": "Europe / London Sovereign",
-                    "nodes": 32,
-                    "health": "HEALTHY",
-                    "lane_capacity": 1024,
-                    "active_workloads": 14,
-                },
-                {
-                    "pod": "beta",
-                    "region": "US East / Ashburn",
-                    "nodes": 64,
-                    "health": "HEALTHY",
-                    "lane_capacity": 2048,
-                    "active_workloads": 28,
-                },
-                {
-                    "pod": "gamma",
-                    "region": "DIFC / Dubai Sovereign",
-                    "nodes": 16,
-                    "health": "HEALTHY",
-                    "lane_capacity": 512,
-                    "active_workloads": 8,
-                },
-                {
-                    "pod": "delta",
-                    "region": "Asia / Tokyo",
-                    "nodes": 32,
-                    "health": "HEALTHY",
-                    "lane_capacity": 1024,
-                    "active_workloads": 12,
-                },
+                {"pod": pod, "region": region, "nodes": None,
+                 "health": "UNVERIFIED", "lane_capacity": None,
+                 "active_workloads": None}
+                for pod, region in (
+                    ("alpha", "Europe / London"),
+                    ("beta", "US East / Ashburn"),
+                    ("gamma", "DIFC / Dubai"),
+                    ("delta", "Asia / Tokyo"),
+                )
             ],
+            "evidence_required": "Measured coordinator snapshot and authenticated worker joins",
         }
 
     def get_sovereign_profile(self) -> Dict[str, Any]:
-        """Return air-gapped sovereign governance and sheaf cohomology status."""
+        """Return AL HARAS assessment pointers without declaring accreditation."""
+        from chronus.security.al_haras.sovereign import (
+            SovereignGovernanceEngine,
+            describe_key_custody,
+        )
+
+        register = SovereignGovernanceEngine.audit_sovereign_compliance(
+            "deployment-unverified"
+        )
         return {
             "profile_name": "Air-Gapped Sovereign Deployment Profile",
             "compliance": {
                 "standard": "UK NCSC 14 Cloud Security Principles",
-                "status": "FULLY_COMPLIANT",
-                "principles_passed": 14,
+                "status": "NOT_ASSESSED",
+                "principles_passed": 0,
                 "principles_total": 14,
+                "principles_independently_assessed": 0,
             },
-            "key_custody": {
-                "model": "Customer-Held Cloud KMS / HSM",
-                "hardware_root_of_trust": "FIPS 140-3 Level 4",
-                "signing_algorithm": "NIST FIPS 204 ML-DSA-87 (CRYSTALS-Dilithium)",
-                "key_rotation_status": "ENFORCED",
-            },
+            "key_custody": describe_key_custody(),
             "cellular_sheaf_cohomology": {
-                "status": "MONITORING_ACTIVE",
-                "cohomology_class": "H^1(X; F) = 0",
-                "prompt_injection_vortices": 0,
-                "context_contradictions": 0,
-                "isolation_state": "ZERO_ANOMALY",
+                "status": "NOT_MEASURED",
+                "cohomology_class": None,
+                "prompt_injection_vortices": None,
+                "context_contradictions": None,
+                "isolation_state": "UNVERIFIED",
             },
             "verification_endpoint": {
                 "url": "/v1/verify/{receipt_hash}",
-                "mode": "ZERO_AUTH_PUBLIC_EVIDENCE",
-                "proof_types": ["FIPS 204 ML-DSA", "FRI zk-STARK Polynomial Quotient"],
+                "evidence": "receipt_verification_is_not_external_certification",
             },
+            "independent_assessment": register,
         }
 
 
