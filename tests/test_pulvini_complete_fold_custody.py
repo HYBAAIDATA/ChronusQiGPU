@@ -77,3 +77,20 @@ def test_reject_unsupported_tensor_rank_before_custody(tmp_path):
     adapter = PulviniCustodyAdapter(ProductionTriad(str(tmp_path / "rank.sqlite3")), depth=1)
     with pytest.raises(ValueError, match="rank"):
         adapter.put("tenant", np.ones((1,) * 9, dtype=float))
+
+
+def test_fold_replay_does_not_attest_unsigned_origin():
+    executor = FoldedTensorExecutor(depth=3)
+    payload = encode_complete_fold(executor.fold(np.arange(12, dtype=float)))
+    decoded = decode_complete_fold(payload)
+    assert decoded.source_digest_authentication == "UNVERIFIED_UNSIGNED_ORIGIN"
+    assert decoded.evidence.input_sha256
+    assert "source" not in decoded.source_digest_authentication.lower() or "UNVERIFIED" in decoded.source_digest_authentication
+
+
+def test_forged_source_attestation_rejected_before_read(tmp_path):
+    adapter = PulviniCustodyAdapter(ProductionTriad(str(tmp_path / "origin.sqlite3")))
+    record = adapter.put("tenant", np.arange(12, dtype=float))
+    forged = replace(record, source_attestation="SIGNED_INDEPENDENTLY")
+    with pytest.raises(ValueError, match="source provenance"):
+        adapter.read(forged)
