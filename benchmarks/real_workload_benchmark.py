@@ -133,7 +133,7 @@ def _read_verified(source: dict) -> bytes:
 
 def _load_bounded_npy(payload: bytes) -> np.ndarray:
     """Validate an NPY header *before* NumPy can allocate decoded storage."""
-    if len(payload) < 10 or payload[:6] != b"\\x93NUMPY":
+    if len(payload) < 10 or payload[:6] != b"\x93NUMPY":
         raise ValueError("invalid NPY magic")
     version = payload[6]
     if version == 1:
