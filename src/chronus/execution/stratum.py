@@ -65,7 +65,7 @@ class StratumV1Client:
                 job["merkle_branches"], job["version_hex"], job["nbits_hex"],
                 job["ntime_hex"], True,
             ]
-            return StratumJob.from_notify(params), Fraction(job["difficulty"])
+            return StratumJob.from_notify(params), job["difficulty"]
         return None
 
     async def connect(self) -> StratumSession:
