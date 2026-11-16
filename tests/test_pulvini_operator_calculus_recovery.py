@@ -87,3 +87,10 @@ def test_finite_large_matrix_cannot_return_infinite_lift():
     A = np.full((2, 2), np.finfo(np.float64).max)
     with pytest.raises(ValueError, match="overflow"):
         calc.lift(A)
+
+
+def test_numeric_looking_text_matrix_cannot_be_promoted_to_valid_operator():
+    calc = PulviniOperatorCalculus()
+    A = np.array([["1.0", "2.0"], ["3.0", "4.0"]])
+    with pytest.raises(ValueError, match="finite numeric original"):
+        calc.verify_action(A, np.array([1.0, 2.0]))
