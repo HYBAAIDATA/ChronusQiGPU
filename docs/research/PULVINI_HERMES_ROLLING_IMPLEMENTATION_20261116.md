@@ -111,7 +111,7 @@ Additional source fingerprints:
   Both encoded artifacts and decoded operands now expose the unverified status.
 
 The locally reconstructed equivalent modules, including new calculus and
-linear operation tests, passed **69/69 isolated tests**. This is not a
+linear operation tests, passed **71/71 isolated tests**. This is not a
 complete exact-current-repository CI pass or a live THESEUS restart certificate.
 
 ### Second real-public-data measurement (same algorithms; different local run)
@@ -163,3 +163,46 @@ lacks all corresponding functionality.
 unmapped contracts. It does not declare the remaining enterprise components
 done, does not assume a 357-file historic archive should overwrite modern
 source, and does not convert local tests into production qualification.
+
+
+### Additional Library provenance and later Notion cross-reference
+
+Three further uploaded Library bundles were examined, not blindly imported:
+
+| Archive SHA-256 | Contents and disposition |
+| --- | --- |
+| `5816687967f6f07ae489086936b56dd709160b59424fea57a80b286039f78add` — `hyba_data.zip` | 38 entries, chiefly old M32 manifold/oracle/search and deployment YAML; historical Geodesic/CHRONUS lineage, not replacement for current PULVINI formal fold |
+| `5194a4be8ca6fd7a46eaa30299969d261cca530bd75a3dd5271ea9785fc93460` — `pulvini.zip` | 14 entries, old M32 search/manifold names; a different provenance family from July protected Enterprise V3 numerical folding |
+| `94d267ee63c0136ed14282d4a3bc402de065bb3ad495c55599649bf7d48cf069` — `enterprise-triad-release-gates.zip` | 21 entries, historical Aethel enterprise custody/release gate contracts; compare against existing OVID/THESEUS/AL HARAS gates, do not install a duplicate custody authority |
+
+Further Notion records read and reconciled:
+
+- [HYBA DATA Code Elevation Pack](https://app.notion.com/p/080cf1c058b14a8692d9431695ed928f):
+  historic data-class gate, claim withholding and unmeasured-fee zero policy.
+- [HYBA Data Pilot Measurement Protocol](https://app.notion.com/p/9c56caf52be040a28f37da830164758e):
+  requires named production(-like) deployment, matched baseline, observed
+  compute/memory costs, signed customer measurement and agreed gain-share.
+- [HYBA Data Capabilities (Evidence-Tiered)](https://app.notion.com/p/31c54504aec9464eab78699130b7e654):
+  historic M1/M2/M3 evidence-class separation; a physical GPU or customer
+  capacity multiplier cannot be derived from φ-depth alone.
+- [Independent Verification (2 Aug)](https://app.notion.com/p/17a3c7e9be7540ffaf1082d87f680b3b):
+  historically falsified several repository claims; do not promote paper
+  ratios without same-implementation measured effective results.
+- [Integrated Deployment Package](https://app.notion.com/p/0f9aedc5b415479cb34a9b1646f006b4):
+  references `HYBA_DATA_WITH_AUTH.zip` and
+  `HYBA_TESTIMONY_WITH_AUTH.zip`; original attached bytes have not been
+  recovered into this code checkout. Their integration is **UNVERIFIED**.
+- [Artifact Store](https://app.notion.com/p/a14577d2b8c64735b0344bdcf9c80c38):
+  lists `HYBA_DATA_ENTERPRISE_BENCHMARKS_P8.zip`,
+  `HYBA_DATA_ENTERPRISE_TRIAL.zip` and additional historical products.
+  These pointers are not proof of deployment on the present release SHA.
+
+Latest adversarial fixes on this PR: checked exact replacement value
+round-trips (rather than NumPy's permissive int64→float64 dtype label),
+explicit last-fold-extent checks, oversized matrix-result preflight,
+unsupported rank rejection before custody, unsigned-source origin labelling,
+integer lifting overflow/nonfinite protection, nonnumeric matrix rejection,
+direct folded-channel arithmetic with every residual kernel, plus durable
+POSIX evidence publication. The recorded **71/71 isolated locally
+reconstructed-source tests** exclude the real production Triad integration
+and do not represent GitHub CI.
