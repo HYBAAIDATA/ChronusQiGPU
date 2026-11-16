@@ -18,6 +18,44 @@ from contextlib import contextmanager
 from pathlib import Path
 
 _TABLES = ("workloads", "nodes", "receipts")
+_RECORD_SQL = {
+    "workloads": {
+        "read": "SELECT record_json FROM api_workloads WHERE record_id = ?",
+        "all": "SELECT record_json FROM api_workloads",
+        "write": (
+            "INSERT INTO api_workloads "
+            "(record_id, tenant_id, state, created_at, record_json) "
+            "VALUES (?, ?, ?, ?, ?) ON CONFLICT(record_id) DO UPDATE SET "
+            "tenant_id=excluded.tenant_id, state=excluded.state, "
+            "created_at=excluded.created_at, record_json=excluded.record_json"
+        ),
+        "clear": "DELETE FROM api_workloads",
+    },
+    "nodes": {
+        "read": "SELECT record_json FROM api_nodes WHERE record_id = ?",
+        "all": "SELECT record_json FROM api_nodes",
+        "write": (
+            "INSERT INTO api_nodes "
+            "(record_id, tenant_id, state, created_at, record_json) "
+            "VALUES (?, ?, ?, ?, ?) ON CONFLICT(record_id) DO UPDATE SET "
+            "tenant_id=excluded.tenant_id, state=excluded.state, "
+            "created_at=excluded.created_at, record_json=excluded.record_json"
+        ),
+        "clear": "DELETE FROM api_nodes",
+    },
+    "receipts": {
+        "read": "SELECT record_json FROM api_receipts WHERE record_id = ?",
+        "all": "SELECT record_json FROM api_receipts",
+        "write": (
+            "INSERT INTO api_receipts "
+            "(record_id, tenant_id, state, created_at, record_json) "
+            "VALUES (?, ?, ?, ?, ?) ON CONFLICT(record_id) DO UPDATE SET "
+            "tenant_id=excluded.tenant_id, state=excluded.state, "
+            "created_at=excluded.created_at, record_json=excluded.record_json"
+        ),
+        "clear": "DELETE FROM api_receipts",
+    },
+}
 _BACKENDS = frozenset({"memory", "sqlite"})
 _MEMORY: dict[str, dict] = {
     "workloads": {},
