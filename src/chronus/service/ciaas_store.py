@@ -17,6 +17,8 @@ Manages:
 - Sovereign Security Profile (NCSC 14 Principles & Cellular Sheaf Cohomology H^1(X; F) = 0)
 """
 
+import json
+import os
 import secrets
 import threading
 from decimal import Decimal, InvalidOperation, ROUND_HALF_EVEN
@@ -97,12 +99,70 @@ class HermitenSettlement(BaseModel):
 
 
 class CIaaSStore:
-    """In-memory multi-tenant CIaaS administrative store."""
+    """CIaaS tenant registry; durable THESEUS journal in configured deployments.
 
-    def __init__(self) -> None:
+    Without custody configuration this is a local reference store; seeded
+    tenants are test fixtures, never live customer/provisioning evidence.
+    """
+
+    _REGISTRY_TENANT = "chronus-ciaas-registry"
+
+    def __init__(self, durable_path: Optional[str] = None) -> None:
         self._lock = threading.RLock()
         self._tenants: Dict[str, TenantProfile] = {}
-        self._seed_default_tenants()
+        selected_path = (
+            durable_path if durable_path is not None
+            else os.getenv("CHRONUS_CIAAS_DURABLE_PATH", "")
+        )
+        if not selected_path and os.getenv("CHRONUS_ENV", "").lower() == "production":
+            raise RuntimeError(
+                "Production CIaaS requires CHRONUS_CIAAS_DURABLE_PATH; "
+                "the in-memory reference registry is not authoritative."
+            )
+        self._custody = None
+        if selected_path:
+            from chronus.storage.durable import DurableTheseusService
+
+            self._custody = DurableTheseusService(selected_path)
+            self._recover_registry()
+        else:
+            self._seed_default_tenants()
+
+    def _recover_registry(self) -> None:
+        """Replay authoritative upsert/removal events; corruption stops startup."""
+        assert self._custody is not None
+        entries = self._custody.get_journal(self._REGISTRY_TENANT)
+        if entries and not self._custody.verify_journal_continuity(
+            self._REGISTRY_TENANT
+        ):
+            raise RuntimeError("THESEUS CIaaS registry continuity verification failed")
+        for event in entries:
+            raw = self._custody.reconstruct(self._REGISTRY_TENANT, event.object_id)
+            payload = json.loads(raw)
+            if event.event_type == "CIAAS_TENANT_UPSERT":
+                profile = TenantProfile.model_validate(payload["profile"])
+                if profile.tenant_id != payload["tenant_id"]:
+                    raise RuntimeError("THESEUS tenant registry entry scope mismatch")
+                self._tenants[profile.tenant_id] = profile
+            elif event.event_type == "CIAAS_TENANT_REMOVED":
+                self._tenants.pop(payload["tenant_id"], None)
+            else:
+                raise RuntimeError("Unexpected THESEUS tenant registry event type")
+
+    def _record_change(
+        self, event_type: str, tenant_id: str, profile: Optional[TenantProfile] = None
+    ) -> None:
+        """Durably commit the registry event BEFORE changing process state."""
+        if self._custody is None:
+            return
+        payload = {"tenant_id": tenant_id}
+        if profile is not None:
+            payload["profile"] = profile.model_dump(mode="json")
+        self._custody.append_journal_event(
+            self._REGISTRY_TENANT,
+            event_type,
+            json.dumps(payload, sort_keys=True).encode("utf-8"),
+        )
 
     def _seed_default_tenants(self) -> None:
         """Seed baseline enterprise tenants."""
@@ -198,11 +258,14 @@ class CIaaSStore:
 
     def save_tenant(self, profile: TenantProfile) -> TenantProfile:
         with self._lock:
+            self._record_change("CIAAS_TENANT_UPSERT", profile.tenant_id, profile)
             self._tenants[profile.tenant_id] = profile
             return profile
 
     def remove_tenant(self, tenant_id: str) -> None:
         with self._lock:
+            if tenant_id in self._tenants:
+                self._record_change("CIAAS_TENANT_REMOVED", tenant_id)
             self._tenants.pop(tenant_id, None)
 
     def onboard_tenant(
@@ -230,7 +293,9 @@ class CIaaSStore:
             console_access_url=f"https://console.chronus.io/tenants/{tenant_id}/workloads",
         )
         with self._lock:
-            self._tenants[tenant_id] = profile
+            if tenant_id in self._tenants:
+                raise ValueError("Tenant is already registered")
+            self.save_tenant(profile)
         return profile
 
     def update_cce(
@@ -240,8 +305,8 @@ class CIaaSStore:
             tenant = self._tenants.get(tenant_id)
             if not tenant:
                 return None
-            tenant.cce = cce
-            return tenant
+            updated = tenant.model_copy(update={"cce": cce}, deep=True)
+            return self.save_tenant(updated)
 
     def calculate_pricing(
         self, tenant_id: str, consumed_ccu: int = 128
