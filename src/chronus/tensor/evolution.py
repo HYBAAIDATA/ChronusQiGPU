@@ -7,18 +7,16 @@ Owner: TN theorist.
 
 from __future__ import annotations
 
-import math
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Tuple
 import numpy as np
 
 from chronus.tensor.types import (
     ContractionCertificate,
     ErrorLedger,
     RefusedMethod,
-    TruncationRecord,
 )
 from chronus.tensor.network import TensorNetwork
-from chronus.tensor.gate import apply_gate, theorem_for
+from chronus.tensor.gate import apply_gate
 
 
 def evolve_tdvp(

@@ -181,11 +181,10 @@ class ChronusVerificationOrchestrator:
             "invariants_passed": None,
             "invariant_summary": "UNAVAILABLE: independent invariant evidence not verified",
         })
-        target = (
-            Path(__file__).resolve().parents[3]
-            / "manifests"
-            / "qualification_manifest_v36.json"
-        )
+        out_dir = os.getenv("CHRONUS_MANIFEST_OUT_DIR")
+        if not out_dir:
+            return record
+        target = Path(out_dir) / "qualification_manifest_v36.json"
         try:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")

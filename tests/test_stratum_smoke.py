@@ -307,7 +307,7 @@ class TranscriptTests(unittest.TestCase):
     def test_write_does_not_overwrite_same_stamp(self) -> None:
         import tempfile
         from pathlib import Path
-        from stratum_smoke import EVIDENCE, Transcript
+        from stratum_smoke import Transcript
 
         with tempfile.TemporaryDirectory() as tmp:
             with patch("stratum_smoke.EVIDENCE", Path(tmp)):

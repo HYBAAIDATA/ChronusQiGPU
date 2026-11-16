@@ -352,7 +352,7 @@ class GeometricGaloisMiner:
 
     def solve_header_range(
         self, header_prefix: bytes, target: int, nonce_start: int,
-        max_scan_window: int,
+        max_scan_window: int, *, cancel_token=None,
     ) -> GeometricMiningResult:
         """Search bounded work using the authored Zeckendorf/Galois pipeline.
 
@@ -391,6 +391,9 @@ class GeometricGaloisMiner:
         evaluated = 0
         try:
             for evaluated in range(1, granted + 1):
+                if cancel_token is not None and cancel_token.is_set():
+                    evaluated -= 1
+                    break
                 nonce = ZeckendorfBasePhiIndexer.decode(z_repr)
                 digest = sha256d(header_prefix + nonce.to_bytes(4, "little"))
                 if int.from_bytes(digest, "little") <= target:
@@ -416,7 +419,7 @@ class GeometricGaloisMiner:
                 if evaluated < granted:
                     z_repr = ZeckendorfBasePhiIndexer.step_next(z_repr)
             return GeometricMiningResult(
-                found=False, iterations_evaluated=granted, polychoron_vertex_idx=vertex_idx,
+                found=False, iterations_evaluated=evaluated, polychoron_vertex_idx=vertex_idx,
                 pv_scale_index=scale_index,
                 pv_marked_amplitude=scaled_state.marked_amplitude,
             )

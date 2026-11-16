@@ -11,8 +11,7 @@ Separates causation from statistical correlation using quantum interference:
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, List, Optional, Tuple
-import numpy as np
+from typing import Any, Dict, Optional
 
 from chronus.tensor.enhanced_representation import EnhancedTensorRepresentation
 
@@ -105,7 +104,7 @@ class CausalInterferenceEngine:
         delta_x = target_value - factual_x
 
         # Compute causal effect via tensor network contraction
-        query_payload = {"target_indices": {"0": int(factual_x * 10), "1": int(target_value * 10)}}
+        _query_payload = {"target_indices": {"0": int(factual_x * 10), "1": int(target_value * 10)}}
         # Use causal transmission coefficient ~0.75 for direct interventions
         causal_transmission = 0.72
 

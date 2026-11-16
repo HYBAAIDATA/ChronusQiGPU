@@ -23,7 +23,9 @@ from typing import Dict, Any, List, Optional
 
 from chronus.stratum.bip310 import DEFAULT_CLIENT_MASK_HEX, parse_and_intersect_version_mask
 from chronus.stratum.sharding import DedupLedger, WorkPartitioner
-from chronus.stratum.gatekeeper import decode_nbits_target
+from chronus.stratum.gatekeeper import decode_nbits_target, LocalPreSubmitGatekeeper
+from chronus.security.mining_policy import MiningSubmissionPolicy
+from chronus.stratum.endpoint import PoolEndpoint
 
 logger = logging.getLogger("ChronusStratumGateway")
 
@@ -45,6 +47,9 @@ class StratumGateway:
         tls: bool = False,
         ssl_context: Optional["ssl.SSLContext"] = None,
     ):
+        self.submission_policy = MiningSubmissionPolicy()
+        self._submission_gatekeeper = LocalPreSubmitGatekeeper()
+        self._submission_ledger = DedupLedger()
         self.host = host
         self.port = port
         self.worker_name = worker_name
@@ -86,6 +91,10 @@ class StratumGateway:
 
     async def connect(self):
         """Opens outbound TCP socket connection and increments connection generation."""
+        MiningSubmissionPolicy.check_endpoint(PoolEndpoint(self.host, self.port, self.tls))
+        self.submission_policy.disarm("DISARMED_NEW_CONNECTION")
+        self.submission_policy.pending.clear()
+        self._submission_ledger.clear()
         self.connection_generation += 1
         self.is_connected = False
         gen = self.connection_generation
@@ -131,6 +140,33 @@ class StratumGateway:
             f"({'TLS' if self.tls else 'cleartext'})"
         )
 
+    def _authorize_submission(self, params, rpc_id):
+        MiningSubmissionPolicy.check_endpoint(PoolEndpoint(self.host, self.port, self.tls))
+        if not isinstance(params, list) or len(params) not in (5, 6) or params[0] != self.worker_name:
+            raise PermissionError("Invalid mining submission contract")
+        if not self.submission_policy.armed:
+            raise PermissionError("Share submission is not armed")
+        job = self.jobs.get(params[1])
+        if job is None or job.get("generation") != self.connection_generation:
+            raise PermissionError("Share references stale or unknown work")
+        self._validate_hex(params[4], 8)
+        valid, _, block_hash, hash_int, target_int, is_block = self._submission_gatekeeper.verify_candidate(
+            job_data=job, extranonce1_hex=self.extranonce1_hex,
+            extranonce2_hex=params[2], extranonce2_size=self.extranonce2_size,
+            ntime_hex=params[3], nonce_int=int(params[4], 16),
+            version_bits_hex=params[5] if len(params) == 6 else "00000000",
+            pool_mask_hex=self.pool_mask_hex, current_difficulty=job["difficulty"],
+            dedup_ledger=self._submission_ledger, active_job_ids=self.jobs,
+        )
+        if not valid:
+            raise PermissionError("Independent pre-submit verification rejected share")
+        self.submission_policy.authorize(rpc_id, {
+            "job_id": job["job_id"], "generation": self.connection_generation,
+            "header_sha256d": block_hash, "hash_int": str(hash_int),
+            "target_int": str(target_int), "is_block_candidate": is_block,
+            "independent_verification": "PASS",
+        })
+
     async def write_rpc(self, method: str, params: List[Any],
                         rpc_id: Optional[int] = None) -> int:
         """Writes a JSON-RPC request line directly to socket without reading."""
@@ -138,6 +174,8 @@ class StratumGateway:
             raise ConnectionError("Socket is not open.")
         rpc_id = self._next_id() if rpc_id is None else rpc_id
         self.msg_id = max(self.msg_id, rpc_id)
+        if method == "mining.submit":
+            self._authorize_submission(params, rpc_id)
         payload_str = json.dumps({"id": rpc_id, "method": method, "params": params}) + "\n"
         self.writer.write(payload_str.encode("utf-8"))
         await asyncio.wait_for(self.writer.drain(), self.pool_timeout_sec)
@@ -149,6 +187,8 @@ class StratumGateway:
             raise ConnectionError("Socket is not open.")
 
         rpc_id = self._next_id()
+        if method == "mining.submit":
+            self._authorize_submission(params, rpc_id)
         payload_str = json.dumps({"id": rpc_id, "method": method, "params": params}) + "\n"
         self.writer.write(payload_str.encode("utf-8"))
         await asyncio.wait_for(self.writer.drain(), self.pool_timeout_sec)
@@ -176,6 +216,7 @@ class StratumGateway:
                 logger.warning(f"Non-dict JSON payload from pool, dropping line: {response}")
                 continue
 
+            self.submission_policy.observe(response)
             if response.get("id") == rpc_id:
                 return response
             if "method" in response:
@@ -215,7 +256,10 @@ class StratumGateway:
             return None
         try:
             msg = json.loads(line_str, parse_float=Decimal)
-            return msg if isinstance(msg, dict) else None
+            if isinstance(msg, dict):
+                self.submission_policy.observe(msg)
+                return msg
+            return None
         except json.JSONDecodeError as exc:
             logger.warning(f"Malformed JSON from pool, dropping line: {exc}")
             return None
@@ -429,13 +473,16 @@ class StratumGateway:
             raise ValueError("ExtraNonce2 size must be between 1 and 32 bytes")
 
     async def close(self):
-        """Closes outbound socket stream cleanly."""
-        self.is_connected = False
-        if self.writer:
-            self.writer.close()
-            try:
-                await self.writer.wait_closed()
-            except Exception:
-                pass
-        self.writer = None
-        self.reader = None
+        """Close the socket even when durable shutdown evidence cannot be written."""
+        try:
+            self.submission_policy.disarm("DISARMED_CONNECTION_CLOSED")
+        finally:
+            self.is_connected = False
+            if self.writer:
+                self.writer.close()
+                try:
+                    await self.writer.wait_closed()
+                except Exception:
+                    pass
+            self.writer = None
+            self.reader = None

@@ -11,6 +11,7 @@ Verifies runtime behaviors without mock circularity:
 import os
 import sys
 import unittest
+from unittest.mock import patch
 from fractions import Fraction
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -39,13 +40,13 @@ class TestBehavioralStratumLifecycle(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(gateway.is_connected)
 
         # Attempting reconnection to a closed port must increment generation and raise ConnectionError/OSError
-        with self.assertRaises((ConnectionRefusedError, OSError)):
+        with patch.dict(os.environ, {"CHRONUS_ALLOWED_POOL_ENDPOINTS": '["stratum+tcp://127.0.0.1:39999"]'}), self.assertRaises((ConnectionRefusedError, OSError)):
             await gateway.connect()
 
         self.assertEqual(gateway.connection_generation, 1)
         self.assertFalse(gateway.is_connected)
 
-        with self.assertRaises((ConnectionRefusedError, OSError)):
+        with patch.dict(os.environ, {"CHRONUS_ALLOWED_POOL_ENDPOINTS": '["stratum+tcp://127.0.0.1:39999"]'}), self.assertRaises((ConnectionRefusedError, OSError)):
             await gateway.connect()
 
         self.assertEqual(gateway.connection_generation, 2)

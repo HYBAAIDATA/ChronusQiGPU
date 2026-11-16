@@ -83,10 +83,10 @@ def test_zeckendorf_step_order_finds_identical_matches():
         search_nonce_range(header, 0, 10, target, step_order="spiral")
 
 
-def test_polyhedral_lane_labels_cover_12_faces_and_20_vertices():
+def test_polyhedral_lane_labels_cover_12_dodecahedron_and_20_icosahedron_faces():
     labels = [mining.polyhedral_lane(lane) for lane in range(32)]
     faces = [l for l in labels if l["polyhedral"] == "dodecahedron-face"]
-    vertices = [l for l in labels if l["polyhedral"] == "icosahedron-vertex"]
+    vertices = [l for l in labels if l["polyhedral"] == "icosahedron-face"]
     assert len(faces) == 12 and len(vertices) == 20
     assert [f["index"] for f in faces] == list(range(12))
     assert [v["index"] for v in vertices] == list(range(20))

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .enums import CapacityLabel, EvidenceClass, TrustClass
+from .enums import CapacityLabel, EvidenceClass
 
 
 @__import__("dataclasses").dataclass(frozen=True)

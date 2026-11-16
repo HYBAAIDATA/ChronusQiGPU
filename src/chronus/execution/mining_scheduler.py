@@ -8,6 +8,9 @@ is a permutation, so scheduling cannot discard a lane or duplicate its work.
 from fractions import Fraction
 from math import gcd
 
+import numpy as np
+from chronus.tensor.geodesic import GeodesicScheduler, PhiMemoryHierarchy, TopologicalIntegrityGate
+
 from chronus.hendrix import GF257
 from turing.exact.core.state import StateZetaP, superpose
 from turing.exact.core.unitary import ProjectiveUnitaryZetaP, UnitaryZetaP
@@ -52,6 +55,9 @@ class TuringMiningScheduler:
         self._stride_seed = 2 * (transmission.den + GF257.discrete_log(1 + seed[7])) + 1
         self.steps = 0
         self.last_evidence = {}
+        self.geodesic = GeodesicScheduler()
+        self.memory = PhiMemoryHierarchy()
+        self.integrity = TopologicalIntegrityGate(tolerance=0.0)
 
     def order(self, lane_count: int, start: int = 0) -> list[int]:
         if type(lane_count) is not int or not 1 <= lane_count <= 32:
@@ -75,11 +81,34 @@ class TuringMiningScheduler:
         order = [(offset + index * stride) % lane_count for index in range(lane_count)]
         if len(set(order)) != lane_count:
             raise ArithmeticError("TURING scheduler lost lane coverage")
+        # Chronus/Tensor is an internal organ. Its queue chooses dispatch order;
+        # folded residency materialises only the selected row. No tensor output
+        # can alter, drop, duplicate or resize a certified nonce lane.
+        resident = np.asarray(order, dtype=np.uint8).reshape(-1, 1)
+        state = self.memory.store("lane-order", resident)
+        for position, lane in enumerate(order):
+            distance = (position - phase) % lane_count
+            self.geodesic.submit(position, distance=distance)
+        dispatched = []
+        while len(self.geodesic):
+            position = self.geodesic.pop()
+            row = self.memory.load_rows("lane-order", position, position + 1)
+            if not self.integrity.verify(row, resident[position:position + 1]).passed:
+                raise ArithmeticError("Geodesic lane reconstruction failed integrity")
+            dispatched.append(int(row[0, 0]))
+        if sorted(dispatched) != list(range(lane_count)):
+            raise ArithmeticError("Geodesic advice changed certified lane coverage")
+        order = dispatched
         self.last_evidence = {
             "engine": "turing-exact", "phase": phase,
             "born_weights": [str(left), str(right)], "lane_order": order,
             "transmission_stride": self._stride_seed,
-            "overlay": {"dodecahedron_faces": 12, "icosahedron_vertices": 20}
+            "geodesic": {"scheduler": "GeodesicScheduler", "backend": "numpy-reference",
+                         "memory": "PhiMemoryHierarchy", "integrity": "PASS",
+                         "representation_bytes": len(state.folded),
+                         "source_bytes": state.original_length,
+                         "coverage": "exact_permutation", "hashrate_multiplier": None},
+            "overlay": {"dodecahedron_faces": 12, "icosahedron_faces": 20}
             if lane_count == 32 else None,
         }
         self.steps += 1

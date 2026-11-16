@@ -6,9 +6,13 @@ in-process fake Stratum pool over a real socket.
 """
 
 import asyncio
+import os
+from unittest.mock import patch
 import json
 
 import pytest
+
+pytestmark = pytest.mark.usefixtures("mining_custody")
 
 from chronus.execution.stratum import (
     DIFF1_TARGET,
@@ -200,7 +204,9 @@ def _run_fake_pool_scenario():
                 except json.JSONDecodeError:
                     continue
                 method = message.get("method")
-                if method == "mining.subscribe":
+                if method in ("mining.configure", "mining.extranonce.subscribe"):
+                    writer.write((json.dumps({"id": message["id"], "result": False, "error": [20, "unsupported", None]}) + "\n").encode())
+                elif method == "mining.subscribe":
                     response = {
                         "id": message["id"],
                         "result": [
@@ -231,7 +237,8 @@ def _run_fake_pool_scenario():
         port = server.sockets[0].getsockname()[1]
 
         client = StratumV1Client("127.0.0.1", port, "user.worker", "x")
-        session = await client.connect()
+        with patch.dict(os.environ, {"CHRONUS_ALLOWED_POOL_ENDPOINTS": json.dumps([f"stratum+tcp://127.0.0.1:{port}"])}):
+            session = await client.connect()
         assert session.extranonce1 == bytes.fromhex("01020304")
         assert session.extranonce2_size == 4
 
@@ -247,7 +254,9 @@ def _run_fake_pool_scenario():
         header = build_header(job, extranonce2, session, nonce=0)
         assert int.from_bytes(sha256d(header), "little") <= target
 
-        accepted = await client.submit(job, extranonce2, nonce=0)
+        client.gateway.submission_policy.arm("synthetic-loopback-test", 1)
+        with patch.dict(os.environ, {"CHRONUS_ALLOWED_POOL_ENDPOINTS": json.dumps([f"stratum+tcp://127.0.0.1:{port}"])}):
+            accepted = await client.submit(job, extranonce2, nonce=0)
         assert accepted is True
         await client.close()
         # NB: not "async with server": on 3.12+ wait_closed() blocks until
@@ -274,7 +283,9 @@ def test_stratum_client_rejects_bad_authorization():
         async def handle(reader, writer):
             async for raw in reader:
                 message = json.loads(raw.decode().strip())
-                if message.get("method") == "mining.subscribe":
+                if message.get("method") in ("mining.configure", "mining.extranonce.subscribe"):
+                    writer.write((json.dumps({"id": message["id"], "result": False, "error": [20, "unsupported", None]}) + "\n").encode())
+                elif message.get("method") == "mining.subscribe":
                     writer.write(
                         b'{"id":%d,"result":[[],"aa",4],"error":null}\n' % message["id"]
                     )
@@ -287,7 +298,7 @@ def test_stratum_client_rejects_bad_authorization():
         server = await asyncio.start_server(handle, "127.0.0.1", 0)
         port = server.sockets[0].getsockname()[1]
         client = StratumV1Client("127.0.0.1", port, "bad.user", "x")
-        with pytest.raises(StratumError, match="authorize"):
+        with patch.dict(os.environ, {"CHRONUS_ALLOWED_POOL_ENDPOINTS": json.dumps([f"stratum+tcp://127.0.0.1:{port}"])}), pytest.raises(StratumError, match="authorize"):
             await client.connect()
         server.close()
 

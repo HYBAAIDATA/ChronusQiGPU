@@ -319,7 +319,7 @@ def verify_distribution_packages() -> Dict[str, Any]:
     }
 
 
-def main():
+def main(output_path=None):
     print("========================================================================")
     print("      CHRONUS SOFTWARE CAPABILITY EVIDENCE GENERATOR         ")
     print("========================================================================")
@@ -387,7 +387,7 @@ def main():
         "external_attestation": False,
     }
 
-    out_file = os.path.join(REPO_ROOT, "SOVEREIGN_CAPABILITY_ATTESTATION.json")
+    out_file = output_path or os.path.join(REPO_ROOT, "SOVEREIGN_CAPABILITY_ATTESTATION.json")
     with open(out_file, "w", encoding="utf-8") as f:
         json.dump(dossier, f, indent=2)
 
