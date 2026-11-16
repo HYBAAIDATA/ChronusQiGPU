@@ -84,7 +84,8 @@ class FoldedTensorExecutor:
     def materialise(self, operand: VerifiedFoldedOperand) -> np.ndarray:
         if not isinstance(operand, VerifiedFoldedOperand):
             raise ValueError("FoldState requires paired verification evidence")
-        if operand.state.folded.size > self.max_elements:
+        if (not operand.state.sizes or operand.state.sizes[0] > self.max_elements
+                or operand.state.folded.size > self.max_elements):
             raise ValueError("folded state outside bounded policy")
         return unfold_verified(operand.state, receipt=operand.evidence)
 
@@ -144,6 +145,8 @@ class FoldedTensorExecutor:
         items = np.asarray(replacement)
         if items.ndim != 1 or items.size != stop-start or not np.all(np.isfinite(items)):
             raise ValueError("replacement shape or finite contract failed")
+        if not np.can_cast(items.dtype, array.dtype, casting="same_kind"):
+            raise ValueError("replacement would silently truncate numerical precision")
         changed = array.copy().reshape(-1)
         changed[start:stop] = items
         folded = self.fold(changed.reshape(array.shape))
