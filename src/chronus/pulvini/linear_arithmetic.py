@@ -37,11 +37,36 @@ def combine_verified_folded(
         raise ValueError("folded arithmetic outside bounded element policy")
     if not np.isfinite(tolerance) or not 0 < tolerance <= 1e-6:
         raise ValueError("invalid arithmetic error budget")
+    # Neither an apparently matching receipt nor unfold_recursive checks the
+    # final sizes entry by itself. Validate the full chronology before acting.
+    operator_geometry = PhiRecursiveOperator(normalization=a.normalization)
+    for state in (a,b):
+        if (len(state.sizes) != len(state.kernels)+1 or
+                state.sizes[-1] != state.folded.size or
+                state.folded.dtype not in (np.dtype("float64"),np.dtype("complex128")) or
+                any(kernel.dtype != state.folded.dtype for kernel in state.kernels)):
+            raise ValueError("complete-fold chronology or canonical dtype invalid")
+        for depth, kernel in enumerate(state.kernels):
+            original_dim = state.sizes[depth]
+            if type(original_dim) is not int or original_dim < 2:
+                raise ValueError("complete-fold chronology invalid")
+            folded_dim,_ = operator_geometry.fibonacci_split(original_dim)
+            if state.sizes[depth+1] != folded_dim or kernel.size != folded_dim:
+                raise ValueError("complete-fold split geometry invalid")
     for scalar in (alpha,beta):
         if (not np.isscalar(scalar) or isinstance(scalar,(str,bytes,bool)) or
                 not np.issubdtype(np.asarray(scalar).dtype,np.number) or
                 not np.isfinite(scalar)):
             raise ValueError("finite numeric scalar required")
+        scalar_source = np.asarray(scalar)
+        canonical = np.dtype("complex128") if (
+            np.iscomplexobj(a.folded) or np.iscomplexobj(b.folded) or
+            np.iscomplexobj(scalar_source)) else np.dtype("float64")
+        with np.errstate(over="ignore", invalid="ignore"):
+            promoted = scalar_source.astype(canonical)
+            roundtripped = promoted.astype(scalar_source.dtype)
+        if not np.array_equal(roundtripped, scalar_source):
+            raise ValueError("folded coefficient not exactly representable")
     result_dtype=np.result_type(a.folded.dtype,b.folded.dtype,
                                 np.asarray(alpha).dtype,np.asarray(beta).dtype)
     if result_dtype not in (np.dtype("float64"),np.dtype("complex128")):
