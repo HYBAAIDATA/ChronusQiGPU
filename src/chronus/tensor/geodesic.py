@@ -68,6 +68,62 @@ class TopologicalIntegrityGate:
             self.checks_passed += 1
         return IntegrityVerdict(passed, error, shape_match, dtype_match)
 
+    def verify_float32_matmul(
+        self, actual: np.ndarray, left: np.ndarray, right: np.ndarray
+    ) -> IntegrityVerdict:
+        """Check GPU float32 GEMM against a bounded componentwise Higham bound.
+
+        Conservatively gamma_(2k) = 2k*u/(1-2k*u), u=2**-24,
+        covering non-fused multiplication followed by accumulation. The operands are the exact
+        float32 input values promoted to float64 for the reference product.
+        This tests output numerical integrity; it does NOT certify hardware,
+        prove an error-free algorithm, or supply a speedup observation.
+        """
+        self.checks_performed += 1
+        a, b, result = np.asarray(left), np.asarray(right), np.asarray(actual)
+        shape_ok = bool(
+            a.ndim == 2 and b.ndim == 2 and result.ndim == 2
+            and a.shape[1] == b.shape[0]
+            and result.shape == (a.shape[0], b.shape[1])
+        )
+        dtype_ok = bool(
+            a.dtype == np.dtype("float32")
+            and b.dtype == np.dtype("float32")
+            and result.dtype == np.dtype("float32")
+        )
+        if not shape_ok or not dtype_ok:
+            return IntegrityVerdict(False, float("inf"), shape_ok, dtype_ok)
+        k = a.shape[1]
+        unit_roundoff = 2.0 ** -24
+        if not k or 2 * k * unit_roundoff >= 1.0 or result.size > 16_777_216:
+            return IntegrityVerdict(False, float("inf"), shape_ok, dtype_ok)
+        if not (np.all(np.isfinite(a)) and np.all(np.isfinite(b))
+                and np.all(np.isfinite(result))):
+            return IntegrityVerdict(False, float("inf"), shape_ok, dtype_ok)
+        aa, bb = a.astype(np.float64), b.astype(np.float64)
+        with np.errstate(over="ignore", invalid="ignore"):
+            reference = aa @ bb
+            magnitude = np.abs(aa) @ np.abs(bb)
+            gamma_k = (2 * k * unit_roundoff) / (1.0 - 2 * k * unit_roundoff)
+            # Reference float64 GEMM also rounds; its error budget is
+            # explicitly included rather than assumed to be exact.
+            gamma64 = (2 * k * 2.0 ** -53) / (1.0 - 2 * k * 2.0 ** -53)
+            # Purely relative error bounds exclude floating-point
+            # underflow. Each non-fused multiply/add may incur an
+            # absolute subnormal rounding error. This allowance does
+            # not admit flush-to-zero on ordinary subnormal products.
+            eta = float(np.nextafter(np.float32(0), np.float32(1)))
+            bound = (gamma_k + gamma64) * magnitude + (2 * k * eta)
+            difference = np.abs(result.astype(np.float64) - reference)
+        if not (np.all(np.isfinite(reference)) and np.all(np.isfinite(bound))
+                and np.all(np.isfinite(difference))):
+            return IntegrityVerdict(False, float("inf"), shape_ok, dtype_ok)
+        error = float(np.max(difference)) if difference.size else 0.0
+        passed = bool(np.all(difference <= bound))
+        if passed:
+            self.checks_passed += 1
+        return IntegrityVerdict(passed, error, shape_ok, dtype_ok)
+
 
 class PhiTensorCore:
     """Explicit tensor operations with shape-safe reference execution."""
