@@ -464,3 +464,22 @@ def test_replacement_job_reuses_tuple_without_forgetting_other_job_duplicates():
     assert "job" not in gateway.jobs
     gateway._process_notify(replacement)
     assert verify("job")[0]  # No stale entry survives retirement of an inactive job ID.
+
+
+def test_braiins_host_without_scheme_keeps_the_hostname(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("PYTHIA_POOL_SPECS", raising=False)
+    monkeypatch.setenv("MINING_ACTIVE_POOL", "BRAIINS")
+    monkeypatch.setenv("MINING_BRAIINS_HOST", "stratum.braiins.com")
+    monkeypatch.setenv("MINING_BRAIINS_PORT", "3333")
+    monkeypatch.setenv("MINING_BRAIINS_USER", "acct.worker")
+    monkeypatch.setenv("MINING_BRAIINS_PASSWORD", "placeholder")
+    from chronus.execution.mining_entrypoint import load_env_config
+
+    label, endpoint, user, password = load_env_config()
+    assert label == "BRAIINS"
+    assert endpoint.host == "stratum.braiins.com"
+    assert endpoint.port == 3333
+    assert endpoint.tls is False
+    assert user == "acct.worker"
+    assert password == "placeholder"
