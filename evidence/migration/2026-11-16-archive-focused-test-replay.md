@@ -104,3 +104,19 @@ The **GitHub repository module and its ten-case focused test file** still
 require independent exact-commit CI. Standalone source replay never
 substitutes for package import, CI result, CodeRabbit/Qodo closure or a
 production release verdict.
+
+
+An additional deterministic digest-reproduction test was then included in
+the isolated fixture, corresponding to the tenth focused test in the PR.
+The same bounded source fixture was re-executed:
+
+```
+..........                                                               [100%]
+10 passed in 0.06s
+```
+
+Stdout SHA-256:
+`a837324a2f5c0d804ee26513e45c3e17425242b25aba8e53fe57a7379e8a79a5`.
+
+This is still a **standalone local source run**, not the installed
+`chronus.tensor` test suite, and is not a green repository CI result.
