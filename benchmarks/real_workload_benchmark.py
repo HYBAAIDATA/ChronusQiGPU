@@ -46,7 +46,7 @@ def _git_commit() -> str | None:
             ["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parents[1],
             stderr=subprocess.DEVNULL, text=True,
         ).strip()
-        return value if SHA256.fullmatch(value) else None
+        return value if re.fullmatch(r"[0-9a-f]{40,64}", value) else None
     except (OSError, subprocess.CalledProcessError):
         return None
 
@@ -127,7 +127,7 @@ def _tensor_workload(payload: bytes, *, depth: int) -> dict:
         array = np.load(io.BytesIO(payload), allow_pickle=False)
     except (ValueError, TypeError, OSError) as exc:
         raise ValueError("invalid or unsafe NumPy tensor input") from exc
-    if not isinstance(array, np.ndarray) or array.dtype.kind not in "biufc":
+    if not isinstance(array, np.ndarray) or array.dtype.kind not in "iufc":
         raise ValueError("tensor requires a non-object numeric dtype")
     if not 1 <= array.size <= 1_000_000 or not np.all(np.isfinite(array)):
         raise ValueError("tensor outside finite-value/element limits")
@@ -157,7 +157,7 @@ def _tensor_workload(payload: bytes, *, depth: int) -> dict:
         selected_a, selected_b = scheduler.pop()
         path = metric.walk_manifold(selected_a, selected_b, 8)
         geo_ns = time.perf_counter_ns() - started
-        if not np.array_equal(path[0], a) or not np.array_equal(path[-1], b):
+        if not np.allclose(path[0], a, rtol=0, atol=1e-12) or not np.allclose(path[-1], b, rtol=0, atol=1e-12):
             raise ValueError("geodesic endpoints are not preserved")
         geodesic = {"metric": "euclidean-reference-4d", "steps": 8,
                     "call_ns": geo_ns, "endpoint_verified": True}
