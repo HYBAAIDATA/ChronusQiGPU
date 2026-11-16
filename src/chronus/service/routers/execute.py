@@ -27,13 +27,13 @@ def get_authority(request: Request) -> ExecutionAuthority:
         authority = getattr(request.app.state, "execution_authority", None)
         if authority is None:
             path = os.getenv("CHRONUS_EXECUTION_STATE_PATH")
-            if not path:
+            key_path = os.getenv("CHRONUS_EXECUTION_KEY_FILE")
+            if not path or not key_path:
                 raise HTTPException(503, "Durable execution custody is not configured")
             try:
                 authority = ExecutionAuthority(
                     path,
-                    custody_key=Path(os.environ["CHRONUS_EXECUTION_KEY_FILE"]).read_bytes()
-                    if os.getenv("CHRONUS_EXECUTION_KEY_FILE") else None,
+                    custody_key=Path(key_path).read_bytes(),
                     max_concurrent=int(os.getenv("CHRONUS_EXECUTION_CONCURRENCY", "2")),
                     max_wall_seconds=float(os.getenv("CHRONUS_EXECUTION_WALL_SECONDS", "30")),
                     memory_bytes=int(os.getenv("CHRONUS_EXECUTION_MEMORY_BYTES", str(2 * 1024**3))),
