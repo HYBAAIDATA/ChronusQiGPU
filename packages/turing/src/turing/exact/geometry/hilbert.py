@@ -142,7 +142,9 @@ class SignedInvolution:
 
     def __post_init__(self):
         object.__setattr__(self, "images",
-                           MappingProxyType(dict(self.images)))
+                           MappingProxyType({
+                               src: tuple(pair) for src, pair in self.images.items()
+                           }))
         for src, (dst, sign) in self.images.items():
             if not (type(src) is int and type(dst) is int and
                     0 <= src < self.space.dimension and
