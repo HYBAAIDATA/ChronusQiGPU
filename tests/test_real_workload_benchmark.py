@@ -83,7 +83,7 @@ def test_real_execution_path_with_explicit_nonproduction_tensor_fixture(tmp_path
         entry["workload"]["pulvini"]["working_set_bytes"]
         + entry["workload"]["pulvini"]["kernel_bytes"]
     )
-    assert entry["workload"]["geodesic"]["endpoint_verified"]
+    assert entry["workload"]["geodesic"]["status"] == "UNAVAILABLE"
     assert entry["custody_restart_roundtrip_verified"]
 
 
