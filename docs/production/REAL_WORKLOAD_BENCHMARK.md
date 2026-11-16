@@ -59,3 +59,26 @@ The NumPy baseline and Chronus `PhiTensorCore` both use software NumPy; their ti
 ## Next qualification gate
 
 Obtain the actual authorized production asset manifest, run on the target machine, retain the exact commit-bound output and independent custody/signing evidence, then reconcile against production qualification gates. The absence of a local asset is **UNAVAILABLE**, never a license to report a simulated or example result.
+
+
+## Reproducible public observational data (16 November 2026)
+
+An additional accepted input classification is `PUBLIC_OBSERVED_DATASET`.
+It is **real data originally collected by independent researchers**, not
+`OPERATOR_DECLARED_PRODUCTION`, not generated fixtures and not customer
+workload evidence. The provenance must cite the source, dataset version,
+transformation and resulting file's full SHA-256.
+
+The optional `scripts/benchmarks/prepare_public_uci_data.py` command uses
+bundled copies of UCI observed datasets from `scikit-learn==1.8.0` and
+fails closed if the expected source SHA-256 differs. The produced manifest
+contains four objects: three observed numeric matrices and original bundled
+wine source bytes for an *opaque-byte preservation* test, not an operational
+state checkpoint. These public input files are smaller than default THESEUS
+source bounds. See `docs/production/PUBLIC_UCI_BENCHMARK_20261116.md` for
+actual isolated-source measurements, comparison caveats and commands.
+
+A measured PULVINI source-only result must never be labelled as full
+Chronus execution, physical acceleration, customer production data or an
+independently signed deployment report. Full `ProductionTriad` evidence
+requires running the entire maintained checkout on the named target host.
