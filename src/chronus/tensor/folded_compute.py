@@ -137,6 +137,23 @@ class FoldedTensorExecutor:
             elapsed_ns=perf_counter_ns()-t0, numerical_output_verified=True,
         )
 
+    def execute_folded_linear(self, left: VerifiedFoldedOperand,
+                              right: VerifiedFoldedOperand, *,
+                              alpha: float | complex = 1.0,
+                              beta: float | complex = 1.0) -> FoldedExecutionResult:
+        """Execute linear combination IN complete fold coordinates.
+
+        This uses the maintained PULVINI map and all residual kernels; it
+        independently materialises inputs for evidence verification. Not an
+        unmeasured GPU acceleration claim or a folded-only compression codec.
+        """
+        from chronus.pulvini.linear_arithmetic import combine_verified_folded
+
+        return combine_verified_folded(
+            left, right, alpha=alpha, beta=beta, tolerance=self.tolerance,
+            max_elements=self.max_elements,
+        )
+
     def update_window(self, base: VerifiedFoldedOperand,
                       replacement: np.ndarray, *, start: int,
                       stop: int) -> FoldedExecutionResult:
