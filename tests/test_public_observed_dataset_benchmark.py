@@ -88,3 +88,41 @@ def test_preparation_refuses_existing_destination(tmp_path):
     tmp_path.mkdir(exist_ok=True)
     with pytest.raises(ValueError, match='must not already exist'):
         _M.prepare(tmp_path)
+
+
+def test_component_runner_rejects_duplicate_public_content_under_new_names(tmp_path):
+    path = Path(__file__).resolve().parents[1] / "scripts/benchmarks/run_public_uci_components.py"
+    spec = spec_from_file_location("chronus_uci_components", path)
+    assert spec is not None and spec.loader is not None
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+    from sklearn.datasets import load_wine
+    sample = np.ascontiguousarray(load_wine().data, dtype=np.float64)
+    payload_path = tmp_path / "fake_0.npy"
+    np.save(payload_path, sample)
+    content = payload_path.read_bytes()
+    entries = []
+    for i in range(4):
+        filename = f"fake_{i}.npy"
+        (tmp_path / filename).write_bytes(content)
+        entries.append({"path": filename, "kind": "tensor",
+                        "sha256": hashlib.sha256(content).hexdigest(),
+                        "source_class": "PUBLIC_OBSERVED_DATASET"})
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(yaml.safe_dump({
+        "schema": "chronus.real-workload-manifest/1",
+        "data_sources": entries}), encoding="utf-8")
+    with pytest.raises(ValueError, match="name, digest, type"):
+        module.run(manifest)
+
+
+def test_component_runner_preserves_exact_source_mapping():
+    path = Path(__file__).resolve().parents[1] / "scripts/benchmarks/run_public_uci_components.py"
+    spec = spec_from_file_location("chronus_uci_contract", path)
+    assert spec is not None and spec.loader is not None
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert module.PINNED_INPUTS == {
+        name: (digest, "snapshot" if name.endswith(".snapshot") else "tensor")
+        for name, digest in _M.PINNED.items()
+    }
