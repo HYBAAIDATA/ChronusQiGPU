@@ -1,8 +1,10 @@
-﻿# One source of truth for capability claims. Served at /v1/capabilities and
-# enforced in CI. A claim cannot be `supported` without evidence and a reviewer.
+# Machine-readable product claim audit served at /v1/capabilities.
+# Supported claims require both evidence and a named reviewer. PR #93 adds
+# implemented capabilities but keeps them unverified until exact-current CI
+# and the applicable admission gates execute.
 version: 1
-reviewed_at: 2026-11-14
-commit: 89aa8685
+reviewed_at: 2026-11-15
+commit: PR-93-candidate
 
 claims:
   - id: nonce-encoding
@@ -43,14 +45,14 @@ claims:
     disposition: unverified
     reviewer: null
     evidence: []
-    notes: "No end-to-end measurement, no derivation committed."
+    notes: "No end-to-end current release measurement."
 
   - id: ramanujan-spectral-gap
     statement: "Spectral mass gap Delta = 229.14 with lambda_2 <= 32.0624."
     disposition: unverified
     reviewer: null
     evidence: []
-    notes: "Number stated without derivation or tolerance."
+    notes: "Number remains outside current production-admission evidence."
 
   - id: opencl-pv-parity
     statement: "OpenCL PV backend matches the exact Lucas/Fibonacci reference values."
@@ -59,7 +61,92 @@ claims:
     evidence:
       - kind: source
         ref: src/chronus/backends/opencl_pv.py
-    notes: "Sequence values only. Says nothing about hashrate."
+    notes: "Sequence values only. Says nothing about current physical throughput."
+
+  - id: triad-durable-custody
+    statement: "The PR #93 production triad contains a restart-durable local THESEUS custody implementation."
+    disposition: unverified
+    reviewer: null
+    evidence:
+      - kind: source
+        ref: src/chronus/storage/durable.py
+      - kind: test
+        ref: tests/test_triad_production.py
+    notes: "Source and tests are present; exact-current PR execution is pending because the initial Actions jobs failed before usable logs were retained."
+
+  - id: ovid-versioned-materialisation
+    statement: "OVID provides a versioned reversible representation and verified materialisation contract."
+    disposition: unverified
+    reviewer: null
+    evidence:
+      - kind: source
+        ref: src/chronus/ovid/transform.py
+      - kind: test
+        ref: tests/test_triad_production.py
+    notes: "Exact-current PR execution pending."
+
+  - id: tensor-runtime-elevated
+    statement: "The maintained Chronus tensor package includes selective resident-state reads, explicit tensor operations, deterministic scheduling, output checks, measured-input energy comparison and verified-profile routing."
+    disposition: unverified
+    reviewer: null
+    evidence:
+      - kind: source
+        ref: src/chronus/tensor/geodesic.py
+      - kind: source
+        ref: src/chronus/tensor/folded_state.py
+      - kind: test
+        ref: tests/test_geodesic_tensor_migration.py
+    notes: "Historical capability records are preserved separately; current PR execution is pending."
+
+  - id: tensor-opencl-backend
+    statement: "An explicit OpenCL GPU-only tensor backend is implemented and fails closed when a qualifying device is absent."
+    disposition: unverified
+    reviewer: null
+    evidence:
+      - kind: source
+        ref: src/chronus/tensor/opencl_backend.py
+      - kind: source
+        ref: src/chronus/kernels/tensor_ops.cl
+    notes: "No current physical GPU measurement is inferred from source presence."
+
+  - id: tensor-cuda-backend
+    statement: "An explicit CUDA tensor backend with Chronus-owned CUDA C kernels is implemented and fails closed without a qualifying device."
+    disposition: unverified
+    reviewer: null
+    evidence:
+      - kind: source
+        ref: src/chronus/tensor/cuda_backend.py
+    notes: "No current physical NVIDIA result is inferred from source presence."
+
+  - id: tensor-metal-backend
+    statement: "An explicit Apple Metal tensor backend is implemented through MLX and fails closed without a qualifying device."
+    disposition: unverified
+    reviewer: null
+    evidence:
+      - kind: source
+        ref: src/chronus/tensor/metal_backend.py
+    notes: "No current physical Apple GPU result is inferred from source presence."
+
+  - id: external-key-custody
+    statement: "Customer-held external KMS/HSM custody is production-admitted."
+    disposition: unverified
+    reviewer: null
+    evidence: []
+    notes: "Provider interfaces do not satisfy FN-CUSTODY; actual provider operation and attested evidence are required."
+
+  - id: multi-region-durability
+    statement: "THESEUS is production-admitted for multi-region failover and declared RTO/RPO."
+    disposition: unverified
+    reviewer: null
+    evidence: []
+    notes: "PR #93 establishes durable local custody, not geo-replication."
+
+  - id: production-admission
+    statement: "The PR #93 candidate is production-admitted."
+    disposition: unverified
+    reviewer: null
+    evidence: []
+    notes: "Requires exact-current CI, verified artifact attestation and every mandatory product gate PASS."
 
   - id: quantum-advantage
     statement: "Demonstrated quantum advantage."
@@ -68,12 +155,18 @@ claims:
     evidence: []
 
 blockers:
-  - id: reference-workloads
-    description: "Customer workload and reference target deployments"
+  - id: exact-current-ci
+    description: "PR #93 exact-current CI must execute with retained usable logs/artifacts."
     status: open
-  - id: independent-pentest
-    description: "Control owners and independent penetration assessment"
+  - id: product-gate-attestation
+    description: "Mandatory product-gate artifact must be attested for the exact release candidate."
     status: open
-  - id: evidence-signing
-    description: "Conformant evidence signing and customer-reference claims"
+  - id: external-custody
+    description: "External customer-held custody requires a real provider execution for profiles that advertise it."
+    status: open
+  - id: physical-device-evidence
+    description: "Physical backend performance requires current device-bound evidence for each advertised accelerator route."
+    status: open
+  - id: deployment-profile-evidence
+    description: "HA, replication, RTO/RPO and external accreditation remain profile-specific evidence gates."
     status: open

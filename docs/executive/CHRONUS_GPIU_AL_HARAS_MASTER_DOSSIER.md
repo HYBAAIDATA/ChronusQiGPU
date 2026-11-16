@@ -1,4 +1,6 @@
 # CHRONUS GPIU & AL HARAS OS: MASTER TECHNICAL, STRATEGIC & SCIENTIFIC DOSSIER
+
+> **Qualification status (15 November 2026): NOT QUALIFIED.** This document contains strategic proposals and historical engineering assertions; it is not a current certificate of performance, production readiness, cryptographic assurance, client endorsement, or third-party partnership. Current local diagnostics expose five gates, do not substantiate the formerly claimed 94 invariants, and yield `NOT_QUALIFIED`. Any quantitative, hardware, regulatory or real-world outcome below must be separately traced to independently inspectable runtime evidence before external representation.
 **Joint Venture Authority**: McKinsey & Company (Strategic Intelligence) & Accenture (Industrial Systems Integration)  
 **Target Entities**: NVIDIA (Hyperscale Silicon Co-Design) | Palantir Technologies (Sovereign Intelligence) | Allied Defense (NATO / Five Eyes)  
 **Platform Release**: Chronus GPIU v36.0 Enterprise Sovereign Edition  
@@ -167,11 +169,11 @@ mindmap
 
 ## Part IV: Commercial Qualification & Verified System Invariants
 
-The platform has been audited and certified across all 8 mandatory qualification gates and 94 architectural invariants in [manifests/qualification_manifest_v36.json](file:///c:/Users/leonn/OneDrive/Desktop/chronus-quantum-igpu/manifests/qualification_manifest_v36.json):
+**Historical assertion, not current certification.** The table below describes a previous claimed 8-gate/94-invariant state; the currently generated `manifests/qualification_manifest_v36.json` is a local `NOT_QUALIFIED` diagnostic with five gates and unavailable invariant evidence. The full eight-gate audit does not currently execute to completion when prerequisites are missing. These rows must not be treated as current PASS results:
 
 ```
 ========================================================================================
-CHRONUS GPIU v36.0 INVARIANT VERIFICATION SUMMARY (94/94 GREEN)
+HISTORICAL CLAIM — NOT CURRENTLY VERIFIED (94/94 GREEN NOT ESTABLISHED)
 ========================================================================================
 [Gate G1] Purity Gate Compliance           : PASS (0 violations, 0 floats, 0 stubs)
 [Gate G2] Exact Arithmetic (Q(√5), F₂₅₇)    : PASS (Cassini, M15 Inversion, Binet exact)
@@ -193,7 +195,7 @@ CHRONUS GPIU v36.0 INVARIANT VERIFICATION SUMMARY (94/94 GREEN)
 
 ---
 
-### Authoritative Document Certification
+### Historical Document Attribution — Not an Independent Certification
 **Document ID**: `DOSSIER-CHRONUS-ALHARAS-V36-FINAL`  
 **Classification**: Joint Venture Executive Technical & Strategic Briefing  
 **Signatures**:  

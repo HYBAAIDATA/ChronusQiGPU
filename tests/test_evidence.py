@@ -1,5 +1,4 @@
 import json
-import xml.etree.ElementTree as ET
 from scripts.ci.build_evidence import build
 
 def test_skipped_test_is_unqualified(tmp_path):

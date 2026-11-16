@@ -18,7 +18,7 @@ class CUDABackendAdapter:
     execution_mode = "PHYSICAL_HARDWARE_EXECUTION"
     runtime_classification = "PHYSICAL_HARDWARE_EXECUTION"
     supported_workloads = frozenset(
-        {"PV_LATTICE_FOLD", "SHA256D_NONCE_SEARCH", "LUCAS_PV_SCALING"}
+        {"PV_LATTICE_FOLD", "SHA256D_NONCE_SEARCH", "LUCAS_PV_SCALING", "scaling.v1"}
     )
 
     def __init__(

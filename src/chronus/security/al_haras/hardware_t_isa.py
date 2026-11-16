@@ -125,7 +125,7 @@ RTL_SEMANTICS: Dict[int, Dict[str, Any]] = {
     0x02: {"matches_model": True, "rtl": "product mod Phi_5(x), 32-bit wrap"},
     0x03: {"matches_model": True, "rtl": "exception 4'hE iff rs1 != rs2; response carries the squared residual mod 2^64"},
     0x04: {"matches_model": False, "rtl": "register move rd <= rs2; no parity and no error correction"},
-    0x05: {"matches_model": False, "rtl": "returns the constant 1; evaluates nothing"},
+    0x05: {"matches_model": False, "rtl": "unsupported; illegal-instruction trap 4\'h2, no evaluation"},
     0x06: {"matches_model": True, "rtl": "exception 4'hC iff a0 < 0; rd <= 1 or 0"},
     0x07: {"matches_model": True, "rtl": "rd <= (a0, a1, 0, 0)"},
     0x08: {"matches_model": False, "rtl": "cat map on the two low bytes of a0 only, results truncated to 8 bits"},

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 from typing import Iterable
 
@@ -64,7 +63,7 @@ class LinearOperator:
         ))
 
     def compose(self, right: "LinearOperator") -> "LinearOperator":
-        """Return ``self @ right`` (apply ``right`` first)."""
+        """Return `self @ right` (apply `right` first)."""
         if not isinstance(right, LinearOperator):
             raise TypeError("right must be a LinearOperator")
         if self.dimension != right.dimension:
@@ -101,6 +100,6 @@ class LinearOperator:
         )
 
     def expectation_value(self, state: QuantumState) -> complex:
-        """Return ``<state|A|state>``; callers should use Hermitian A for observables."""
+        """Return `<state|A|state>`; callers should use Hermitian A for observables."""
         result = self.apply_amplitudes(state.amplitudes)
         return sum(a.conjugate() * b for a, b in zip(state.amplitudes, result))

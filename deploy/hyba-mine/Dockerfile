@@ -2,7 +2,7 @@
 # HYBA Mine image: the documented miner image (the repository Dockerfile, target
 # miner-runtime) plus the CPU OpenCL runtime for the iGPU lanes, the hyba_mine
 # package (lanes, search, two-block campaign), the runner, the built-in self-test
-# and the miner's tests. Built by .github/workflows/hyba-mine.yml.
+# and the miner's tests. This optional campaign image is built manually.
 ARG BASE_IMAGE=hyba-mine-base
 FROM ${BASE_IMAGE}
 USER root

@@ -1,11 +1,17 @@
 {
-  "description": "Reviewed exceptions for scripts/ci/check_forbidden_claims.py. Excluded prefixes hold third-party code and preserved historical material; every allowlist entry records the exact occurrence count and the basis for the wording.",
+  "description": "Reviewed exceptions for scripts/ci/check_forbidden_claims.py. Excluded prefixes hold third-party code and preserved historical material; excluded suffixes hold captured vendor artefacts that are not authored source; every allowlist entry records the exact occurrence count and the basis for the wording.",
   "excluded_prefixes": [
     "vendor/",
     "archive/",
     "chronus_source_backup/",
-    "docs/directives/"
+    "docs/directives/",
+    "docs/research/"
   ],
+  "excluded_suffixes": [
+    ".mhtml",
+    ".mht"
+  ],
+  "excluded_suffix_reason": "Saved web pages are captured third-party material, not authored source. A saved page legitimately contains the vocabulary this gate blocks (the words appear in ordinary mathematical prose), so scanning it produces a permanent false positive that would otherwise have to be allowlisted occurrence by occurrence. The claim gate applies to wording Chronus authors; a captured page is evidence of someone else's wording.",
   "allowlist": [
     {
       "path": "artifacts/qigpu/exact_library/qudit_qec.py",

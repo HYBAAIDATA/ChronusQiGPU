@@ -1,0 +1,1 @@
+{"payload": {"kid": null, "records": [{"key": "alpha", "value": {"value": 1}, "coordinates": [3.292555228250726, 9.442408594681698], "fingerprint": 24785340632307093631994020, "timestamp": "2026-11-14T22:09:01.948897+00:00"}], "wal_hashes": {"wal_000001.jsonl": "96438bfcbb6d437aca954c75c7f273291a7552e0c0d6ca97a1fd348fe1243cad"}}, "sigs": []}

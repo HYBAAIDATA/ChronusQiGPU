@@ -1,0 +1,81 @@
+{
+  "schema": "hyba.chronus.deployment-profiles/v1",
+  "base_profile": "software-base",
+  "profiles": {
+    "software-base": {
+      "release_eligible": true,
+      "description": "Distributable Chronus software with CHRONUS execution, OVID versioned transforms and THESEUS durable local custody.",
+      "required_product_gates": [
+        "CO-SIGN",
+        "RS-RECEIPT",
+        "RS-REPLAY",
+        "FN-CLAIMS",
+        "FN-CUSTODY"
+      ],
+      "custody": {
+        "authority": "THESEUS",
+        "minimum_scope": "restart-durable local custody with verified journal continuity",
+        "external_customer_key_custody_required": false,
+        "multi_region_required": false
+      },
+      "physical_accelerator_measurement_required": false,
+      "external_accreditation_required": false
+    },
+    "enterprise": {
+      "release_eligible": false,
+      "description": "Environment-qualified enterprise deployment layered on the software-base release.",
+      "inherits": [
+        "software-base"
+      ],
+      "required_additional_evidence": [
+        "real provider/connectivity execution for advertised connectors",
+        "external customer-held custody when advertised",
+        "tenant isolation and operational acceptance in target environment",
+        "declared continuity/failover objectives"
+      ],
+      "custody": {
+        "authority": "THESEUS",
+        "external_customer_key_custody_required": true,
+        "multi_region_required": "per contract"
+      }
+    },
+    "sovereign": {
+      "release_eligible": false,
+      "description": "Environment-qualified sovereign or isolated deployment layered on the software-base release.",
+      "inherits": [
+        "software-base"
+      ],
+      "required_additional_evidence": [
+        "customer-held external custody",
+        "offline/air-gapped deployment validation where required",
+        "data residency and no-unapproved-egress controls",
+        "operator-specific security/accreditation acceptance"
+      ],
+      "custody": {
+        "authority": "THESEUS",
+        "external_customer_key_custody_required": true,
+        "multi_region_required": "per sovereign profile"
+      }
+    },
+    "hyperscaler": {
+      "release_eligible": false,
+      "description": "Environment-qualified large-scale fleet/data deployment layered on the software-base release.",
+      "inherits": [
+        "software-base"
+      ],
+      "required_additional_evidence": [
+        "real multi-host fleet execution",
+        "provider connector execution",
+        "capacity/throughput/latency measurements on named infrastructure",
+        "failure/recovery and continuity evidence"
+      ],
+      "custody": {
+        "authority": "THESEUS",
+        "external_customer_key_custody_required": "when advertised",
+        "multi_region_required": "when advertised"
+      },
+      "physical_accelerator_measurement_required": "for every advertised physical backend/performance claim"
+    }
+  },
+  "rule": "A software-base release never promotes deployment-profile claims. Deployment profiles require separate environment-bound evidence and acceptance."
+}
