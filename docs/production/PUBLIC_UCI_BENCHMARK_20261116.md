@@ -160,3 +160,45 @@ This component runner is deliberately separate from
 `benchmarks/real_workload_benchmark.py` (which additionally exercises the
 full OVID–THESEUS persistent custody path). Do not add their timings
 or compare unrelated operations to produce an artificial speedup.
+
+
+## Matched verified useful-work execution — 16 November 2026
+
+This section records a **new executed benchmark**, not the illustrative 13×
+numbers from the earlier v10 proposal. The maintained
+`scripts/benchmarks/run_public_uci_components.py` was elevated to measure
+**identical useful work** on the same SHA-256-pinned public observational
+tensors, alternating the run order with two warmups and 13 timed pairs.
+The reference performs direct NumPy `x+x`. The candidate performs the
+maintained PULVINI V3 **fold + built-in verification + explicit verified unfold**,
+then `PhiTensorCore.execute("add", reconstructed, reconstructed)`. All
+candidate overhead is included. Each output is independently checked with
+`rtol=atol=1e-12`; this is numerical tolerance, not bitwise equivalence.
+
+| Observed UCI tensor | Direct NumPy median | Verified fold+unfold+Chronus addition median | Measured direct/candidate speedup | 13× target |
+| --- | ---: | ---: | ---: | --- |
+| Digits (1797×64) | 26.630 µs | 3.944791 ms | 0.006751× | NOT MET |
+| Wine (178×13) | 1.212 µs | 0.262568 ms | 0.004616× | NOT MET |
+| Breast cancer (569×30) | 4.537 µs | 0.796478 ms | 0.005696× | NOT MET |
+
+**Execution environment:** isolated Linux CPU worker,
+Python 3.13.5, NumPy 2.3.5, externally observed UCI datasets redistributed
+by scikit-learn 1.8.0. The source-extracted maintained modules were bound by
+their Git blob SHA-1. This run did **not** contain a full current-commit
+checkout, deployed Chronus/Triad, physical accelerator, production tensor
+or sovereign signing authority. The observed ratio is **not** a "13× fold
+ratio", a quantum advantage metric, or proof of constant-time complexity.
+
+Raw 13-pair timing arrays and the source fingerprints are preserved in
+`evidence/benchmarks/public-uci-matched-work-20261116.json`.
+The local full report has SHA-256
+`f78ceaaefebb8529db5bd18e864c1e4265bd77a207de6d233600e5262a31fb1f`.
+The code integration has contract tests in
+`tests/test_public_observed_dataset_benchmark.py`.
+A full checkout run of `benchmarks/real_workload_benchmark.py` with
+real authorized customer/operational tensors and THESEUS custody is still
+**UNVERIFIED**, not a reason to substitute these public results.
+
+Rerun the maintained public input preparation and component runner with
+`--output` pointing to a fresh path. This preserves the original evidence
+and performs a new measurement on that machine; timing values will vary.

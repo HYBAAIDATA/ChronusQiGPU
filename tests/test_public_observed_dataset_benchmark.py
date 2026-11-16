@@ -141,3 +141,39 @@ def test_component_runner_rejects_content_modified_under_pinned_name(tmp_path):
     original.write_bytes(payload[:-1] + bytes((payload[-1] ^ 1,)))
     with pytest.raises(ValueError, match="input SHA-256 mismatch"):
         module.run(directory / "manifest.yaml")
+
+
+# Measured real-public-input paired workload; no synthetic timing evidence.
+def test_real_observed_wine_paired_verified_useful_work(inputs):
+    from importlib.util import module_from_spec, spec_from_file_location
+    script = Path(__file__).resolve().parents[1] / "scripts/benchmarks/run_public_uci_components.py"
+    spec = spec_from_file_location("chronus_public_paired_runner", script)
+    assert spec is not None and spec.loader is not None
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+    root, _ = inputs
+    path = root / "uci_wine.npy"
+    record = module._measure_source(path, _M.PINNED[path.name], "tensor", depth=4)
+    m = record["matched_useful_work"]
+    assert m["measured_pairs"] == 13
+    assert m["direct_add_ns"]["count"] == m["fold_unfold_add_ns"]["count"] == 13
+    assert m["same_result_within_tolerance"] is True
+    assert m["fold_and_verification_in_timed_candidate"] is True
+    assert m["candidate_backend"] == "numpy-reference"
+    assert m["physical_or_quantum_advantage_claimed"] is False
+    assert m["production_qualification"] == "UNVERIFIED"
+    assert m["observed_speedup_direct_over_folded"] > 0
+
+
+@pytest.mark.parametrize("repetitions,warmup", [(2, 0), (202, 0), (13, -1), (13, 21)])
+def test_paired_benchmark_rejects_invalid_sample_policy(repetitions, warmup):
+    from importlib.util import module_from_spec, spec_from_file_location
+    script = Path(__file__).resolve().parents[1] / "scripts/benchmarks/run_public_uci_components.py"
+    spec = spec_from_file_location("chronus_public_paired_policy", script)
+    assert spec is not None and spec.loader is not None
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+    with pytest.raises(ValueError):
+        module._paired_verified_work(np.ones((2, 2), dtype=np.float64),
+                                   PhiTensorCore(), depth=4,
+                                   repetitions=repetitions, warmup=warmup)
