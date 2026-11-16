@@ -87,8 +87,12 @@ class LaneSearchMixin:
         searched = 0
         for low, high in windows:
             hits.extend(self.lanes.search(header, low, high, share_target))
+            requested = high - low
             span_done = getattr(self.lanes, "last_span", None)
-            searched += (high - low) if span_done is None else span_done
+            done = requested if span_done is None else span_done
+            searched += done
+            if done < requested:
+                break
         elapsed = time.perf_counter_ns() - started
         if searched <= 0:
             self._hash_throttled = True

@@ -197,6 +197,24 @@ class SearchTests(unittest.TestCase):
         self.assertEqual(engine._nonce_cursors[0], 10)
         self.assertFalse(engine._hash_throttled)
 
+    def test_a_partial_grant_does_not_jump_the_wrap(self):
+        class Partial(ReferenceLanes):
+            def search(self, header80, start, stop, target):
+                granted = min(100, stop - start)
+                self.last_span = granted
+                self.calls.append((start, start + granted))
+                return []
+
+        lanes = Partial()
+        engine = Engine(lanes, span=4096, shards=1)
+        engine.window = 3000
+        engine._nonce_cursors[0] = 3000
+        engine._lane_search(job(870000), hashlib.sha256(b"r").digest(), "00000000", 0)
+        self.assertEqual(lanes.calls, [(3000, 3100)])
+        self.assertEqual(engine.hashes_computed, 100)
+        self.assertEqual(engine._nonce_cursors[0], 3100)
+        self.assertFalse(engine._nonce_space_exhausted)
+
     def test_a_zero_grant_does_not_skip_unsearched_nonces(self):
         class Blocked(ReferenceLanes):
             def search(self, header80, start, stop, target):
