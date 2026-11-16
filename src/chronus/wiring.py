@@ -14,6 +14,7 @@ import logging
 import os
 import re
 import shutil
+import stat
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -306,59 +307,87 @@ def toposort_wired(graph: Dict[Path, List[Path]]) -> List[Path]:
 
 
 # PART_2_MARKER
+def _bundle_file_matches(output_dir: Path, rel_path: Path, entry: FileEntry) -> bool:
+    """Hash a regular output file through no-follow directory/file descriptors.
+
+    Reuse must not trust aliases or symlinked ancestors, even when their bytes
+    currently happen to match. The opened descriptor remains bound to the file
+    being verified rather than following a mutable path during hashing.
+    """
+    if rel_path.is_absolute() or not rel_path.parts or ".." in rel_path.parts:
+        return False
+    flags = os.O_RDONLY | os.O_NOFOLLOW
+    try:
+        dir_fd = os.open(output_dir, flags | os.O_DIRECTORY)
+    except (OSError, ValueError):
+        return False
+    try:
+        for part in rel_path.parts[:-1]:
+            child_fd = os.open(part, flags | os.O_DIRECTORY, dir_fd=dir_fd)
+            os.close(dir_fd)
+            dir_fd = child_fd
+        leaf_fd = os.open(rel_path.name, flags | os.O_NONBLOCK, dir_fd=dir_fd)
+        try:
+            metadata = os.fstat(leaf_fd)
+            if not stat.S_ISREG(metadata.st_mode) or metadata.st_size != entry.size:
+                return False
+            digest = hashlib.sha256()
+            while True:
+                chunk = os.read(leaf_fd, 1024 * 1024)
+                if not chunk:
+                    break
+                digest.update(chunk)
+            return digest.hexdigest() == entry.sha256
+        finally:
+            os.close(leaf_fd)
+    except (OSError, ValueError, RuntimeError):
+        return False
+    finally:
+        os.close(dir_fd)
+
+
 def _already_wired(entries: List[FileEntry], output_dir: Path) -> Tuple[List[FileEntry], List[FileEntry]]:
-    """Return (already_wired, new) files whose hashes match the output bundle."""
-    wired: List[FileEntry] = []
-    if output_dir.is_dir():
+    """Return only source-identical files already present in the sealed output bundle.
+
+    The manifest is untrusted metadata. The source digest, source size and the
+    actual regular destination bytes must all agree; no symlink aliases pass.
+    """
+    current = {e.rel_path: e for e in entries}
+    wired_set: Set[Path] = set()
+    if output_dir.is_dir() and not output_dir.is_symlink():
         for manifest_file in output_dir.glob("__wiring_manifest.json"):
+            if manifest_file.is_symlink():
+                continue
             try:
                 data = json.loads(manifest_file.read_text(encoding="utf-8"))
-            except Exception:
+                if not isinstance(data, dict):
+                    continue
+                records = data.get("files") or {}
+                if not isinstance(records, dict):
+                    continue
+            except (OSError, ValueError, TypeError):
                 continue
-            files = data.get("files") or {}
-            for rel, rec in files.items():
-                target = output_dir / rel
-                try:
-                    if target.is_file() and target.stat().st_size == int(rec.get("size", -1)) \
-                            and _hash_file(target) == rec.get("sha256"):
-                        wired.append(next((e for e in entries if e.rel_path == Path(rel)), None))
-                except Exception:
-                    pass
-    wired_set = {e.rel_path for e in wired if e}
-    result: List[FileEntry] = []
-    for e in entries:
-        if e.rel_path in wired_set:
-            result.append(e)
-        else:
-            result.append(e)  # placeholder; new gets filtered below
-    new = [e for e in entries if e.rel_path not in wired_set]
-    return list(wired_set and wired), new
+            for rel, rec in records.items():
+                if not isinstance(rel, str) or not isinstance(rec, dict):
+                    continue
+                rel_path = Path(rel)
+                if rel_path.is_absolute() or not rel_path.parts or ".." in rel_path.parts:
+                    continue
+                entry = current.get(rel_path)
+                if entry is None or entry.size != rec.get("size") or entry.sha256 != rec.get("sha256"):
+                    continue
+                if _bundle_file_matches(output_dir, rel_path, entry):
+                    wired_set.add(rel_path)
+    return (
+        [e for e in entries if e.rel_path in wired_set],
+        [e for e in entries if e.rel_path not in wired_set],
+    )
 
 
 def build_wiring_plan(file_entries: Iterable[FileEntry], output_dir: Path) -> WiringPlan:
     """Split discovered files into already-wired, canonical, and duplicate groups."""
     entries = list(file_entries)
-    # Resolve already-wired entries properly (recompute full list, not subset).
-    already_set = set()
-    current = {e.rel_path: e for e in entries}
-    if output_dir.is_dir():
-        for mf in output_dir.glob("__wiring_manifest.json"):
-            try:
-                data = json.loads(mf.read_text(encoding="utf-8"))
-            except Exception:
-                continue
-            for rel, rec in (data.get("files") or {}).items():
-                target = output_dir / rel
-                try:
-                    entry = current.get(Path(rel))
-                    if entry and entry.size == rec.get("size") and entry.sha256 == rec.get("sha256") \
-                            and _is_within(target.resolve(), output_dir.resolve()) \
-                            and target.is_file() and target.stat().st_size == entry.size \
-                            and _hash_file(target) == entry.sha256:
-                        already_set.add(Path(rel))
-                except Exception:
-                    pass
-    already: List[FileEntry] = [e for e in entries if e.rel_path in already_set]
+    already, _ = _already_wired(entries, output_dir)
 
     by_hash: Dict[str, List[FileEntry]] = {}
     for e in entries:

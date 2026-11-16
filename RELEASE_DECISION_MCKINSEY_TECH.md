@@ -1,28 +1,52 @@
-# Chronus release decision
+# Chronus release decision — PR #93 close-out candidate
 
-**Status: NOT QUALIFIED. Any prior “GO,” “PRODUCTION_QUALIFIED,” or equivalent release decision is withdrawn.**
+**Decision:** **EVIDENCE-GATED CANDIDATE — NOT YET PRODUCTION-ADMITTED**
 
-Review date: 2026-11-08  
-Source reviewed: `a2768d11847de113d26535e33cfe9d4a79a009db` on `main`  
-Review type: static source and documentation review; tests and deployments were not run.
+Review date: 15 November 2026  
+Candidate branch: `closeout/triad-production-posture-20261115`  
+Pull request: #93
 
-## Decision basis
+## What is closed in source
 
-The repository contains a CPU reference implementation, service code, experimental adapters, and demo/simulated flows. This review did not establish a release-gate suite with current passing evidence, a production deployment, independent security assessment, physical accelerator results, regulatory authorization, or customer acceptance. Critical security labels in older documentation overstate the source: ML-DSA is not conformant, STARK/FRI soundness is not established, and KMS/HSM abstractions do not demonstrate real remote key custody. See the [claim-by-claim audit](docs/claim-audit.md).
+PR #93 closes the principal source/documentation gaps required for the maintained CHRONUS–OVID–THESEUS triad:
 
-| Gate | Current disposition |
-|---|---|
-| Reproducible release tests tied to this commit | Not demonstrated; not run in this review |
-| Cryptographic conformance and independent security review | Not met / not demonstrated |
-| Real KMS/HSM integration and key-custody evidence | Not demonstrated |
-| Production deployment, reliability, and tenant isolation | Not demonstrated |
-| Physical accelerator correctness and benchmark evidence | Not demonstrated |
-| Compliance authorization/certification | Not demonstrated |
-| Customer acceptance and operational support | Not demonstrated |
-| Frontend build and live data integration | Not verified; apparent unresolved API-client import requires checking |
+- restart-durable THESEUS custody and continuity;
+- versioned OVID transform/materialisation;
+- triad restart/reconstruction composition;
+- migrated tensor capability surface under maintained Chronus namespaces;
+- explicit fail-closed OpenCL, CUDA and Metal tensor backends;
+- historical test/benchmark migration registers;
+- removal of self-certifying release paths;
+- exact-commit, attested product-gate admission contract;
+- current production documentation and claim boundaries.
 
-## Restrictions
+## What controls admission
 
-Do not describe Chronus as production-qualified, certified, FIPS-compliant, independently audited, customer-deployed, or performance-validated. Do not reuse historical test counts, tenant counts, pricing, savings, valuations, or benchmark numbers as current evidence. Do not imply a McKinsey/Accenture affiliation or joint venture.
+Production admission is not a boolean embedded in source. It requires:
+1. exact release SHA;
+2. successful current CI for the declared software scope;
+3. verified artifact attestation;
+4. all mandatory product gates PASS;
+5. device/deployment evidence for each advertised physical or operational capability.
 
-A future release decision requires a defined acceptance plan, verified current CI and build outputs, security and cryptographic review, real infrastructure and hardware evidence where applicable, documented operational controls, and approval by accountable owners. No gate is inferred as passed from the existence of source code or a workflow definition.
+## Current CI state
+
+The initial PR #93 Actions/CodeQL runs terminated across unrelated jobs before usable job logs were available. GitHub's job-log endpoint returns Azure `BlobNotFound` for sampled jobs. The breadth and timing are consistent with runner/artifact infrastructure failure rather than a meaningful product verdict.
+
+Therefore:
+- no red run is being relabelled as a code failure without step evidence;
+- no green result is being inferred;
+- the candidate remains evidence gated until an exact-current run can execute.
+
+## Product-specific open environment gates
+
+These do not invalidate implemented source, but they cannot be manufactured in repository CI:
+- current physical accelerator performance on the target device;
+- real customer-held external key custody;
+- multi-region replication/failover and declared RTO/RPO;
+- customer/environment acceptance where contractually required;
+- external accreditation or certification where claimed.
+
+## Merge rule
+
+Merge only when the software/repository checks for the exact PR candidate are successfully executed or an equivalent retained exact-current execution record is reviewed. After merge, production admission remains profile-specific and gate-controlled; a merge is not itself an external deployment or hardware certificate.

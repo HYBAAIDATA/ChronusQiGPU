@@ -112,7 +112,7 @@ def load_env_config() -> Tuple[str, PoolEndpoint, str, str]:
 
     scheme, separator, bare_host = host_raw.partition("://")
     if not separator:
-        scheme = "stratum+tcp"
+        scheme, bare_host = "stratum+tcp", host_raw
     # Only bolt the port on when the host does not already carry one.
     if port_raw and ":" not in bare_host.rsplit("]", 1)[-1]:
         bare_host = f"{bare_host}:{port_raw}"

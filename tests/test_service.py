@@ -200,7 +200,10 @@ class TestServiceAPI:
         assert body["status"] == "COMPLETED"
         assert body["result"]["backend"] == "python-math-reference"
         assert body["result"]["execution_state"] == "EXECUTED"
-        assert body["result"]["result"]["lucas"] == "123"
+        assert body["result"]["result"]["family"] == "scaling.v1"
+        assert body["result"]["result"]["sequence_value"] == "123"
+        assert "lucas" not in body["result"]["result"]
+        assert "fibonacci" not in body["result"]["result"]
         auth_service.register_tenant("other-service-test", "other-service-test-token")
         denied = self.client.get(
             f"/workloads/{body['workload_id']}",
@@ -301,7 +304,7 @@ class TestServiceAPI:
         assert response.status_code == 200
         body = response.json()
         assert body["usage"]["workloads_completed"] >= 1
-        assert "LUCAS_PV_SCALING" in body["usage"]["by_type"]
+        assert "scaling.v1" in body["usage"]["by_type"]
         from chronus.service.routers.verify import _ed25519_signer
         assert _ed25519_signer.verify(body["digest"].encode("ascii"), body["signature"])
         unauthenticated = self.client.get("/billing/usage")

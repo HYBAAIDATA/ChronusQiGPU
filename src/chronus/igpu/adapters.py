@@ -11,20 +11,16 @@ This module implements:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from chronus.core.enums import (
     AdapterBackend,
     AdapterRole,
     AdapterStatus,
     EvidenceClass,
-    CapacityLabel,
     TrustClass,
     MemoryTier,
 )
-from chronus.core.dataclasses import CapabilityManifest, EffectiveCapacity
-from chronus.core.constants import LUCAS_LADDER_RUNGS
-
+from chronus.core.dataclasses import CapabilityManifest
 from .abi import AdapterRole as RoleEnum
 
 __all__ = ["ADAPTER_TABLE", "TypedUnavailableAdapter", "promote_adapter"]
@@ -104,6 +100,7 @@ ADAPTER_TABLE: tuple[AdapterSpec, ...] = (
         trust_class=TrustClass.TYPED_UNAVAILABLE,
     ),
 )
+
 
 # ---------------------------------------------------------------------------
 # Tier 6.2 - TypedUnavailableAdapter (Axiom 7: complete fallback)
@@ -196,15 +193,15 @@ def promote_adapter(backend: AdapterBackend, kernel: dict) -> bool:
         elevation_preflight(action)
         return False
 
-    # Axiom 6: record evidence digest chain
+    # Axiom 6: derive the evidence digest chain before reporting eligibility.
     from chronus.core.dataclasses import EvidenceRecord
 
-    evidence = EvidenceRecord(
+    _evidence = EvidenceRecord(
         layer=str(backend),
         item_id=backend.value,
         input_digest="kernel_manifest",
         config_digest=conformance.digest_chain,
         output_digest="conformance_passed",
         trust_class=TrustClass.RUNTIME_SIGNED,
-    )
+    ).digest_chain()
     return True

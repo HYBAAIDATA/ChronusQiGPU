@@ -101,6 +101,9 @@ chronus_complete_system_master_v36 (1)/
 data/
 *.sqlite3
 
+# Generated Stratum smoke transcripts (schema chronus.smoke/1)
+evidence/smoke/*.json
+
 .next/
 frontend/.next/
 .pytest_tmp/

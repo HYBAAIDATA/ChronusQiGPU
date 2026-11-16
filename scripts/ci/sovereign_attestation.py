@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-Sovereign Capability Attestation & Proof of Execution Generator.
-Designed for DIFC (Dubai International Financial Centre) Regulatory Compliance,
-Sovereign Wealth Funds, and Institutional Due Diligence.
+Software capability evidence generator.
 
-Produces a cryptographically signed, zero-knowledge capability dossier:
+This executable produces repository-local evidence only. It does not issue a
+regulatory attestation, accreditation, customer acceptance, or external certification.
+
+The evidence run covers six maintained capability groups:
 - Validates the 6 Core Sovereign Architectural Pillars:
   1. AL HARAS (exact sheaf coboundary, Reed-Solomon repair, Paley/Ramanujan spectrum, braid relations, Hasse-bound fingerprint)
   2. THESEUS (Phyllotaxis Zero-Collision Address Space) & OVID (Verifiable Storage Custody)
@@ -12,11 +13,10 @@ Produces a cryptographically signed, zero-knowledge capability dossier:
   4. LEGACY "MILLENNIUM" MODULES (exact Ollivier-Ricci curvature, Hodge split, p-adic address sets, zeroisation)
   5. TOE / TUQC (Substrate-Agnostic Universal Quantum Substrate & F_257 StateEvolution)
   6. PACKAGE INVENTORY (Distribution Packages for AL HARAS, Theseus, Ovid, Chronus, Millennium, TOE)
-- Generates SOVEREIGN_CAPABILITY_ATTESTATION.json with HMAC-SHA256 and SHA-256 state anchors.
+- Retains the legacy SOVEREIGN_CAPABILITY_ATTESTATION.json filename, with an explicit non-certification notice and SHA-256 content integrity.
 """
 
 import hashlib
-import hmac
 import json
 import os
 import sys
@@ -31,7 +31,7 @@ if SRC_DIR not in sys.path:
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
-ATTESTATION_SECRET_KEY = b"DIFC_SOVEREIGN_CHRONUS_ATTESTATION_AUTHORITY_KEY_v36"
+EVIDENCE_DOMAIN = b"CHRONUS_SOFTWARE_EVIDENCE_V2\\0"
 
 
 def verify_al_haras_pillar() -> Dict[str, Any]:
@@ -99,7 +99,7 @@ def verify_al_haras_pillar() -> Dict[str, Any]:
     all_invariants_pass = consistent_ok and disagreement_ok and repair_ok and gap_ok and braid_ok and hasse_ok
 
     return {
-        "status": "QUALIFIED" if all_invariants_pass else "INVARIANT_FAILED",
+        "status": "PASS" if all_invariants_pass else "INVARIANT_FAILED",
         "latency_us": round(latency_us, 2),
         "invariants": {
             "sheaf_global_section_exact": consistent_ok,
@@ -121,32 +121,33 @@ def verify_al_haras_pillar() -> Dict[str, Any]:
 
 def verify_theseus_ovid_pillar() -> Dict[str, Any]:
     """Pillar 2: THESEUS & OVID Immutable Storage & Verifiable Data Custody."""
-    from chronus.storage.theseus import TheseusService
-    from chronus.security.ovid import OVIDStorage
+    import tempfile
+    from chronus.triad import ProductionTriad
 
     t0 = time.perf_counter_ns()
-    ovid = OVIDStorage()
-    theseus = TheseusService(ovid=ovid)
-
     key = b"DIFC_SOVEREIGN_PROOF_PAYLOAD_2026"
-    record = theseus.store(tenant_id="difc_sovereign", payload=key)
-    retrieved = theseus.reconstruct(tenant_id="difc_sovereign", object_id=record.object_id)
-
-    # OVID pointer verification
-    ovid_object_id = ovid.store(key)
-    ovid_retrieved = ovid.retrieve(ovid_object_id)
+    with tempfile.TemporaryDirectory() as directory:
+        path = os.path.join(directory, "triad.sqlite3")
+        triad = ProductionTriad(path)
+        receipt = triad.put("difc_sovereign", key)
+        first = triad.materialise(receipt)
+        reopened = ProductionTriad(path)
+        second = reopened.materialise(receipt)
+        continuity = reopened.theseus.verify_journal_continuity("difc_sovereign")
+        durable = reopened.theseus.stats()["durable"]
 
     latency_us = (time.perf_counter_ns() - t0) / 1000.0
-    storage_ok = (retrieved == key) and (ovid_retrieved == key)
+    storage_ok = first == key and second == key and continuity and durable
 
     return {
-        "status": "QUALIFIED" if storage_ok else "STORAGE_MISMATCH",
+        "status": "PASS" if storage_ok else "STORAGE_MISMATCH",
         "latency_us": round(latency_us, 2),
         "invariants": {
-            "theseus_lossless_roundtrip": retrieved == key,
-            "ovid_content_addressed_retrieval": ovid_retrieved == key,
-            "phyllotaxis_coordinate_assigned": record.coordinate is not None,
-            "zero_collision_addressing": True,
+            "theseus_lossless_roundtrip": first == key,
+            "restart_recovery_roundtrip": second == key,
+            "journal_continuity_verified": continuity,
+            "durable_custody": durable,
+            "ovid_materialisation_verified": second == key,
         },
     }
 
@@ -184,7 +185,7 @@ def verify_chronus_stratum_pillar() -> Dict[str, Any]:
     all_ok = phase_ok and zeck_ok and binet_ok and target_ok and endian_ok
 
     return {
-        "status": "QUALIFIED" if all_ok else "CHRONUS_INVARIANT_FAILED",
+        "status": "PASS" if all_ok else "CHRONUS_INVARIANT_FAILED",
         "latency_us": round(latency_us, 2),
         "invariants": {
             "f257_galois_phases": phase_ok,
@@ -192,7 +193,7 @@ def verify_chronus_stratum_pillar() -> Dict[str, Any]:
             "binet_lucas_symbolic_exactness": binet_ok,
             "endian_swapped_roundtrip": endian_ok,
             "share_target_exact_fractions": target_ok,
-            "gatekeeper_latency_us": 2.85,
+            "gatekeeper_latency_us": None,
         },
     }
 
@@ -243,7 +244,7 @@ def verify_millennium_pillar() -> Dict[str, Any]:
     all_ok = poincare_ok and hodge_ok and ultrametric_ok and anosov_ok
 
     return {
-        "status": "QUALIFIED" if all_ok else "MILLENNIUM_FAILED",
+        "status": "PASS" if all_ok else "MILLENNIUM_FAILED",
         "latency_us": round(latency_us, 2),
         "exact_checks_passed": {
             "ollivier_ricci_curvature_certified": poincare_ok,
@@ -272,13 +273,13 @@ def verify_toe_quantum_pillar() -> Dict[str, Any]:
     latency_us = (time.perf_counter_ns() - t0) / 1000.0
 
     return {
-        "status": "QUALIFIED" if is_entangled else "FAILED",
+        "status": "PASS" if is_entangled else "FAILED",
         "latency_us": round(latency_us, 2),
         "invariants": {
             "f257_bell_state_evolution": is_entangled,
             "exact_field_hadamard": sv.amplitudes[0] == 30,
             "zero_floating_point_truncation": True,
-            "zero_thermal_decoherence": True,
+            "physical_noise_claim": "NOT_APPLICABLE_SOFTWARE_EXECUTION",
         },
     }
 
@@ -320,7 +321,7 @@ def verify_distribution_packages() -> Dict[str, Any]:
 
 def main():
     print("========================================================================")
-    print("      CHRONUS SOVEREIGN CAPABILITY & DIFC ATTESTATION GENERATOR         ")
+    print("      CHRONUS SOFTWARE CAPABILITY EVIDENCE GENERATOR         ")
     print("========================================================================")
     t0 = time.time()
 
@@ -349,19 +350,23 @@ def main():
     print(f"      -> Packages Found: {package_proof['package_count']}")
 
     overall_qualified = (
-        al_haras_proof["status"] == "QUALIFIED"
-        and theseus_proof["status"] == "QUALIFIED"
-        and chronus_proof["status"] == "QUALIFIED"
-        and millennium_proof["status"] == "QUALIFIED"
-        and toe_proof["status"] == "QUALIFIED"
+        al_haras_proof["status"] == "PASS"
+        and theseus_proof["status"] == "PASS"
+        and chronus_proof["status"] == "PASS"
+        and millennium_proof["status"] == "PASS"
+        and toe_proof["status"] == "PASS"
     )
 
     dossier = {
-        "attestation_title": "SOVEREIGN QUANTUM CAPABILITY & MATHEMATICAL PURITY DOSSIER",
-        "standard": "DIFC Sovereign Asset Evaluation & Five Eyes Computational Verification",
-        "status": "SOVEREIGN_QUALIFIED" if overall_qualified else "QUALIFICATION_FAILED",
+        "schema": "chronus-software-capability-evidence/v2",
+        "attestation_title": "Chronus software capability evidence dossier",
+        "standard": "Internal executable evidence only",
+        "status": "SOFTWARE_EVIDENCE_PASS" if overall_qualified else "SOFTWARE_EVIDENCE_FAILED",
+        "production_qualified": False,
+        "external_certification": False,
         "timestamp_utc": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
-        "evaluation_authority": "Chronus Sovereign Regulatory Compliance Board",
+        "evaluation_authority": "repository self-test; not an external authority",
+        "legacy_filename_notice": "SOVEREIGN_CAPABILITY_ATTESTATION.json is retained for compatibility only.",
         "pillars": {
             "al_haras": al_haras_proof,
             "theseus_ovid": theseus_proof,
@@ -370,21 +375,16 @@ def main():
             "toe_quantum": toe_proof,
             "distribution_packages": package_proof,
         },
-        "guarantees": {
-            "mathematical_honesty": "100% Exact Fraction & Modular Algebra",
-            "quantum_theatre_index": "0.00% (No Simulation / No Classical-Dressed-As-Quantum)",
-            "wire_drop_rejection": "0.00% Invalid Shares Emitted",
-            "endianness_safety": "100% Explicit Endian Markers",
-            "pci_purity_ast_scan": "PASS",
-        },
     }
 
     payload_bytes = json.dumps(dossier, sort_keys=True, indent=2).encode("utf-8")
-    signature = hmac.new(ATTESTATION_SECRET_KEY, payload_bytes, hashlib.sha256).hexdigest()
-    dossier["cryptographic_attestation"] = {
-        "signature_algorithm": "HMAC-SHA256 (DIFC-SOVEREIGN-SEAL)",
-        "hmac_digest": signature,
-        "content_sha256": hashlib.sha256(payload_bytes).hexdigest(),
+    content_digest = hashlib.sha256(EVIDENCE_DOMAIN + payload_bytes).hexdigest()
+    dossier["content_integrity"] = {
+        "algorithm": "SHA-256",
+        "domain": EVIDENCE_DOMAIN.decode("ascii", "ignore").rstrip("\\0"),
+        "content_sha256": content_digest,
+        "keyed_signature": False,
+        "external_attestation": False,
     }
 
     out_file = os.path.join(REPO_ROOT, "SOVEREIGN_CAPABILITY_ATTESTATION.json")
@@ -393,10 +393,10 @@ def main():
 
     elapsed = time.time() - t0
     print("========================================================================")
-    print(f"Attestation Written: {out_file}")
-    print(f"HMAC Sovereign Seal: {signature}")
+    print(f"Evidence Written: {out_file}")
+    print(f"Content SHA-256 : {content_digest}")
     print(f"Generation Duration: {elapsed:.3f}s")
-    print(f"FINAL RESULT: {'SOVEREIGN QUALIFIED (100% GREEN)' if overall_qualified else 'FAILED'}")
+    print(f"FINAL RESULT: {'SOFTWARE EVIDENCE PASS' if overall_qualified else 'SOFTWARE EVIDENCE FAILED'}")
     print("========================================================================")
 
     if not overall_qualified:

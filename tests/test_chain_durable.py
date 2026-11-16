@@ -1,9 +1,6 @@
-import json
 import pytest
 from chronus.canon import canonical_bytes,NonCanonical
-from chronus.chain import ChainBroken,GENESIS,verify_chain
 from chronus.journal import Journal,encode,JournalCorrupt
-from chronus.durable import DurableChain
 from chronus.verdict import Verdict,Status
 from chronus.claims import Claim,Publish,gate_claims
 

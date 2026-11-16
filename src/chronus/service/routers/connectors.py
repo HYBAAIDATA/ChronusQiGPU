@@ -10,7 +10,7 @@ Exposes:
 - GET  /v1/connectors: List bound Zero-Copy Native Representation Connectors
 - POST /v1/connectors: Bind a Day-1 Zero-Copy Connector to client data at rest
 - GET  /v1/connectors/{connector_id}: Connector detail + discovered schemas
-- POST /v1/connectors/{connector_id}/ingest: Binet-Zeckendorf ingress + AL HARAS H^1(X; F) check
+- POST /v1/connectors/{connector_id}/ingest: sealed structural ingress + AL HARAS H^1(X; F) check
 - POST /v1/connectors/{connector_id}/discover: Trigger Automated Schema Discovery Middleware
 """
 
@@ -56,7 +56,7 @@ class RegisterConnectorRequest(BaseModel):
 
 
 class IngestConnectorBlockRequest(BaseModel):
-    """Request payload for automatic Binet-Zeckendorf structural ingestion at connector edge."""
+    """Request payload for automatic structural ingestion at connector edge."""
 
     payload_b64: Optional[str] = Field(
         default=None,
@@ -88,7 +88,7 @@ class ExecutePointerRequest(BaseModel):
 
     operation: str = Field(
         default="PV_LATTICE_FOLD",
-        description="PV_LATTICE_FOLD | LUCAS_PV_SCALING | METALLIC_SCALE | EXACT_RECONSTRUCT_VERIFY | ZERO_COPY_QUERY_BENCHMARK",
+        description="PV_LATTICE_FOLD | scaling.v1 | METALLIC_SCALE | EXACT_RECONSTRUCT_VERIFY | ZERO_COPY_QUERY_BENCHMARK",
     )
     scale_order: int = Field(default=8, ge=0, le=256)
     metallic_m: int = Field(default=1, ge=1, le=16)
@@ -136,13 +136,13 @@ async def get_connector_specifications() -> Dict[str, Any]:
                 "guarantee": "Data remains inside client storage and encryption boundary; zero bulk file staging.",
             },
             {
-                "id": "BINET_ZECKENDORF_STRUCTURAL_INGESTION",
-                "engine": "BinetZeckendorfIngressEngine",
+                "id": "STRUCTURAL_INGESTION_V1",
+                "engine": "StructuralIngressEngine",
                 "supported_formats": [fmt.value for fmt in IngestFormat],
                 "algebraic_rings": [
                     "Q(sqrt(5))",
-                    "Pisot-Lucas L_n",
-                    "Zeckendorf Non-Adjacent Base",
+                    "scaling.v1 sequence ring",
+                    "non-adjacent positional base",
                 ],
                 "max_footprint_collapse": "99.90%",
                 "fidelity": "100% Exact Lossless Round-Trip",
@@ -452,7 +452,7 @@ async def get_connector_detail(connector_id: str) -> Dict[str, Any]:
 
 @router.post(
     "/{connector_id}/ingest",
-    summary="Ingest external block via Binet-Zeckendorf Fold & AL HARAS Zero-Trust Edge",
+    summary="Ingest external block via structural fold and AL HARAS zero-trust edge",
 )
 async def ingest_connector_block(
     connector_id: str,
