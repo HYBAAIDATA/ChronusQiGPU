@@ -3,3 +3,10 @@
 # ruleset's required_signatures + code owner review to make this enforceable).
 .github/workflows/ @hybadatadevops1
 /scripts/ @hybadatadevops1
+
+# CLOSED HYBA IP — PULVINI V3 research and its governance must remain owner-controlled.
+/src/chronus/pulvini/ @hybadatadevops1
+/tests/test_pulvini_research_locked.py @hybadatadevops1
+/tools/verify_pulvini_lock.py @hybadatadevops1
+/docs/research/PULVINI_V3_FOLD_AUTHORITY.md @hybadatadevops1
+/.github/CODEOWNERS @hybadatadevops1
