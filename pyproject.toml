@@ -38,9 +38,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Install the local TURING source explicitly during development; the mining
+# extra depends on the pinned, separately distributed TURING package. A direct
+# file reference and an exact named requirement cannot be combined by pip.
 mining = ["hyba-turing==0.2.0.dev0"]
 dev = [
-    "hyba-turing @ file:./packages/turing",
     "prometheus-client>=0.20,<1",
     "pyyaml>=6,<7",
     "pytest>=7.0",
