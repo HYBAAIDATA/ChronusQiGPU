@@ -1,11 +1,10 @@
-"""IGPU ABI — Tier 4 role-aware negotiation for the Chronus elevation.
+"""IGPU ABI — Tier 4 role-aware negotiation for Chronus (HYBA Data).
 
-This module implements:
-
-    PHASE 3 — Heterogeneous Pad Role Assignment (2–3 weeks)
-        Deliverable: scheduler demonstrates heterogeneous work allocation.
-        Metric: 3 roles, 95%+ correct role selection.
-        Gate: role negotiation contract test.
+Maps consortium institutions to adapter roles for scheduler fallback
+routing. This is role metadata only; it does not provision hardware,
+measure performance, or establish deployment. Requirements trace to
+the Notion records in ``docs/notion-production-readiness.md``;
+evidence status follows ``docs/claim-audit.md``.
 """
 
 from __future__ import annotations

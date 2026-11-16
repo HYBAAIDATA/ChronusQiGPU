@@ -1,7 +1,9 @@
-"""Section 1: Core Types & Invariants for the Falsifiable Tensor Engine.
+"""Section 1: core types and invariants for the Falsifiable Tensor Engine.
 
-Owned jointly by the Tensor Network Theorist and Representation Theorist.
-Enforces block-sparse symmetry invariants, error ledgers, and contraction certificates.
+Block-sparse symmetry containers, truncation records and the cumulative
+ErrorLedger. Ledger accumulation here is ``2*sqrt(sum discarded)`` for
+SVD records — an estimate absent canonical-gauge enforcement, not a
+certified Schmidt bound; gate sequences accumulate per-step bounds.
 """
 
 from __future__ import annotations

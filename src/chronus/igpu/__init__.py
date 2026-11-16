@@ -1,8 +1,17 @@
-"""iGPU — execution-lane runtime for the Chronus elevation.
+"""iGPU — role-aware negotiation and adapter declarations for Chronus.
 
-The Chronus elevation adds Tier 4 (role-aware negotiation) and Tier 6
-(cloud adapters) to the existing iGPU runtime. This package re-exports the
-new ABI and adapter types.
+Chronus is a HYBA Data product/platform, not a separate company or GPU
+device. This package declares Tier 4 role-aware negotiation and Tier 6
+cloud-adapter rows, and re-exports the tensor representation for
+iGPU-facing imports. The default execution route is CPU reference;
+any client GPU route is opt-in, device-bound and fail-closed.
+
+Requirements source: Notion records listed in
+``docs/notion-production-readiness.md`` and reconciled in
+``docs/production/NOTION_LIBRARY_RECONCILIATION.md``. Notion supplies
+requirements and decisions, not execution evidence; release credit
+requires exact-commit CI, attested gates and device-bound evidence per
+``docs/claim-audit.md``.
 """
 
 from __future__ import annotations

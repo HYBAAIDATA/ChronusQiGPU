@@ -1,8 +1,10 @@
-"""Section 0: The Charter as an Executable Assertion.
+"""Section 0: the Charter as an executable assertion (HYBA Data).
 
-Runs before any code in the Falsifiable Tensor Engine.
-Guarantees scientific integrity, bans hype language, and enforces
-error ledgers and contraction certificates on all claims.
+Runs before any Falsifiable Tensor Engine code. Bans hype tokens
+(``quantum supremacy`` etc.), requires error ledgers and contraction
+certificates, and is enforced by the scientific-integrity veto. Owner
+direction (Notion production-readiness, Workflow 01–04) sits above this
+file: the Charter enforces honesty, it does not award production status.
 """
 
 from __future__ import annotations

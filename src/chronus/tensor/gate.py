@@ -1,8 +1,13 @@
-"""Section 3 & Section 5: Gate Application & Theorem-Backed Error Bounds.
+"""Section 3 & Section 5: Gate application and truncation error bounds.
 
-Prevents silent truncation by logging every truncation event to the ErrorLedger
-with an explicit academic theorem reference.
-Owner: TN theorist & numerical linear algebra specialist.
+Every truncation is logged to the ErrorLedger with an explicit theorem
+reference. Notes: (1) ``factorize_two_site`` splits sqrt(S) symmetrically
+but callers do not canonicalize to mixed-canonical gauge first, so
+discarded weight is an estimate, not a certified Schmidt weight;
+(2) ``rand_svd`` uses a fixed seed for determinism and its HMT bound is
+probabilistic, not rigorous — do not present it as a hard guarantee;
+(3) sequential gate errors accumulate as a sum of per-step bounds, not a
+single sqrt. Owner: TN theorist & numerical linear algebra specialist.
 """
 
 from __future__ import annotations

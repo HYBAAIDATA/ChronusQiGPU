@@ -1,4 +1,10 @@
-"""Fail-closed Apple Metal tensor backend through MLX."""
+"""Fail-closed Apple Metal tensor backend through MLX.
+
+Opt-in client-Apple-Silicon climb-in route only. Requires macOS/ARM plus
+MLX with an available Metal device; otherwise raises
+``MetalTensorUnavailable``. No physical-device execution is inferred on
+other hosts or in Linux CI.
+"""
 
 from __future__ import annotations
 

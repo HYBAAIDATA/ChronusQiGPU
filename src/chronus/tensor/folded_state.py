@@ -1,8 +1,10 @@
 """Selective, reversible folded-state representation for tensor residency.
 
-The representation reuses Chronus's M15 byte-pair transform. Partial reads
-reconstruct only the byte pairs covering the requested range; they do not call
-the full reconstruction path.
+Reuses Chronus's M15 byte-pair transform (integers mod 256 — reversible
+mapping, not compression and not cryptographic authentication). Partial
+reads reconstruct only the byte pairs covering the requested range; they
+do not call the full reconstruction path. Byte ratio is reported, never
+as a compression or speedup claim.
 """
 
 from __future__ import annotations

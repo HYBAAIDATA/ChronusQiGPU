@@ -1,8 +1,9 @@
-"""Section 8: PEPS Approximate Contraction.
+"""Section 8: PEPS approximate contraction with explicit error accounting.
 
-The only module where approximation is a first-class citizen.
-Emits a ContractionCertificate logging exact boundary truncation bounds.
-Owner: Numerical linear algebra specialist.
+Boundary-MPS and CTMRG routes return coefficient-1.0 placeholder
+observables with analytic bound formulas, not contracted device results;
+belief propagation raises ``UntrustedApproximation``. Certificates log
+the bound used — they are not execution evidence.
 """
 
 from __future__ import annotations

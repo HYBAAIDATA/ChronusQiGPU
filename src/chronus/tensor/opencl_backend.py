@@ -1,7 +1,13 @@
-"""Fail-closed OpenCL tensor backend.
+"""Fail-closed OpenCL tensor backend — client-GPU climb-in route.
 
 Only OpenCL-reported GPU devices are eligible. There is no implicit CPU
-OpenCL route and no internal reference fallback.
+OpenCL route and no internal reference fallback: if the provisioned
+client GPU is absent or fails its all-operation known-answer self-test,
+this backend raises and stays unavailable. Chronus (HYBA Data) runs the
+reference on CPU by default and climbs into this client surface only
+when it is explicitly provisioned and verified — see
+``docs/system-update/qigpu-substrate-agnostic.md`` and Notion Workflow 02
+in ``docs/notion-production-readiness.md``.
 """
 
 from __future__ import annotations

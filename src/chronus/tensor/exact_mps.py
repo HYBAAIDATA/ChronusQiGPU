@@ -1,8 +1,12 @@
 """Bounded unnormalised matrix-product-state contraction in Z[zeta_5].
 
 Experimental reference path; no physical measurement or approximate inputs.
-The output grows exponentially and is explicitly bounded. The conventional
-normalisation step is deliberately not applied: it may leave the ring.
+The output grows exponentially and is explicitly bounded (<= 65,536
+coefficients, <= 16 sites). The conventional normalisation step is
+deliberately not applied: it may leave the ring. Notion trace: recovered
+PULVINI tensor-train contract — the archived ``astype(float)`` defect was
+a real defect in the archive only; this module implements an independent
+exact Q-valued factorisation and must not be read as the archived engine.
 """
 from chronus.quantum.geometric_polychoron import Cyclotomic5
 

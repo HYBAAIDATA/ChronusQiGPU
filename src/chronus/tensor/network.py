@@ -1,8 +1,11 @@
-"""Section 2 & Section 9: Network Construction & HARD_CAP_THEOREM.
+"""Section 2 & Section 9: network construction and HARD_CAP_THEOREM.
 
-Derives honest physical memory caps and constructs MPS, PEPS, and MERA networks
-without ever allocating dense zeros(2^n).
-Owner: distributed-systems engineer & TN theorist.
+Derives honest physical memory caps and constructs MPS, PEPS, and MERA
+networks without ever allocating dense zeros(2^n). The cap (1 TB / 16
+bytes per complex128, safety factor 10) is an explicit host-RAM model,
+not a measured device claim. All symmetry charges are currently 0, so
+U(1)/Z2/SU(2) savings are theoretical until real block decomposition
+lands. Owner: distributed-systems engineer & TN theorist.
 """
 
 from __future__ import annotations

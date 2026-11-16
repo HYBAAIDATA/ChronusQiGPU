@@ -1,8 +1,14 @@
-"""Density Matrix Renormalization Group (DMRG) Variational Ground State Solver.
+"""Density Matrix Renormalization Group (DMRG) variational ground-state solver.
 
-Optimizes 1D Matrix Product States (MPS) with theorem-backed singular value truncation.
-Required for Experiment E3 (1000-node TFIM ground state).
-Owner: TN theorist & quantum matter specialist.
+Optimizes 1D Matrix Product States (MPS) with singular-value truncation
+logging to the ErrorLedger. Notion/E3 scope (1,000-node TFIM) is a
+requirements target only — this routine currently overwrites each bond
+with a hard-coded local 2-site ground state plus an ad-hoc scale envelope
+and reports the analytic Jordan-Wigner energy rather than <psi|H|psi>.
+Until environments, tolerance handling and true variational sweeps land,
+treat E3 variational-DMRG as UNVERIFIED; see
+``docs/production/IGPU_TENSOR_INTEGRITY_ELEVATION_20261116.md`` §Remaining
+defects. Owner: TN theorist & quantum matter specialist.
 """
 
 from __future__ import annotations

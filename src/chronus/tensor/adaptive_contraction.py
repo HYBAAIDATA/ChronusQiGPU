@@ -1,11 +1,10 @@
-"""Classical Adaptive Tensor Contraction Pathway with Pathway Optimization.
+"""Classical adaptive tensor contraction pathway (HYBA Data).
 
-Renamed per Consortium Charter:
-- 'superposition' -> parallel_pathway_search
-- 'interference' -> weighted_pathway_aggregation
-- 'quantum-inspired' -> classical_tensor_network
-- Latency is measured at runtime (perf_counter_ns), not claimed.
-- All outputs explicitly state is_quantum = False.
+Classical multi-path search plus cost-based ranking. ``optimize_contraction``
+measures wall-clock latency only; ``flops_estimated``/``peak memory`` are
+planning estimates, not executed device work. Status strings
+(``OPTIMAL_CONTRACTION_EXECUTED``) denote plan selection, not physical
+execution. All outputs state ``is_quantum = False``.
 """
 
 from __future__ import annotations

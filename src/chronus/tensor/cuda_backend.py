@@ -1,4 +1,11 @@
-"""Fail-closed CUDA tensor backend using Chronus-owned CUDA C kernels."""
+"""Fail-closed CUDA tensor backend using Chronus-owned CUDA C kernels.
+
+Opt-in client-NVIDIA climb-in route only. Requires CuPy plus a
+discovered CUDA device; a failed build or known-answer check leaves the
+backend unavailable — never silent CPU fallback. No cuBLAS/cuTENSOR/
+tensor-core path is claimed; kernels are naive baselines until
+device-bound measurement says otherwise.
+"""
 
 from __future__ import annotations
 

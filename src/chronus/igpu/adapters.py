@@ -1,11 +1,15 @@
-"""IGPU adapters - Tier 6 cloud adapter declarations for the Chronus elevation.
+"""IGPU adapters — Tier 6 cloud-adapter declarations for Chronus (HYBA Data).
 
-This module implements:
-
-    PHASE 5 - Cloud Adapters (External, 4-8 weeks)
-        Deliverable: adapters report unavailable until configured; never simulate.
-        Metric: >= 1 adapter with live conformance test.
-        Gate: cloud manifest + credentials; hardware-rooted attestation external.
+Declares the adapter table and the fail-closed ``TypedUnavailableAdapter``.
+An unavailable adapter never executes; ``promote_adapter`` requires a
+passing conformance test (Axiom 8) and derives an evidence digest chain
+(Axiom 6) before reporting eligibility. Capability manifests use
+``MemoryTier`` labels as declared metadata only — a
+``TIER_0_ON_DEVICE_HBM`` label on a zero-byte unavailable manifest is not
+a measured HBM claim. Device certification follows Notion Workflow 02
+(backend truth bound to route); see
+``docs/notion-production-readiness.md`` and
+``docs/production/NOTION_LIBRARY_RECONCILIATION.md``.
 """
 
 from __future__ import annotations

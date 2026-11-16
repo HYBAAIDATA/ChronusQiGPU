@@ -1,10 +1,12 @@
-"""chronus.igpu.tensor: the public export of the Chronus tensor representation.
+"""chronus.igpu.tensor: iGPU-facing re-export of the Chronus tensor surface.
 
 The implementation lives in chronus.tensor; this module re-exports its public
-API (the same objects) so iGPU-facing code and Chronus subsystems import it
-from the iGPU namespace. TURING must not import it: the dependency runs from
-Chronus to TURING, never the reverse. The representation is numerical (numpy)
-and records truncation explicitly; it is not part of any exact path.
+API so iGPU-facing code imports from the iGPU namespace. TURING must not
+import it: the dependency runs from Chronus to TURING, never the reverse
+(see ``docs/system-update/quantum-package-taxonomy.md``). The numerical
+representation is complex128 NumPy with explicit truncation ledgers; the
+exact integer/rational paths (``exact_rational_tt``, lattice folds) are
+separate and bounded.
 """
 
 from chronus import tensor as _tensor

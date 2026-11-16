@@ -1,7 +1,15 @@
-"""Chronus Consortium Falsifiable Tensor Engine.
+"""Chronus Consortium Falsifiable Tensor Engine (HYBA Data).
 
-Auditable block-sparse tensor network engine with rigorous mathematical bounds,
-explicit error ledgers, hardware-derived caps, and honest refusals.
+Auditable block-sparse tensor network engine with rigorous mathematical
+bounds, explicit error ledgers, hardware-derived caps, and honest
+refusals. Default execution is CPU reference; any client accelerator
+route (OpenCL/CUDA/Metal) is opt-in, device-bound and fail-closed.
+
+Requirements trace to the Notion records in
+``docs/notion-production-readiness.md``; capability-vs-evidence
+disposition follows ``docs/production/NOTION_LIBRARY_RECONCILIATION.md``
+and claim status follows ``docs/claim-audit.md``. Historical counts are
+provenance only — release credit requires exact-commit execution.
 """
 
 from chronus.tensor.charter import (

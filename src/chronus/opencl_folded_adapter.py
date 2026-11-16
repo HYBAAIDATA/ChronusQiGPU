@@ -1,21 +1,11 @@
-"""Period-516 folded F_257[phi] state buffers for the opt-in OpenCL adapter.
+"""Period-516 folded F_257[phi] state buffers for the opt-in OpenCL adapter — client climb-in route.
 
-Memory folding, not compression: an unbounded scale index s decomposes
-uniquely as s = 516 * q + r over the Galois/Pisano period pi(257) = 516 of
-phi in F_257[phi] (phi^2 = phi + 1, phi^516 == 1). The canonical residual r
-in [0, 515] maps bijectively to one of 516 exact [a, b] uint16 coefficient
-pairs, so folding projects the trajectory onto a finite basis with zero
-truncation: unfold(fold(s)) == s bit-for-bit.
-
-This module is the single source of truth for the 2,064-byte constant LUT
-(516 x ushort2) and the 16-byte FoldedState16 record. The pure-Python
-reference path (fold/step/unfold), the pytest parity suite, and the opt-in
-OpenCL adapter all consume the exact same bytes.
-
-The module is import-safe without pyopencl, numpy, or an installed chronus
-package: every folding primitive is standard-library only, and the physical
-adapter imports its accelerator dependencies lazily, raising
-HardwareUnavailableError when no GPU stack is present.
+Requires ``CHRONUS_ENABLE_OPENCL_PV=1`` plus a provisioned, KAT-verified
+OpenCL GPU; otherwise raises ``HardwareUnavailableError``. Notion trace:
+production-readiness Workflow 02 in ``docs/notion-production-readiness.md``.
+The recovered Chronos ONE iGPU v3.4 archive on owner disk (``chronos-one-igpu-v3.4.zip``,
+133 entries incl. qsdl_parser/qsdl_compiler) is a separate historical
+graphics lineage — not ported here, not GPU execution evidence.
 """
 
 from __future__ import annotations

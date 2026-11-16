@@ -1,20 +1,13 @@
-"""EnhancedTensorRepresentation — Classical Block-Sparse Tensor Network Engine.
+"""EnhancedTensorRepresentation — classical block-sparse tensor network engine.
 
-Every claim from the spec is either implemented honestly under its real name
-or refused in code. No silent "quantum" relabeling.
-
-Enforced renames:
-- "superposition" -> parallel_pathway_search
-- "entanglement" -> bond_structure_with_charge_sectors
-- "interference" -> weighted_pathway_aggregation
-- "quantum-inspired" -> classical_tensor_network
-- "0.01ms latency" -> REFUSED
-- "708x speedup" -> MEASURED_AT_RUNTIME
-
-Hard refusals:
-- ["100X information density", "O(n^3) -> O(n^2) as general theorem",
-   "linear scaling beyond chi", "causal intelligence via interference",
-   "quantum speedup on classical hardware"]
+Every spec claim is either implemented honestly under its real name or
+refused in code. Contraction-tree search returns a fixed candidate set
+(greedy / opt_einsum-labelled / balanced) with analytic cost estimates:
+``flops``/``peak_mem`` are estimates, and ``optimize_contraction`` /
+``execute_sharded_contraction`` report planning plus wall-clock latency,
+not executed device work. ``search`` is cosine inner-product ranking.
+Notion trace: Geodesic/Tensor engineering record (Jul 2026); disposition
+per ``docs/production/NOTION_LIBRARY_RECONCILIATION.md``.
 """
 
 from __future__ import annotations

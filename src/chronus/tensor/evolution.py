@@ -1,8 +1,9 @@
-"""Section 6: Time Evolution via TDVP & Honest Refusal of Trotter at Scale.
+"""Section 6: time evolution — TDVP plus honest Trotter refusal at scale.
 
-Enforces that TDVP is the only 1000-node evolution the consortium certifies,
-while Trotter is strictly demoted to an n <= 32 test utility.
-Owner: TN theorist.
+TDVP is the only 1,000-node route the consortium certifies; Trotter
+refuses above n = 32 (``RefusedMethod``). TDVP's local gate path is
+implemented; its planner bound is a fixed curvature constant per step,
+not a measured device result.
 """
 
 from __future__ import annotations

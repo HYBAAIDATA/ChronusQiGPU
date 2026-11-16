@@ -1,9 +1,14 @@
-"""Production tensor execution compatibility surfaces.
+"""Production tensor execution compatibility surfaces (HYBA Data).
 
 These classes preserve the July Geodesic/Tensor API concepts while routing
 through explicit NumPy reference execution unless a separately qualified
 accelerator backend is selected. No hardware route is inferred from a class
-name.
+name. ``TopologicalIntegrityGate.verify_float32_matmul`` is the bounded
+componentwise Higham check used for GPU matmul output; the generic
+``verify`` stays strict. Scheduler/router select only from verified
+observations — they never invent throughput. Notion source: Geodesic/Tensor
+engineering record (Jul 2026) per
+``docs/production/NOTION_LIBRARY_RECONCILIATION.md``.
 """
 
 from __future__ import annotations
