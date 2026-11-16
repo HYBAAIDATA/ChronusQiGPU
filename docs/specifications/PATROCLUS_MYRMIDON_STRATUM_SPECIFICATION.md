@@ -79,7 +79,7 @@ Internally, the system delegates work across the **600 Myrmidon Searchers**, map
     │  • Local Transmit Intercept: Invalid nonces dropped internally ➔ 0.00% pool IP ban rate
     ▼
  6. STEALTH & HASHRATE SHAPING PROTOCOL
-    │  • Configured Cap: 10.0 EH/s max | Active Throttle: 1.0 EH/s
+    │  • Configured Cap: 1.0 EH/s hard ceiling | Active throttle cannot exceed it
     │  • Never Consecutive Blocks Rule: Suppresses Block N+1 if Patroclus mined Block N
     │  • Persistent Socket Presence: Emits steady heartbeat shares to prevent pool timeouts
     ▼
@@ -110,7 +110,7 @@ Internally, the system delegates work across the **600 Myrmidon Searchers**, map
 * **3µs Local Gatekeeper**: Reconstructs the 80-byte header from all 6 submission parameters and asserts `hash_int <= target_int` locally *prior to wire transmission*. Invalid nonces are intercepted locally, guaranteeing a **0.00% pool IP ban rate**.
 
 #### Phase 5: Stealth Hashrate Shaping & Wire Submission
-* **Configured Cap & Throttle**: Configured baseline cap at **10.0 EH/s**, with active operational throttling at **1.0 EH/s**.
+* **Configured Cap & Throttle**: The hard ceiling is **1.0 EH/s**. The active throttle cannot be set above that ceiling.
 * **Never Consecutive Blocks Rule**: Suppresses mainnet block submission $N+1$ locally if Patroclus struck block $N$, avoiding block-monopoly alerts.
 * **Persistent Socket Presence**: Emits low-profile heartbeat shares to maintain socket presence on ViaBTC, Braiins, NiceHash, and CKPool.
 * **6-Parameter Wire Submit Payload**: Formats the final submission payload with masked `version_bits`:

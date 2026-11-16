@@ -44,8 +44,8 @@ class TestMLDSASigner(unittest.TestCase):
         message = b"Production transaction payload hash"
         signature = signer.sign(message)
 
-        # Signature must be valid hex and 192 bytes (384 hex characters)
-        self.assertEqual(len(bytes.fromhex(signature)), 192)
+        # ML-DSA-65 signatures are 3309 bytes under FIPS 204.
+        self.assertEqual(len(bytes.fromhex(signature)), 3309)
         self.assertTrue(signer.verify(message, signature))
 
     def test_tamper_detection(self):

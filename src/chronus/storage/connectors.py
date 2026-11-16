@@ -1916,7 +1916,12 @@ class ZeroCopyConnectorManager:
             int(phi_dict["denominator"]),
         )
 
-        op = operation.strip().upper()
+        from chronus.core.workload_alias import (
+            INTERNAL_SCALING_WORKLOAD,
+            normalize_pointer_operation,
+        )
+
+        op = normalize_pointer_operation(operation)
         if op == "PV_LATTICE_FOLD":
             factor = phi_power(scale_order)
             folded_out = base_elem.multiply(factor)
@@ -1933,16 +1938,16 @@ class ZeroCopyConnectorManager:
                 "trace": [folded_out.trace().numerator, folded_out.trace().denominator],
                 "norm_invariant_verified": norm_verified,
             }
-        elif op == "LUCAS_PV_SCALING":
+        elif op == INTERNAL_SCALING_WORKLOAD:
             base_idx = int(desc.get("pisot_lucas_state", {}).get("structural_index_n", 8))
             target_idx = base_idx + scale_order
             fn_t, fn1_t = _fib_pair_exact(target_idx)
             ln_t = 2 * fn1_t - fn_t
             comp_result = {
-                "operation": op,
+                "operation": "scaling.v1",
                 "target_index": target_idx,
-                "fibonacci_F_n": str(fn_t),
-                "lucas_L_n": str(ln_t),
+                "sequence_F_n": str(fn_t),
+                "sequence_S_n": str(ln_t),
                 "identity_verified": ln_t == 2 * fn1_t - fn_t,
             }
         elif op == "METALLIC_SCALE":
@@ -1975,7 +1980,7 @@ class ZeroCopyConnectorManager:
         else:
             raise ValueError(
                 f"Unsupported pointer operation '{operation}'. "
-                "Supported: PV_LATTICE_FOLD, LUCAS_PV_SCALING, METALLIC_SCALE, EXACT_RECONSTRUCT_VERIFY, ZERO_COPY_QUERY_BENCHMARK"
+                "Supported: PV_LATTICE_FOLD, scaling.v1, METALLIC_SCALE, EXACT_RECONSTRUCT_VERIFY, ZERO_COPY_QUERY_BENCHMARK"
             )
 
         elapsed_ms = (time.perf_counter() - started) * 1000

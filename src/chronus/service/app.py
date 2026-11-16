@@ -13,6 +13,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 
+from chronus.service.api.errors import ApiError, problem_response
+from chronus.service.api.routers import procurement as procurement_routes
 from chronus.service.dependencies import service_config
 from chronus.service.models import ErrorResponse
 from chronus.service.routers import (
@@ -85,6 +87,19 @@ def create_app() -> FastAPI:
         )
     app.add_middleware(GZipMiddleware, minimum_size=1000)
 
+    # Procurement routes raise ApiError; map them without replacing existing handlers.
+    @app.exception_handler(ApiError)
+    async def api_error_handler(request: Request, exc: ApiError) -> JSONResponse:
+        return problem_response(
+            request,
+            exc.status,
+            exc.code,
+            exc.title,
+            exc.detail,
+            exc.extra,
+            exc.headers,
+        )
+
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(
         request: Request, exc: RequestValidationError
@@ -144,6 +159,8 @@ def create_app() -> FastAPI:
         response.headers["X-Service-Version"] = app.version
         return response
 
+    # Sealed capacity procurement (quote → reserve → admit). Same router as
+    # chronus.service.api.app; auth is CHRONUS_TENANT_TOKENS bearer scopes.
     app.include_router(workloads_router)
     app.include_router(verify_router)
     app.include_router(health_router)
@@ -151,6 +168,11 @@ def create_app() -> FastAPI:
     app.include_router(console_router)
     app.include_router(billing_router)
     app.include_router(v1_router)
+    app.include_router(
+        procurement_routes.router,
+        prefix="/v1/capacity",
+        tags=["procurement"],
+    )
     app.include_router(ciaas_router)
     app.include_router(al_haras_router)
     app.include_router(connectors_router)

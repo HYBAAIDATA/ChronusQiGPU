@@ -29,6 +29,21 @@ class BrokenLanes:
         return [start]
 
 
+class CapReservationTests(unittest.TestCase):
+    def test_an_invalid_range_does_not_reserve_hashes(self):
+        from chronus.execution.hashrate_cap import HashrateCap, override_process_cap
+
+        lane = ProcessLanes.__new__(ProcessLanes)
+        lane.lanes = 1
+        cap = HashrateCap(3, clock=lambda: 0)
+        with override_process_cap(cap):
+            with self.assertRaises(ValueError):
+                lane.search(b"short", 0, 1, 0)
+            with self.assertRaises(ValueError):
+                lane.search(GENESIS_HEADER, 0, (1 << 32) + 1, 0)
+            self.assertEqual(cap.available(), 3)
+
+
 class ReferenceTests(unittest.TestCase):
     def test_genesis_nonce_at_difficulty_one(self):
         self.assertIn(GENESIS_NONCE, reference_scan(GENESIS_HEADER, GENESIS_NONCE - 64, GENESIS_NONCE + 64, DIFF1_TARGET))

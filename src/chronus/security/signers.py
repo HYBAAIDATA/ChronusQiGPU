@@ -205,89 +205,58 @@ class MLDSASigner:
 
 
 class Ed25519Signer:
-    """Ed25519 signer with current hex and legacy byte interfaces."""
+    """Ed25519 Digital Signature Signer.
 
-    conformant = True
+    Implements Edwards-curve Digital Signature Algorithm (Ed25519)
+    for high-performance classical digital signatures.
+    """
 
-    def __init__(self, seed: Optional[bytes] = None) -> None:
-        """Initialize from a 32-byte RFC 8032 seed or generate a fresh key."""
-        if seed is not None and len(seed) != 32:
-            raise ValueError("seed must be 32 bytes")
+    def __init__(self) -> None:
+        """Initialize Ed25519 signer."""
         self._algorithm = "Ed25519"
-        self._return_bytes = seed is not None
-        self._private_key: Optional[ed25519.Ed25519PrivateKey] = (
-            ed25519.Ed25519PrivateKey.from_private_bytes(seed)
-            if seed is not None
-            else ed25519.Ed25519PrivateKey.generate()
-        )
-        self._public_key: Optional[ed25519.Ed25519PublicKey] = (
-            self._private_key.public_key()
-        )
-        self.public_key = self._public_key.public_bytes(
-            encoding=Encoding.Raw, format=PublicFormat.Raw
-        )
-        self.key_id = "ed25519:" + hashlib.sha256(self.public_key).hexdigest()[:16]
+        self._private_key: Optional[ed25519.Ed25519PrivateKey] = None
+        self._public_key: Optional[ed25519.Ed25519PublicKey] = None
+        self._generate_keypair()
 
     def _generate_keypair(self) -> None:
         """Generate Ed25519 key pair."""
         self._private_key = ed25519.Ed25519PrivateKey.generate()
         self._public_key = self._private_key.public_key()
-        self.public_key = self._public_key.public_bytes(
-            encoding=Encoding.Raw, format=PublicFormat.Raw
-        )
-        self.key_id = "ed25519:" + hashlib.sha256(self.public_key).hexdigest()[:16]
 
-    def sign(self, message: bytes) -> str | bytes:
-        """Sign a message, returning legacy bytes for seeded legacy callers."""
+    def sign(self, message: bytes) -> str:
+        """Sign a message using Ed25519.
+
+        Args:
+            message: Message bytes to sign.
+
+        Returns:
+            Hex-encoded Ed25519 signature.
+        """
         if self._private_key is None:
             raise ValueError("Ed25519 private key not initialized")
+
         signature = self._private_key.sign(message)
-        return signature if self._return_bytes else signature.hex()
+        return signature.hex()
 
-    @staticmethod
-    def _verify_with_key(
-        message: bytes,
-        signature: str | bytes,
-        public_key: ed25519.Ed25519PublicKey | bytes,
-    ) -> bool:
+    def verify(self, message: bytes, signature: str) -> bool:
+        """Verify an Ed25519 signature.
+
+        Args:
+            message: Original message bytes.
+            signature: Hex-encoded signature to verify.
+
+        Returns:
+            True if signature is valid, False otherwise.
+        """
+        if self._public_key is None:
+            return False
+
         try:
-            sig_bytes = bytes.fromhex(signature) if isinstance(signature, str) else signature
-            key = (
-                ed25519.Ed25519PublicKey.from_public_bytes(public_key)
-                if isinstance(public_key, bytes)
-                else public_key
-            )
-            if len(sig_bytes) != 64:
-                return False
-            key.verify(sig_bytes, message)
+            sig_bytes = bytes.fromhex(signature)
+            self._public_key.verify(sig_bytes, message)
             return True
-        except (InvalidSignature, TypeError, ValueError):
+        except (InvalidSignature, ValueError):
             return False
-
-    def verify(
-        self,
-        message: bytes,
-        signature: str | bytes | None = None,
-        public_key: bytes | None = None,
-    ) -> bool:
-        """Verify with this key, or support the legacy class-level call shape."""
-        if not isinstance(self, Ed25519Signer):
-            legacy_message = self
-            legacy_signature = message
-            legacy_public_key = public_key if public_key is not None else signature
-            if not isinstance(legacy_public_key, bytes):
-                return False
-            return Ed25519Signer._verify_with_key(
-                legacy_message, legacy_signature, legacy_public_key
-            )
-        if signature is None:
-            return False
-        key: ed25519.Ed25519PublicKey | bytes | None = (
-            public_key if public_key is not None else self._public_key
-        )
-        if key is None:
-            return False
-        return self._verify_with_key(message, signature, key)
 
     def get_public_key(self) -> Optional[str]:
         """Get the hex-encoded public key."""
@@ -301,29 +270,6 @@ class Ed25519Signer:
     def algorithm(self) -> str:
         return self._algorithm
 
-    def self_test(self) -> tuple[bool, str]:
-        """Exercise a round-trip and explicit tamper rejection."""
-        message = b"chronus-self-test"
-        signature = self.sign(message)
-        if not self.verify(message, signature):
-            return False, "signature verification failed"
-        if self.verify(message + b"!", signature):
-            return False, "tampered message accepted"
-        return True, "Ed25519 round-trip and tamper rejection pass"
-
-
-class MlDsaSigner:
-    """Legacy fail-closed placeholder; no conformant implementation is exposed."""
-
-    conformant = False
-    key_id = "ml-dsa-65:unavailable"
-
-    def sign(self, message: bytes) -> bytes:
-        raise NotImplementedError("ML-DSA-65 not implemented")
-
-    def verify(self, message: bytes, signature: bytes) -> bool:
-        raise NotImplementedError("ML-DSA-65 not implemented")
-
 
 class PostQuantumError(Exception):
     """Base exception for post-quantum cryptographic operations."""
@@ -335,3 +281,21 @@ class VerificationError(PostQuantumError):
     """Exception for signature verification failures."""
 
     pass
+
+
+class MlDsaSigner:
+    """Legacy fail-closed placeholder; no conformant implementation is exposed.
+
+    Retained only so old imports fail closed instead of silently changing
+    algorithm semantics.
+    """
+
+    conformant = False
+    key_id = "ml-dsa-65:unavailable"
+
+    def sign(self, message: bytes) -> bytes:
+        raise NotImplementedError("ML-DSA-65 not implemented")
+
+    def verify(self, message: bytes, signature: bytes) -> bool:
+        raise NotImplementedError("ML-DSA-65 not implemented")
+

@@ -35,6 +35,7 @@ dependencies = [
     "SQLAlchemy>=2.0,<3",
     "greenlet>=3.0.0",
     "numpy>=1.26,<3",
+    "scipy>=1.10,<2",
 ]
 
 [project.optional-dependencies]
@@ -43,12 +44,12 @@ test = [
 ]
 mining = ["hyba-turing==0.2.0.dev0"]
 dev = [
-    "hyba-turing @ file:./packages/turing",
     "prometheus-client>=0.20,<1",
     "pyyaml>=6,<7",
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "hypothesis>=6.100",
+    "PyYAML>=6,<7",
     "numpy>=1.26,<3",
     "joblib>=1.3",
     "pandas>=2.0",
@@ -81,13 +82,14 @@ fleet-opencl = [
 
 [project.scripts]
 chronus-fleet = "chronus.fleet.cli:main"
+ga-api = "ga.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["chronus*"]
+include = ["chronus*", "ga*"]
 
 [tool.setuptools.package-data]
 "chronus.kernels" = ["*.cl"]
@@ -97,3 +99,7 @@ include = ["chronus*"]
 testpaths = ["tests"]
 pythonpath = ["src", "packages/turing/src"]
 addopts = "--basetemp=.pytest_temp"
+markers = [
+    "real: executes production code without mocked behaviour; not hardware/deployment proof",
+    "simulated: uses test doubles, synthetic harnesses or controlled fakes; not runtime evidence",
+]

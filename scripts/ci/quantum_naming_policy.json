@@ -1,0 +1,23 @@
+{
+  "schema": "chronus.quantum-naming/1",
+  "legacy_root": "src/chronus/quantum",
+  "legacy_modules": {
+    "__init__.py": "historical_namespace",
+    "entanglement.py": "algebraic_model",
+    "extension_search.py": "finite_field_model",
+    "geometric_polychoron.py": "algebraic_model",
+    "grover.py": "finite_field_model",
+    "metallic_search.py": "algebraic_model",
+    "ring_codec.py": "algebraic_model",
+    "ring_mps.py": "algebraic_model",
+    "ring_state.py": "algebraic_model",
+    "statevector.py": "finite_field_model",
+    "subspace.py": "finite_field_model"
+  },
+  "classical_alias": {
+    "path": "src/chronus/intelligence/predictive_engine.py",
+    "exported_name": "QuantumStateEngine",
+    "target_name": "PredictiveEngine"
+  },
+  "review": "Inventory of legacy interfaces only; no attestation of physical qubits, quantum advantage or hardware execution."
+}

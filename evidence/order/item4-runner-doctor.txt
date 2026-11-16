@@ -1,0 +1,4 @@
+runner-doctor: ok — python 3.12.3
+runner-doctor: ok — git at /usr/bin/git
+runner-doctor: ok — work path is outside OneDrive markers
+runner-doctor: all checks passed

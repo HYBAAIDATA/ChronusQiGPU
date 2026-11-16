@@ -24,7 +24,8 @@ from chronus.security.al_haras.orbital_mesh import link_summary
 from chronus.security.al_haras.reed_solomon import ReedSolomonError
 from chronus.security.al_haras.sheaf import SheafError
 from chronus.security.al_haras.sovereign import describe_key_custody
-from chronus.security.al_haras.topological_os import run_self_tests
+from chronus.core.seal import scrub_dict_strings
+from chronus.security.al_haras.topological_os import public_self_tests, run_self_tests
 from chronus.service.dependencies import get_current_tenant
 
 from chronus.security.al_haras import (
@@ -136,12 +137,15 @@ class FrontierSimulationRequest(BaseModel):
 async def get_al_haras_status() -> Dict[str, Any]:
     """Self-test results and implementation status, recomputed on every call."""
     tests = run_self_tests()
+    public_tests = scrub_dict_strings(
+        public_self_tests(tests), context="al_haras self_tests"
+    )
     expander = RamanujanExpanderSpectralGapGuard.verify_mass_gap()
     governance = SovereignGovernanceEngine.audit_sovereign_compliance("status")
     return {
         "product": "AL HARAS (HYBA Security)",
         "status": "SELF_TEST_PASSED" if all(tests.values()) else "SELF_TEST_FAILED",
-        "self_tests": tests,
+        "self_tests": public_tests,
         "implemented_checks": {
             "state_consistency": "exact cellular-sheaf coboundary with residual location and nearest-section repair",
             "trace_repair": "Reed-Solomon RS(48,32) over GF(257), Berlekamp-Welch decoding",
@@ -153,7 +157,7 @@ async def get_al_haras_status() -> Dict[str, Any]:
                 "spectral_gap": expander["spectral_gap_decimal"],
                 "certified_exactly": expander["satisfies_bound"],
             },
-            "braid_relations": "Fibonacci braid representation over Z[zeta_5], exact",
+            "braid_relations": "Exact braid representation over Z[zeta_5]",
             "receipts": "Ed25519 and ML-DSA-87 (FIPS 204) over canonical JSON; both must verify",
         },
         "not_implemented": [

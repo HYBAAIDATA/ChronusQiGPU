@@ -1,35 +1,34 @@
-# Chronusv2
+# Chronus
 
-Chronusv2 is a HYBA Data software prototype exploring exact mathematical representations and workload execution. **Chronus is a HYBA Data product/platform, not a separate company.** HYBA’s two market-facing companies are HYBA Data and HYBA Security; **AL HARAS is HYBA Security**. This repository is **not release-qualified** and does not establish production readiness, enterprise security, regulatory compliance, customer deployments, or performance advantages. See the [claim audit](docs/claim-audit.md) before relying on any older product, benchmark, valuation, or release document.
+Chronus is HYBA Data's computational infrastructure platform. This repository contains the maintained execution runtime, software-defined iGPU/fleet, tensor runtime, enterprise connector plane, OVID representation services, THESEUS custody services, APIs, frontend, tests, evidence tooling and release controls.
 
-## What the source supports
+## Production architecture
 
-- A Python implementation of exact arithmetic and Lucas/PV reference workloads is present in `src/chronus/`.
-- A workload service/API, SDK, and local persistence code are present. The default workload store is SQLite; this does not establish high availability or a production multi-tenant deployment.
-- A CPU reference execution path is the default. An opt-in OpenCL adapter exists, but this review did not validate it on physical GPU hardware.
-- Some storage, provisioning, status, and console paths are local or simulated. They must not be represented as customer deployments, durable distributed infrastructure, live telemetry, or measured operations.
-- The source contains experimental security-related modules. The current `MLDSASigner`, STARK-shaped verifier, and KMS/HSM provider abstractions are **not evidence of conformant ML-DSA/FIPS 204, sound STARK/FRI verification, or real cloud/HSM key custody**.
+The data/execution core is one triad:
 
-These statements are based on a static review of source at commit `a2768d11847de113d26535e33cfe9d4a79a009db` on 2026-11-08. Tests, CI runs, builds, physical devices, hosted services, and third-party assessments were not run or independently verified for this documentation update.
+| Authority | Responsibility |
+| --- | --- |
+| **CHRONUS** | execution, backend selection, scheduling, tensor operations, fleet coordination, verification and execution receipts |
+| **OVID** | versioned reversible representation transformation and materialisation |
+| **THESEUS** | durable custody, integrity, continuity, restart recovery and provenance |
 
-## Release posture
+The production composition is implemented in `src/chronus/triad.py`.
 
-**NOT QUALIFIED.** Previous “GO,” “production qualified,” certification, benchmark, invariant-count, tenant-volume, and valuation statements have been withdrawn unless re-established with current, reproducible evidence. Do not use those statements in customer, investor, procurement, or press material. Chronus has no asserted affiliation, endorsement, or joint venture with McKinsey or Accenture.
+The maintained runtime also contains:
+- software-defined iGPU and multi-machine fleet execution under `src/chronus/fleet/`;
+- tensor execution under `src/chronus/tensor/`, including selective resident-state materialisation and a fail-closed physical OpenCL tensor route;
+- workload execution and backend routing under `src/chronus/execution/`;
+- enterprise connector and data-movement services under `src/chronus/storage/connectors.py`;
+- service/API surfaces under `src/chronus/service/`;
+- internal treasury mining support, which is not a customer product.
 
-## Development
+## Definitive production posture
 
-Requires Python 3.10 or later. To install and run the tests locally:
+The source is being closed out under an **evidence-gated production posture**.
 
-```bash
-git clone https://HYBADATA@dev.azure.com/HYBADATA/Chronus_Redux/_git/Chronus_Redux
-cd Chronus_Redux
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -e '.[dev]'
-python -m pytest -q
-```
+A source constant, successful local test run, provider name or historical benchmark cannot award production admission. The current qualification path requires the exact release commit, verified CI evidence and all mandatory product gates.
 
-Running this command is a local test action, not a release qualification or certification. Record the commit, environment, command, result, and CI run when publishing test evidence.
+The mandatory product gates are defined in `src/chronus/core/qualification.py`. The software-base product verifier is `scripts/ci/build_product_gates.py`; `scripts/ci/evaluate_attested.py` verifies the separately attested test and product-gate artifacts. A tag can publish only after `scripts/ci/require_release_qualification.py` verifies successful full CI and an attested `PASS` qualification for the exact `main` commit.
 
 ## CI and deployment
 
@@ -37,91 +36,70 @@ GitHub Actions under `.github/workflows/` are active for pushes and pull request
 
 The repository contains Azure infrastructure definitions under `infra/azure/`, but no active Azure deployment pipeline is established by this source snapshot. Deployment remains an explicit owner-controlled operation and is out of scope for PR #71. Before deploying the API, set a stable `CHRONUS_JWT_SECRET`; otherwise token signing keys change across restarts. See [the Notion requirements map](docs/notion-production-readiness.md) for the release packet and remaining gates.
 
-## Documentation
+`DurableTheseusService` in `src/chronus/storage/durable.py` provides the production local custody path using SQLite WAL, full synchronous commits, content verification, tenant-scoped records, restart validation and a hash-chained journal.
 
-- [Repository agent instructions](AGENTS.md)
-- [HYBA product style guide](docs/directives/PRODUCT_STYLE_GUIDE.md)
-- [Frontend implementation standard](docs/directives/FRONTEND.md)
-- [Product packaging and market framing](docs/directives/PACKAGING.md)
-- [HYBA funding pitch — positioning draft](funding/FUNDING_PITCH.md)
-- [iGPU Manifesto: Chronus ONE & The Virtual GPIU](docs/IGPU_MANIFESTO.md)
-- [iGPU fleet: many machines as one Chronus iGPU, in tiers with the option to scale](docs/fleet/FLEET.md) ([Mac setup](docs/fleet/MAC_SETUP.md), [spec decisions](docs/fleet/DECISIONS.md))
-- [Claim audit and disposition](docs/claim-audit.md)
-- [Current implementation assessment](docs/system-update/current-state-assessment.md)
-- [Architecture and market assumptions](docs/system-update/architecture-and-market.md)
-- [Test evidence and limitations](docs/system-update/test-evidence.md)
-- [Release decision](RELEASE_DECISION_MCKINSEY_TECH.md)
-- [Historical reports and withdrawal notices](docs/reports/README.md)
-- [Governance and acceptance controls](docs/system-update/governance-and-acceptance.md)
+The older `TheseusService` remains available for compatibility and in-process workflows. It must not be used as evidence of durable custody.
 
----
+`OvidTransformService` in `src/chronus/ovid/transform.py` owns versioned reversible working representations. OVID does not replace THESEUS as the durable system of record.
 
-## Forensic Analysis Addendum (2026-11-14)
+## Tensor and accelerator runtime
 
-This addendum documents the forensic analysis of the mining workflow and constituent parts for the Chronus v2 repository.
+The maintained tensor runtime now includes:
+- selective row/byte reconstruction without full-state reconstruction;
+- shape-safe rectangular matrix operations and other explicit tensor operations;
+- dtype-preserving resident-state storage;
+- deterministic geodesic scheduling;
+- output-integrity checks;
+- measured-input energy comparison;
+- profile-driven routing from verified observations;
+- selective folded-state inference;
+- physical OpenCL, CUDA and Apple Metal tensor backends that require device discovery, kernel readiness and a known-answer self-test before becoming eligible; none silently fall back to CPU.
 
-### Mining Workflow Summary
+Physical execution and performance remain device-specific evidence. An adapter or kernel being present is not a physical benchmark.
 
-The Chronus mining workflow integrates Bitcoin Stratum V1 protocol with geometric algebra over F_257, replacing stochastic brute-force hash scanning with deterministic geometric collapse. Key components include:
+## Evidence migration
 
-- **Stratum V1 Protocol**: `src/chronus/stratum/` - endianness engine, gatekeeper, bip310 version rolling
-- **Geometric/Galois Miner**: `src/chronus/execution/geometric_galois_miner.py` - 11D 600-cell polytope over F_257
-- **Mining Scheduler**: `src/chronus/execution/mining_scheduler.py` - TURING exact-state scheduling
-- **Elevation Layer**: `src/chronus/execution/elevation.py` - golden-stride bijection
+Historical Chronus tests and benchmarks were reconciled from the engineering record and the ChatGPT Library. They are retained as provenance and regression targets in `evidence/migration/chronus_historical_evidence_register.json`.
 
-### Scientific Breakthroughs
+Historical results are not silently promoted to the current release commit. The current CI reruns the maintained code; physical results remain bound to the named device, driver, workload and artifact.
 
-| Innovation | Status |
-|---|---|
-| Galois Field One-Shot Oracle over F_257 | Verified: N=2^1000 → 1 oracle flip + 1 diffusion |
-| 11D 600-Cell Polytope Geometry | Verified: Deterministic collapse vs stochastic brute-force |
-| Lie-Poisson Ramanujan Expander Manifold | Verified: PSL_2(F_257) with spectral gap Delta=229.14 |
-| Hodge Sheaf Laplacian Consensus | Verified: ker(L_F) == H^0(X; F) validation |
-| DSW Instanton Self-Healing | Verified: 1-cycle instanton cobordism self-healing |
-| Zeckendorf Phi-Addressing | Verified: Carry-free Fibonacci index addressing |
-| Golden-Stride Bijection | Verified: nonce = offset + index * 0x9E3779B9 (mod 2^32) |
-| Exact Fraction Gatekeeper | Verified: Fraction-based difficulty-to-target |
+## Development
 
-### Project State Benchmarking
+Python 3.10+ is required.
 
-- **Selftest (BIST)**: Known-answer checks against public Bitcoin data (genesis + block 1)
-- **Turing Scheduler**: Probability invariant and lane coverage framework established
-- **OpenCL PV Backend**: Lucas/Fibonacci exact values confirmed, 32-lane device consensus verified
-- **Coverage Target**: 90%+ for all key modules
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e '.[dev]'
+python -m pytest -q
+```
 
-### Packaging and Release Status
+Focused triad close-out tests:
 
-| Package | Classification |
-|---|---|
-| `chronus` (src/chronus) | Internal research, Private :: Do Not Upload |
-| `turing` (packages/turing) | Internal math foundation, Private :: Do Not Upload |
-| `hyba_mine` (packages/hyba_mine) | Internal treasury mining, Private :: Do Not Upload |
-| `chronus.quantum` (src/chronus/quantum) | Legacy research, Not TURING, not conventional QM |
+```bash
+python -m pytest -q \
+  tests/test_triad_production.py \
+  tests/test_triad_capability_manifest.py \
+  tests/test_geodesic_tensor_migration.py \
+  tests/test_qualification.py \
+  tests/test_product_gates.py \
+  tests/test_release_gate.py
+```
 
-**Release Posture**: NOT QUALIFIED. All previous claims withdrawn unless re-established with current, reproducible evidence. No quantum advantage, hardware execution, or release readiness claims are supported.
+## CI
 
-### Evidence Requirements
+GitHub Actions workflows in `.github/workflows/` are active for this repository. They cover the main regression suite, packaging, acceleration checks, storage evidence, mining checks, frontend builds, container restart smoke tests, release/evidence qualification and other bounded gates.
 
-For each capability, evidence must include:
-- Source commit and environment/dependency versions
-- Exact commands and raw outputs
-- Exit status and limitations
-- SHA-256 artifact hashes
-- Reviewer name and CI run URL
-- Per-module benchmark raw records
-- Whole-layer benchmarks at named paths
-- Equivalent outputs and input preparation/extraction costs
-- Repeated timings and correctness tolerances
-- Environment documentation
-- Setup costs recorded separately when excluded
+Workflow existence is not a passing result; use the exact run associated with the release SHA. The release workflow requires both a successful full `CI` push run and a successful `Chronus V2 evidence qualification` push run for that exact `main` commit before building or publishing.
 
-### Documentation Refresh
+Azure deployment assets are also present. Their presence does not establish that a deployment is running.
 
-New documentation files created:
-- `FORENSIC_ANALYSIS.md` - Comprehensive forensic analysis
-- `docs/mining/mining_workflow_forensic.md` - Detailed workflow documentation
-- `docs/breakthroughs/` - Breakthrough innovation catalog
-- `docs/evidence/` - Evidence packs per capability
-- `docs/packaging/` - Packaging and release readiness documentation
+## Product boundaries
 
-*This addendum is based on source review at commit 89aa86851eb3b56cd8d4276a3d847d9bc66b64d4 on 2026-11-14. Tests, CI runs, builds, physical devices, and third-party assessments were not independently verified for this update.*
+- Chronus is a HYBA Data product/platform.
+- AL HARAS is HYBA Security.
+- Customer-facing claims must come from current evidence.
+- Internal treasury mining is not a customer-facing offering.
+- Historical reports remain provenance unless re-qualified on the current source.
+
+See [AGENTS.md](AGENTS.md), the [product style guide](docs/directives/PRODUCT_STYLE_GUIDE.md) and [packaging rules](docs/directives/PACKAGING.md) for repository-wide product and evidence rules.

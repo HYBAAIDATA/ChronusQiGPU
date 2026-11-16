@@ -73,7 +73,7 @@ async def get_euclid_telemetry(
     return {
         "status": "HEALTHY",
         "supported_modes": [m.value for m in IntelligenceMode],
-        "manifold": "11D Regular 600-Cell Polychoron over F_257[phi]",
+        "manifold": "11D regular polychoron over F_257[x]",
         "spectral_mass_gap": 229.14,
         "triad_resonance_damping": "ENABLED",
         "zero_stall_guarantee": True,

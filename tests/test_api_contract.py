@@ -1,7 +1,10 @@
 """Contract tests: the guarantees the surface actually makes."""
 
 import json
+import os
 import sqlite3
+import subprocess
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 
@@ -189,6 +192,207 @@ def test_parallel_processes_initialize_sqlite_atomically(tmp_path):
             "SELECT COUNT(*) FROM sqlite_master "
             "WHERE type='table' AND name LIKE 'api_%'"
         ).fetchone()[0] == 5
+
+
+def test_staged_publication_fsyncs_directory(tmp_path, monkeypatch):
+    """POSIX publication must persist both data bytes and its directory entry."""
+    if os.name == "nt":
+        pytest.skip("Windows rename has separate no-replace semantics")
+    database = tmp_path / "persist.sqlite3"
+    observed = []
+    real_sync = os.fsync
+
+    def observed_fsync(fd):
+        observed.append(os.fstat(fd).st_mode)
+        return real_sync(fd)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(state.os, "fsync", observed_fsync)
+        state._stage_brand_new_database(str(database))
+    assert database.exists()
+    import stat
+    assert any(stat.S_ISREG(mode) for mode in observed)
+    assert any(stat.S_ISDIR(mode) for mode in observed)
+
+
+def test_existing_published_database_is_never_overwritten(tmp_path):
+    database = tmp_path / "existing.sqlite3"
+    database.write_bytes(b"existing-state-must-survive")
+    with pytest.raises(FileExistsError):
+        state._stage_brand_new_database(str(database))
+    assert database.read_bytes() == b"existing-state-must-survive"
+
+
+def test_interrupted_staging_never_publishes_incomplete_database(
+    tmp_path, monkeypatch
+):
+    """An invalid first-use schema may not become the durable published file."""
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "sqlite")
+    database = tmp_path / "interrupt.sqlite3"
+    monkeypatch.setenv("CHRONUS_API_DB_PATH", str(database))
+    with monkeypatch.context() as patch:
+        patch.setattr(
+            state, "_SCHEMA_SQL",
+            {**state._SCHEMA_SQL, "invalid": "CREATE TABLE"},
+        )
+        with pytest.raises(sqlite3.OperationalError):
+            with state.connection():
+                pass
+    assert not database.exists()
+    with state.connection() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM api_workloads").fetchone()[0] == 0
+    assert database.exists()
+    with state.connection() as conn:
+        assert state._schema_valid(conn)
+
+
+def test_fresh_sqlite_bootstrap_is_serialized_across_processes(tmp_path):
+    """Independent workers must never observe a partially created schema."""
+    db_path = tmp_path / "multiprocess.sqlite3"
+    env = {
+        **os.environ,
+        "CHRONUS_API_STATE_BACKEND": "sqlite",
+        "CHRONUS_API_DB_PATH": str(db_path),
+    }
+    script = """
+from chronus.service.api import state
+with state.connection() as conn:
+    assert conn.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
+    assert conn.execute("SELECT count(*) FROM api_workloads").fetchone()[0] == 0
+"""
+    children = []
+    try:
+        for _ in range(6):
+            children.append(
+                subprocess.Popen(
+                    [sys.executable, "-c", script],
+                    env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                )
+            )
+        results = [child.communicate(timeout=60) for child in children]
+        assert all(child.returncode == 0 for child in children), results
+    finally:
+        # A failed start or timeout must never leak a worker or hold a lock.
+        for child in children:
+            if child.poll() is None:
+                child.kill()
+        for child in children:
+            child.wait(timeout=15)
+    assert db_path.exists()
+    assert (tmp_path / "multiprocess.sqlite3.bootstrap.lock").exists()
+
+
+def test_bootstrap_sidecar_blocks_competing_process(tmp_path):
+    """Prove a second process cannot acquire an already-held bootstrap lock."""
+    import time
+
+    db_path = tmp_path / "sidecar-lock.sqlite3"
+    script = (
+        "from chronus.service.api.state import _interprocess_bootstrap_lock; "
+        "print('WAITING', flush=True); "
+        "with_lock = _interprocess_bootstrap_lock(" + repr(str(db_path)) + "); "
+        "with_lock.__enter__(); "
+        "print('ACQUIRED', flush=True); "
+        "with_lock.__exit__(None, None, None)"
+    )
+    child = None
+    try:
+        with state._interprocess_bootstrap_lock(str(db_path)):
+            child = subprocess.Popen(
+                [sys.executable, "-c", script],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+            )
+            assert child.stdout.readline().strip() == "WAITING"
+            time.sleep(0.35)
+            assert child.poll() is None, (
+                "Second worker bypassed the first worker's bootstrap lock"
+            )
+        stdout, stderr = child.communicate(timeout=30)
+        assert child.returncode == 0, stderr
+        assert "ACQUIRED" in stdout
+    finally:
+        if child is not None:
+            if child.poll() is None:
+                child.kill()
+            child.wait(timeout=15)
+
+
+def test_bootstrap_lock_is_shared_by_database_symlink_alias(tmp_path):
+    """Two independent workers resolving the same DB must share one lock."""
+    import time
+
+    target = tmp_path / "canonical.sqlite3"
+    target.touch()
+    alias = tmp_path / "alias.sqlite3"
+    alias.symlink_to(target)
+    code = (
+        "from chronus.service.api.state import _interprocess_bootstrap_lock; "
+        "print('WAITING', flush=True); "
+        "gate = _interprocess_bootstrap_lock(" + repr(str(alias)) + "); "
+        "gate.__enter__(); print('ACQUIRED', flush=True); "
+        "gate.__exit__(None, None, None)"
+    )
+    child = None
+    try:
+        with state._interprocess_bootstrap_lock(str(target)):
+            child = subprocess.Popen(
+                [sys.executable, "-c", code],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+            )
+            assert child.stdout.readline().strip() == "WAITING"
+            time.sleep(0.25)
+            assert child.poll() is None, "alias obtained a different bootstrap lock"
+        output, errors = child.communicate(timeout=30)
+        assert child.returncode == 0, errors
+        assert "ACQUIRED" in output
+    finally:
+        if child is not None:
+            if child.poll() is None:
+                child.kill()
+            child.wait(timeout=15)
+
+
+def test_crash_during_bootstrap_keeps_incomplete_database_unqualified(
+    tmp_path, monkeypatch
+):
+    """An abruptly exited bootstrap must not cause silent custody recreation."""
+    db_path = tmp_path / "crashed-bootstrap.sqlite3"
+    env = {
+        **os.environ,
+        "CHRONUS_API_STATE_BACKEND": "sqlite",
+        "CHRONUS_API_DB_PATH": str(db_path),
+    }
+    crashing_worker = """
+import os
+import sqlite3
+from chronus.service.api.state import _interprocess_bootstrap_lock
+
+path = os.environ["CHRONUS_API_DB_PATH"]
+with _interprocess_bootstrap_lock(path):
+    with sqlite3.connect(path) as conn:
+        conn.execute("CREATE TABLE interrupted_bootstrap (id INTEGER)")
+    os._exit(37)
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", crashing_worker],
+        env=env, capture_output=True, text=True, timeout=45,
+    )
+    assert result.returncode == 37, result.stderr
+    assert db_path.exists()
+
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "sqlite")
+    monkeypatch.setenv("CHRONUS_API_DB_PATH", str(db_path))
+    with pytest.raises(RuntimeError, match="existing database"):
+        with state.connection():
+            pass
+    with sqlite3.connect(db_path) as conn:
+        assert conn.execute(
+            "SELECT name FROM sqlite_master WHERE name = 'interrupted_bootstrap'"
+        ).fetchone()
+        assert conn.execute(
+            "SELECT name FROM sqlite_master WHERE name = 'api_idempotency'"
+        ).fetchone() is None
+    monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
 
 
 def test_sqlite_replaced_database_fails_closed_and_readiness_drops(
