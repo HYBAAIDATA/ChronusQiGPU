@@ -107,6 +107,7 @@ class NativeMathReferenceBackend:
         {
             "EXACT_Q5_ALGEBRAIC",
             "LUCAS_PV_SCALING",
+            "scaling.v1",  # sealed external alias
             "SHA256D_NONCE_SEARCH",
             "PV_LATTICE_FOLD",
             "TRINITY_SCALE_FOLD_STORE",
@@ -117,6 +118,7 @@ class NativeMathReferenceBackend:
             "EXACT_PHASE_SEARCH",
             "ZERO_COPY_CONNECTOR_EXECUTE",
             "BINET_ZECKENDORF_INGEST",
+            "ingest.v1",  # sealed external alias
             "ENTERPRISE_FINANCIAL_ETL",
             "O1_STRUCTURAL_PV",
             "DEFENCE_SIMULATION",
@@ -164,7 +166,7 @@ class NativeMathReferenceBackend:
                 "norm_invariant_verified": True,
                 "values": serialize_lattice(outputs),
             }
-        if workload_type == "BINET_ZECKENDORF_INGEST":
+        if workload_type in ("BINET_ZECKENDORF_INGEST", "ingest.v1"):
             return self._execute_binet_zeckendorf_ingest(payload)
         if workload_type in (
             "ENTERPRISE_FINANCIAL_ETL",
@@ -200,7 +202,7 @@ class NativeMathReferenceBackend:
             return self._execute_metallic(request)
         if workload_type == "EXACT_PHASE_SEARCH":
             return self._execute_phase_search(request)
-        if workload_type == "LUCAS_PV_SCALING":
+        if workload_type in ("LUCAS_PV_SCALING", "scaling.v1"):
             return self._execute_lucas(request)
         if workload_type == "SHA256D_NONCE_SEARCH":
             return self._execute_nonce_search(request)

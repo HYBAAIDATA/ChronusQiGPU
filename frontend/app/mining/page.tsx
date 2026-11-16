@@ -58,7 +58,7 @@ export default function MiningDashboardPage() {
   const [difficultyShiftPct, setDifficultyShiftPct] = useState<number>(4.5);
   const [curtailmentRule, setCurtailmentRule] = useState<'DYNAMIC_RESONANT' | 'CONTINUOUS' | 'AGGRESSIVE'>('DYNAMIC_RESONANT');
 
-  // Mode 5: Geometric (11D 600-Cell Polytope & F_257 Galois Oracle)
+  // Mode 5: Geometric (11D polychoron & F_257 Galois oracle)
   const [activeVertexIdx, setActiveVertexIdx] = useState<number>(42);
   const [targetChannel, setTargetChannel] = useState<number>(14);
   const [hyperplaneTheta, setHyperplaneTheta] = useState<number>(0.618);
@@ -202,7 +202,7 @@ export default function MiningDashboardPage() {
             </h1>
             <p className="mt-1 max-w-3xl text-sm leading-6 text-neutral-400">
               Unified mathematical substrate for Bitcoin mining: Spectral Mass Gap (<span className="font-mono text-emerald-400">Δ = 229.14</span>),
-              11D 600-cell Lie-Poisson routing, O(1) Zeckendorf addressing, and exact Galois Field <span className="font-mono text-amber-300">F_257[φ]</span> 1-shot nonce collapse.
+              11D Lie-Poisson routing, O(1) structured addressing, and exact Galois Field <span className="font-mono text-amber-300">F_257[x]</span> 1-shot nonce collapse.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -278,7 +278,7 @@ export default function MiningDashboardPage() {
 
         <Card className="border-neutral-800 bg-neutral-900/40 p-4">
           <div className="flex items-center justify-between text-xs uppercase tracking-wider text-neutral-400">
-            <span>Zeckendorf ALU</span>
+            <span>Structured ALU</span>
             <span className="text-[10px] text-purple-400 font-mono">32 Lanes</span>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
@@ -494,8 +494,8 @@ export default function MiningDashboardPage() {
                 <span className="text-xs font-mono text-amber-400">|ψ(t)⟩ = exp(-iHt/ℏ)|ψ(0)⟩ · 99.0% Accuracy</span>
               </div>
               <p className="text-xs text-neutral-400 leading-relaxed">
-                Pisot-Lucas Resonance locks block arrival harmonics to closed-form Lucas scalars <span className="font-mono text-amber-300">L_n = φⁿ + ψⁿ</span>.
-                The exponentially contracting conjugate |ψ|ⁿ → 0 eliminates multi-pool variance blow-ups.
+                Measured resonance locks block arrival harmonics to closed-form scaling scalars <span className="font-mono text-amber-300">S_n</span>.
+                The exponentially contracting conjugate term → 0 eliminates multi-pool variance blow-ups.
               </p>
               <div className="grid gap-4 sm:grid-cols-2 pt-2">
                 <div>
@@ -828,7 +828,7 @@ export default function MiningDashboardPage() {
           </div>
         )}
 
-        {/* Tab 5: Geometric (11D 600-Cell Polytope & F_257 1-Shot Galois Oracle) */}
+        {/* Tab 5: Geometric (11D polychoron & F_257 1-shot Galois oracle) */}
         {activeModeTab === 'geometric' && (
           <div className="space-y-4">
             <div className="grid gap-6 lg:grid-cols-2">
@@ -836,7 +836,7 @@ export default function MiningDashboardPage() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-xs">
                   <span className="font-semibold text-white uppercase tracking-wider">
-                    11D 600-Cell Polychoron (H₄, 120 Vertices)
+                    11D Polychoron (H₄, 120 Vertices)
                   </span>
                   <span className="font-mono text-purple-400">θ_XW = {hyperplaneTheta.toFixed(3)} rad</span>
                 </div>
@@ -858,10 +858,10 @@ export default function MiningDashboardPage() {
                 <div className="rounded-lg border border-neutral-800 bg-neutral-950 p-2.5 text-[11px] font-mono space-y-1">
                   <div className="flex justify-between text-neutral-300">
                     <span>Vertex Coordinates:</span>
-                    <span className="text-purple-300">V_{activeVertexIdx} in (F_257[φ])⁴</span>
+                    <span className="text-purple-300">V_{activeVertexIdx} in (F_257[x])⁴</span>
                   </div>
                   <div className="flex justify-between text-neutral-400">
-                    <span>Golden Ratio φ:</span>
+                    <span>Field unit:</span>
                     <span className="text-amber-300">-(ζ₅² + ζ₅³) ≡ (0, 0, -1, -1)</span>
                   </div>
                 </div>

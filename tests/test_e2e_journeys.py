@@ -51,7 +51,8 @@ def test_e2e_jwt_workload_lifecycle(client):
     assert submit.status_code == 202
     body = submit.json()
     assert body["status"] == "COMPLETED"
-    assert body["result"]["result"]["lucas"] == "123"
+    assert body["result"]["result"]["family"] == "scaling.v1"
+    assert body["result"]["result"]["sequence_value"] == "123"
     workload_id = body["workload_id"]
 
     fetched = client.get(f"/workloads/{workload_id}", headers=headers)

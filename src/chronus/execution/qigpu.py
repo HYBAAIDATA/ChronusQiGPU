@@ -10,6 +10,7 @@ execution stays on the CPU substrate and telemetry says so.
 from dataclasses import dataclass
 from typing import Any
 
+from chronus.core.workload_alias import externalize_workload_type
 from chronus.execution.reference import ExecutionRouter
 
 
@@ -23,11 +24,14 @@ class ExecutionSurface:
     telemetry: dict[str, Any]
 
     def to_dict(self) -> dict[str, Any]:
+        # Customer-visible inventory uses sealed class names only.
         return {
             "surface_id": self.surface_id,
             "kind": self.kind,
             "execution_mode": self.execution_mode,
-            "workloads": self.workloads,
+            "workloads": sorted(
+                {externalize_workload_type(name) for name in self.workloads}
+            ),
             "available": self.available,
             "telemetry": self.telemetry,
         }
