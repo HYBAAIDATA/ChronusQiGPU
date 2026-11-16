@@ -270,7 +270,7 @@ def test_turing_scheduler_is_used_by_live_nonce_search():
     candidate = miner._search_nonce_batch(miner.gateway.jobs["job"], bytes(32), "00000000", (1 << 256) - 1)
     first = miner.scheduler.last_evidence["lane_order"][0]
     assert candidate[0] == miner.partitioner.ranges[first].start_nonce
-    assert miner.scheduler.last_evidence["overlay"] == {"dodecahedron_faces": 12, "icosahedron_vertices": 20}
+    assert miner.scheduler.last_evidence["overlay"] == {"dodecahedron_faces": 12, "icosahedron_faces": 20}
     assert miner.last_search_result.harmonic_consensus
     assert miner.last_search_result.galois_amplitude == 1
 
