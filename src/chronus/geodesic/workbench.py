@@ -19,17 +19,22 @@ class MathematicalWorkbench:
     """Local inspection of an actual exact state; updates are explicit."""
 
     state: object
+    max_entries: int = 4096
 
     def __post_init__(self):
         from turing.exact.geometry.hilbert import SparseState
+        if type(self.max_entries) is not int or not 1 <= self.max_entries <= 19200:
+            raise ValueError("workbench inspection bound must be within 1..19200")
         if not isinstance(self.state, SparseState):
             raise TypeError("workbench requires caller-supplied TURING SparseState")
         if not self.state.normalized():
             raise ValueError("workbench requires exactly normalized state")
 
-    def inspect(self, max_entries: int = 256) -> dict[str, object]:
-        if type(max_entries) is not int or not 1 <= max_entries <= 4096:
-            raise ValueError("max_entries outside 1..4096")
+    def inspect(self, max_entries: int | None = None) -> dict[str, object]:
+        if max_entries is None:
+            max_entries = self.max_entries
+        if type(max_entries) is not int or not 1 <= max_entries <= 19200:
+            raise ValueError("max_entries outside 1..19200")
         entries = sorted(self.state.amplitudes.items())
         if len(entries) > max_entries:
             raise ValueError("inspection limit exceeded; increase max_entries explicitly")
@@ -46,7 +51,8 @@ class MathematicalWorkbench:
             } for i,value in entries],
         }
 
-    def inject_phase(self, index: int, phase: str) -> dict[str, object]:
+    def inject_phase(self, index: int, phase: str,
+                     max_entries: int | None = None) -> dict[str, object]:
         """A controlled exact local phase update; no oracle shortcut."""
         from turing.exact.geometry.hilbert import (
             ExactComplex, phase_injection,
@@ -59,12 +65,20 @@ class MathematicalWorkbench:
             raise ValueError("allowed exact phase values: 1,-1,i,-i")
         if type(index) is not int or not 0 <= index < self.state.space.dimension:
             raise ValueError("basis index out of range")
-        self.state = phase_injection(self.state,{index:choices[phase]})
-        if not self.state.normalized():
+        bound = self.max_entries if max_entries is None else max_entries
+        if type(bound) is not int or not 1 <= bound <= 19200:
+            raise ValueError("max_entries outside 1..19200")
+        next_state = phase_injection(self.state, {index: choices[phase]})
+        if not next_state.normalized():
             raise ArithmeticError("exact phase update did not preserve norm")
-        return self.inspect()
+        # Inspection validation must precede state commitment, so an
+        # unsuccessful request never produces a partially applied update.
+        if len(next_state.amplitudes) > bound:
+            raise ValueError("inspection limit exceeded; exact state unchanged")
+        self.state = next_state
+        return self.inspect(bound)
 
-    def visualize_wavefunction(self, max_entries: int = 256):
+    def visualize_wavefunction(self, max_entries: int | None = None):
         """Matplotlib figure of measured *mathematical* Born weights, no mocks."""
         data = self.inspect(max_entries)
         try:
@@ -108,6 +122,8 @@ class MathematicalWorkbench:
             raise RuntimeError("install ipywidgets and IPython for Jupyter workbench") from exc
         if not self.state.amplitudes:
             raise ValueError("state has no amplitude to inspect")
+        # Fail before creating controls if a caller needs a larger bound.
+        self.inspect(self.max_entries)
         indices = sorted(self.state.amplitudes.keys())
         selector = widgets.Dropdown(options=indices, description="Basis")
         phase = widgets.Dropdown(options=("1","-1","i","-i"), description="Phase")
@@ -119,19 +135,20 @@ class MathematicalWorkbench:
         def on_phase(_):
             with output:
                 output.clear_output()
-                result = self.inject_phase(selector.value, phase.value)
+                result = self.inject_phase(selector.value, phase.value,
+                                           max_entries=self.max_entries)
                 display(result)
                 print("Verified: exact state norm remains 1")
 
         def on_plot(_):
             with output:
                 output.clear_output()
-                display(self.visualize_wavefunction())
+                display(self.visualize_wavefunction(self.max_entries))
 
         def on_inspect(_):
             with output:
                 output.clear_output()
-                display(self.inspect())
+                display(self.inspect(self.max_entries))
 
         inject.on_click(on_phase)
         plot.on_click(on_plot)
