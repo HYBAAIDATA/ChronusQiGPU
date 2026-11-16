@@ -18,6 +18,7 @@ import statistics
 import subprocess
 import sys
 import time
+import tempfile
 
 import numpy as np
 
@@ -124,8 +125,18 @@ def main(argv=None):
         evidence=measure(args.data,args.sha256,depth=args.depth,
                          window=args.window,samples=args.samples)
         target.parent.mkdir(parents=True,exist_ok=True)
-        with target.open("x",encoding="utf8") as stream:
-            json.dump(evidence,stream,indent=2)
+        # Write and fsync a private staging file before exclusive atomic
+        # publication; a failed write never leaves a deceptive partial report.
+        fd, staged = tempfile.mkstemp(prefix=".chronus-evidence-",
+                                      suffix=".json.tmp",dir=target.parent)
+        try:
+            with os.fdopen(fd,"w",encoding="utf8") as stream:
+                json.dump(evidence,stream,indent=2)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.link(staged,target)  # atomic publish, fails if target exists
+        finally:
+            os.unlink(staged)
         print(json.dumps({"result":"PASS","output":str(target),
                           "production_qualification":"UNVERIFIED"}))
         return 0
