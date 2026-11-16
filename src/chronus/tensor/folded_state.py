@@ -12,7 +12,44 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from chronus.execution.structural import fold_pair, unfold_pair
+from functools import lru_cache
+
+
+@lru_cache(maxsize=1)
+def _pair_luts() -> tuple[np.ndarray, np.ndarray]:
+    """Complete M15 and inverse tables over the exact 65,536 byte-pair domain.
+
+    All arithmetic uses uint32 before modular reduction to avoid intermediary
+    overflow. The tables are read-only and are created once per process.
+    This is a NumPy CPU execution, NOT a GPU instruction or compression codec.
+    """
+    pairs = np.arange(1 << 16, dtype=np.uint32)
+    first, second = pairs >> 8, pairs & 255
+    folded = ((((219 * first + 98 * second) & 255) << 8) |
+              ((98 * first + 121 * second) & 255)).astype(np.uint16)
+    unfolded = ((((135 * first + 98 * second) & 255) << 8) |
+                ((98 * first + 37 * second) & 255)).astype(np.uint16)
+    folded.flags.writeable = False
+    unfolded.flags.writeable = False
+    return folded, unfolded
+
+
+def _map_pairs(payload: bytes, *, inverse: bool) -> bytes:
+    """Transform only the supplied even-length aligned range, without expansion."""
+    if len(payload) % 2:
+        raise ValueError("byte-pair map requires even-length aligned input")
+    if not payload:
+        return b""
+    values = np.frombuffer(payload, dtype=np.uint8).reshape(-1, 2)
+    indices = ((values[:, 0].astype(np.uint16) << 8) |
+               values[:, 1].astype(np.uint16))
+    mapped = _pair_luts()[1 if inverse else 0][indices]
+    result = np.empty(len(payload), dtype=np.uint8)
+    result[0::2] = (mapped >> 8).astype(np.uint8)
+    result[1::2] = mapped.astype(np.uint8)
+    return result.tobytes()
+
+
 
 
 @dataclass(frozen=True)
@@ -28,12 +65,8 @@ class ExactFoldState:
         if not isinstance(payload, bytes) or not payload:
             raise ValueError("payload must be non-empty bytes")
         padded = payload if len(payload) % 2 == 0 else payload + b"\x00"
-        folded = bytearray(len(padded))
-        for i in range(0, len(padded), 2):
-            a, b = fold_pair(padded[i], padded[i + 1])
-            folded[i], folded[i + 1] = a, b
         return cls(
-            folded=bytes(folded),
+            folded=_map_pairs(padded, inverse=False),
             original_length=len(payload),
             source_sha256=hashlib.sha256(payload).hexdigest(),
         )
@@ -53,13 +86,7 @@ class ExactFoldState:
         )
 
     def _unfold_aligned(self, pair_start: int, pair_stop: int) -> bytes:
-        output = bytearray(pair_stop - pair_start)
-        out = 0
-        for i in range(pair_start, pair_stop, 2):
-            a, b = unfold_pair(self.folded[i], self.folded[i + 1])
-            output[out], output[out + 1] = a, b
-            out += 2
-        return bytes(output)
+        return _map_pairs(self.folded[pair_start:pair_stop], inverse=True)
 
     def unfold(self) -> bytes:
         raw = self._unfold_aligned(0, len(self.folded))[: self.original_length]
