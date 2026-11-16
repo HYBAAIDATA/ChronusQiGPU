@@ -16,7 +16,7 @@ from fractions import Fraction
 from typing import Collection, Mapping
 
 from turing.exact.geometry.hilbert import (
-    ONE, ZERO, ExactComplex, SparseState,
+    ZERO, ExactComplex, SparseState,
     SignedInvolution, phase_injection,
 )
 

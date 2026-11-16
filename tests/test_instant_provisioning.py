@@ -142,7 +142,10 @@ class TestInstantProvisioningEngine(unittest.TestCase):
         self.assertTrue(tenant_storage_registry.verify_journal_continuity(tenant_id))
 
         # Verify GET /capacity reflects updated allocations
-        cap_status = self.client.get(f"/v1/tenants/{tenant_id}/capacity")
+        cap_status = self.client.get(
+            f"/v1/tenants/{tenant_id}/capacity",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
         self.assertEqual(cap_status.status_code, 200)
         self.assertEqual(cap_status.json()["active_warps"], 256)
         self.assertEqual(cap_status.json()["theseus_journal_entries"], 2)

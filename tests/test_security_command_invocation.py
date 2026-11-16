@@ -92,6 +92,7 @@ def test_mutation_executes_argv_and_restores_exact_original_bytes(tmp_path, monk
 
 def test_mutation_restores_source_when_test_launch_fails(tmp_path, monkeypatch):
     root = tmp_path / "checkout"
+    root.mkdir()
     source = root / "changed.py"
     original = b"value = 1\r\n"
     source.write_bytes(original)
