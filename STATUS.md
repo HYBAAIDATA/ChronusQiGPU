@@ -47,3 +47,27 @@ The archive reconciliation PR #130 includes additional source changes:
 not production-admitted. CI must execute, pass and provide exact-head
 evidence before merge; human owner must enforce rulesets and release gates.
 Legacy `access_control.py` is not an active security authority.
+
+## Notion/Library source restoration — November 16, 2026
+
+Source recovery branch `audit/20261116-notion-library-artifacts` reconciles
+real attached Notion blocks and ChatGPT Library ZIPs, not names alone.
+Seven supplied ZIPs passed archive integrity/path checks. The source register
+records their fingerprints plus additional Library sources.
+
+- **CODE-PRESENT, REVIEW PENDING:** exact rational TT (no implicit numerical
+  truncation, checked core digest, registered in `chronus.tensor`).
+- **CODE-PRESENT, REVIEW PENDING:** archived ONE iGPU finite-data and allocation
+  guards wired into the existing `PhiTensorCore` reference execution path.
+- **TEST SOURCE ADDED, CURRENT CI UNAVAILABLE:** tensor round-trip/negative
+  cases and geodesic input/output safety cases.
+- **ARCHIVE-SCOPED RESULTS:** historical ONE iGPU/Lucas 10 passed, historical
+  VQC + PULVINI formal 22 passed, local new exact TT source 6 passed.
+  None qualifies this current branch or deployed runtime.
+- **NOT PORTED:** Chronos QSDL parser/compiler graph. Historical Kellogg
+  merged PR descriptions are not accessible source files via this connection.
+- **NO CLAIM:** live pool accepted share, physical accelerator, quantum
+  advantage, compression capacity or production qualification.
+
+Source map:
+`docs/audits/2026-11-16-notion-library-source-recovery.md`.
