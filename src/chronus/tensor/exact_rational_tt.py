@@ -97,14 +97,15 @@ class ExactRationalTensorTrain:
         final = tuple(tuple((current[l * last + j],) for j in range(last))
                       for l in range(previous))
         cores.append(final)
-        result = cls(dims, tuple(cores), "")
-        result.verify()
         payload = json.dumps({"shape": dims, "cores": [[[[str(v) for v in bond]
-                      for bond in physical] for physical in core] for core in result.cores]},
+                      for bond in physical] for physical in core] for core in tuple(cores)]},
                       sort_keys=True, separators=(",", ":"))
-        return cls(dims, tuple(cores), sha256(payload.encode()).hexdigest())
+        result = cls(dims, tuple(cores), sha256(payload.encode()).hexdigest())
+        result.verify()
+        return result
 
     def reconstruct(self) -> tuple[Fraction, ...]:
+        self.verify()
         # Row-major contraction with explicit bond indices, never a dense 2^n statevector.
         partial = [[Fraction(1)]]
         for site in self.cores:
@@ -134,6 +135,8 @@ class ExactRationalTensorTrain:
             previous = rank
         if previous != 1:
             raise ValueError("terminal tensor train bond must be one")
+        if not isinstance(self.digest, str) or len(self.digest) != 64:
+            raise ValueError("tensor train requires a complete digest")
         if self.digest:
             payload = json.dumps({"shape": self.shape, "cores": [[[[str(v) for v in bond]
                       for bond in physical] for physical in core] for core in self.cores]},
