@@ -189,22 +189,27 @@ CAPACITY_OPENAPI_PATHS = (
     "/v1/capacity/reserve",
     "/v1/capacity/admit",
 )
-_SCHEMA_REF_PREFIX = "#/components/schemas/"
+# Follow local component refs used by FastAPI OpenAPI (schemas, reusable
+# requestBodies/responses/parameters). Unrelated legacy routes stay out.
+_COMPONENT_SECTIONS = ("schemas", "responses", "requestBodies", "parameters")
+_COMPONENT_REF_PREFIX = "#/components/"
 
 
-def _referenced_schema_names(node: Any) -> set[str]:
-    """Return component schema names referenced anywhere under ``node``."""
-    names: set[str] = set()
+def _referenced_components(node: Any) -> set[tuple[str, str]]:
+    """Return ``(section, name)`` pairs for ``#/components/<section>/<name>`` refs."""
+    found: set[tuple[str, str]] = set()
     if isinstance(node, dict):
         ref = node.get("$ref")
-        if isinstance(ref, str) and ref.startswith(_SCHEMA_REF_PREFIX):
-            names.add(ref[len(_SCHEMA_REF_PREFIX) :])
+        if isinstance(ref, str) and ref.startswith(_COMPONENT_REF_PREFIX):
+            parts = ref[len(_COMPONENT_REF_PREFIX) :].split("/", 1)
+            if len(parts) == 2 and parts[0] in _COMPONENT_SECTIONS and parts[1]:
+                found.add((parts[0], parts[1]))
         for value in node.values():
-            names |= _referenced_schema_names(value)
+            found |= _referenced_components(value)
     elif isinstance(node, list):
         for item in node:
-            names |= _referenced_schema_names(item)
-    return names
+            found |= _referenced_components(item)
+    return found
 
 
 def capacity_openapi_fragment(openapi: dict[str, Any]) -> dict[str, Any]:
@@ -212,27 +217,33 @@ def capacity_openapi_fragment(openapi: dict[str, Any]) -> dict[str, Any]:
 
     Never hand-keep this map: the CI gate must seal what the app actually
     serves, or the fragment drifts and the gate passes on a stale copy.
-    Also seals component schemas reachable from those paths (request models
-    are typically ``$ref`` entries), without pulling unrelated legacy routes.
+    Also seals every component reachable from those paths (schemas,
+    requestBodies, responses, parameters), without pulling unrelated routes.
     """
     paths = openapi.get("paths") or {}
     missing = [path for path in CAPACITY_OPENAPI_PATHS if path not in paths]
     if missing:
         raise AssertionError(f"live OpenAPI missing capacity routes: {missing}")
     fragment = {path: paths[path] for path in CAPACITY_OPENAPI_PATHS}
-    schemas = (openapi.get("components") or {}).get("schemas") or {}
-    sealed: dict[str, Any] = {}
-    pending = list(_referenced_schema_names(fragment))
+    components = openapi.get("components") or {}
+    sealed: dict[str, dict[str, Any]] = {section: {} for section in _COMPONENT_SECTIONS}
+    pending = list(_referenced_components(fragment))
     while pending:
-        name = pending.pop()
-        if name in sealed:
+        section, name = pending.pop()
+        if name in sealed[section]:
             continue
-        if name not in schemas:
-            raise AssertionError(f"live OpenAPI missing referenced schema: {name}")
-        sealed[name] = schemas[name]
-        pending.extend(_referenced_schema_names(schemas[name]))
+        bucket = components.get(section) or {}
+        if name not in bucket:
+            raise AssertionError(
+                f"live OpenAPI missing referenced component: {section}/{name}"
+            )
+        sealed[section][name] = bucket[name]
+        pending.extend(_referenced_components(bucket[name]))
     seal_schema(
-        {"paths": fragment, "components": {"schemas": sealed}},
+        {
+            "paths": fragment,
+            "components": {k: v for k, v in sealed.items() if v},
+        },
         context="procurement.live_capacity_openapi",
     )
     return fragment

@@ -265,6 +265,42 @@ class ProcurementBookTests(unittest.TestCase):
                     },
                 }
             )
+        # Reusable response/requestBody refs must also pull nested schemas.
+        with self.assertRaises(AssertionError):
+            capacity_openapi_fragment(
+                {
+                    "paths": {
+                        path: {
+                            "post": {
+                                "responses": {
+                                    "200": {"$ref": "#/components/responses/Tainted"}
+                                }
+                            }
+                        }
+                        for path in CAPACITY_OPENAPI_PATHS
+                    },
+                    "components": {
+                        "responses": {
+                            "Tainted": {
+                                "description": "ok",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "$ref": "#/components/schemas/TaintedBody"
+                                        }
+                                    }
+                                },
+                            }
+                        },
+                        "schemas": {
+                            "TaintedBody": {
+                                "type": "object",
+                                "properties": {"fibonacci": {"type": "integer"}},
+                            }
+                        },
+                    },
+                }
+            )
 
 
 if __name__ == "__main__":
