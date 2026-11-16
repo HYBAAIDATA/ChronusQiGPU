@@ -36,7 +36,6 @@ infra
 manifests
 monitoring
 reports
-tests
 console
 scripts
 *.log
