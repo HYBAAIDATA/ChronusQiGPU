@@ -109,6 +109,15 @@ def test_delivery_requires_custody_and_valid_provider_ack(setup, monkeypatch, tm
     custody = DurableTheseusService(str(path))
     assert custody.verify_journal_continuity("billing-test")
     assert len(custody.get_journal("billing-test")) == 2
-    # Retries retain the stable identifier; the provider must deduplicate.
-    assert client.post(f"/billing/hermiten/usage/{wid}", headers=admin).status_code == 200
-    assert sent[0][1] == sent[1][1]
+    # A recorded acknowledgement prevents a duplicate provider side effect.
+    retry = client.post(f"/billing/hermiten/usage/{wid}", headers=admin)
+    assert retry.status_code == 200
+    assert retry.json()["status"] == "ALREADY_ACKNOWLEDGED"
+    assert retry.json()["provider_receipt_id"] == "external-receipt-1"
+    assert len(sent) == 1
+    assert len(DurableTheseusService(str(path)).get_journal("billing-test")) == 2
+
+    # A revised usage record may not silently reuse the same billing key.
+    store.rows[0].ccu_cost = "0.2"
+    assert client.post(f"/billing/hermiten/usage/{wid}", headers=admin).status_code == 409
+    assert len(sent) == 1

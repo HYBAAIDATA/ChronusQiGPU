@@ -175,3 +175,15 @@ Evidence: `tests/test_ciaas_durable_registry.py` uses a real local
 THESEUS store for restart replay, tamper rejection and fail-closed
 mutation checks. It is not a simulated production deployment or a
 substitute for operational restore and tenant isolation evidence.
+
+### Retry safety: recorded Hermiten acknowledgements
+
+Remote usage delivery now reads the existing THESEUS tenant journal before
+making an external call. When a matching acknowledged account/workload
+and payload digest exists, it returns `ALREADY_ACKNOWLEDGED` with the
+original provider receipt and custody hash instead of rebilling.
+A mismatching digest for the same workload/account is rejected with
+`409` and requires explicit reconciliation. Pending intents without
+acknowledgements may be retried with a stable idempotency key; deployment
+still **must verify** the real provider's idempotency and reconciliation
+contract. This local safeguard is not a cross-process distributed lock.
