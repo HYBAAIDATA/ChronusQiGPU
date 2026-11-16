@@ -190,3 +190,46 @@ def test_cli_refuses_hardlink_alias_output(tmp_path: Path):
                  "--output", str(alias)]) == 2
     assert alias.read_bytes() == source.read_bytes()
     assert not db.exists()
+
+
+def test_bad_second_input_leaves_no_custody_or_partial_records(tmp_path: Path):
+    first = tmp_path / "good.snapshot"
+    first.write_bytes(b"actual fixture bytes; never marketed as production")
+    second = tmp_path / "invalid.npy"
+    second.write_bytes(b"definitely not a NPY file")
+    sources = []
+    for path, kind in ((first, "snapshot"), (second, "tensor")):
+        sources.append({"path": str(path), "kind": kind,
+                        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                        "source_class": "TEST_FIXTURE_NON_PRODUCTION"})
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(yaml.safe_dump({"schema": MANIFEST_SCHEMA,
+                                        "data_sources": sources}), encoding="utf-8")
+    database = tmp_path / "custody.sqlite3"
+    with pytest.raises(ValueError, match="invalid or unsafe"):
+        run_benchmark(manifest, database)
+    assert not database.exists()
+
+
+def test_receipt_size_bound_preflight_prevents_partial_custody(tmp_path: Path, monkeypatch):
+    monkeypatch.setenv("CHRONUS_MAX_PAYLOAD_BYTES", "256")
+    state = tmp_path / "source.snapshot"
+    state.write_bytes(b"x" * 256)
+    manifest = _manifest(tmp_path, state, "snapshot")
+    database = tmp_path / "custody.sqlite3"
+    with pytest.raises(ValueError, match="custody receipt exceeds effective custody limit"):
+        run_benchmark(manifest, database)
+    assert not database.exists()
+
+
+@pytest.mark.parametrize("suffix", ["-wal", "-shm", "-journal"])
+def test_sidecar_paths_are_not_evidence_destinations(tmp_path: Path, suffix: str):
+    snapshot = tmp_path / "source.snapshot"
+    snapshot.write_bytes(b"nonproduction snapshot input")
+    manifest = _manifest(tmp_path, snapshot, "snapshot")
+    db = tmp_path / "custody.sqlite3"
+    path = Path(str(db) + suffix)
+    assert main(["--manifest", str(manifest), "--custody-db", str(db),
+                 "--output", str(path)]) == 2
+    assert not db.exists()
+    assert not path.exists()
