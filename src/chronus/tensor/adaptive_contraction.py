@@ -18,6 +18,7 @@ from chronus.tensor.enhanced_representation import (
     EnhancedTensorRepresentation,
     search_contraction_trees,
     select_best_tree,
+    execute_sharded_contraction,
 )
 
 
@@ -61,33 +62,19 @@ class AdaptiveTensorContractionPathway:
         return best, candidates
 
     def optimize_contraction(self, query_payload: Dict[str, Any]) -> Dict[str, Any]:
-        """Dynamically evaluates and executes the optimal contraction route.
-
-        Measures wall-clock latency with time.perf_counter_ns().
-        """
-        t0_ns = time.perf_counter_ns()
-
+        """Run actual CPU MPS contraction; never assert GPU work without backend."""
+        if query_payload not in ({}, {"operation": "norm"}):
+            raise NotImplementedError("adaptive contraction objective unavailable")
+        start = time.perf_counter_ns()
         candidates = self.parallel_pathway_search(query_payload)
-        best_tree, all_trees = self.weighted_pathway_aggregation(candidates, query_payload)
-
-        # Execute contraction
-        t1_ns = time.perf_counter_ns()
-        latency_ms = (t1_ns - t0_ns) / 1_000_000.0
-
+        best, all_trees = self.weighted_pathway_aggregation(candidates, query_payload)
+        result = execute_sharded_contraction(
+            self.tensor_network.shard_plan, best, self.tensor_network.network)
         return {
-            "status": "OPTIMAL_CONTRACTION_EXECUTED",
-            "optimal_route": best_tree.name,
-            "strategy": best_tree.strategy,
-            "latency_ms": round(latency_ms, 4),  # MEASURED at runtime
+            **result, "optimal_route": best.name, "strategy": best.strategy,
+            "latency_ms": round((time.perf_counter_ns()-start)/1e6, 4),
             "parallel_candidates_evaluated": len(all_trees),
-            "flops_estimated": best_tree.flops,
-            "peak_intermediate_memory_bytes": best_tree.peak_mem,
             "optimization_level": self.optimization_level,
-            "method": "classical_tensor_network",
-            "is_quantum": False,  # MANDATORY
-            "refused_claims": [
-                "0.01ms latency",
-                "708x speedup",
-                "100X information density",
-            ],
+            "method": "finite_precision_mps_norm_transfer",
+            "refused_claims": ["0.01ms latency", "708x speedup", "100X information density"],
         }

@@ -121,9 +121,8 @@ def build_network(
 ) -> Tuple[TensorNetwork, ErrorLedger]:
     """Constructs a tensor network with honest memory bounds and an attached error ledger."""
     hard_cap = HARD_CAP_THEOREM()
-    assert chi_max <= hard_cap, (
-        f"Charter violation: Requested chi_max={chi_max} exceeds hardware hard cap theorem ({hard_cap})."
-    )
+    if chi_max > hard_cap:
+        raise ValueError("requested bond dimension exceeds configured bound")
 
     ledger = ErrorLedger()
     network = TensorNetwork(topology=topology, chi_max=chi_max, gauge_group=group)
