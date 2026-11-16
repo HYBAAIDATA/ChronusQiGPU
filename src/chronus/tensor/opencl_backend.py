@@ -7,6 +7,7 @@ OpenCL route and no internal reference fallback.
 from __future__ import annotations
 
 from importlib.resources import files
+import os
 
 import numpy as np
 
@@ -45,7 +46,20 @@ class OpenCLTensorBackend:
             raise OpenCLTensorUnavailable("OpenCL GPU discovery failed") from exc
         if not devices:
             raise OpenCLTensorUnavailable("no OpenCL GPU device available")
-        device = devices[0]
+        # Default remains an OpenCL GPU, never an inferred integrated GPU.
+        # Operators may bind by explicit identity; no silently substituted GPU.
+        requested = os.getenv("CHRONUS_OPENCL_DEVICE_MATCH", "").strip().lower()
+        if requested:
+            matching = [d for d in devices if requested in (
+                str(d.name) + " " + str(d.vendor) + " " + str(d.driver_version)
+            ).lower()]
+            if len(matching) != 1:
+                raise OpenCLTensorUnavailable(
+                    "requested OpenCL device identity did not resolve uniquely"
+                )
+            device = matching[0]
+        else:
+            device = devices[0]
         context = cl.Context([device])
         queue = cl.CommandQueue(context, device=device)
         source = files("chronus.kernels").joinpath("tensor_ops.cl").read_text(encoding="utf-8")
@@ -57,22 +71,41 @@ class OpenCLTensorBackend:
             cl, context, queue, program, device
         )
         try:
-            actual = self.execute(
-                "add",
-                np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32),
-                np.array([4.0, 3.0, 2.0, 1.0], dtype=np.float32),
-            )["output"]
-            if not np.array_equal(actual, np.array([5.0, 5.0, 5.0, 5.0], dtype=np.float32)):
-                raise OpenCLTensorUnavailable("OpenCL tensor known-answer check failed")
+            # Every exposed kernel must pass actual on-device known answers,
+            # including non-square matmul and a rectangular Kronecker output.
+            # Small integers remain exactly representable in binary32.
+            a = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+            b = np.array([[5.0, 6.0], [7.0, 8.0]], dtype=np.float32)
+            m = np.array([[1.0, 2.0, 3.0],
+                          [4.0, 5.0, 6.0]], dtype=np.float32)
+            n = np.array([[1.0, 2.0],
+                          [3.0, 4.0],
+                          [5.0, 6.0]], dtype=np.float32)
+            cases = [
+                ("add", (a, b), None, a + b),
+                ("hadamard", (a, b), None, a * b),
+                ("scale", (a,), 2.0, a * np.float32(2.0)),
+                ("matmul", (m, n), None, m @ n),
+                ("kron", (m, a), None, np.kron(m, a)),
+            ]
+            for op, operands, factor, expected in cases:
+                actual = self.execute(op, *operands, scalar=factor)["output"]
+                if not np.array_equal(actual, expected):
+                    raise OpenCLTensorUnavailable(
+                        f"OpenCL {op} kernel known-answer check failed"
+                    )
             self._self_tested = True
         except Exception as exc:
+            self._self_tested = False
             self._program = None
             self._queue = None
             self._context = None
             self._device = None
             if isinstance(exc, OpenCLTensorUnavailable):
                 raise
-            raise OpenCLTensorUnavailable("OpenCL tensor known-answer check failed") from exc
+            raise OpenCLTensorUnavailable(
+                "OpenCL tensor all-operation known-answer check failed"
+            ) from exc
 
     def is_available(self) -> bool:
         try:
@@ -87,6 +120,15 @@ class OpenCLTensorBackend:
             "backend": self.name,
             "execution_mode": self.execution_mode,
             "device_name": str(self._device.name),
+            "device_identity_policy": (
+                "operator_selected" if os.getenv("CHRONUS_OPENCL_DEVICE_MATCH")
+                else "first_discovered_opencl_gpu"
+            ),
+            "integrated_gpu_verified": False,
+            "self_tested_operations": (
+                ["add", "hadamard", "scale", "matmul", "kron"]
+                if self._self_tested else []
+            ),
             "vendor": str(self._device.vendor),
             "driver_version": str(self._device.driver_version),
             "measured": False,
@@ -95,10 +137,17 @@ class OpenCLTensorBackend:
 
     @staticmethod
     def _f32(value: np.ndarray) -> np.ndarray:
-        array = np.ascontiguousarray(value, dtype=np.float32)
-        if array.size == 0:
-            raise ValueError("empty tensors are not supported")
-        return array
+        array = np.asarray(value)
+        if array.dtype != np.dtype("float32"):
+            raise ValueError(
+                "OpenCL tensor kernel requires native float32 input; "
+                "no implicit complex/fp64 narrowing"
+            )
+        if array.size == 0 or array.size > np.iinfo(np.uint32).max:
+            raise ValueError("tensor element count outside uint32 kernel policy")
+        if not np.all(np.isfinite(array)):
+            raise ValueError("OpenCL tensor inputs must be finite")
+        return np.ascontiguousarray(array)
 
     def execute(self, operation: str, *values: np.ndarray, scalar: float | None = None) -> dict:
         self._initialize()
@@ -106,6 +155,8 @@ class OpenCLTensorBackend:
         op = operation.lower()
         arrays = [self._f32(v) for v in values]
         mf = cl.mem_flags
+        if not arrays:
+            raise ValueError("at least one source tensor required")
         buffers = [
             cl.Buffer(self._context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=a)
             for a in arrays
@@ -134,10 +185,12 @@ class OpenCLTensorBackend:
             kb, n = arrays[1].shape
             if k != kb:
                 raise ValueError("matmul inner dimensions do not agree")
+            if m * n > 16_777_216:
+                raise ValueError("matmul output exceeds bounded 64 MiB policy")
             out = np.empty((m, n), dtype=np.float32)
             out_buf = cl.Buffer(self._context, mf.WRITE_ONLY, out.nbytes)
             self._program.tensor_matmul(
-                self._queue, (m, n), None, buffers[0], buffers[1], out_buf,
+                self._queue, (n, m), None, buffers[0], buffers[1], out_buf,
                 np.uint32(m), np.uint32(k), np.uint32(n)
             )
         elif op == "kron":
@@ -151,10 +204,13 @@ class OpenCLTensorBackend:
             bbuf = cl.Buffer(self._context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=b)
             ar, ac = a.shape
             br, bc = b.shape
+            if ar * br * ac * bc > 16_777_216:
+                raise ValueError("Kronecker output exceeds bounded 64 MiB policy")
             out = np.empty((ar * br, ac * bc), dtype=np.float32)
             out_buf = cl.Buffer(self._context, mf.WRITE_ONLY, out.nbytes)
             self._program.tensor_kron2(
-                self._queue, out.shape, None, abuf, bbuf, out_buf,
+                self._queue, (out.shape[1], out.shape[0]), None,
+                abuf, bbuf, out_buf,
                 np.uint32(ar), np.uint32(ac), np.uint32(br), np.uint32(bc)
             )
         else:
