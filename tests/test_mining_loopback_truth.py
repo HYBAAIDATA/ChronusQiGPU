@@ -68,3 +68,22 @@ def test_rehearsal_failure_is_not_promoted_and_internal_error_is_redacted(monkey
     assert caught.value.status_code == 500
     assert "private fixture diagnostic" not in caught.value.detail
     assert "no production evidence" in caught.value.detail.lower()
+
+
+def test_rejected_fixture_releases_ports_for_next_rehearsal(monkeypatch):
+    original_validate = master_e2e_engine.LocalStratumTestServer.validate_share
+
+    def deny_share(self, params):
+        return False
+
+    monkeypatch.setattr(
+        master_e2e_engine.LocalStratumTestServer, "validate_share", deny_share
+    )
+    with pytest.raises(RuntimeError, match="rejected mining.submit"):
+        asyncio.run(master_e2e_engine.execute_master_end_to_end())
+
+    # The first failed rehearsal must not leave a loopback listener bound.
+    monkeypatch.setattr(
+        master_e2e_engine.LocalStratumTestServer, "validate_share", original_validate
+    )
+    asyncio.run(master_e2e_engine.execute_master_end_to_end())
