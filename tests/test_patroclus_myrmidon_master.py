@@ -69,11 +69,18 @@ AUTH_HEADERS = {"Authorization": "Bearer test-token", "X-Tenant-ID": "test-tenan
 
 
 @pytest.fixture
-def client():
-    try:
-        auth_service.register_tenant("test-tenant", "test-token")
-    except ValueError:
-        pass
+def client(monkeypatch, tmp_path):
+    from chronus.service.auth_middleware import Role, create_jwt_token
+
+    monkeypatch.setenv("CHRONUS_JWT_SECRET", "mining-control-suite-secret-must-be-32-bytes-minimum")
+    monkeypatch.setenv("CHRONUS_MINING_ADMIN_TENANT_ID", "test-tenant")
+    monkeypatch.setenv("CHRONUS_MINING_ADMIN_SUBJECTS", '["test-operator"]')
+    monkeypatch.setenv(
+        "CHRONUS_MINING_ADMIN_CUSTODY_PATH", str(tmp_path / "mining-admin-audit.sqlite3")
+    )
+    AUTH_HEADERS["Authorization"] = "Bearer " + create_jwt_token(
+        "test-tenant", "test-operator", role=Role.SYSTEM_ADMIN
+    )
     return TestClient(app)
 
 
@@ -349,8 +356,10 @@ class TestIntegrationAndE2E:
         resp = client.post("/v1/mining/admin/patroclus/simulate", json={}, headers=AUTH_HEADERS)
         assert resp.status_code == 200
         data = resp.json()
-        assert data["status"] == "SUCCESS"
-        assert len(data["decision_points"]) == 10
+        assert data["status"] == "REHEARSAL_COMPLETED"
+        assert data["decision_points"] == []
+        assert data["live_pool_acceptance"] == "UNAVAILABLE"
+        assert data["production_qualified"] is False
 
     def test_sdk_patroclus_and_stealth_methods(self):
         sdk = ChronusClient(tenant_id="test-tenant", access_token="test-token", base_url="http://testserver")
