@@ -92,7 +92,8 @@ def discover(manifest_path: Path, *, max_bytes: int = MAX_BYTES) -> list[dict]:
         if (not isinstance(raw_path, str) or not raw_path or
                 kind not in {"tensor", "snapshot"} or
                 not isinstance(digest, str) or not SHA256.fullmatch(digest) or
-                source_class not in {"OPERATOR_DECLARED_PRODUCTION", "TEST_FIXTURE_NON_PRODUCTION"}):
+                source_class not in {"OPERATOR_DECLARED_PRODUCTION", "TEST_FIXTURE_NON_PRODUCTION",
+                                     "PUBLIC_OBSERVED_DATASET"}):
             raise ValueError("source requires path, kind, full sha256, and explicit source_class")
         path = Path(raw_path)
         if not path.is_absolute():
