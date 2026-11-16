@@ -29,7 +29,7 @@ and fails if a mechanism token appears in a path, field name, or enum value.
 - Index microbench: `scripts/benchmarks/index_baseline.py` (claim HD-01)
 - Claims sheet: `docs/claims/claims-hyba-data.yaml`
 - Contracting: `docs/contracts/avoided-capex.md`
-- Internal research reading (not a customer surface): `chronus.math.millennium_bridge`
+- Internal research reading (not a customer surface): `chronus.research.millennium_bridge`
   citing `chronus.math.unified_quantum_engine.GoldenArithmetic`
 
 ## Explicit non-claims

@@ -71,6 +71,7 @@ def _refusal_to_api(exc: Refusal) -> ApiError:
         "expired": 409,
         "overage": 409,
         "invalid_quote": 400,
+        "idempotency_conflict": 409,
     }.get(exc.code, 409)
     return ApiError(status, exc.code, "Reservation refused", exc.detail)
 

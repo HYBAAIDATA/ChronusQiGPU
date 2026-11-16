@@ -36,6 +36,7 @@ class UtilisationLedger:
         self._path = path
         self._lock = threading.Lock()
         self._rows: list[UtilisationRecord] = []
+        self._by_reservation: dict[str, UtilisationRecord] = {}
         if path and path.is_file():
             for line in path.read_text(encoding="utf-8").splitlines():
                 if not line.strip():
@@ -47,7 +48,9 @@ class UtilisationLedger:
                         float(data.get("space_bytes", 0))
                         * float(data.get("utilisation", 0.0))
                     )
-                self._rows.append(UtilisationRecord(**data))
+                row = UtilisationRecord(**data)
+                self._rows.append(row)
+                self._by_reservation[row.reservation] = row
 
     def record(self, admission: dict[str, Any], *, tenant_id: str | None = None) -> UtilisationRecord:
         space = int(admission["space_bytes"])
@@ -71,11 +74,9 @@ class UtilisationLedger:
             tenant_id=tenant_id if tenant_id is not None else admission.get("tenant_id"),
         )
         with self._lock:
-            # Idempotent on reservation id so a retry after a failed write
-            # (admit already stores the admission) does not double-bill.
-            for existing in self._rows:
-                if existing.reservation == reservation_id:
-                    return existing
+            existing = self._by_reservation.get(reservation_id)
+            if existing is not None:
+                return existing
             # Persist first; only then keep the in-memory row so a disk failure
             # leaves nothing that would suppress a later retry write.
             if self._path is not None:
@@ -84,6 +85,7 @@ class UtilisationLedger:
                     handle.write(json.dumps(asdict(row), sort_keys=True) + "\n")
                     handle.flush()
             self._rows.append(row)
+            self._by_reservation[reservation_id] = row
         return row
 
     def rows(self, *, tenant_id: str | None = None) -> list[UtilisationRecord]:

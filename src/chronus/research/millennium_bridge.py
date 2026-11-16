@@ -48,7 +48,7 @@ from typing import Sequence
 
 from chronus.math.unified_quantum_engine import GoldenArithmetic
 
-LOG = logging.getLogger("chronus.math.bridge")
+LOG = logging.getLogger("chronus.research.bridge")
 
 PHI = (1 + 5**0.5) / 2
 
@@ -147,7 +147,14 @@ def betti_1(
     faces: Sequence[tuple[int, int, int]],
 ) -> int:
     """dim ker(Delta_1) on a 2-complex, over Q. Betti_1 by the Hodge theorem."""
-    index = {edge: i for i, edge in enumerate(edges)}
+    # Index by unordered endpoints so a listed edge (1, 0) still matches a face
+    # that walks 0→1. Orientation for d1 follows the listed endpoint order.
+    index: dict[tuple[int, int], int] = {}
+    for i, (a, b) in enumerate(edges):
+        key = (min(a, b), max(a, b))
+        if key in index:
+            raise ValueError(f"duplicate edge endpoints {key}")
+        index[key] = i
     d1 = [[Fraction(0)] * vertices for _ in edges]
     for i, (a, b) in enumerate(edges):
         d1[i][a] = Fraction(-1)
@@ -185,7 +192,11 @@ def hodge_reading() -> Reading:
 
 
 def wilson_gap(size: int, coupling: float = 1.0) -> float:
-    """Bottom of the Hessian of the U(1) Wilson action on a size x size torus."""
+    """Lowest nonzero plaquette eigenvalue of the U(1) Wilson Hessian on an L×L torus.
+
+    Gauge and constant zero modes are excluded by the sin(π/L) momentum;
+    the unqualified Hessian bottom is zero. This returns the projected gap.
+    """
     if size < 2:
         raise ValueError("lattice needs size >= 2")
     return 4 * math.sin(math.pi / size) ** 2 / coupling**2
@@ -195,7 +206,7 @@ def yang_mills_reading() -> Reading:
     sizes = (8, 16, 32, 64, 128)
     gaps = [wilson_gap(n) for n in sizes]
     if not all(g > 0 for g in gaps):
-        raise AssertionError("finite lattice always has a gap")
+        raise AssertionError("finite lattice always has a projected gap")
     for small, large in zip(gaps, gaps[1:]):
         if large >= small:
             raise AssertionError("gap must shrink with volume")
@@ -204,10 +215,13 @@ def yang_mills_reading() -> Reading:
         raise AssertionError("decays as 1/L^2 in the large-L limit")
     return Reading(
         problem="Yang-Mills existence and mass gap",
-        quantity="gap at L=128, g=1",
+        quantity="lowest nonzero Wilson eigenvalue at L=128, g=1 (zero modes projected out)",
         value=gaps[-1],
         link="OPEN",
-        note=f"1/L^2 decay, {ratio:.0f}x from L=8; a uniform gap is the problem",
+        note=(
+            f"1/L^2 decay of the projected gap, {ratio:.0f}x from L=8; "
+            "the unqualified Hessian bottom is zero; a uniform continuum gap is the problem"
+        ),
     )
 
 

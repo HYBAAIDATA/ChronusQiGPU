@@ -45,6 +45,23 @@ class ProcurementBookTests(unittest.TestCase):
             now=1_000.0,
         )
         self.assertEqual(res.id, again.id)
+        other_quote = build_quote(
+            2_000,
+            tier="TIER_POLYNOMIAL",
+            contract_version=CONTRACT_VERSION,
+            evidence_hash=self.evidence,
+        )
+        with self.assertRaises(Refusal) as conflict:
+            reserve(
+                self.book,
+                CONTRACT_VERSION,
+                self.evidence,
+                other_quote,
+                "key-1",
+                tenant_id=TENANT,
+                now=1_000.0,
+            )
+        self.assertEqual(conflict.exception.code, "idempotency_conflict")
 
         # Server rebuilds the quote: tampered economics → invalid_quote;
         # releases_old ≠ 0 → stale_envelope.

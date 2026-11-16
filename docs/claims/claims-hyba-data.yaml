@@ -12,8 +12,8 @@ claims:
     status: measured
     falsifier: >
       rerun scripts/benchmarks/index_baseline.py at 1M records; claim fails if
-      prime_vs_dict_ratio < 30 (addresses-only vs CPython dict). A separate
-      minimum floor of 10x may be tracked later; it does not approve >30x.
+      prime_vs_dict_ratio <= 30 (addresses-only vs CPython dict; unrounded ratio).
+      A separate minimum floor of 10x may be tracked later; it does not approve >30x.
     owner: benchmark
     evidence:
       - scripts/benchmarks/index_baseline.py
@@ -90,6 +90,7 @@ refusals_schedule:
     - expired
     - overage
     - invalid_quote
+    - idempotency_conflict
 
 before_hyperscaler_call:
   - HD-01 at 1M records

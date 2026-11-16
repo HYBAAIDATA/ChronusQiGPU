@@ -6,8 +6,8 @@ Closing this repository for migration. Remaining polish lands in the new repo.
 
 - Sealed procurement: quote → reserve → admit (tenant-scoped, server-rebuilt quotes)
 - Carmichael index addressing + HD-01 index baseline (honest probe accounting)
-- Millennium bridge (internal): `chronus.math.millennium_bridge` cites
-  `GoldenArithmetic` in `chronus.math.unified_quantum_engine`
+- Millennium bridge (internal): `chronus.research.millennium_bridge` cites
+  `GoldenArithmetic` in `chronus.math.unified_quantum_engine` (outside purity gate)
 - Deploy app (`chronus.service.app`) mounts the same `/v1/capacity/*` routes
 
 ## Local verification (this closeout)

@@ -160,12 +160,10 @@ def reserve(
 
     key = (tenant_id, idempotency_key)
     existing = book._by_key.get(key)
-    if existing is not None:
-        if existing.expired(now):
-            book._by_key.pop(key, None)
-            book._live.pop(existing.id, None)
-        else:
-            return existing
+    if existing is not None and existing.expired(now):
+        book._by_key.pop(key, None)
+        book._live.pop(existing.id, None)
+        existing = None
 
     if evidence_hash != live_evidence_hash(contract_version=contract_version):
         # Defence in depth; callers should pass the live hash.
@@ -177,8 +175,20 @@ def reserve(
         )
     except Refusal:
         raise
-    except Exception as exc:  # noqa: BLE001 — map any parse failure to invalid_quote
-        raise Refusal("invalid_quote", str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001 — map any parse/seal failure to invalid_quote
+        LOG.info("invalid_quote during rebuild: %s", exc)
+        raise Refusal(
+            "invalid_quote",
+            "quote fields are missing, malformed, or outside the sealed envelope",
+        ) from exc
+
+    if existing is not None:
+        if existing.quote_hash != quote_hash(trusted):
+            raise Refusal(
+                "idempotency_conflict",
+                "idempotency key already bound to a different quote",
+            )
+        return existing
 
     if not trusted.get("is_binding"):
         raise Refusal("quote_not_binding", f"verdict {trusted.get('verdict')}")

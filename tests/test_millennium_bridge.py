@@ -5,7 +5,8 @@ from __future__ import annotations
 import math
 import unittest
 
-from chronus.math.millennium_bridge import (
+from chronus.math.unified_quantum_engine import GoldenArithmetic
+from chronus.research.millennium_bridge import (
     PHI,
     arccosh_sqrt5_over_2_is_ln_phi,
     betti_1,
@@ -14,7 +15,6 @@ from chronus.math.millennium_bridge import (
     self_test,
     wilson_gap,
 )
-from chronus.math.unified_quantum_engine import GoldenArithmetic
 
 
 class GoldenArithmeticTests(unittest.TestCase):
@@ -52,6 +52,8 @@ class MillenniumBridgeTests(unittest.TestCase):
     def test_hodge_and_wilson(self) -> None:
         self.assertEqual(betti_1(3, [(0, 1), (1, 2), (0, 2)], []), 1)
         self.assertEqual(betti_1(3, [(0, 1), (1, 2), (0, 2)], [(0, 1, 2)]), 0)
+        # Reversed listed edge still matches the face that walks 0→1.
+        self.assertEqual(betti_1(3, [(1, 0), (1, 2), (0, 2)], [(0, 1, 2)]), 0)
         self.assertGreater(wilson_gap(2), wilson_gap(4))
         self.assertGreater(wilson_gap(4), wilson_gap(8))
 

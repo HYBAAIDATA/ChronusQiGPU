@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 
+from chronus.service.api.errors import ApiError, problem_response
 from chronus.service.api.routers import procurement as procurement_routes
 from chronus.service.dependencies import service_config
 from chronus.service.models import ErrorResponse
@@ -85,6 +86,19 @@ def create_app() -> FastAPI:
             ],
         )
     app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+    # Procurement routes raise ApiError; map them without replacing existing handlers.
+    @app.exception_handler(ApiError)
+    async def api_error_handler(request: Request, exc: ApiError) -> JSONResponse:
+        return problem_response(
+            request,
+            exc.status,
+            exc.code,
+            exc.title,
+            exc.detail,
+            exc.extra,
+            exc.headers,
+        )
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(
