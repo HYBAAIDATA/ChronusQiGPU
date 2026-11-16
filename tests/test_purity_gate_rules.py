@@ -1,7 +1,10 @@
 """The purity gate bans floating-point math in exact paths but allows exact integer helpers."""
 import importlib.util
 import math
+import pytest
 from pathlib import Path
+
+pytestmark = pytest.mark.real
 
 ROOT = Path(__file__).resolve().parents[1]
 _spec = importlib.util.spec_from_file_location("purity_gate", ROOT / "scripts" / "ci" / "purity_gate.py")

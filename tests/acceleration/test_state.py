@@ -1,5 +1,7 @@
 import numpy as np
 import pytest
+
+pytestmark = pytest.mark.real
 from hypothesis import given, settings, strategies as st
 from chronus.acceleration.state import MAX_DIMENSION, TOLERANCE, apply_unitary, normalize
 from chronus.acceleration.fourier import qft

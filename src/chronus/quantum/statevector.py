@@ -1,4 +1,4 @@
-"""Exact finite-field quantum state evolution over F_257.
+"""Exact finite-field state-vector algebra over F_257 (legacy quantum-inspired namespace).
 
 Amplitudes are elements of F_257, never floating point. The field contains
 every constant the standard gate set needs, exactly:
