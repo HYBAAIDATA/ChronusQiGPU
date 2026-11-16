@@ -66,3 +66,9 @@ def test_no_false_gpu_fused_or_storage_qualification(executor):
     assert m["physical_accelerator_measured"] is False
     assert m["net_storage_savings_measured"] is False
     assert m["fused_hardware_instruction"] is False
+
+
+def test_window_update_rejects_complex_to_real_narrowing(executor):
+    operand = executor.fold(np.arange(12, dtype=np.float64))
+    with pytest.raises(ValueError, match="truncate"):
+        executor.update_window(operand, np.array([1+4j]), start=0, stop=1)
