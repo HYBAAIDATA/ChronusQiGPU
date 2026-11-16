@@ -17,6 +17,7 @@ from typing import Any, Dict, List
 
 from chronus.backends.lattice import HardwareUnavailableError
 from chronus.execution.asic_sha256 import _H0, sha256_block
+from chronus.execution.hashrate_cap import process_cap
 
 _KERNEL_PATH = Path(__file__).resolve().parent.parent / "kernels" / "sha256d_search.cl"
 _MAX_REPORTED = 64
@@ -43,6 +44,7 @@ class OpenCLSha256dMinerBackend:
         self._queue = None
         self._program = None
         self._device_info: Dict[str, Any] = {}
+        self._last_span = 0
         self._available = self._probe()
 
     def _probe(self) -> bool:
@@ -119,9 +121,11 @@ class OpenCLSha256dMinerBackend:
 
         import pyopencl as cl
 
-        width = stop - start
+        width = process_cap().allow(stop - start)
+        self._last_span = width
         if width == 0:
             return []
+        stop = start + width
 
         found = cl.Buffer(
             self._ctx, cl.mem_flags.WRITE_ONLY, size=4 * self.max_reported
@@ -166,7 +170,7 @@ class OpenCLSha256dMinerBackend:
             "runtime_classification": self.runtime_classification,
             "backend": self.name,
             "device": self._device_info,
-            "tested": 1 << 32,
+            "tested": self._last_span,
             "match_count": len(matches),
             "matches": matches,
         }

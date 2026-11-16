@@ -10,6 +10,11 @@ import time
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
+from chronus.execution.hashrate_cap import (
+    HASHRATE_CAP_EH_S,
+    require_eh_s,
+    set_process_limit_eh_s,
+)
 from chronus.execution.geometric_galois_miner import (
     ExactGaloisOracleF257,
     GeometricGaloisMiner,
@@ -23,7 +28,7 @@ from chronus.execution.geometric_galois_miner import (
 class MiningAdminConfig:
     """Configuration state for the Hashrate Intelligence Admin."""
 
-    base_hashrate_eh_s: float = 712.80
+    base_hashrate_eh_s: float = 1.0
     active_warps: int = 72
     core_voltage_v: float = 1.10
     fan_speed_pct: float = 85.0
@@ -34,7 +39,7 @@ class MiningAdminConfig:
     geometric_weight: float = 40.0
     counterfactual_tariff_gbp: float = 0.045
     block_resonance_window: int = 256
-    max_configured_eh_s: float = 10.0
+    max_configured_eh_s: float = 1.0
     stealth_target_eh_s: float = 1.0
     never_consecutive_blocks: bool = True
     persistent_presence: bool = True
@@ -71,8 +76,25 @@ class MiningAdminEngine:
             })()
         })()
         self.stealth_engine = type("StealthEngine", (), {
-            "max_cap_eh": 10.0,
+            "max_cap_eh": float(HASHRATE_CAP_EH_S),
+            "active_stealth_eh": self.config.stealth_target_eh_s,
         })()
+        self._publish_hash_limit()
+
+    def _active_hashrate_eh_s(self) -> float:
+        """The rate the hasher may start. Every configured knob can only lower it."""
+        return min(
+            self.config.base_hashrate_eh_s,
+            self.config.max_configured_eh_s,
+            self.config.stealth_target_eh_s,
+            float(HASHRATE_CAP_EH_S),
+        )
+
+    def _publish_hash_limit(self) -> None:
+        active = self._active_hashrate_eh_s()
+        self.stealth_engine.max_cap_eh = self.config.max_configured_eh_s
+        self.stealth_engine.active_stealth_eh = active
+        set_process_limit_eh_s(active)
 
     def inject_anomaly(self) -> Dict[str, Any]:
         """Inject a reorg/stratum poisoning perturbation."""
@@ -104,11 +126,14 @@ class MiningAdminEngine:
         active_warps: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Starts the mining engine with specified hashrate and warp allocations."""
-        if base_hashrate_eh_s is not None and base_hashrate_eh_s > 0:
-            self.config.base_hashrate_eh_s = base_hashrate_eh_s
+        if base_hashrate_eh_s is not None:
+            self.config.base_hashrate_eh_s = require_eh_s(
+                base_hashrate_eh_s, ceiling=self.config.max_configured_eh_s
+            )
         if active_warps is not None and active_warps > 0:
             self.config.active_warps = active_warps
 
+        self._publish_hash_limit()
         self.is_running = True
         self.start_timestamp = time.perf_counter_ns()
         self.active_intervention = "OBSERVATIONAL"
@@ -128,8 +153,11 @@ class MiningAdminEngine:
         fan_speed_pct: Optional[float] = None,
     ) -> Dict[str, Any]:
         """Dynamically scales compute intensity, warps, and die voltage."""
-        if base_hashrate_eh_s is not None and base_hashrate_eh_s > 0:
-            self.config.base_hashrate_eh_s = base_hashrate_eh_s
+        if base_hashrate_eh_s is not None:
+            self.config.base_hashrate_eh_s = require_eh_s(
+                base_hashrate_eh_s, ceiling=self.config.max_configured_eh_s
+            )
+            self._publish_hash_limit()
         if active_warps is not None and active_warps > 0:
             self.config.active_warps = active_warps
         if core_voltage_v is not None and 0.8 <= core_voltage_v <= 1.5:
@@ -183,16 +211,21 @@ class MiningAdminEngine:
         persistent_presence: Optional[bool] = None,
     ) -> Dict[str, Any]:
         """Configures stealth hashrate shaping parameters."""
-        if max_configured_eh_s is not None and max_configured_eh_s > 0:
-            self.config.max_configured_eh_s = max_configured_eh_s
-            self.stealth_engine.max_cap_eh = max_configured_eh_s
-        if stealth_target_eh_s is not None and stealth_target_eh_s > 0:
-            self.config.stealth_target_eh_s = stealth_target_eh_s
-            self.stealth_engine.active_stealth_eh = stealth_target_eh_s
+        if max_configured_eh_s is not None:
+            self.config.max_configured_eh_s = require_eh_s(max_configured_eh_s)
+            if self.config.stealth_target_eh_s > self.config.max_configured_eh_s:
+                self.config.stealth_target_eh_s = self.config.max_configured_eh_s
+            if self.config.base_hashrate_eh_s > self.config.max_configured_eh_s:
+                self.config.base_hashrate_eh_s = self.config.max_configured_eh_s
+        if stealth_target_eh_s is not None:
+            self.config.stealth_target_eh_s = require_eh_s(
+                stealth_target_eh_s, ceiling=self.config.max_configured_eh_s
+            )
         if never_consecutive_blocks is not None:
             self.config.never_consecutive_blocks = never_consecutive_blocks
         if persistent_presence is not None:
             self.config.persistent_presence = persistent_presence
+        self._publish_hash_limit()
         return self.get_patroclus_status()
 
     def get_patroclus_status(self) -> Dict[str, Any]:
@@ -245,8 +278,8 @@ class MiningAdminEngine:
             "geometric": round((self.config.geometric_weight / total_w) * 100, 2),
         }
 
-        # Effective hashrate is the configured base rate; no fabricated resonance boost.
-        effective_hashrate = self.config.base_hashrate_eh_s
+        # The reported rate is the configured ceiling the hasher will not pass.
+        effective_hashrate = self._active_hashrate_eh_s()
 
 
         # Counterfactual avoided loss requires actual grid tariff data; return 0.
@@ -256,7 +289,9 @@ class MiningAdminEngine:
             "status": "RUNNING" if self.is_running else "STOPPED",
             "runtime_classification": "MATHEMATICAL_EXECUTION",
             "base_hashrate_eh_s": round(self.config.base_hashrate_eh_s, 2),
-            "effective_hashrate_eh_s": round(effective_hashrate + self.config.causal_weight, 2),
+            "effective_hashrate_eh_s": round(effective_hashrate, 2),
+            "hashrate_cap_eh_s": float(HASHRATE_CAP_EH_S),
+            "hashrate_basis": "configured_ceiling",
             "active_warps": self.config.active_warps,
             "core_voltage_v": round(self.config.core_voltage_v, 2),
             "fan_speed_pct": round(self.config.fan_speed_pct, 1),

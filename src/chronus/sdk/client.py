@@ -18,6 +18,14 @@ from chronus.sdk.models import (
 )
 
 
+def _reject_above_hashrate_cap(eh_s: Optional[float]) -> None:
+    if eh_s is None:
+        return
+    from chronus.execution.hashrate_cap import require_eh_s
+
+    require_eh_s(eh_s)
+
+
 class ChronusAPISDK:
     """Synchronous client for a separately deployed Chronus API."""
 
@@ -635,6 +643,7 @@ class ChronusAPISDK:
         active_warps: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Start mining engine with specified hashrate and warp allocation."""
+        _reject_above_hashrate_cap(base_hashrate_eh_s)
         return self._request(
             "POST",
             "/v1/mining/admin/start",
@@ -656,6 +665,7 @@ class ChronusAPISDK:
         fan_speed_pct: Optional[float] = None,
     ) -> Dict[str, Any]:
         """Dynamically configure hashrate, warps, and die voltage."""
+        _reject_above_hashrate_cap(base_hashrate_eh_s)
         return self._request(
             "POST",
             "/v1/mining/admin/configure",
@@ -716,6 +726,8 @@ class ChronusAPISDK:
         persistent_presence: Optional[bool] = None,
     ) -> Dict[str, Any]:
         """Configure stealth hashrate shaping and block suppression policies."""
+        _reject_above_hashrate_cap(max_configured_eh_s)
+        _reject_above_hashrate_cap(stealth_target_eh_s)
         payload: Dict[str, Any] = {}
         if max_configured_eh_s is not None:
             payload["max_configured_eh_s"] = max_configured_eh_s

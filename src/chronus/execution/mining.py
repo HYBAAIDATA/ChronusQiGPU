@@ -6,6 +6,7 @@ from concurrent.futures import ProcessPoolExecutor
 from typing import Any
 
 from chronus.config import runtime_bounds
+from chronus.execution.hashrate_cap import process_cap
 from chronus.execution.structural import (
     zeckendorf_decode,
     zeckendorf_encode,
@@ -155,7 +156,6 @@ def search_nonce_range(
         for value in (start, stop, target, workers)
     ):
         raise ValueError("start, stop, target and workers must be integers")
-    lanes = partition_nonce_range(start, stop, weights=partition)
     max_candidates = _max_candidates()
     if stop == start or stop - start > max_candidates:
         raise ValueError(
@@ -165,6 +165,11 @@ def search_nonce_range(
         raise ValueError("target must be an unsigned 256-bit integer")
     if not 1 <= workers <= _lanes():
         raise ValueError(f"workers must be between 1 and {_lanes()}")
+    granted = process_cap().allow(stop - start)
+    if granted <= 0:
+        raise ValueError("hashrate cap allows no further hashes in this window")
+    stop = start + granted
+    lanes = partition_nonce_range(start, stop, weights=partition)
     jobs = [
         (header, lane_start, lane_stop, target, step_order, lane_index, engine)
         for lane_index, (lane_start, lane_stop) in enumerate(lanes)

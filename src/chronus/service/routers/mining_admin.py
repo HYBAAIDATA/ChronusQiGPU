@@ -12,12 +12,16 @@ _engine = MiningAdminEngine.get_instance()
 
 
 class StartMiningRequest(BaseModel):
-    base_hashrate_eh_s: Optional[float] = Field(None, description="Target base hashrate in EH/s")
+    base_hashrate_eh_s: Optional[float] = Field(
+        None, gt=0, le=1.0, description="Target base hashrate in EH/s. The hard cap is 1."
+    )
     active_warps: Optional[int] = Field(None, description="Number of active execution warps/blades")
 
 
 class ConfigureCapacityRequest(BaseModel):
-    base_hashrate_eh_s: Optional[float] = Field(None, description="Base hashrate in EH/s")
+    base_hashrate_eh_s: Optional[float] = Field(
+        None, gt=0, le=1.0, description="Base hashrate in EH/s. The hard cap is 1."
+    )
     active_warps: Optional[int] = Field(None, description="Active compute warps")
     core_voltage_v: Optional[float] = Field(None, description="ASIC core voltage in volts")
     fan_speed_pct: Optional[float] = Field(None, description="Cooling fan speed in percent")
@@ -36,8 +40,12 @@ class CausalInterventionRequest(BaseModel):
 
 
 class ConfigureStealthRequest(BaseModel):
-    max_configured_eh_s: Optional[float] = Field(None, description="Maximum configured hashrate cap in EH/s (e.g. 10.0)")
-    stealth_target_eh_s: Optional[float] = Field(None, description="Under-the-radar active throttle in EH/s (e.g. 1.0)")
+    max_configured_eh_s: Optional[float] = Field(
+        None, gt=0, le=1.0, description="Configured hashrate cap in EH/s. Cannot exceed 1."
+    )
+    stealth_target_eh_s: Optional[float] = Field(
+        None, gt=0, le=1.0, description="Active throttle in EH/s. Cannot exceed the cap."
+    )
     never_consecutive_blocks: Optional[bool] = Field(None, description="Enforce 'Never Two Consecutive Blocks' rule")
     persistent_presence: Optional[bool] = Field(None, description="Maintain persistent socket presence with steady heartbeat shares")
 
@@ -58,10 +66,13 @@ async def start_mining(
     req: StartMiningRequest,
     tenant_id: str = Depends(get_current_tenant),
 ) -> Dict[str, Any]:
-    return _engine.start_mining(
-        base_hashrate_eh_s=req.base_hashrate_eh_s,
-        active_warps=req.active_warps,
-    )
+    try:
+        return _engine.start_mining(
+            base_hashrate_eh_s=req.base_hashrate_eh_s,
+            active_warps=req.active_warps,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
 
 @router.post("/stop", summary="Stop active mining engine")
@@ -76,12 +87,15 @@ async def configure_capacity(
     req: ConfigureCapacityRequest,
     tenant_id: str = Depends(get_current_tenant),
 ) -> Dict[str, Any]:
-    return _engine.configure_hashrate_and_capacity(
-        base_hashrate_eh_s=req.base_hashrate_eh_s,
-        active_warps=req.active_warps,
-        core_voltage_v=req.core_voltage_v,
-        fan_speed_pct=req.fan_speed_pct,
-    )
+    try:
+        return _engine.configure_hashrate_and_capacity(
+            base_hashrate_eh_s=req.base_hashrate_eh_s,
+            active_warps=req.active_warps,
+            core_voltage_v=req.core_voltage_v,
+            fan_speed_pct=req.fan_speed_pct,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
 
 @router.post("/intelligence", summary="Rebalance 5-mode meta-intelligence distribution")
@@ -135,12 +149,15 @@ async def configure_stealth(
     req: ConfigureStealthRequest,
     tenant_id: str = Depends(get_current_tenant),
 ) -> Dict[str, Any]:
-    return _engine.configure_stealth(
-        max_configured_eh_s=req.max_configured_eh_s,
-        stealth_target_eh_s=req.stealth_target_eh_s,
-        never_consecutive_blocks=req.never_consecutive_blocks,
-        persistent_presence=req.persistent_presence,
-    )
+    try:
+        return _engine.configure_stealth(
+            max_configured_eh_s=req.max_configured_eh_s,
+            stealth_target_eh_s=req.stealth_target_eh_s,
+            never_consecutive_blocks=req.never_consecutive_blocks,
+            persistent_presence=req.persistent_presence,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
 
 @router.post("/patroclus/simulate", summary="Execute Master End-to-End Stratum handshake & share simulation")

@@ -29,7 +29,8 @@ interface ModeWeights {
 export default function MiningDashboardPage() {
   // Mining Engine Administration State
   const [isRunning, setIsRunning] = useState<boolean>(true);
-  const [baseHashrate, setBaseHashrate] = useState<number>(712.80);
+  const [hashrateCap, setHashrateCap] = useState<number>(1);
+  const [baseHashrate, setBaseHashrate] = useState<number>(1);
   const [activeWarps, setActiveWarps] = useState<number>(72);
   const [coreVoltage, setCoreVoltage] = useState<number>(1.10);
   const [fanSpeed, setFanSpeed] = useState<number>(85);
@@ -66,8 +67,8 @@ export default function MiningDashboardPage() {
   const [oracleCollapsed, setOracleCollapsed] = useState<boolean>(true);
 
   // Mode 7: Stealth & Hashrate Shaping
-  const [maxConfiguredEhs, setMaxConfiguredEhs] = useState<number>(10.0);
-  const [stealthActiveEhs, setStealthActiveEhs] = useState<number>(1.0);
+  const [maxConfiguredEhs, setMaxConfiguredEhs] = useState<number>(1);
+  const [stealthActiveEhs, setStealthActiveEhs] = useState<number>(1);
   const [neverConsecutive, setNeverConsecutive] = useState<boolean>(true);
   const [persistentPresence, setPersistentPresence] = useState<boolean>(true);
   // Patroclus Gateway state
@@ -82,7 +83,11 @@ export default function MiningDashboardPage() {
       .then((data) => {
         if (!mounted || !data) return;
         if (typeof data.status === 'string') setIsRunning(data.status === 'RUNNING');
-        if (typeof data.base_hashrate_eh_s === 'number') setBaseHashrate(data.base_hashrate_eh_s);
+        const cap = typeof data.hashrate_cap_eh_s === 'number' ? data.hashrate_cap_eh_s : 1;
+        setHashrateCap(cap);
+        if (typeof data.base_hashrate_eh_s === 'number') {
+          setBaseHashrate(Math.min(data.base_hashrate_eh_s, cap));
+        }
         if (typeof data.active_warps === 'number') setActiveWarps(data.active_warps);
         if (typeof data.core_voltage_v === 'number') setCoreVoltage(data.core_voltage_v);
         if (typeof data.fan_speed_pct === 'number') setFanSpeed(data.fan_speed_pct);
@@ -114,8 +119,7 @@ export default function MiningDashboardPage() {
 
   // No synthetic obstruction — system is in harmonic consensus
   const h1Obstruction = false
-  const resonancePct = 0
-  const effectiveHashrate = isRunning ? Number(baseHashrate.toFixed(2)) : 0.0;
+  const effectiveHashrate = Number(Math.min(baseHashrate, hashrateCap).toFixed(1));
 
   // Admin Actions with API Integration
   async function handleToggleMining() {
@@ -226,14 +230,14 @@ export default function MiningDashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Card className="border-neutral-800 bg-neutral-900/40 p-4">
           <div className="flex items-center justify-between text-xs uppercase tracking-wider text-neutral-400">
-            <span>Effective Hashrate</span>
-            <span className="text-[10px] text-amber-400 font-mono">+{resonancePct}% Boost</span>
+            <span>Configured hashrate ceiling</span>
+            <span className="text-[10px] text-amber-400 font-mono">limit</span>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-bold text-white font-mono">{effectiveHashrate}</span>
             <span className="text-xs text-neutral-400">EH/s</span>
           </div>
-          <p className="mt-1 text-[11px] text-neutral-500">Base: {baseHashrate} EH/s · Harmonic boost</p>
+          <p className="mt-1 text-[11px] text-neutral-500">Cap {hashrateCap} EH/s. Scheduled limit, not a measured device rate. Braiins Pool is about 15 EH/s combined.</p>
         </Card>
 
         <Card className="border-neutral-800 bg-neutral-900/40 p-4">
@@ -309,14 +313,15 @@ export default function MiningDashboardPage() {
             </div>
             <input
               type="range"
-              min="100"
-              max="1500"
-              step="10"
-              value={baseHashrate}
+              min="0.1"
+              max={hashrateCap}
+              step="0.1"
+              value={Math.min(baseHashrate, hashrateCap)}
               onChange={(e) => handleUpdateCapacity(Number(e.target.value), activeWarps, coreVoltage, fanSpeed)}
               className="mt-2 w-full accent-amber-400"
+              aria-label="Base hashrate allocation"
             />
-            <span className="text-[10px] text-neutral-500">Scalable from 100 to 1,500 EH/s</span>
+            <span className="text-[10px] text-neutral-500">Cannot exceed {hashrateCap} EH/s.</span>
           </div>
 
           <div>
@@ -1007,18 +1012,19 @@ export default function MiningDashboardPage() {
                 <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 p-3 space-y-2">
                   <div className="flex justify-between text-xs font-mono">
                     <span className="text-neutral-400">Configured Cap:</span>
-                    <span className="text-white font-bold">{maxConfiguredEhs.toFixed(1)} EH/s</span>
+                    <span className="text-white font-bold">{hashrateCap.toFixed(1)} EH/s</span>
                   </div>
                   <input
                     type="range"
-                    min="1"
-                    max="20"
-                    step="0.5"
-                    value={maxConfiguredEhs}
-                    onChange={(e) => handleUpdateStealth(Number(e.target.value), undefined, undefined, undefined)}
+                    min={hashrateCap}
+                    max={hashrateCap}
+                    step="0.1"
+                    value={hashrateCap}
+                    disabled
                     className="w-full accent-emerald-400"
+                    aria-label="Configured hashrate cap"
                   />
-                  <span className="text-[10px] text-neutral-500">Maximum contractual capacity ceiling</span>
+                  <span className="text-[10px] text-neutral-500">Hard ceiling. The API rejects a cap above {hashrateCap} EH/s.</span>
                 </div>
 
                 <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 p-3 space-y-2">
@@ -1029,13 +1035,14 @@ export default function MiningDashboardPage() {
                   <input
                     type="range"
                     min="0.1"
-                    max="5.0"
+                    max={hashrateCap}
                     step="0.1"
-                    value={stealthActiveEhs}
+                    value={Math.min(stealthActiveEhs, hashrateCap)}
                     onChange={(e) => handleUpdateStealth(undefined, Number(e.target.value), undefined, undefined)}
                     className="w-full accent-emerald-400"
+                    aria-label="Active hashrate throttle"
                   />
-                  <span className="text-[10px] text-neutral-500">Under-the-radar stealth operational throughput</span>
+                  <span className="text-[10px] text-neutral-500">Active throttle. It cannot be set above the {hashrateCap} EH/s ceiling.</span>
                 </div>
               </div>
 

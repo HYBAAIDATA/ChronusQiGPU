@@ -14,6 +14,7 @@ import time
 from typing import Optional, Tuple
 
 from chronus.execution.geometric_galois_miner import GeometricGaloisMiner
+from chronus.execution.hashrate_cap import process_cap
 from chronus.execution.mining_scheduler import TuringMiningScheduler
 from chronus.stratum.endian_engine import swap_prevhash_words, compute_merkle_root_stratum, build_header80
 from chronus.stratum.bip310 import (
@@ -113,6 +114,14 @@ def load_env_config() -> Tuple[str, PoolEndpoint, str, str]:
     scheme, separator, bare_host = host_raw.partition("://")
     if not separator:
         scheme, bare_host = "stratum+tcp", host_raw
+        # Braiins and ViaBTC document "x" and "123" as ignored placeholders.
+        # Match the password that is sent. Surrounding whitespace is a different value.
+        if password not in {"x", "123"}:
+            logger.warning(
+                "MINING_%s_HOST has no scheme, so this password is sent on cleartext "
+                "stratum+tcp. Use a stratum+ssl:// host when the password is a secret.",
+                active_pool,
+            )
     # Only bolt the port on when the host does not already carry one.
     if port_raw and ":" not in bare_host.rsplit("]", 1)[-1]:
         bare_host = f"{bare_host}:{port_raw}"
@@ -174,6 +183,7 @@ class ChronusRealMiningEngine:
         self._next_shard = 0
         self._nonce_space_exhausted = False
         self._nonce_extranonce_exhausted = False
+        self._hash_throttled = False
 
         self.en2_counter = 0
         self.hashes_computed = 0
@@ -286,6 +296,7 @@ class ChronusRealMiningEngine:
         share_target: int,
     ):
         """Search a bounded SHA-256d batch across disjoint shard nonce ranges."""
+        self._hash_throttled = False
         base_version = int(job["version_hex"], 16)
         prevhash_bytes = swap_prevhash_words(job["prevhash_hex"])
         ntime = int(job["ntime_hex"], 16)
@@ -325,6 +336,9 @@ class ChronusRealMiningEngine:
                 rolled_version, prevhash_bytes, merkle_root_bytes, ntime, nbits, 0
             )[:76]
             result = self.search_engine.solve_header_range(header_prefix, share_target, cursor, count)
+            if result.iterations_evaluated == 0:
+                self._hash_throttled = True
+                break
             HASHRATE_BATCHES.inc()
             self.last_search_result = result
             self.hashes_computed += result.iterations_evaluated
@@ -415,7 +429,11 @@ class ChronusRealMiningEngine:
                     await batch
                     raise
                 if candidate is None:
-                    await asyncio.sleep(0)
+                    if self._hash_throttled:
+                        delay = process_cap().wait_ns() / 1_000_000_000
+                        await asyncio.sleep(delay if delay > 0 else 0.001)
+                    else:
+                        await asyncio.sleep(0)
                     continue
                 solution_nonce, version_bits_submit, candidate_hash = candidate
 

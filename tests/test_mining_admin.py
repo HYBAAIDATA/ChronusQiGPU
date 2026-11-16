@@ -12,7 +12,8 @@ Tests:
 import pytest
 from fastapi.testclient import TestClient
 
-from chronus.execution.mining_admin import MiningAdminEngine
+from chronus.execution.hashrate_cap import process_cap
+from chronus.execution.mining_admin import MiningAdminConfig, MiningAdminEngine
 from chronus.service.app import app
 
 
@@ -21,6 +22,8 @@ def admin_engine():
     engine = MiningAdminEngine.get_instance()
     # Reset engine state before each test
     engine.stop_mining()
+    engine.config = MiningAdminConfig()
+    engine._publish_hash_limit()
     engine.anomaly_injected = False
     engine.dsw_healed = False
     engine.active_intervention = "OBSERVATIONAL"
@@ -45,23 +48,32 @@ class TestMiningAdminEngine:
         status_init = admin_engine.get_status()
         assert status_init["status"] == "STOPPED"
 
-        status_started = admin_engine.start_mining(base_hashrate_eh_s=800.0, active_warps=96)
+        status_started = admin_engine.start_mining(base_hashrate_eh_s=1.0, active_warps=96)
         assert status_started["status"] == "RUNNING"
-        assert status_started["base_hashrate_eh_s"] == 800.0
+        assert status_started["base_hashrate_eh_s"] == 1.0
+        assert status_started["hashrate_cap_eh_s"] == 1.0
+        assert status_started["hashrate_basis"] == "configured_ceiling"
+        assert status_started["effective_hashrate_eh_s"] == 1.0
         assert status_started["active_warps"] == 96
-        assert status_started["effective_hashrate_eh_s"] > 800.0  # Harmonic boost active
+        assert process_cap().cap_h_s == 10**18
+        with pytest.raises(ValueError):
+            admin_engine.start_mining(base_hashrate_eh_s=800.0)
 
         status_stopped = admin_engine.stop_mining()
         assert status_stopped["status"] == "STOPPED"
 
     def test_engine_capacity_and_voltage_configuration(self, admin_engine):
         res = admin_engine.configure_hashrate_and_capacity(
-            base_hashrate_eh_s=950.0,
+            base_hashrate_eh_s=0.5,
             active_warps=128,
             core_voltage_v=1.05,
             fan_speed_pct=90.0,
         )
-        assert res["base_hashrate_eh_s"] == 950.0
+        assert res["base_hashrate_eh_s"] == 0.5
+        assert res["effective_hashrate_eh_s"] == 0.5
+        assert process_cap().cap_h_s == 5 * 10**17
+        with pytest.raises(ValueError):
+            admin_engine.configure_hashrate_and_capacity(base_hashrate_eh_s=950.0)
         assert res["active_warps"] == 128
         assert res["core_voltage_v"] == 1.05
         assert res["fan_speed_pct"] == 90.0
@@ -116,11 +128,19 @@ class TestMiningAdminAPIEndpoints:
         start_resp = client.post(
             "/v1/mining/admin/start",
             headers=AUTH_HEADERS,
-            json={"base_hashrate_eh_s": 750.0, "active_warps": 72},
+            json={"base_hashrate_eh_s": 1.0, "active_warps": 72},
         )
         assert start_resp.status_code == 200
         assert start_resp.json()["status"] == "RUNNING"
-        assert start_resp.json()["base_hashrate_eh_s"] == 750.0
+        assert start_resp.json()["base_hashrate_eh_s"] == 1.0
+        assert start_resp.json()["hashrate_cap_eh_s"] == 1.0
+
+        rejected = client.post(
+            "/v1/mining/admin/start",
+            headers=AUTH_HEADERS,
+            json={"base_hashrate_eh_s": 750.0, "active_warps": 72},
+        )
+        assert rejected.status_code == 422
 
         stop_resp = client.post(
             "/v1/mining/admin/stop",
@@ -134,7 +154,7 @@ class TestMiningAdminAPIEndpoints:
             "/v1/mining/admin/configure",
             headers=AUTH_HEADERS,
             json={
-                "base_hashrate_eh_s": 850.0,
+                "base_hashrate_eh_s": 0.4,
                 "active_warps": 96,
                 "core_voltage_v": 1.12,
                 "fan_speed_pct": 95.0,
@@ -142,7 +162,8 @@ class TestMiningAdminAPIEndpoints:
         )
         assert resp.status_code == 200
         data = resp.json()
-        assert data["base_hashrate_eh_s"] == 850.0
+        assert data["base_hashrate_eh_s"] == 0.4
+        assert data["effective_hashrate_eh_s"] == 0.4
         assert data["core_voltage_v"] == 1.12
 
     def test_api_intelligence_rebalance_endpoint(self, client):

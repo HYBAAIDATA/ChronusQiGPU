@@ -35,6 +35,7 @@ from chronus.stratum.endian_engine import (
     build_header_prefix,
     sha256d,
 )
+from chronus.execution.hashrate_cap import process_cap
 from chronus.execution.structural import (
     zeckendorf_decode,
     zeckendorf_encode,
@@ -368,6 +369,11 @@ class GeometricGaloisMiner:
         if type(max_scan_window) is not int or not 1 <= max_scan_window <= (1 << 20):
             raise ValueError("max_scan_window must be between 1 and 2**20")
 
+        count = min(max_scan_window, (1 << 32) - nonce_start)
+        count = process_cap().allow(count)
+        if count == 0:
+            return GeometricMiningResult(found=False, iterations_evaluated=0)
+
         scale_index = self.pv_scale_ladder[self._pv_scale_step % len(self.pv_scale_ladder)]
         self._pv_scale_step += 1
         # Hendrix's rank-2 extension search carries PV scale in a pair of field
@@ -383,7 +389,6 @@ class GeometricGaloisMiner:
         vertex_idx = int.from_bytes(seed_hash[:2], "big") % len(self.vertices_f257)
         vertex = self.vertices_f257[vertex_idx]
         z_repr = ZeckendorfBasePhiIndexer.encode(nonce_start)
-        count = min(max_scan_window, (1 << 32) - nonce_start)
         for evaluated in range(1, count + 1):
             nonce = ZeckendorfBasePhiIndexer.decode(z_repr)
             digest = sha256d(header_prefix + nonce.to_bytes(4, "little"))
