@@ -5,6 +5,7 @@ assert unverified architectural invariants.
 """
 
 import json
+import os
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone

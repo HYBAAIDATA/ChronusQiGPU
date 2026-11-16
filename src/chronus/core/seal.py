@@ -1,14 +1,15 @@
 """One-way mechanism seal for customer-visible Chronus surfaces.
 
 Internally, audit and math keep full provenance. Externally, only measured
-behavior (tier, envelope, evidence hash) is exposed. The seal wins on every
-customer-visible string; the audit wins on every ledger entry.
+behavior (tier, envelope, evidence hash, reservation) is exposed. The seal
+wins on every customer-visible string; the audit wins on every ledger entry.
 """
 
 from __future__ import annotations
 
+import json
 import re
-from typing import Iterable
+from typing import Any
 
 # Banned on all customer-visible strings (API, console, docs under seal scope,
 # error messages, manifests). Matching is case-insensitive with word boundaries
@@ -20,6 +21,9 @@ BANNED_MECHANISM_TOKENS: tuple[str, ...] = (
     "phi-ratio",
     "phi",
     "pisot",
+    "pisano",
+    "vijayaraghavan",
+    "salem",
     "zeckendorf",
     "cassini",
     "binet",
@@ -62,15 +66,28 @@ def find_banned_tokens(text: str) -> list[str]:
 def assert_sealed(text: str, *, context: str = "external surface") -> None:
     hits = find_banned_tokens(text)
     if hits:
-        raise ValueError(f"{context} contains sealed mechanism token(s): {', '.join(hits)}")
+        raise ValueError(
+            f"{context} contains sealed mechanism token(s): {', '.join(hits)}"
+        )
 
 
 def is_external_surface(rel_path: str) -> bool:
     return any(rel_path.startswith(prefix) for prefix in EXTERNAL_SURFACE_PREFIXES)
 
 
+def seal_schema(schema: dict[str, Any], *, context: str = "openapi") -> None:
+    """Fail if a route path, field name or enum value carries a mechanism token."""
+    blob = json.dumps(schema, default=str)
+    hits = find_banned_tokens(blob)
+    if hits:
+        raise AssertionError(
+            f"{context}: mechanism tokens on a public surface: {hits}"
+        )
+
+
 def scrub_dict_strings(payload: dict, *, context: str = "api payload") -> dict:
     """Recursively assert string keys and leaves are sealed; returns the same dict."""
+
     def walk(node, path: str) -> None:
         if isinstance(node, dict):
             for key, value in node.items():
