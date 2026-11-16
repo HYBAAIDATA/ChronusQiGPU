@@ -9,6 +9,10 @@ Two reviewed exceptions keep the gate exact rather than blunt:
 * Excluded prefixes (claim_token_policy.json): third-party code under vendor/
   and preserved historical material that owner rules keep unchanged (archive/,
   chronus_source_backup/, docs/directives/). They are recorded, not edited.
+* Excluded suffixes (claim_token_policy.json): captured vendor artefacts such
+  as saved web pages (.mhtml). A saved page is someone else's wording, and it
+  legitimately contains the words this gate blocks, so scanning it produces a
+  permanent false positive. The reason is recorded in the policy.
 * Allowlist (claim_token_policy.json): an occurrence in a current file passes
   only when the policy records the file, the token index, the exact number of
   occurrences and the basis for the wording: a mathematical or engineering
@@ -40,12 +44,18 @@ def load_tokens(root):
 def load_policy(root, token_count):
     path = root / POLICY_FILE
     if not path.exists():
-        return (), {}
+        return (), (), {}
     policy = json.loads(path.read_text())
     excluded = tuple(policy.get('excluded_prefixes', ()))
     for prefix in excluded:
         if not isinstance(prefix, str) or not prefix.endswith('/') or prefix.startswith('/'):
             raise ValueError(f'excluded prefix must be a relative directory ending in /: {prefix!r}')
+    excluded_suffixes = tuple(policy.get('excluded_suffixes', ()))
+    for suffix in excluded_suffixes:
+        if not isinstance(suffix, str) or not suffix.startswith('.'):
+            raise ValueError(f'excluded suffix must start with a dot: {suffix!r}')
+    # Compare case-insensitively so ".MHTML" is excluded by a ".mhtml" rule.
+    excluded_suffixes = frozenset(suffix.casefold() for suffix in excluded_suffixes)
     allow = {}
     for entry in policy.get('allowlist', ()):
         token = entry.get('token')
@@ -62,12 +72,12 @@ def load_policy(root, token_count):
         if key in allow:
             raise ValueError(f'duplicate allowlist entry: {entry}')
         allow[key] = count
-    return excluded, allow
+    return excluded, excluded_suffixes, allow
 
 
 def scan(root):
     patterns = load_tokens(root)
-    excluded, allow = load_policy(root, len(patterns))
+    excluded, excluded_suffixes, allow = load_policy(root, len(patterns))
     tracked = subprocess.check_output(['git', 'ls-files', '-z'], cwd=root).split(b'\0')
     violations = []
     matched = set()
@@ -76,6 +86,8 @@ def scan(root):
             continue
         rel = raw.decode('utf-8', 'surrogateescape')
         if excluded and rel.startswith(excluded):
+            continue
+        if excluded_suffixes and Path(rel).suffix.casefold() in excluded_suffixes:
             continue
         path = root / rel
         if path.is_symlink():

@@ -142,6 +142,8 @@ jobs:
         run: python scripts/ci/sovereign_attestation.py
       - name: Generate local software verification manifest
         run: python scripts/ci/manifest.py
+      - name: Audit qualification manifests
+        run: python scripts/ci/audit_manifests.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: software-evidence-dossiers

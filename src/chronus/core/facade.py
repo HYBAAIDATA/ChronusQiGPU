@@ -157,6 +157,10 @@ def main() -> int:
     print(f"{manifest.posture} ({manifest.passed}/{len(manifest.gates)}) -> {target}")
     return 0 if manifest.posture == "qualified" else 1
 
+# Where the release manifest is written. The repository is the default; an
+# override lets a caller collect the artefact somewhere disposable.
+MANIFEST_OUT_DIR = os.environ.get("CHRONUS_MANIFEST_OUT_DIR")
+
 
 class ChronusVerificationOrchestrator:
     """Compatibility facade for evidence-led local qualification diagnostics."""
