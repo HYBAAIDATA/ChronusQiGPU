@@ -56,12 +56,29 @@ def build_m32_domains() -> tuple[M32Domain, ...]:
                 icosa.append((a, b, c))
     for a in (-PHI_INV, PHI_INV):
         for b in (-PHI, PHI):
-            icosa.extend(_cyclic((Z, a, b)))
+            # Face-normal golden orbit of the icosahedron, not its vertices:
+            # swapping the golden coordinates aligns each direction with
+            # exactly three supporting vertices in the twelve-point orbit.
+            icosa.extend(_cyclic((Z, b, a)))
 
     if len(dodeca) != 12 or len(icosa) != 20:
         raise AssertionError("unexpected dodecahedral / icosahedral orbit sizes")
     if len(set(dodeca + icosa)) != 32:
         raise AssertionError("M32 directions are not distinct")
+    # Exact supporting-face certificate: every icosahedron face normal
+    # maximizes its dot product on exactly three of the 12 primal vertices.
+    # This verifies the 8 cube + 12 golden directions are *face normals*,
+    # rather than just 20 otherwise plausible vectors.
+    for normal in icosa:
+        dot_products = [_dot(normal, vertex) for vertex in dodeca]
+        maximum = dot_products[0]
+        for value in dot_products[1:]:
+            if (value - maximum).sign() > 0:
+                maximum = value
+        support = tuple(i for i, value in enumerate(dot_products)
+                        if (value - maximum).is_zero())
+        if len(support) != 3:
+            raise AssertionError("icosahedron face normal does not support one triangular face")
     if any(_norm2(v).sign() <= 0 for v in dodeca + icosa):
         raise AssertionError("zero-norm M32 direction")
     domains = tuple(
