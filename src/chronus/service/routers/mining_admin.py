@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from chronus.execution.mining_admin import MiningAdminEngine
 from chronus.service.dependencies import get_current_tenant
+from chronus.service.mining_operator import get_mining_admin_operator
 
 router = APIRouter(prefix="/v1/mining/admin", tags=["mining_admin"])
 _engine = MiningAdminEngine.get_instance()
@@ -64,7 +65,7 @@ async def get_mining_status(
 @router.post("/start", summary="Start mining engine with specified capacity")
 async def start_mining(
     req: StartMiningRequest,
-    tenant_id: str = Depends(get_current_tenant),
+    tenant_id: str = Depends(get_mining_admin_operator),
 ) -> Dict[str, Any]:
     try:
         return _engine.start_mining(
@@ -77,7 +78,7 @@ async def start_mining(
 
 @router.post("/stop", summary="Stop active mining engine")
 async def stop_mining(
-    tenant_id: str = Depends(get_current_tenant),
+    tenant_id: str = Depends(get_mining_admin_operator),
 ) -> Dict[str, Any]:
     return _engine.stop_mining()
 
@@ -85,7 +86,7 @@ async def stop_mining(
 @router.post("/configure", summary="Dynamically configure hashrate and hardware parameters")
 async def configure_capacity(
     req: ConfigureCapacityRequest,
-    tenant_id: str = Depends(get_current_tenant),
+    tenant_id: str = Depends(get_mining_admin_operator),
 ) -> Dict[str, Any]:
     try:
         return _engine.configure_hashrate_and_capacity(
@@ -101,7 +102,7 @@ async def configure_capacity(
 @router.post("/intelligence", summary="Rebalance 5-mode meta-intelligence distribution")
 async def configure_intelligence(
     req: ConfigureIntelligenceRequest,
-    tenant_id: str = Depends(get_current_tenant),
+    tenant_id: str = Depends(get_mining_admin_operator),
 ) -> Dict[str, Any]:
     return _engine.configure_intelligence_modes(
         predictive=req.predictive,
@@ -115,7 +116,7 @@ async def configure_intelligence(
 @router.post("/intervene", summary="Execute Pearl Level 2 causal do(X) intervention")
 async def apply_intervention(
     req: CausalInterventionRequest,
-    tenant_id: str = Depends(get_current_tenant),
+    tenant_id: str = Depends(get_mining_admin_operator),
 ) -> Dict[str, Any]:
     try:
         return _engine.apply_causal_intervention(req.intervention)
@@ -125,14 +126,14 @@ async def apply_intervention(
 
 @router.post("/anomaly/inject", summary="Inject reorg or stratum poisoning perturbation")
 async def inject_anomaly(
-    tenant_id: str = Depends(get_current_tenant),
+    tenant_id: str = Depends(get_mining_admin_operator),
 ) -> Dict[str, Any]:
     return _engine.inject_anomaly()
 
 
 @router.post("/anomaly/heal", summary="Execute 1-cycle DSW instanton monopole cobordism heal")
 async def execute_dsw_heal(
-    tenant_id: str = Depends(get_current_tenant),
+    tenant_id: str = Depends(get_mining_admin_operator),
 ) -> Dict[str, Any]:
     return _engine.execute_dsw_heal()
 
@@ -147,7 +148,7 @@ async def get_patroclus_telemetry(
 @router.post("/stealth", summary="Configure stealth hashrate shaping and block policies")
 async def configure_stealth(
     req: ConfigureStealthRequest,
-    tenant_id: str = Depends(get_current_tenant),
+    tenant_id: str = Depends(get_mining_admin_operator),
 ) -> Dict[str, Any]:
     try:
         return _engine.configure_stealth(
@@ -166,7 +167,7 @@ async def configure_stealth(
 )
 async def simulate_patroclus_session(
     req: SimulatePatroclusRequest,
-    tenant_id: str = Depends(get_current_tenant),
+    tenant_id: str = Depends(get_mining_admin_operator),
 ) -> Dict[str, Any]:
     """Rehearse the fixed local fixtures; never report external pool acceptance.
 
