@@ -92,6 +92,13 @@ class PulviniOperatorCalculus:
                 not np.issubdtype(A.dtype, np.number) or
                 not np.all(np.isfinite(A))):
             raise ValueError("operator must be a finite bounded square matrix")
+        scalar_dtype = np.dtype("complex128") if np.iscomplexobj(A) else np.dtype("float64")
+        with np.errstate(over="ignore", invalid="ignore"):
+            converted = A.astype(scalar_dtype)
+            recovered = converted.astype(A.dtype)
+        if not np.array_equal(recovered, A):
+            raise ValueError("operator input not exactly representable in reference scalar dtype")
+        A = converted
         M = self.fold_matrix(A.shape[0])
         denom = float(np.vdot(M[:, 0],M[:, 0]).real)
         if denom <= 0:
