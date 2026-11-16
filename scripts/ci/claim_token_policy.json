@@ -236,6 +236,13 @@
       "count": 1,
       "basis": "refusal-or-denial",
       "note": "Test asserts the claim audit refuses the phrase"
+    },
+    {
+      "path": "src/chronus/qualification/harness.py",
+      "token": 1,
+      "count": 1,
+      "basis": "mathematical-term",
+      "note": "Geometric-tier classifier names a fixed-base decay model"
     }
   ]
 }

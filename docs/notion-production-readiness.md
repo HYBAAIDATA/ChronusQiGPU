@@ -1,10 +1,10 @@
 # Notion → ChronusQiGPU production-readiness map
 
-Review date: 2026-11-15  
-Repository: `HYBAAIDATA/ChronusQiGPU`  
-Main baseline reviewed: `dc920a82c38ee408fb9698d3206631139f9d0d97`  
-Closing branch: [`codex/production-readiness-20261115`](https://github.com/HYBAAIDATA/ChronusQiGPU/tree/codex/production-readiness-20261115)  
-Closing PR: [#71](https://github.com/HYBAAIDATA/ChronusQiGPU/pull/71)
+Review date: 2026-11-16
+Repository: `HYBAAIDATA/ChronusQiGPU`
+Main baseline reviewed: `3f30f61d490ee78ca6c8b0bdf1b3df84b1b6a0c1`
+Closing branch: [`codex/production-readiness-20261116`](https://github.com/HYBAAIDATA/ChronusQiGPU/tree/codex/production-readiness-20261116)
+Closing PR: [#136](https://github.com/HYBAAIDATA/ChronusQiGPU/pull/136)
 
 ## Release decision
 
@@ -35,6 +35,32 @@ Notion is the requirements and decision source. It is not a substitute for the r
 The July 2026 Geodesic Tensor Engine source is retrievable from the ChatGPT Library and Notion engineering record. The four previously labelled missing symbols are now present in the maintained Python package; **do not copy the monolithic legacy engine into the active tree**. See [the archive reconciliation audit](audits/2026-11-16-source-archive-reconciliation.md) for source paths, archive SHA-256 values, scope and outstanding evidence.
 
 The historical PYTHIA TypeScript mining audit is a separate source lineage. Its routes, singleton state machines and RFX instructions do not exist as literal current-repository paths. Reproduce each risk against the maintained Python Stratum and security boundaries instead of treating an old line number as a current defect.
+
+## 16 November implementation closeout
+
+The review branch closes the reproducible source blockers found on the current
+main baseline without weakening the fail-closed release boundary:
+
+- `src/chronus/execution/mining_scheduler.py` now emits the expected Geodesic
+  evidence packet for the maintained scheduler, memory and integrity surfaces.
+- The clean-checkout qualification runner adds `packages/turing/src` to its
+  import path; the exact HYBA Mine workflow and macOS setup install the local
+  TURING distribution before Chronus and HYBA Mine. Without that seam,
+  `chronus.execution.mining_scheduler` fails with `ModuleNotFoundError` in a
+  production-style environment.
+- Test fixtures now authenticate tenant-capacity reads, create rollback roots,
+  and keep the existing security checks intact. Unused imports and the exact
+  mathematical claim-token policy are corrected.
+- The frontend dependency graph is refreshed to remove the audited Tailwind /
+  PostCSS transitive advisories (local `pnpm audit`: zero findings), and the
+  acceptance harness starts the checked-in Next binary directly.
+
+Local exact-current evidence is `2340 passed, 38 skipped, 1 xfailed` on Python
+3.12.14, plus the focused package, acceleration, storage, build, Bandit,
+purity and mutation checks. The PR's hosted Actions jobs fail before usable
+steps/logs are retained (`BlobNotFound` on sampled log downloads), so hosted CI
+is **UNAVAILABLE**, not green. The generated qualification and sovereignty
+artifacts therefore remain explicitly `NOT_QUALIFIED` / software-evidence-only.
 
 ## Requirement-to-repository map
 
@@ -105,14 +131,20 @@ The repository currently supplies source and synthetic/CPU-reference tests for s
 
 ## CI observations used for this closing pass
 
-The main baseline had concrete failures, not a qualification result:
+The historical main baseline had concrete failures, not a qualification result:
 
 - CI run [43669370042](https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/43669370042): Python test, lint/compile/package, static-security and purity failures.
 - Packages run [43669369942](https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/43669369942): wheel checks passed; hygiene and packaging checks exposed stale temporary workflow and source errors.
 - Chronus evidence run [43669370018](https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/43669370018): test extra/evaluator artifact failures.
 - Storage run [43669370069](https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/43669370069): claim-token script could not import the source package.
 
-PR #71 records the historical HYBA Mine artifact first, then fixes the syntax, signer test contract, test extra, import path, exact Stratum difficulty type, dynamic-query security finding, merge-artifact files and temporary/blank workflows. The checks on the latest head are still running; their result must be recorded by SHA before any merge.
+PR #71 records an earlier remediation attempt. PR #136 is the current closing
+branch and contains the exact-current fixes listed above. Its latest hosted
+Actions attempts (`43844663572`, `43844663589`, `43844663557`, `43844663725`,
+`43844663665`, `43844663583`) fail before usable job steps/logs are retained;
+the CI run `43844663637` was still partly queued when observed. Sampled log
+downloads return Azure `BlobNotFound`; no hosted result is promoted to
+qualification.
 
 ## Promotion rule
 

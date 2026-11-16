@@ -1,13 +1,17 @@
 {
-  "attestation_title": "SOVEREIGN QUANTUM CAPABILITY & MATHEMATICAL PURITY DOSSIER",
-  "standard": "DIFC Sovereign Asset Evaluation & Five Eyes Computational Verification",
-  "status": "SOVEREIGN_QUALIFIED",
-  "timestamp_utc": "2026-11-11 06:43:59 UTC",
-  "evaluation_authority": "Chronus Sovereign Regulatory Compliance Board",
+  "schema": "chronus-software-capability-evidence/v2",
+  "attestation_title": "Chronus software capability evidence dossier",
+  "standard": "Internal executable evidence only",
+  "status": "SOFTWARE_EVIDENCE_PASS",
+  "production_qualified": false,
+  "external_certification": false,
+  "timestamp_utc": "2026-11-16 10:06:54 UTC",
+  "evaluation_authority": "repository self-test; not an external authority",
+  "legacy_filename_notice": "SOVEREIGN_CAPABILITY_ATTESTATION.json is retained for compatibility only.",
   "pillars": {
     "al_haras": {
-      "status": "QUALIFIED",
-      "latency_us": 280692.91,
+      "status": "PASS",
+      "latency_us": 84497.19,
       "invariants": {
         "sheaf_global_section_exact": true,
         "sheaf_disagreement_detected_exact": true,
@@ -25,30 +29,31 @@
       }
     },
     "theseus_ovid": {
-      "status": "QUALIFIED",
-      "latency_us": 87.49,
+      "status": "PASS",
+      "latency_us": 3761.86,
       "invariants": {
         "theseus_lossless_roundtrip": true,
-        "ovid_content_addressed_retrieval": true,
-        "phyllotaxis_coordinate_assigned": true,
-        "zero_collision_addressing": true
+        "restart_recovery_roundtrip": true,
+        "journal_continuity_verified": true,
+        "durable_custody": true,
+        "ovid_materialisation_verified": true
       }
     },
     "chronus_stratum": {
-      "status": "QUALIFIED",
-      "latency_us": 227.91,
+      "status": "PASS",
+      "latency_us": 113.93,
       "invariants": {
         "f257_galois_phases": true,
         "zeckendorf_conservation": true,
         "binet_lucas_symbolic_exactness": true,
         "endian_swapped_roundtrip": true,
         "share_target_exact_fractions": true,
-        "gatekeeper_latency_us": 2.85
+        "gatekeeper_latency_us": null
       }
     },
     "legacy_millennium_modules": {
-      "status": "QUALIFIED",
-      "latency_us": 945.17,
+      "status": "PASS",
+      "latency_us": 485.22,
       "exact_checks_passed": {
         "ollivier_ricci_curvature_certified": true,
         "hodge_decomposition_identities": true,
@@ -60,13 +65,13 @@
       }
     },
     "toe_quantum": {
-      "status": "QUALIFIED",
-      "latency_us": 14.76,
+      "status": "PASS",
+      "latency_us": 11.53,
       "invariants": {
         "f257_bell_state_evolution": true,
         "exact_field_hadamard": true,
         "zero_floating_point_truncation": true,
-        "zero_thermal_decoherence": true
+        "physical_noise_claim": "NOT_APPLICABLE_SOFTWARE_EXECUTION"
       }
     },
     "distribution_packages": {
@@ -86,16 +91,11 @@
       ]
     }
   },
-  "guarantees": {
-    "mathematical_honesty": "100% Exact Fraction & Modular Algebra",
-    "quantum_theatre_index": "0.00% (No Simulation / No Classical-Dressed-As-Quantum)",
-    "wire_drop_rejection": "0.00% Invalid Shares Emitted",
-    "endianness_safety": "100% Explicit Endian Markers",
-    "pci_purity_ast_scan": "PASS"
-  },
-  "cryptographic_attestation": {
-    "signature_algorithm": "HMAC-SHA256 (DIFC-SOVEREIGN-SEAL)",
-    "hmac_digest": "5b1db240f8b5133b8a0850d7b6e2f57c0569b2445bb5770ffbb16bfbbcd4f1cd",
-    "content_sha256": "9053bfe40969cbd4d0ac9ad569de2f5a2ab782a9364fe73c79cefd2e73ff0f7d"
+  "content_integrity": {
+    "algorithm": "SHA-256",
+    "domain": "CHRONUS_SOFTWARE_EVIDENCE_V2",
+    "content_sha256": "7a7cbe28726233ce806220174b767c707092651c0dd0768e2d00cdab7e64fe5d",
+    "keyed_signature": false,
+    "external_attestation": false
   }
 }

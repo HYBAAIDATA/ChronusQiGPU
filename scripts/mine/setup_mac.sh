@@ -86,6 +86,7 @@ mkdir -p "$STATE_ROOT" "$BIN" "$LOG_DIR"
 chmod 700 "$STATE_ROOT"
 [ -x "$VENV/bin/python" ] || "$PY" -m venv "$VENV"
 "$VENV/bin/python" -m pip install --quiet --upgrade pip
+"$VENV/bin/python" -m pip install --quiet -e "$REPO/packages/turing"
 "$VENV/bin/python" -m pip install --quiet -e "$REPO"
 "$VENV/bin/python" -m pip install --quiet --no-deps -e "$REPO/packages/hyba_mine"
 "$VENV/bin/python" -m pip install --quiet "pyobjc-framework-Metal>=10.3"

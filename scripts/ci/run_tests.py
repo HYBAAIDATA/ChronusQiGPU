@@ -11,8 +11,11 @@ import unittest
 # Add repository root and src directory to sys.path
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 SRC_DIR = os.path.join(REPO_ROOT, "src")
+TURING_SRC_DIR = os.path.join(REPO_ROOT, "packages", "turing", "src")
 if SRC_DIR not in sys.path:
     sys.path.insert(0, SRC_DIR)
+if TURING_SRC_DIR not in sys.path:
+    sys.path.insert(0, TURING_SRC_DIR)
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 

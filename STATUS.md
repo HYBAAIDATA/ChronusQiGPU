@@ -3,9 +3,9 @@
 **Status: NOT QUALIFIED**
 
 - Repository: `HYBAAIDATA/ChronusQiGPU`
-- Main baseline reviewed: `dc920a82c38ee408fb9698d3206631139f9d0d97`
-- Closing branch: `codex/production-readiness-20261115`
-- Closing PR: [#71](https://github.com/HYBAAIDATA/ChronusQiGPU/pull/71)
+- Main baseline reviewed: `3f30f61d490ee78ca6c8b0bdf1b3df84b1b6a0c1`
+- Closing branch: `codex/production-readiness-20261116`
+- Closing PR: [#136](https://github.com/HYBAAIDATA/ChronusQiGPU/pull/136)
 - Requirements map: [docs/notion-production-readiness.md](docs/notion-production-readiness.md)
 - Claim audit: [docs/claim-audit.md](docs/claim-audit.md)
 
@@ -13,13 +13,23 @@ The previous dossier claimed “100% PRODUCTION QUALIFIED” from an unrelated h
 
 ## Observed blockers
 
-- The main baseline had reproducible CI failures in collection, packaging, static security, purity, evidence installation and storage-path setup. PR #71 addresses the source-level causes and reruns the checks on its own SHA.
+- The current main baseline had reproducible source-level failures in package collection, hygiene, qualification import paths and test fixtures. PR #136 carries the fixes on top of main, including the missing Geodesic evidence packet, clean-checkout TURING import path, secure tenant-capacity test credentials, rollback fixture setup, claim-token allowlisting and the HYBA Mine/TURING installation seam.
+- The frontend lockfile also carried 20 pnpm advisories through the Tailwind/PostCSS transitive graph (including one critical). PR #136 refreshes the locked graph; local `pnpm audit` now reports zero advisories, the Next production build passes, and all four Ciaas acceptance tests pass.
+- Local exact-current verification on the review checkout passed `2340 passed, 38 skipped, 1 xfailed` (Python 3.12.14), with the focused package, acceleration, storage, build, Bandit, purity and mutation checks passing. This is local evidence, not GitHub-hosted CI evidence.
+- The PR's GitHub Actions runs fail before retaining usable job steps/logs; sampled log downloads return Azure `BlobNotFound`. That is recorded as infrastructure unavailable, not as a passing release gate.
 - No physical GPU/device certificate, reference-vs-device differential, sustained thermal/soak run, failure/recovery record, or literal live-pool acknowledgement is present.
 - No immutable SBOM/provenance/rollback packet or explicit owner approval is present.
 - The four July Geodesic Tensor primitives have now been located in active `src/chronus/tensor/geodesic.py`, exported and tested by `tests/test_geodesic_tensor_migration.py` (source/test presence only; no current release qualification). The historical named Kellogg contract is not yet matched to a complete maintained implementation/certification and remains under reconciliation.
 - Historical qualification manifests and benchmark claims remain provenance only.
 
 The mining deployment hold in `deploy/hyba-mine/control.env` is preserved. No deployment workflow was resurrected by this review.
+
+The ChatGPT Library and Notion source reconciliation is recorded in
+[`docs/notion-production-readiness.md`](docs/notion-production-readiness.md),
+[`docs/production/NOTION_LIBRARY_RECONCILIATION.md`](docs/production/NOTION_LIBRARY_RECONCILIATION.md)
+and the dated audit. The maintained tree already contains the four named
+Geodesic/Tensor surfaces; historical monolithic source was not copied into the
+runtime.
 
 ## 16 November 2026 closeout supplement
 

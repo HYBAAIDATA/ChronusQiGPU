@@ -71,6 +71,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: Install Chronus and HYBA Mine
         run: |
+          python -m pip install -e packages/turing
           python -m pip install -e .
           python -m pip install --no-deps -e packages/hyba_mine
       - name: Metal bindings (macOS runners only)
@@ -96,6 +97,7 @@ jobs:
           python-version: '3.12'
       - name: Install Chronus and HYBA Mine
         run: |
+          python -m pip install -e packages/turing
           python -m pip install -e .
           python -m pip install --no-deps -e packages/hyba_mine
       - name: Metal bindings (macOS runners only)
