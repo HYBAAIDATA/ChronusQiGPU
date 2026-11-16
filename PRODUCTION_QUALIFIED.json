@@ -1,35 +1,35 @@
 {
-  "schema": "chronus-production-posture/v2",
-  "status": "EVIDENCE_GATED",
-  "production_qualified": false,
-  "branch": "closeout/triad-production-posture-20261115",
-  "release_commit": "SET_BY_CI",
-  "generated_at": "2026-11-15",
-  "authorities": {
-    "CHRONUS": "execution",
-    "OVID": "versioned representation transformation/materialisation",
-    "THESEUS": "durable custody/integrity/continuity/recovery/provenance"
+  "status": "NOT_QUALIFIED",
+  "reason": "Repository and local CI evidence are necessary but do not establish a production release.",
+  "reviewed_at": "2026-11-15",
+  "repository": "HYBAAIDATA/ChronusQiGPU",
+  "baseline": {
+    "branch": "main",
+    "git_sha": "dc920a82c38ee408fb9698d3206631139f9d0d97"
   },
-  "local_software_evidence": "PENDING_CI",
-  "mandatory_product_gates": {
-    "CO-SIGN": "NOT_RUN",
-    "RS-RECEIPT": "NOT_RUN",
-    "RS-REPLAY": "NOT_RUN",
-    "FN-CLAIMS": "NOT_RUN",
-    "FN-CUSTODY": "NOT_RUN"
+  "closing_pr": "https://github.com/HYBAAIDATA/ChronusQiGPU/pull/71",
+  "local_ci": {
+    "status": "OBSERVED_FAILURES_ON_BASELINE",
+    "runs": [
+      "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/43669370042",
+      "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/43669369942",
+      "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/43669370018",
+      "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/43669370069"
+    ],
+    "note": "PR #71 reruns the corrected source; record its final checks by head SHA before merge."
   },
-  "attestation_verified": false,
-  "external_certification": false,
-  "hardware_measurement": "DEVICE_SPECIFIC_NOT_INFERRED",
-  "blockers": [
-    "Exact close-out commit CI has not yet completed",
-    "Mandatory product-gate attestation has not yet completed",
-    "External customer-held custody remains environment/profile specific",
-    "Physical accelerator performance requires device-bound evidence"
-  ],
-  "evidence": {
-    "capability_manifest": "capabilities/triad_production_manifest.json",
-    "migration_register": "evidence/migration/chronus_historical_evidence_register.json",
-    "closeout": "docs/production/TRIAD_PRODUCTION_CLOSEOUT.md"
-  }
+  "external_release_evidence": {
+    "status": "MISSING",
+    "required": [
+      "device-certificate.json",
+      "reference-vs-device-differential.json",
+      "sustained-soak-and-recovery.json",
+      "pool-acknowledgement.json",
+      "sbom.json",
+      "provenance.json",
+      "rollback-plan.json",
+      "owner-approval.json"
+    }
+  },
+  "signature": null
 }

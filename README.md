@@ -30,21 +30,11 @@ A source constant, successful local test run, provider name or historical benchm
 
 The mandatory product gates are defined in `src/chronus/core/qualification.py`. The software-base product verifier is `scripts/ci/build_product_gates.py`; `scripts/ci/evaluate_attested.py` verifies the separately attested test and product-gate artifacts. A tag can publish only after `scripts/ci/require_release_qualification.py` verifies successful full CI and an attested `PASS` qualification for the exact `main` commit.
 
-The previous self-certifying paths have been removed from the close-out branch:
-- the package facade no longer forces a production-qualified result;
-- the local manifest generator no longer embeds a signing key or awards production status;
-- the legacy sovereign dossier is now explicitly a repository-local software evidence file rather than an external certification;
-- provider labels do not create custody credit.
+## CI and deployment
 
-Current posture and close-out details:
-- [Production close-out](docs/production/TRIAD_PRODUCTION_CLOSEOUT.md)
-- [Capability matrix](docs/production/TRIAD_CAPABILITY_MATRIX.md)
-- [Test and benchmark provenance](docs/production/TEST_AND_BENCHMARK_PROVENANCE.md)
-- [Machine-readable capability manifest](capabilities/triad_production_manifest.json)
-- [Historical evidence migration register](evidence/migration/chronus_historical_evidence_register.json)
-- [Deployment profile contract](capabilities/deployment_profiles.json)
+GitHub Actions under `.github/workflows/` are active for pushes and pull requests in this repository. They run the source tests, lint/compile/package checks, security scans, CPU-reference OpenCL checks, RTL checks, container smoke tests and evidence workflows. A passing job is evidence for that job and commit only; it is not production qualification.
 
-## Durable custody
+The repository contains Azure infrastructure definitions under `infra/azure/`, but no active Azure deployment pipeline is established by this source snapshot. Deployment remains an explicit owner-controlled operation and is out of scope for PR #71. Before deploying the API, set a stable `CHRONUS_JWT_SECRET`; otherwise token signing keys change across restarts. See [the Notion requirements map](docs/notion-production-readiness.md) for the release packet and remaining gates.
 
 `DurableTheseusService` in `src/chronus/storage/durable.py` provides the production local custody path using SQLite WAL, full synchronous commits, content verification, tenant-scoped records, restart validation and a hash-chained journal.
 

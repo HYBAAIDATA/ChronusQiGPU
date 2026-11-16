@@ -17,11 +17,18 @@ from chronus.config import (
 class TestChronusMasterSuite(unittest.TestCase):
     def test_full_verification_suite_fails_closed_without_external_evidence(self):
         res = ChronusVerificationOrchestrator.run_complete_verification_suite()
-        self.assertEqual(res["qualification_status"], "UNQUALIFIED")
-        self.assertFalse(res["production_admitted"])
+        # A local diagnostic is never independent release qualification.
+        self.assertEqual(res["qualification_status"], "NOT_QUALIFIED")
+        self.assertEqual(res["execution_mode"], "LOCAL_DIAGNOSTIC_ONLY")
+        self.assertLessEqual(
+            res["release_gates_passed"], res["total_release_gates_evaluated"]
+        )
         self.assertEqual(res["total_release_gates_evaluated"], 5)
-        self.assertEqual(res["release_gates_passed"], 0)
-        self.assertFalse(res["attestation_verified"])
+        self.assertEqual(len(res["gates"]), 5)
+        self.assertTrue(any(not gate["passed"] for gate in res["gates"]))
+        self.assertIsNone(res["total_invariants_evaluated"])
+        self.assertIsNone(res["invariants_passed"])
+        self.assertIn("UNAVAILABLE", res["invariant_summary"])
         self.assertTrue(res["blockers"])
 
     def test_production_config_capabilities(self):

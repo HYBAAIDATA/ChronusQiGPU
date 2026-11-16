@@ -7,8 +7,7 @@
 #   prefer:  ours (the Chronus iGPU, even where the host has a GPU) | host
 # The runner follows the choice: macOS for metal, Ubuntu otherwise. A named
 # backend the runner does not offer fails closed (the job goes red).
-# The former Azure deployment workflow has been removed; this file is only the
-# bounded Mac/runtime validation workflow.
+# This test-only workflow is independent of any future hosting decision.
 name: "HYBA Mine (Mac runtime)"
 
 on:

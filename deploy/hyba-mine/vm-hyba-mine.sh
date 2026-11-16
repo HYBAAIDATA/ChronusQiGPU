@@ -1,7 +1,6 @@
 #!/bin/bash
-# HYBA Mine on the mining host (vm-qigpu-miner, UK West). Runs as root through Azure
-# run-command. The former GitHub deployment workflow has been removed; invoke
-# this script only through the separately authorised operator/deployment path:
+# Optional Azure VM adapter retained for a future hosting decision. It runs as root
+# through Azure run-command when invoked manually or by separately reviewed automation:
 #
 #   vm-hyba-mine.sh <campaign|status|stop|examine> <pools> <key vault> <registry login server> <registry name> [image] [campaign id] [max run seconds]
 #
