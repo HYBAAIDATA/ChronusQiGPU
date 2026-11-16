@@ -30,6 +30,9 @@ class VerifiedFoldIndex:
         # The formal roundtrip uses sizes[:-1]; check every Fibonacci split
         # including the final stored extent, before compiling the read index.
         source = operand.state
+        if (source.folded.dtype not in (np.dtype("float64"), np.dtype("complex128")) or
+                any(kernel.dtype != source.folded.dtype for kernel in source.kernels)):
+            raise ValueError("selective inverse requires canonical float64/complex128 kernel dtype")
         if (not source.sizes or len(source.sizes) != len(source.kernels) + 1 or
                 source.sizes[-1] != source.folded.size):
             raise ValueError("invalid final PULVINI fold chronology")
