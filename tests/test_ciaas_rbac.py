@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
 from chronus.service.app import create_app
-from chronus.service.auth_middleware import Role, jwt_validator
+from chronus.service.auth_middleware import Role, jwt_validator, create_jwt_token
 
 
 class TestCIaaSRBAC(unittest.TestCase):
@@ -17,6 +17,11 @@ class TestCIaaSRBAC(unittest.TestCase):
     def setUp(self):
         self.app = create_app()
         self.client = TestClient(self.app)
+        self.client.headers.update({
+            "Authorization": "Bearer " + create_jwt_token(
+                "chronus-root", "unit-sysadmin", Role.SYSTEM_ADMIN
+            )
+        })
 
     def test_rbac_matrix_endpoint(self):
         """Verify AL HARAS 4-tier privileges matrix structure."""
@@ -142,17 +147,18 @@ class TestCIaaSRBAC(unittest.TestCase):
         self.assertEqual(float(settlement["chronus_value_share_usd"]), 20000.0)
         # Client retained 75% = 60000
         self.assertEqual(float(settlement["client_retained_usd"]), 60000.0)
-        self.assertEqual(settlement["settlement_status"], "RECONCILED")
-        self.assertTrue(settlement["proof_certificate"].startswith("cert_hermiten_"))
+        self.assertEqual(settlement["settlement_status"], "CALCULATED_UNVERIFIED")
+        self.assertIsNone(settlement["proof_certificate"])
 
     def test_fabric_pods_fleet(self):
         """Inspect regional fleet pods alpha..delta, DEC fluid routing, and DSW instanton healer."""
         res = self.client.get("/v1/fabric/pods")
         self.assertEqual(res.status_code, 200)
         data = res.json()
-        self.assertEqual(data["virtual_crossbar"]["bandwidth"], "130 Tb/s")
-        self.assertEqual(data["virtual_crossbar"]["packet_stalls"], 0)
-        self.assertEqual(data["instanton_healer"]["repair_latency_cycles"], 1)
+        self.assertEqual(data["status"], "RUNTIME_UNVERIFIED")
+        self.assertIsNone(data["virtual_crossbar"]["bandwidth"])
+        self.assertIsNone(data["virtual_crossbar"]["packet_stalls"])
+        self.assertIsNone(data["instanton_healer"]["repair_latency_cycles"])
 
         pods = {p["pod"]: p for p in data["pods"]}
         self.assertIn("alpha", pods)
@@ -165,12 +171,59 @@ class TestCIaaSRBAC(unittest.TestCase):
         res = self.client.get("/v1/governance/sovereign")
         self.assertEqual(res.status_code, 200)
         data = res.json()
-        self.assertEqual(data["compliance"]["principles_passed"], 14)
+        self.assertEqual(data["compliance"]["principles_passed"], 0)
+        self.assertEqual(data["compliance"]["status"], "NOT_ASSESSED")
         self.assertEqual(
-            data["cellular_sheaf_cohomology"]["cohomology_class"], "H^1(X; F) = 0"
+            data["cellular_sheaf_cohomology"]["cohomology_class"], None
         )
         self.assertEqual(
-            data["cellular_sheaf_cohomology"]["prompt_injection_vortices"], 0
+            data["cellular_sheaf_cohomology"]["prompt_injection_vortices"], None
+        )
+
+
+    def test_privilege_escalation_and_cross_tenant_access_are_denied(self):
+        anonymous = TestClient(create_app())
+        request = {"tenant_id": "tenant-default", "user_id": "attacker",
+                   "role": "system_admin"}
+        self.assertEqual(
+            anonymous.post("/v1/auth/token", json=request).status_code, 401
+        )
+        self.assertEqual(
+            anonymous.post("/v1/tenants/onboard", json={
+                "tenant_id": "attacker",
+                "organization_name": "Attacker",
+                "admin_email": "attacker@example.invalid"
+            }).status_code, 401
+        )
+        self.assertEqual(anonymous.get("/v1/tenants").status_code, 401)
+        developer = {"Authorization": "Bearer " + create_jwt_token(
+            "tenant-default", "attacker", Role.DEVELOPER
+        )}
+        self.assertEqual(
+            anonymous.post("/v1/auth/token", headers=developer,
+                           json=request).status_code, 403
+        )
+        other = {"Authorization": "Bearer " + create_jwt_token(
+            "tenant-other", "attacker", Role.TENANT_ADMIN
+        )}
+        self.assertEqual(
+            anonymous.get("/v1/tenants/tenant-default",
+                          headers=other).status_code, 403
+        )
+        self.assertEqual(
+            anonymous.post("/v1/tenants/tenant-default/cce",
+                           headers=other,
+                           json={"concurrency_limit": 2048}).status_code, 403
+        )
+        self.assertEqual(
+            anonymous.post("/v1/tenants/tenant-default/settlement",
+                           headers=developer,
+                           json={"counterfactual_cost": 100}).status_code, 403
+        )
+        self.assertEqual(
+            anonymous.post("/v1/fabric/clusters/register",
+                           headers=self.client.headers,
+                           json={"cluster_id": "unregistered"}).status_code, 503
         )
 
 
