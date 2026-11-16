@@ -29,7 +29,7 @@
       "provenance.json",
       "rollback-plan.json",
       "owner-approval.json"
-    }
+    ]
   },
   "signature": null
 }
