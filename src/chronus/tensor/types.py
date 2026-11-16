@@ -208,11 +208,16 @@ class ErrorLedger:
 
     def append(self, item: Union[TruncationRecord, ContractionCertificate]) -> None:
         if isinstance(item, TruncationRecord):
+            if not math.isfinite(item.discarded_weight) or item.discarded_weight < 0 or not math.isfinite(item.error_bound) or item.error_bound < 0:
+                raise ValueError("truncation evidence must have finite nonnegative weights and bounds")
             self.truncations.append(item)
-            # Fannes-Audenaert global bound accumulation: sqrt(sum(discarded_weights))
-            total_discarded = sum(r.discarded_weight for r in self.truncations)
-            self.global_bound = 2.0 * math.sqrt(max(0.0, total_discarded))
+            # The triangle inequality requires adding each independently
+            # committed truncation error; sqrt(sum(weights)) is not valid
+            # for sequential adaptive truncations.
+            self.global_bound += item.error_bound
         elif isinstance(item, ContractionCertificate):
+            if not math.isfinite(item.planner_bound) or item.planner_bound < 0:
+                raise ValueError("planner bound must be finite and nonnegative")
             self.certificates.append(item)
             self.global_bound += item.planner_bound
 

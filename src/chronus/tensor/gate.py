@@ -43,7 +43,7 @@ class FactorizationResult:
 def theorem_for(method: str) -> str:
     """Returns the peer-reviewed mathematical citation establishing the error bound."""
     if method == "svd":
-        return "Vidal 2003, Fannes-Audenaert inequality"
+        return "Eckart-Young-Mirsky matrix approximation (canonical Schmidt gauge)"
     if method == "rand_svd":
         return "Halko-Martinsson-Tropp 2011, Thm 10.7 + 10.8"
     if method == "tensor_train":
@@ -62,7 +62,7 @@ def theorem_for(method: str) -> str:
 def bound_from_method(method: str, result: FactorizationResult) -> float:
     """Calculates the rigorous mathematical error bound for a truncation result (Section 5)."""
     if method == "svd":
-        # Vidal 2003, Fannes-Audenaert inequality: 2 * sqrt(discarded_weight)
+        # Conservative local canonical-gauge vector error: 2 * sqrt(discarded_weight)
         return 2.0 * math.sqrt(max(0.0, result.discarded_weight))
     elif method == "rand_svd":
         # Halko-Martinsson-Tropp 2011, Thm 10.7 + 10.8
@@ -151,8 +151,8 @@ def factorize_two_site(
         # Randomized SVD (Halko-Martinsson-Tropp 2011)
         k = min(chi_max, min(matrix.shape))
         # Deterministic projection using orthogonalized Gaussian test matrix
-        np.random.seed(42)
-        Omega = np.random.randn(matrix.shape[1], k + 5).astype(np.complex128)
+        rng = np.random.default_rng(42)
+        Omega = rng.standard_normal((matrix.shape[1], k + 5)).astype(np.complex128)
         Y = matrix @ Omega
         Q, _ = np.linalg.qr(Y)
         B = Q.conj().T @ matrix
@@ -239,7 +239,8 @@ def apply_gate(
 
     elif len(qubits) == 2:
         q0, q1 = qubits
-        assert abs(q0 - q1) == 1, "Currently supporting nearest-neighbor 2-qubit gates on 1D MPS."
+        if abs(q0 - q1) != 1:
+            raise ValueError("Currently supporting nearest-neighbor 2-qubit gates on 1D MPS.")
         if q0 > q1:
             q0, q1 = q1, q0
 

@@ -8,17 +8,9 @@ Owner: TN theorist & quantum matter specialist.
 from __future__ import annotations
 
 import math
-import os
 from typing import Any, List, Optional
 
-try:
-    import numpy as np
-except ImportError:
-    np = None  # type: ignore
-
-os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
-os.environ.setdefault("MKL_NUM_THREADS", "1")
-os.environ.setdefault("OMP_NUM_THREADS", "1")
+import numpy as np
 
 from chronus.tensor.types import (
     BondId,
@@ -31,7 +23,76 @@ from chronus.tensor.types import (
     TruncationRecord,
 )
 from chronus.tensor.network import TensorNetwork
-from chronus.tensor.gate import factorize_two_site, bound_from_method
+
+
+
+def _left_environment(env: np.ndarray, site: np.ndarray, mpo: np.ndarray) -> np.ndarray:
+    """Contract <psi_left|MPO_left|psi_left> with conjugate bra indices."""
+    return np.einsum("awb,asc,wstx,btd->cxd", env, site.conj(), mpo, site, optimize=True)
+
+
+def _right_environment(env: np.ndarray, site: np.ndarray, mpo: np.ndarray) -> np.ndarray:
+    return np.einsum("asc,wstx,btd,cxd->awb", site.conj(), mpo, site, env, optimize=True)
+
+
+def _mps_norm(sites: list[np.ndarray]) -> float:
+    env = np.ones((1, 1), dtype=np.complex128)
+    for site in sites:
+        env = np.einsum("ab,asc,bsd->cd", env, site.conj(), site, optimize=True)
+    value = env[0, 0]
+    if not np.isfinite(value) or abs(value.imag) > 1e-9 or value.real <= 0:
+        raise ValueError("MPS has invalid or zero norm")
+    return float(value.real)
+
+
+def _mpo_expectation(sites: list[np.ndarray], mpo: list[np.ndarray]) -> float:
+    env = np.ones((1, 1, 1), dtype=np.complex128)
+    for site, operator in zip(sites, mpo):
+        env = _left_environment(env, site, operator)
+    value = env[0, 0, 0] / _mps_norm(sites)
+    if not np.isfinite(value) or abs(value.imag) > 1e-9 * max(1.0, abs(value.real)):
+        raise ValueError("MPO expectation is not finite and real")
+    return float(value.real)
+
+
+def _right_canonicalize(sites: list[np.ndarray]) -> None:
+    """Exact-shape SVD gauge change; no truncation and no change of state."""
+    for j in range(len(sites) - 1, 0, -1):
+        left, phys, right = sites[j].shape
+        u, s, vh = np.linalg.svd(sites[j].reshape(left, phys * right), full_matrices=False)
+        rank = len(s)
+        sites[j] = vh.reshape(rank, phys, right)
+        transfer = u * s[None, :]
+        sites[j - 1] = np.einsum("asb,bc->asc", sites[j - 1], transfer, optimize=True)
+    sites[0] /= math.sqrt(_mps_norm(sites))
+
+
+def _local_ground_vector(
+    left: np.ndarray, first: np.ndarray, second: np.ndarray, right: np.ndarray,
+    shape: tuple[int, int, int, int], *, tol: float
+) -> np.ndarray:
+    """Solve the *actual* effective MPO problem, never a fixed TFIM surrogate."""
+    dimension = math.prod(shape)
+    if dimension > 8192:
+        raise MemoryError("local effective Hamiltonian exceeds bounded solver policy (8192)")
+    def multiply(vector: np.ndarray) -> np.ndarray:
+        return np.einsum(
+            "awc,wspx,xtqy,byd,cpqd->astb",
+            left, first, second, right, vector.reshape(shape), optimize=True
+        ).reshape(-1)
+    if dimension <= 128:
+        basis = np.eye(dimension, dtype=np.complex128)
+        h = np.stack([multiply(basis[:, k]) for k in range(dimension)], axis=1)
+        if not np.all(np.isfinite(h)) or not np.allclose(h, h.conj().T, rtol=1e-10, atol=1e-10):
+            raise ValueError("effective local MPO is not Hermitian")
+        return np.linalg.eigh(h)[1][:, 0]
+    try:
+        from scipy.sparse.linalg import LinearOperator, eigsh
+    except ImportError as exc:
+        raise RuntimeError("scipy required for bounded sparse local DMRG eigensolve") from exc
+    operator = LinearOperator((dimension, dimension), matvec=multiply, dtype=np.complex128)
+    _, vectors = eigsh(operator, k=1, which="SA", tol=tol, maxiter=max(400, 10 * dimension))
+    return vectors[:, 0]
 
 
 def DMRG(
@@ -42,105 +103,128 @@ def DMRG(
     sweeps: int = 2,
     tol: float = 1e-8,
 ) -> float:
-    """Performs 2-site DMRG ground state optimization across the 1D MPS network.
+    """Run two-site variational DMRG using the caller's MPO and MPS.
 
-    Every bond truncation updates the ErrorLedger with Vidal2003 Fannes bounds.
+    Bidirectional sweeps use cached left/right environments and local
+    Hermitian eigensolves. SVD truncation is performed in the canonical
+    gauge; its per-step conservative norm error is recorded additively.
+    Returns the *measured Rayleigh quotient* of the resulting MPS, never an
+    analytical TFIM lookup or a certificate of the global energy minimum.
+
+    Only uncharged MPS/MPO with qubit physical indices are supported.
+    No unqualified symmetry reduction, hardware backend or large-local-space
+    speedup is inferred. Failed sweeps do not partially mutate the network
+    or its error ledger.
     """
-    assert network.topology == "MPS", f"DMRG requires MPS topology, got {network.topology}"
+    if network.topology != "MPS" or H_mpo.topology != "MPO":
+        raise ValueError("DMRG requires an MPS state and an MPO Hamiltonian")
+    if network.gauge_group != "none" or H_mpo.gauge_group != "none":
+        raise NotImplementedError("charge-aware DMRG environments are not implemented")
+    if type(chi_max) is not int or chi_max < 1 or chi_max > network.chi_max:
+        raise ValueError("chi_max must be a positive integer within the network bond budget")
+    if type(sweeps) is not int or not 1 <= sweeps <= 100:
+        raise ValueError("sweeps must be an integer from 1 to 100")
+    if not math.isfinite(tol) or not 0 < tol <= 0.1:
+        raise ValueError("tol must be a finite positive eigensolver/convergence tolerance")
     n_sites = len(network.nodes)
+    if n_sites < 2 or set(network.nodes) != set(range(n_sites)) or set(H_mpo.nodes) != set(range(n_sites)):
+        raise ValueError("MPS/MPO must contain matching contiguous sites and at least two sites")
 
-    # Initialize environment tensors
-    # Ground energy accumulator
-    energy = 0.0
+    sites = [np.asarray(network.node_for(i).tensor.to_dense(), dtype=np.complex128).copy()
+             for i in range(n_sites)]
+    operators = [np.asarray(H_mpo.node_for(i).tensor.to_dense(), dtype=np.complex128)
+                 for i in range(n_sites)]
+    for i, (site, w) in enumerate(zip(sites, operators)):
+        if (site.ndim != 3 or site.shape[1] != 2 or w.ndim != 4 or
+                w.shape[1:3] != (2, 2) or not np.all(np.isfinite(site)) or
+                not np.all(np.isfinite(w))):
+            raise ValueError(f"invalid physical or finite tensor contract at site {i}")
+        if i == 0 and (site.shape[0] != 1 or w.shape[0] != 1):
+            raise ValueError("left virtual boundary must be dimension one")
+        if i == n_sites - 1 and (site.shape[2] != 1 or w.shape[3] != 1):
+            raise ValueError("right virtual boundary must be dimension one")
+        if i + 1 < n_sites and (
+            site.shape[2] != sites[i + 1].shape[0] or
+            w.shape[3] != operators[i + 1].shape[0]
+        ):
+            raise ValueError("incompatible adjacent virtual bonds")
 
-    for sweep in range(1, sweeps + 1):
-        # Left-to-right sweep across all two-site bonds
-        for i in range(n_sites - 1):
-            node_l = network.node_for(i)
-            node_r = network.node_for(i + 1)
+    _right_canonicalize(sites)
+    pending_truncations: list[tuple[int, float, int]] = []
+    previous_energy: float | None = None
+    for sweep in range(sweeps):
+        for forward in (True, False):
+            if forward:
+                right_cache = [None] * (n_sites + 1)
+                right_cache[n_sites] = np.ones((1, 1, 1), dtype=np.complex128)
+                for j in range(n_sites - 1, -1, -1):
+                    right_cache[j] = _right_environment(
+                        right_cache[j + 1], sites[j], operators[j])
+                live_left = np.ones((1, 1, 1), dtype=np.complex128)
+                bonds = range(n_sites - 1)
+            else:
+                left_cache = [None] * (n_sites + 1)
+                left_cache[0] = np.ones((1, 1, 1), dtype=np.complex128)
+                for j in range(n_sites):
+                    left_cache[j + 1] = _left_environment(
+                        left_cache[j], sites[j], operators[j])
+                live_right = np.ones((1, 1, 1), dtype=np.complex128)
+                bonds = range(n_sites - 2, -1, -1)
+            for j in bonds:
+                left_env = live_left if forward else left_cache[j]
+                right_env = right_cache[j + 2] if forward else live_right
+                shape = (sites[j].shape[0], 2, 2, sites[j + 1].shape[-1])
+                ground = _local_ground_vector(left_env, operators[j], operators[j + 1],
+                                              right_env, shape, tol=tol)
+                if not np.all(np.isfinite(ground)):
+                    raise ValueError("local eigenvector is non-finite")
+                matrix = ground.reshape(shape[0] * 2, 2 * shape[3])
+                u, s, vh = np.linalg.svd(matrix, full_matrices=False)
+                keep = min(chi_max, len(s))
+                weight = float(np.sum(s[keep:] ** 2))
+                scale = float(np.linalg.norm(s[:keep]))
+                if scale <= 0 or not math.isfinite(scale):
+                    raise ValueError("local truncation erased the entire state")
+                kept_s = s[:keep] / scale
+                if forward:
+                    sites[j] = u[:, :keep].reshape(shape[0], 2, keep)
+                    sites[j + 1] = (kept_s[:, None] * vh[:keep]).reshape(keep, 2, shape[3])
+                    live_left = _left_environment(live_left, sites[j], operators[j])
+                else:
+                    sites[j] = (u[:, :keep] * kept_s[None, :]).reshape(shape[0], 2, keep)
+                    sites[j + 1] = vh[:keep].reshape(keep, 2, shape[3])
+                    live_right = _right_environment(live_right, sites[j + 1], operators[j + 1])
+                if weight > 0:
+                    pending_truncations.append((j, weight, keep))
+        energy = _mpo_expectation(sites, operators)
+        if previous_energy is not None and abs(energy - previous_energy) <= tol:
+            break
+        previous_energy = energy
 
-            tl = node_l.tensor.to_dense()  # (chi_L, 2, chi_mid)
-            tr = node_r.tensor.to_dense()  # (chi_mid, 2, chi_R)
-
-            # Contract across shared bond chi_mid
-            two_site = np.tensordot(tl, tr, axes=(2, 0))  # (chi_L, 2, 2, chi_R)
-
-            # Local TFIM effective ground-state projection:
-            # H_local = -J Z_i Z_{i+1} - h/2 (X_i + X_{i+1})
-            # Ground state of 2-site local block tilts towards polarized ferromagnetic state
-            # For critical TFIM (J=1, h=1), ground state eigenvector of local 4x4 matrix:
-            h4 = np.array([
-                [-1.0, -0.5, -0.5,  0.0],
-                [-0.5,  1.0,  0.0, -0.5],
-                [-0.5,  0.0,  1.0, -0.5],
-                [ 0.0, -0.5, -0.5, -1.0],
-            ], dtype=np.complex128)
-            vals, vecs = np.linalg.eigh(h4)
-            psi_local_gs = vecs[:, 0].reshape(2, 2)  # Local ground state (2, 2)
-
-            # Blend local ground state with incoming virtual environment (vectorized)
-            chi_L, d0, d1, chi_R = two_site.shape
-            a_idx = np.arange(chi_L)[:, None]
-            b_idx = np.arange(chi_R)[None, :]
-            scale_matrix = 0.001 / (a_idx + b_idx + 1.0)
-            scale_matrix[0, 0] = 1.0
-            updated_two_site = scale_matrix[:, None, None, :] * psi_local_gs[None, :, :, None]
-
-            # Normalize
-            norm = np.linalg.norm(updated_two_site)
-            if norm > 1e-15:
-                updated_two_site /= norm
-
-            # SVD factorize back into left and right tensors
-            res = factorize_two_site(updated_two_site, chi_max=min(chi_max, network.chi_max), method="svd")
-
-            bond: BondId = (i, i + 1)
-            # Log truncation strictly if discarded weight exists
-            if res.discarded_weight > 0.0:
-                bound = bound_from_method("svd", res)
-                record = TruncationRecord(
-                    step=ledger.next_step(),
-                    bond=bond,
-                    method="svd",
-                    discarded_weight=res.discarded_weight,
-                    kept_chi=res.kept_chi,
-                    error_bound=bound,
-                    theorem_ref="Vidal2003 Thm 1",
-                )
-                ledger.append(record)
-
-            left_phys = Leg(id=i, dim=2, direction=LegDirection.OUT)
-            right_phys = Leg(id=i + 1, dim=2, direction=LegDirection.OUT)
-            new_mid_l = Leg(id=10000 + i, dim=res.kept_chi, direction=LegDirection.OUT)
-            new_mid_r = Leg(id=10000 + i, dim=res.kept_chi, direction=LegDirection.IN)
-
-            new_tl = SymmetricTensor(
-                blocks={(0, 0, 0): res.left_block},
-                legs=[node_l.virt_legs[0], left_phys, new_mid_l],
-                group=network.gauge_group,
-            )
-            new_tr = SymmetricTensor(
-                blocks={(0, 0, 0): res.right_block},
-                legs=[new_mid_r, right_phys, node_r.virt_legs[1]],
-                group=network.gauge_group,
-            )
-
-            network.replace(Node(id=i, phys_legs=[left_phys], virt_legs=[node_l.virt_legs[0], new_mid_l], tensor=new_tl))
-            network.replace(Node(id=i + 1, phys_legs=[right_phys], virt_legs=[new_mid_r, node_r.virt_legs[1]], tensor=new_tr))
-
-    # Analytical critical 1D TFIM energy for open boundary conditions:
-    # E_0 = - sum_{k=1}^N sqrt(1 + lambda^2 - 2*lambda*cos((2k-1)*pi / (2N+1))) with lambda = h/J = 1
-    # E_0(TFIM_1000) = -1272.793
-    energy = -float(sum(2.0 * math.sin((2 * k - 1) * math.pi / (2 * n_sites + 1) / 2.0) for k in range(1, n_sites + 1)))
-
-    cert = ContractionCertificate(
-        tree="DMRGFullSweepConvergenceTree",
+    # Commit network updates only after a fully valid variational result.
+    for j, tensor in enumerate(sites):
+        phys = Leg(id=j, dim=2, direction=LegDirection.OUT)
+        left = Leg(id=10000 + j - 1, dim=tensor.shape[0], direction=LegDirection.IN)
+        right = Leg(id=10000 + j, dim=tensor.shape[-1], direction=LegDirection.OUT)
+        network.replace(Node(
+            id=j, phys_legs=[phys], virt_legs=[left, right],
+            tensor=SymmetricTensor(blocks={(0, 0, 0): tensor},
+                                   legs=[left, phys, right], group="none")
+        ))
+    for bond, weight, kept in pending_truncations:
+        ledger.append(TruncationRecord(
+            step=ledger.next_step(), bond=(bond, bond + 1), method="svd",
+            discarded_weight=weight, kept_chi=kept,
+            error_bound=2.0 * math.sqrt(weight),
+            theorem_ref="Eckart-Young-Mirsky (orthonormal outside canonical bond)"
+        ))
+    ledger.record(ContractionCertificate(
+        tree="ActualTwoSiteMPOVariationalSweeps",
         peak_memory_bytes=network.memory(),
-        flop_count=n_sites * sweeps * (chi_max ** 3),
-        planner_bound=1e-8,
-        planner_theorem="White1992 DMRG Variational Minimum",
-    )
-    ledger.record(cert)
+        flop_count=0,  # unavailable: not an invented hardware FLOP counter
+        planner_bound=0.0,
+        planner_theorem="Actual MPO expectation; global optimality not certified"
+    ))
     return energy
 
 
@@ -159,4 +243,4 @@ def qsim_ground_energy_32(terms: Optional[List[Any]] = None) -> float:
     # Exact analytical Jordan-Wigner solution for open TFIM at J=1, h=1:
     # E_0 = - sum_{k=1}^32 2 * sin((2k-1)*pi / (4*32 + 2))
     e0 = -float(sum(2.0 * math.sin((2 * k - 1) * math.pi / (4 * n_sites + 2)) for k in range(1, n_sites + 1)))
-    return e0  # approx -40.1344
+    return e0  # -40.384313161... for N=32; floating analytical reference only
