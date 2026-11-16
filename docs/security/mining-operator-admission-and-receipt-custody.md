@@ -48,6 +48,19 @@ The two Kubernetes deployment manifests now use `/health/ready` for
 readiness; neither relies on a fake `cluster-internal-token` or mining
 telemetry. Health readiness is not a production certificate.
 
+## Frontend operator connection
+
+`frontend/lib/api-client.ts` forwards an explicit bearer token for global
+mining API calls via the existing `/api/chronus` proxy, whose allowlisted
+`Authorization` header is passed to the backend. `frontend/app/mining/page.tsx`
+accepts a short-lived token in **component memory only** (no persistence,
+hard-coded credentials or URL parameters). No token means no verified status
+and disabled mining engage/stop button. The UI updates its operational
+running state only after the backend explicitly confirms it; failed requests
+are reported without changing that state. Other history/research panels
+remain non-qualifying display surfaces. Enforce HTTPS, browser/session
+hardening and operator provisioning before production exposure.
+
 ## Signed receipt durability
 
 `src/chronus/security/receipts.py::ReceiptLog` remains a deliberately
