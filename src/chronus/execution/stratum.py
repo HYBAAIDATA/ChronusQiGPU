@@ -65,11 +65,6 @@ class StratumV1Client:
                 job["merkle_branches"], job["version_hex"], job["nbits_hex"],
                 job["ntime_hex"], True,
             ]
-            # The pool difficulty stays an exact Fraction to this boundary.
-            # No library forces a float here: StratumSession.target and
-            # difficulty_to_target both consume the rational directly, and
-            # casting to float would lose low bits above 2**53, which is
-            # exactly the case difficulty_to_target is written to avoid.
             return StratumJob.from_notify(params), job["difficulty"]
         return None
 

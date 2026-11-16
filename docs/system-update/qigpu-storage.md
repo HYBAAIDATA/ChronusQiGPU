@@ -1,33 +1,76 @@
-# QiGPU, Chronus, Theseus and Ovid: unified scale–fold–store system
+# Chronus, OVID and THESEUS: unified execute–transform–custody system
 
-This document maps the four named subsystems onto the maintained source tree and records what each one executes today.
+This document records the maintained production composition.
 
-## Chronus — the QiGPU compute engine
+## CHRONUS — execution
 
-`src/chronus/execution/` is the execution substrate. `qigpu.py` inventories execution surfaces: the CPU substrate (`python-math-reference`) is always present, and a client-provisioned accelerator surface (`opencl-pv`) registers only when `CHRONUS_ENABLE_OPENCL_PV=1` is set, an OpenCL GPU is detected, and its startup known-answer test passes. When the client prefers their own GPU, the QiGPU routes `PV_LATTICE_FOLD` onto that instance's silicon via SoA integer-lattice buffers. When no client GPU is provisioned, the QiGPU operates on the CPU — the mathematics is the substrate and the hardware is interchangeable. `QiGPUOrchestrator.resolve()` fails closed on an unknown or unsupported surface. The `/health` endpoint publishes the live surface inventory.
+CHRONUS owns execution and resource coordination. Maintained execution surfaces include:
+- `src/chronus/execution/` for workload execution and backend routing;
+- `src/chronus/fleet/` for multi-machine scheduling, leases, verification, recovery and receipts;
+- `src/chronus/tensor/` for tensor execution, selective resident-state materialisation and backend routing.
 
-Lucas/PV scaling is delivered two ways:
+The reference route is always explicit. Physical accelerator routes must identify the actual device and fail closed when a requested device is unavailable.
 
-- `LUCAS_PV_SCALING` and `PV_LATTICE_FOLD` materialize exact integer results (fast doubling; arbitrary-precision host reference).
-- `TRINITY_SCALE_FOLD_STORE` advances a PV scale index over Zeckendorf-folded seeds, so successive scaling composes without expanding coefficients.
+## OVID — representation transformation and materialisation
 
-## Ovid — content-addressed storage and receipts
+`src/chronus/ovid/transform.py` provides a versioned reversible representation contract.
 
-`src/chronus/security/ovid.py` provides the content-addressed object store: every payload's address is its SHA-256 digest, and Ed25519 receipts bind to those digests. Storage and signing keys are process-local; they are not durable across restart.
+Every OVID representation records:
+- transformation contract and version;
+- source digest;
+- representation digest;
+- original length;
+- encoded representation bytes.
 
-## Theseus — phyllotaxis storage and reconstruction
+Materialisation verifies both the representation digest and the final source digest.
 
-`src/chronus/storage/` ports the legacy Theseus role into the maintained tree:
+The legacy content-addressed helpers under `src/chronus/security/ovid.py` remain compatibility utilities. They are process-local and are not the durable system of record.
 
-- `phyllotaxis.py` implements golden-ratio distribution: the Knuth multiplicative constant `floor(2**64 * (phi - 1))` maps each content digest onto one of 32 storage lanes, and the Vogel golden-turn model assigns every stored record a deterministic spiral coordinate (`sequence`, exact rational golden-turn fraction, lane).
-- `theseus.py` stores payloads as OVID objects, assigns phyllotaxis coordinates, supports per-tenant queries, and reconstructs payloads with fail-closed digest verification. Identical content stored twice by one tenant is deduplicated to one address.
+## THESEUS — durable custody and continuity
 
-Two native workloads expose this over the authenticated API: `PHYLOTAXIS_STORE` (`{"data": "base64:..."}`) and `THESEUS_RETRIEVE` (`{"object_id": "..."}`). `TRINITY_SCALE_FOLD_STORE` accepts `"store": true` to persist the folded state through Theseus, returning its record; the state can then be scaled further from storage.
+`src/chronus/storage/durable.py` provides the production local custody path.
 
-## The closed loop
+It uses SQLite WAL with full synchronous commits and supplies:
+- content-addressed durable objects;
+- tenant-scoped records;
+- restart verification;
+- digest-checked reconstruction;
+- append-only hash-chained journal entries;
+- journal continuity validation;
+- checkpointing;
+- concurrent-writer transactional admission;
+- evidence and storage statistics.
 
-Scale (Lucas/PV index) → Fold (Zeckendorf canonical form) → Store (Ovid content address on a phyllotaxis lane) → Retrieve (Theseus digest-verified reconstruction) → Scale again. Every stage is exact integer arithmetic with no floating-point truncation anywhere in the path.
+`src/chronus/storage/theseus.py::TheseusService` remains the in-process compatibility implementation. Its process-local nature is explicit and must not be confused with `DurableTheseusService`.
 
-## Verified status
+## Production triad flow
 
-107 tests pass locally, including golden-lane distribution uniformity, golden-turn coordinate exactness, tenant isolation, tamper detection, and the API round trip. The QiGPU accelerator surface is exercised on a CPU OpenCL runtime only; physical client-GPU validation requires provisioned hardware.
+`src/chronus/triad.py::ProductionTriad` composes the three authorities:
+
+```text
+input
+  -> CHRONUS workload
+  -> OVID versioned representation
+  -> THESEUS durable commit + custody journal
+  -> restart/replay
+  -> OVID verified materialisation
+  -> independently digest-checked output
+```
+
+The close-out regression proves transform → durable commit → restart → materialise without transferring durable authority to OVID.
+
+## Existing structured storage
+
+Phyllotaxis addressing remains available in `src/chronus/storage/phyllotaxis.py`. Existing authenticated workloads such as `PHYLOTAXIS_STORE`, `THESEUS_RETRIEVE` and `TRINITY_SCALE_FOLD_STORE` remain supported by their current service paths.
+
+Their legacy in-process storage behavior does not substitute for the new durable production composition. Product paths that require durable custody should compose with `DurableTheseusService`.
+
+## Qualification
+
+Focused current tests:
+
+```bash
+python -m pytest tests/test_triad_production.py -q
+```
+
+Current test execution must be bound to the release SHA. Local durability does not by itself establish multi-region replication, a customer deployment, high availability or a physical-accelerator result; those are separately gated deployment capabilities.

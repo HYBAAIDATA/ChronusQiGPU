@@ -1,11 +1,57 @@
-# HYBA Mine deployment
+# HYBA Mine: local validation before deployment
 
-HYBA Mine is HYBA's internal mining operation. It is never offered to customers
-and nothing in this folder ships in a product distribution: lifting mining out
-means removing `deploy/hyba-mine/` and `.github/workflows/hyba-mine.yml`. The code
-lives in this repository; the miner runs on HYBA's Azure mining host
-(`vm-qigpu-miner`, UK West), never on GitHub: GitHub's terms prohibit cryptomining
-in Actions, on GitHub-hosted and self-hosted runners alike.
+Hosting is undecided. Docker is the initial validation environment, with Braiins
+as the pool under test. Azure scripts in this folder are historical optional
+adapters, not an active deployment path or evidence of a running host.
+
+## Repeatable local checks
+
+From the repository root:
+
+```bash
+docker build --target mining-check -t chronus-mining-check .
+docker run --rm --network none chronus-mining-check
+```
+
+This runs the packaged mining self-test, endpoint configuration regressions,
+core Stratum lifecycle tests and HYBA Mine synthetic-pool session/runtime tests.
+Loopback sockets work with `--network none`; no real pool is contacted. Synthetic
+share acceptance is not evidence of Braiins acceptance or mining performance.
+
+If the build environment uses a private certificate authority, supply its trusted
+CA bundle as a BuildKit secret (certificate verification remains enabled):
+
+```bash
+docker build --secret id=build_ca,src=/path/to/trusted-ca-bundle.pem \
+  --target mining-check -t chronus-mining-check .
+```
+
+## Bounded live Braiins test
+
+Build the canonical runner, copy the example outside the checkout, and replace
+`YOUR_BRAIINS_USERNAME.docker-test` with your real Braiins account and worker.
+`PYTHIA_POOL_SPECS`, when set, overrides `MINING_ACTIVE_POOL` and its settings.
+Braiins uses plain Stratum V1 TCP on port 3333 (backup 443); do not require TLS
+for this profile.
+
+```bash
+docker build --target miner-runtime -t chronus-braiins .
+cp deploy/hyba-mine/braiins.env.example /tmp/chronus-braiins.env
+chmod 600 /tmp/chronus-braiins.env
+# Edit /tmp/chronus-braiins.env before running the following command.
+timeout --signal=TERM --kill-after=30s 120s docker run --rm --init \
+  --name chronus-braiins-test --env-file /tmp/chronus-braiins.env chronus-braiins
+```
+
+Use a host with outbound access to the pool. A timeout is a test bound, not a
+success signal. Inspect logs separately for TCP connection, authorization,
+`mining.notify`, submitted shares and matching accepted-share replies. A short
+run may receive jobs without finding any share. Stop the test container with
+`docker stop chronus-braiins-test` if the client is interrupted.
+
+No deployment, registry, cloud identity or restart policy is selected by these
+commands. Live credentials belong in the operator's local file or credential
+store, never in the repository or image.
 
 ## What runs
 
@@ -14,8 +60,8 @@ in Actions, on GitHub-hosted and self-hosted runners alike.
   `hyba_mine` package, `runner.py`, `bist.py` and the miner's tests.
 - `hyba_mine/lanes.py`: SHA-256d search over every lane of the host. The OpenCL
   iGPU lanes run the packaged kernel (`chronus/kernels/sha256d_search.cl`) on every
-  compute unit; on this host that is the CPU device, so the QiGPU runs in Mode A on
-  CPU silicon. The process lanes run one process per available CPU. A lane set is
+  compute unit; PoCL executes on CPU silicon; actual device availability and execution
+  must be established on each test host. The process lanes run one process per available CPU. A lane set is
   used only after its results equal the host reference on known-answer windows
   (the genesis nonce at difficulty 1, an easy-target window on block 1, a target no
   hash can meet). Each qualified set is calibrated and the faster one takes the
@@ -47,33 +93,18 @@ in Actions, on GitHub-hosted and self-hosted runners alike.
 3. Hashing stops, the pool session closes and the container exits; it is not
    restarted, so the host is offline for mining. `HYBA_MINE_MAX_RUN_SECONDS` bounds
    the whole campaign.
-4. The former deployment workflow examined the host for any attempt to look inside
-   the miner: exec, attach, copy, export or top on the container, files changed in
-   it, unexpected pool methods, SSH attempts, logins, listening services and
-   run-command executions, plus the Azure activity on the resource group. That
-   workflow has been removed, so this examination no longer runs automatically.
 
-## Deployment workflow status
+## Historical deployment adapters
 
-The `.github/workflows/hyba-mine.yml` deployment workflow has been removed.
-Editing `control.env` or pushing it does not trigger a deployment, and no
-GitHub Actions job builds or runs this campaign. The remaining files are not an
-active deployment workflow.
-
-## Credentials
-
-- Azure sign-in: OpenID Connect to the managed identity `id-hyba-mine-github`
-  (Reader on the mining resource group, AcrPush on `crcronusqigpudemohybadata`,
-  Virtual Machine Contributor on `vm-qigpu-miner`), trusted only for
-  `refs/heads/hyba-mine/control` and `refs/heads/main` of this repository. No
-  secret is stored in GitHub.
-- Pool logins (`pool-<pool>-worker`, `pool-<pool>-password`) and the registry pull
-  password stay in Key Vault `kv-cronusqigpu-demo-hyba`. The host reads them with
-  its own managed identity into a 0600 file that Docker reads once; they are never
-  printed.
+The empty mining deployment workflow has been deleted. `control.env` and
+`vm-hyba-mine.sh` are retained as historical adapters; they are not used by the
+local validation commands. Azure remains an available future hosting option,
+subject to a separate owner decision and deployment review. The owner hold in
+`control.env` remains in place.
 
 ## Pools
 
-ViaBTC (`btc.viabtc.io:3333`) and Braiins (`stratum.braiins.com:3333`), as in the
-pool catalogue. NiceHash and ckpool are added when their logins are in Key Vault
-and the miner's pool settings accept them.
+The canonical runner defaults to Braiins. The optional campaign runner defaults
+to `viabtc,braiins`; a Braiins-only campaign requires `HYBA_MINE_POOLS=braiins`
+and all four `MINING_BRAIINS_*` values, including `PASSWORD=x`. The local commands
+above use the canonical runner, not the optional campaign.

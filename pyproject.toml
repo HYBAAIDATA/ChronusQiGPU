@@ -39,6 +39,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+test = [
+    "pytest>=8.0",
+]
 mining = ["hyba-turing==0.2.0.dev0"]
 dev = [
     "hyba-turing @ file:./packages/turing",

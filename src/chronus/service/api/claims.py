@@ -44,8 +44,11 @@ class Audit:
     @property
     def posture(self) -> str:
         # Honest by construction: anything not supported blocks qualification.
-        if (self.claims and all(c.disposition == "supported" for c in self.claims)
-                and all(b.status == "closed" for b in self.blockers)):
+        if (
+            self.claims
+            and all(c.disposition == "supported" for c in self.claims)
+            and all(b.status == "closed" for b in self.blockers)
+        ):
             return "qualified"
         return "not_qualified"
 

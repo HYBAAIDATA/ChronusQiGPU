@@ -30,13 +30,21 @@ from chronus.config import (
 
 
 class TestChronusMasterSuite(unittest.TestCase):
-    def test_full_verification_suite(self):
+    def test_full_verification_suite_fails_closed_without_external_evidence(self):
         res = ChronusVerificationOrchestrator.run_complete_verification_suite()
-        self.assertEqual(res["qualification_status"], "PRODUCTION_QUALIFIED")
-        self.assertEqual(res["total_release_gates_evaluated"], 8)
-        self.assertEqual(res["release_gates_passed"], 8)
-        self.assertEqual(res["total_invariants_evaluated"], 94)
-        self.assertEqual(res["invariants_passed"], 94)
+        # A local diagnostic is never independent release qualification.
+        self.assertEqual(res["qualification_status"], "NOT_QUALIFIED")
+        self.assertEqual(res["execution_mode"], "LOCAL_DIAGNOSTIC_ONLY")
+        self.assertLessEqual(
+            res["release_gates_passed"], res["total_release_gates_evaluated"]
+        )
+        self.assertEqual(res["total_release_gates_evaluated"], 5)
+        self.assertEqual(len(res["gates"]), 5)
+        self.assertTrue(any(not gate["passed"] for gate in res["gates"]))
+        self.assertIsNone(res["total_invariants_evaluated"])
+        self.assertIsNone(res["invariants_passed"])
+        self.assertIn("UNAVAILABLE", res["invariant_summary"])
+        self.assertTrue(res["blockers"])
 
     def test_suite_does_not_overwrite_the_tracked_manifest(self):
         """A test run must leave the committed release manifest untouched."""

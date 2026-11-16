@@ -163,8 +163,6 @@ class StratumSession:
 
     extranonce1: bytes
     extranonce2_size: int
-    # The pool difficulty is an exact rational. It stays a Fraction so that
-    # difficulty_to_target never has to round through a binary float.
     difficulty: Fraction = Fraction(1)
 
     @property
