@@ -211,3 +211,51 @@ def _indexed_h4_vertices() -> tuple[Point4, ...]:
     if len(ordered) != 120:
         raise AssertionError("reconstruction of canonical H4 vertex order failed")
     return ordered
+
+
+class Polychoron120Cell:
+    """Stable exact public 120-cell facade over the verified dual incidence.
+
+    Vertices are exact Q(sqrt(5)) quadruples as (a,b) integer numerator
+    pairs over a common denominator 16. No float approximations.
+    """
+
+    def __init__(self) -> None:
+        self._dual = build_dual_120_cell()
+        self._primal_tetra_lookup = {
+            tetra: index
+            for index, tetra in enumerate(self._dual.primal_tetrahedra)
+        }
+
+    @property
+    def vertices(self) -> tuple[Point4, ...]:
+        return self._dual.vertices
+
+    @property
+    def edges(self) -> tuple[tuple[int, int], ...]:
+        return self._dual.edges
+
+    @property
+    def pentagonal_faces(self) -> tuple[tuple[int, int, int, int, int], ...]:
+        return self._dual.faces
+
+    @property
+    def dodecahedral_cells(self) -> tuple[tuple[int, ...], ...]:
+        return self._dual.cells
+
+    @property
+    def coordinate_denominator(self) -> int:
+        return 16
+
+    def index_of_tetrahedron(self, tetrahedron: tuple[int, int, int, int]) -> int:
+        """Exact 600-cell tetrahedron / dual-vertex bijection, no proximity."""
+        if len(tetrahedron) != 4 or len(set(tetrahedron)) != 4:
+            raise ValueError("expected four distinct primal indices")
+        key = tuple(sorted(tetrahedron))
+        try:
+            return self._primal_tetra_lookup[key]
+        except KeyError:
+            raise ValueError("input is not a canonical H4 tetrahedral cell") from None
+
+    def invariants(self) -> dict[str, object]:
+        return self._dual.invariants()
