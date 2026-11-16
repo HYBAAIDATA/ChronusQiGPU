@@ -180,6 +180,56 @@ class SearchTests(unittest.TestCase):
         self.assertTrue(engine._nonce_space_exhausted)
         self.assertIsNone(engine._nonce_context)
 
+    def test_a_short_grant_advances_only_the_searched_span(self):
+        class Capped(ReferenceLanes):
+            def search(self, header80, start, stop, target):
+                granted = min(10, stop - start)
+                self.last_span = granted
+                self.calls.append((start, start + granted))
+                return []
+
+        lanes = Capped()
+        engine = Engine(lanes)
+        engine.window = 3000
+        engine._lane_search(job(870000), hashlib.sha256(b"root").digest(), "1fffe000", 0)
+        self.assertEqual(lanes.calls, [(0, 10)])
+        self.assertEqual(engine.hashes_computed, 10)
+        self.assertEqual(engine._nonce_cursors[0], 10)
+        self.assertFalse(engine._hash_throttled)
+
+    def test_a_partial_grant_does_not_jump_the_wrap(self):
+        class Partial(ReferenceLanes):
+            def search(self, header80, start, stop, target):
+                granted = min(100, stop - start)
+                self.last_span = granted
+                self.calls.append((start, start + granted))
+                return []
+
+        lanes = Partial()
+        engine = Engine(lanes, span=4096, shards=1)
+        engine.window = 3000
+        engine._nonce_cursors[0] = 3000
+        engine._lane_search(job(870000), hashlib.sha256(b"r").digest(), "00000000", 0)
+        self.assertEqual(lanes.calls, [(3000, 3100)])
+        self.assertEqual(engine.hashes_computed, 100)
+        self.assertEqual(engine._nonce_cursors[0], 3100)
+        self.assertFalse(engine._nonce_space_exhausted)
+
+    def test_a_zero_grant_does_not_skip_unsearched_nonces(self):
+        class Blocked(ReferenceLanes):
+            def search(self, header80, start, stop, target):
+                self.last_span = 0
+                self.calls.append((start, stop))
+                return []
+
+        lanes = Blocked()
+        engine = Engine(lanes)
+        engine.window = 3000
+        self.assertIsNone(engine._lane_search(job(870000), hashlib.sha256(b"r").digest(), "00000000", 0))
+        self.assertEqual(engine.hashes_computed, 0)
+        self.assertEqual(engine._nonce_cursors, {})
+        self.assertTrue(engine._hash_throttled)
+
     def test_a_lane_hit_that_fails_the_host_recheck_is_discarded(self):
         lanes = ReferenceLanes(extra_false_hit=5)
         engine = Engine(lanes)

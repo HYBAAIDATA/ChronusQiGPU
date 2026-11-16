@@ -35,6 +35,7 @@ from chronus.stratum.endian_engine import (
     build_header_prefix,
     sha256d,
 )
+from chronus.execution.hashrate_cap import process_cap
 from chronus.execution.structural import (
     zeckendorf_decode,
     zeckendorf_encode,
@@ -368,6 +369,7 @@ class GeometricGaloisMiner:
         if type(max_scan_window) is not int or not 1 <= max_scan_window <= (1 << 20):
             raise ValueError("max_scan_window must be between 1 and 2**20")
 
+        count = min(max_scan_window, (1 << 32) - nonce_start)
         scale_index = self.pv_scale_ladder[self._pv_scale_step % len(self.pv_scale_ladder)]
         self._pv_scale_step += 1
         # Hendrix's rank-2 extension search carries PV scale in a pair of field
@@ -383,37 +385,45 @@ class GeometricGaloisMiner:
         vertex_idx = int.from_bytes(seed_hash[:2], "big") % len(self.vertices_f257)
         vertex = self.vertices_f257[vertex_idx]
         z_repr = ZeckendorfBasePhiIndexer.encode(nonce_start)
-        count = min(max_scan_window, (1 << 32) - nonce_start)
-        for evaluated in range(1, count + 1):
-            nonce = ZeckendorfBasePhiIndexer.decode(z_repr)
-            digest = sha256d(header_prefix + nonce.to_bytes(4, "little"))
-            if int.from_bytes(digest, "little") <= target:
-                amplitudes = ExactGaloisOracleF257.execute_one_shot_collapse([nonce], {nonce})
-                amplitude = amplitudes[nonce]
-                if amplitude != 1:
-                    raise ArithmeticError("Galois target-hit collapse failed")
-                stalk = [(vertex[i].a + nonce) % P for i in range(4)]
-                if not self.consensus.is_harmonic_consensus(stalk):
-                    stalk = self.dsw_healer.heal_trace(stalk)
-                harmonic = self.consensus.is_harmonic_consensus(stalk)
-                if not harmonic:
-                    raise ArithmeticError("Geometric trace failed harmonic consensus")
-                return GeometricMiningResult(
-                    found=True, nonce=nonce, header_hash=digest,
-                    iterations_evaluated=evaluated, harmonic_consensus=harmonic,
-                    galois_amplitude=amplitude, polychoron_vertex_idx=vertex_idx,
-                    bit_diffusion_pct=self.expander.compute_bit_diffusion(nonce & 0xff, (nonce + 1) & 0xff),
-                    zeckendorf_indices=z_repr,
-                    pv_scale_index=scale_index,
-                    pv_marked_amplitude=scaled_state.marked_amplitude,
-                )
-            if evaluated < count:
-                z_repr = ZeckendorfBasePhiIndexer.step_next(z_repr)
-        return GeometricMiningResult(
-            found=False, iterations_evaluated=count, polychoron_vertex_idx=vertex_idx,
-            pv_scale_index=scale_index,
-            pv_marked_amplitude=scaled_state.marked_amplitude,
-        )
+        granted = process_cap().allow(count)
+        if granted == 0:
+            return GeometricMiningResult(found=False, iterations_evaluated=0)
+        evaluated = 0
+        try:
+            for evaluated in range(1, granted + 1):
+                nonce = ZeckendorfBasePhiIndexer.decode(z_repr)
+                digest = sha256d(header_prefix + nonce.to_bytes(4, "little"))
+                if int.from_bytes(digest, "little") <= target:
+                    amplitudes = ExactGaloisOracleF257.execute_one_shot_collapse([nonce], {nonce})
+                    amplitude = amplitudes[nonce]
+                    if amplitude != 1:
+                        raise ArithmeticError("Galois target-hit collapse failed")
+                    stalk = [(vertex[i].a + nonce) % P for i in range(4)]
+                    if not self.consensus.is_harmonic_consensus(stalk):
+                        stalk = self.dsw_healer.heal_trace(stalk)
+                    harmonic = self.consensus.is_harmonic_consensus(stalk)
+                    if not harmonic:
+                        raise ArithmeticError("Geometric trace failed harmonic consensus")
+                    return GeometricMiningResult(
+                        found=True, nonce=nonce, header_hash=digest,
+                        iterations_evaluated=evaluated, harmonic_consensus=harmonic,
+                        galois_amplitude=amplitude, polychoron_vertex_idx=vertex_idx,
+                        bit_diffusion_pct=self.expander.compute_bit_diffusion(nonce & 0xff, (nonce + 1) & 0xff),
+                        zeckendorf_indices=z_repr,
+                        pv_scale_index=scale_index,
+                        pv_marked_amplitude=scaled_state.marked_amplitude,
+                    )
+                if evaluated < granted:
+                    z_repr = ZeckendorfBasePhiIndexer.step_next(z_repr)
+            return GeometricMiningResult(
+                found=False, iterations_evaluated=granted, polychoron_vertex_idx=vertex_idx,
+                pv_scale_index=scale_index,
+                pv_marked_amplitude=scaled_state.marked_amplitude,
+            )
+        finally:
+            unused = granted - evaluated
+            if unused > 0:
+                process_cap().refund(unused)
 
 
 class GeometricGaloisMinerBackend:
@@ -460,21 +470,29 @@ class GeometricGaloisMinerBackend:
         seed_hash = hashlib.sha256(header_prefix).digest()
         vertex_idx = int.from_bytes(seed_hash[:2], "big") % len(self.miner.vertices_f257)
 
+        granted = process_cap().allow(100)
         matches = []
-        for n in range(100):
-            h = sha256d(header_prefix + n.to_bytes(4, "little"))
-            if int.from_bytes(h, "little") <= target:
-                matches.append(n)
+        tested = 0
+        try:
+            for n in range(granted):
+                tested = n + 1
+                h = sha256d(header_prefix + n.to_bytes(4, "little"))
+                if int.from_bytes(h, "little") <= target:
+                    matches.append(n)
+        finally:
+            unused = granted - tested
+            if unused > 0:
+                process_cap().refund(unused)
 
         _amplitudes = ExactGaloisOracleF257.execute_one_shot_collapse(
-            list(range(100)), set(matches)
+            list(range(tested)), set(matches)
         )
 
         return {
             "execution_mode": self.execution_mode,
             "runtime_classification": self.runtime_classification,
             "backend": self.name,
-            "tested": 100,
+            "tested": tested,
             "match_count": len(matches),
             "matches": matches,
             "galois_collapsed": True,

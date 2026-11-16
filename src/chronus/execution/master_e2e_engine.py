@@ -157,12 +157,14 @@ class F257GaloisOracle:
 # =====================================================================
 class StealthEngine:
     """
-    Controls hashrate cap (10.0 EH/s max, 1.0 EH/s active),
+    Controls the hashrate cap (1.0 EH/s hard ceiling),
     prevents mining two consecutive mainnet blocks, and maintains socket presence.
     """
-    def __init__(self, max_cap_eh: float = 10.0, active_stealth_eh: float = 1.0, never_consecutive_blocks: bool = True):
-        self.max_cap_eh = max_cap_eh
-        self.active_stealth_eh = active_stealth_eh
+    def __init__(self, max_cap_eh: float = 1.0, active_stealth_eh: float = 1.0, never_consecutive_blocks: bool = True):
+        from chronus.execution.hashrate_cap import require_eh_s
+
+        self.max_cap_eh = require_eh_s(max_cap_eh)
+        self.active_stealth_eh = require_eh_s(active_stealth_eh, ceiling=self.max_cap_eh)
         self.never_consecutive_blocks = never_consecutive_blocks
         self.last_mined_block_height: Optional[int] = None
         self.mined_blocks_history: List[int] = []
