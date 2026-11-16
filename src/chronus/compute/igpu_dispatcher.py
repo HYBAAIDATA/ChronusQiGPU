@@ -33,6 +33,7 @@ class ComputeTask:
             raise ValueError("task_id must be a bounded nonempty string")
         if self.operation not in {
             "exact-dual-laplacian", "exact-involution",
+            "exact-phase", "exact-amplify",
             "metal-dual-laplacian", "metal-matmul",
         }:
             raise ValueError(f"unsupported compute operation: {self.operation}")
@@ -115,6 +116,12 @@ class iGPUDispatcher:
             elif task.operation == "exact-involution":
                 output = self._exact_involution(task.data)
                 classification = "MATHEMATICAL_EXECUTION_HOST"
+            elif task.operation == "exact-phase":
+                output = self._exact_phase(task.data)
+                classification = "MATHEMATICAL_EXECUTION_HOST"
+            elif task.operation == "exact-amplify":
+                output = self._exact_amplify(task.data)
+                classification = "MATHEMATICAL_EXECUTION_HOST"
             elif task.operation == "metal-dual-laplacian":
                 output = self._metal_dual_laplacian(task.data)
                 classification = "METAL_APPROXIMATE_FLOAT32"
@@ -185,6 +192,38 @@ class iGPUDispatcher:
         return {"state": evolved, "basis_dimension": state.space.dimension,
                 "operator": "HERMITIAN_INVOLUTION_QUARTER_TURN",
                 "arithmetic": "EXACT_GAUSSIAN_RATIONAL"}
+
+    @staticmethod
+    def _exact_phase(data: dict[str, Any]) -> dict[str, Any]:
+        from turing.exact.geometry.hilbert import SparseState, phase_injection
+        state, phases = data.get("state"), data.get("phases")
+        if not isinstance(state, SparseState) or not isinstance(phases, dict):
+            raise TypeError("exact phase requires TURING state and a phase map")
+        changed = phase_injection(state, phases)
+        if changed.norm2() != state.norm2():
+            raise ArithmeticError("phase operation failed norm conservation")
+        return {"state": changed, "basis_dimension": state.space.dimension,
+                "operator": "EXACT_DIAGONAL_UNIT_PHASE",
+                "arithmetic": "EXACT_GAUSSIAN_RATIONAL"}
+
+    @staticmethod
+    def _exact_amplify(data: dict[str, Any]) -> dict[str, Any]:
+        from turing.exact.geometry.hilbert import SparseState
+        from turing.exact.geometry.operators import amplitude_amplification_step
+        reference = data.get("reference")
+        state = data.get("state")
+        marked = data.get("marked")
+        if not isinstance(state, SparseState) or not isinstance(reference, SparseState):
+            raise TypeError("exact amplification requires TURING state and reference")
+        if not isinstance(marked, (set, tuple, list, frozenset)):
+            raise TypeError("marked subset must be explicitly provided")
+        changed = amplitude_amplification_step(reference, state, marked)
+        if changed.norm2() != state.norm2():
+            raise ArithmeticError("amplification operation violated norm conservation")
+        return {"state": changed, "basis_dimension": state.space.dimension,
+                "operator": "EXACT_KNOWN_MARKED_REFLECTION",
+                "arithmetic": "EXACT_GAUSSIAN_RATIONAL",
+                "unknown_oracle_speedup_proven": False}
 
     def _metal_matmul(self, data: dict[str, Any]) -> dict[str, Any]:
         import numpy as np
