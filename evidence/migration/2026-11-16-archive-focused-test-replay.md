@@ -1,0 +1,80 @@
+# Focused offline archive-test replay — 16 November 2026
+
+**Environment:** Linux, Python 3.13.5, pytest 9.0.2, NumPy 2.3.5. No
+internet, no live Stratum and no physical accelerator. Historical provenance
+is not a current release certificate.
+
+## Chronos ONE iGPU v3.4
+
+Archive SHA-256:
+`406a6b499ecee14a93e172ce274ae92c69381953cabadbd69903d326cc55642d`.
+
+Command in extracted archive:
+
+```bash
+cd chronos-completed
+PYTHONPATH=src python -m pytest -q \
+  tests/test_one_igpu.py tests/test_lucas_engine.py tests/test_lucas_runtime.py
+```
+
+Captured stdout:
+
+```
+..........                                                               [100%]
+10 passed in 3.79s
+```
+
+Stdout SHA-256:
+`d96a858f3def7cc4d98f2039cbff441c94155cb2b2f70e25f34e8ef797477799`.
+
+## July VQC with July PULVINI import closure
+
+VQC ZIP SHA-256:
+`7b4ef03683de8bf03a189293bb72e4493c9a408c5722b38f4a1e2ca8f05e9038`.
+
+The original `phi_quantum_machine.py`, `vqc_phi_grover.py` and two original
+test files were placed **only into a temporary test package** at
+`euclid.pythagoras.quantum.pulvini_enterprise`. Their missing formal import
+was supplied by the original `formal.py` in the separately recovered July
+PULVINI enterprise ZIP. This is deliberately a *mixed-archive replay*, not
+proof of a shipped standalone package.
+
+```bash
+PYTHONPATH=. python -m pytest -q \
+  test_phi_quantum_machine.py test_vqc_phi_grover.py
+```
+
+Captured stdout:
+
+```
+......................                                                   [100%]
+22 passed in 0.19s
+```
+
+Stdout SHA-256:
+`dc73640ef02afbd8d65d8db048f6b373b2cf15a7b92f5d501ac92bb60870faba`.
+
+## Recovered bounded exact rational tensor train
+
+The isolated source fixture used the same module as
+`src/chronus/tensor/exact_rational_tt.py` after the retained-state digest
+check was added; it exercised exact rational reconstruction, zero/high-rank
+shape handling, invalid dtype/dimension rejections and mutating a retained
+core after the digest had been established.
+
+```bash
+python -m pytest -q test_exact_rational_tt.py
+```
+
+Captured stdout:
+
+```
+......                                                                   [100%]
+6 passed in 0.04s
+```
+
+**Limit:** the test imports the standalone source fixture, not the current
+private repository's `chronus.tensor` package initializer. The new
+`tests/test_exact_rational_tt_recovery.py` and the modified
+`tests/test_geodesic_tensor_migration.py` must run on the exact commit in
+the repository CI before a test-pass claim is made for the integrated code.
