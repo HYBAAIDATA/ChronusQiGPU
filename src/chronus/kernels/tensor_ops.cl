@@ -47,8 +47,9 @@ __kernel void tensor_kron2(
     const uint ac,
     const uint br,
     const uint bc) {
-    size_t row = get_global_id(0);
-    size_t col = get_global_id(1);
+    // Like matmul, x-lanes advance contiguous output columns.
+    size_t col = get_global_id(0);
+    size_t row = get_global_id(1);
     const uint rows = ar * br;
     const uint cols = ac * bc;
     if (row >= rows || col >= cols) return;
