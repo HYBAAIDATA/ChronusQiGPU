@@ -102,3 +102,56 @@ def assign_domain(vector: Vector3) -> M32Domain:
     if best is None:
         raise AssertionError("complete antipodal orbit did not contain a positive dot")
     return best
+
+
+class M32DomainPartition:
+    """Executable 12+20 exact face-normal domain partition.
+
+    Decision assignments use exact Q(sqrt5) comparisons. The optional
+    adjacency diagnostic is computed geometrically from SciPy's FLOAT64
+    spherical Voronoi cells, NOT an independently certified exact graph.
+    """
+
+    def __init__(self) -> None:
+        self.domains = build_m32_domains()
+        self.dodeca_faces = tuple(d.normal for d in self.domains[:12])
+        self.icosa_faces = tuple(d.normal for d in self.domains[12:])
+        self.all_normals = tuple(d.normal for d in self.domains)
+        self.adjacency_classification = "UNCOMPUTED_FLOAT64_VORONOI_DIAGNOSTIC"
+        self._adjacency = None
+
+    def assign_lane(self, vector: Vector3) -> int:
+        """Exact nearest spherical domain; no float/tolerance."""
+        return assign_domain(vector).lane
+
+    @property
+    def adjacency(self):
+        """Float64 spherical-Voronoi ridge graph, explicitly diagnostic."""
+        if self._adjacency is not None:
+            return self._adjacency
+        import numpy as np
+        from scipy.spatial import SphericalVoronoi
+
+        root5 = np.sqrt(5.0)
+        points = np.array([
+            [float(x.a) + float(x.b) * root5 for x in domain.normal]
+            for domain in self.domains
+        ], dtype=np.float64)
+        points /= np.linalg.norm(points, axis=1)[:, None]
+        voronoi = SphericalVoronoi(points)
+        voronoi.sort_vertices_of_regions()
+        incident: dict[tuple[int, int], set[int]] = {}
+        for region_id, region in enumerate(voronoi.regions):
+            for a, b in zip(region, region[1:] + region[:1]):
+                incident.setdefault(tuple(sorted((a, b))), set()).add(region_id)
+        adjacency = np.zeros((32, 32), dtype=bool)
+        for owners in incident.values():
+            if len(owners) != 2:
+                raise ArithmeticError("Voronoi ridge does not have two incident cells")
+            a, b = sorted(owners)
+            adjacency[a, b] = adjacency[b, a] = True
+        if not np.array_equal(adjacency, adjacency.T) or np.any(np.diag(adjacency)):
+            raise ArithmeticError("numerical M32 Voronoi adjacency invariant failed")
+        self._adjacency = adjacency
+        self.adjacency_classification = "APPROXIMATE_FLOAT64_SPHERICAL_VORONOI"
+        return adjacency
