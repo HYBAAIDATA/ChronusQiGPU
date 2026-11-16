@@ -90,7 +90,7 @@ def test_preparation_refuses_existing_destination(tmp_path):
         _M.prepare(tmp_path)
 
 
-def test_component_runner_rejects_duplicate_public_content_under_new_names(tmp_path):
+def test_component_runner_rejects_unpinned_names(tmp_path):
     path = Path(__file__).resolve().parents[1] / "scripts/benchmarks/run_public_uci_components.py"
     spec = spec_from_file_location("chronus_uci_components", path)
     assert spec is not None and spec.loader is not None
@@ -126,3 +126,18 @@ def test_component_runner_preserves_exact_source_mapping():
         name: (digest, "snapshot" if name.endswith(".snapshot") else "tensor")
         for name, digest in _M.PINNED.items()
     }
+
+
+def test_component_runner_rejects_content_modified_under_pinned_name(tmp_path):
+    script = Path(__file__).resolve().parents[1] / "scripts/benchmarks/run_public_uci_components.py"
+    spec = spec_from_file_location("chronus_uci_integrity", script)
+    assert spec is not None and spec.loader is not None
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+    directory = tmp_path / "pinned"
+    _M.prepare(directory)
+    original = directory / "uci_digits.npy"
+    payload = original.read_bytes()
+    original.write_bytes(payload[:-1] + bytes((payload[-1] ^ 1,)))
+    with pytest.raises(ValueError, match="input SHA-256 mismatch"):
+        module.run(directory / "manifest.yaml")
