@@ -58,6 +58,10 @@ This branch changes the API to a fixed local-loopback rehearsal classification, 
 | P1 | Current-head CI | Failed / queued Actions have been observed; investigate whether jobs ran any steps before classifying as a source regression. Do not bypass checks |
 | P2 | Historic capability equivalence | Compare July API operations and proofs against maintained Geodesic/Tensor, PULVINI and TURING one-by-one; current symbol presence is not a complete byte-for-byte reimplementation certificate |
 
+## Historical archive replay evidence (local, non-qualifying)
+
+The original July Geodesic test modules were executed in a temporary isolated import layout with the November PULVINI handoff's `formal.py`. **115/115 historical tests passed** under Python 3.13.5, NumPy 2.3.5, pytest 9.0.2 at 2026-11-16T06:41Z. This is a mixed-archive compatibility check, **not** a test of current Chronus source, PR head, physical device or mining deployment. Original archive hashes, reconstructed dependency hash, invocation, exit code and local stdout/JUnit digests are recorded at [evidence/migration/2026-11-16-geodesic-archive-replay.md](../../evidence/migration/2026-11-16-geodesic-archive-replay.md).
+
 ## Release disposition
 
 **NOT QUALIFIED / RELEASE HELD.** Targeted PR-level source fixes are not merged/current-main proof. No live service was deployed, no pool credentials used, no hidden benchmark generated and no issue or production hold is declared closed without linked evidence. Preserve the historical archives, hashes and failing results for reconstruction.
