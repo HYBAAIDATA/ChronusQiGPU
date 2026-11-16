@@ -194,7 +194,6 @@ def test_discovery_rational_determinant_extreme_integer_regression():
 
 
 def test_fiber_transition_mutation_cannot_bypass_inverse_link():
-    from types import MappingProxyType
     supplied = {(0,1): IDENTITY}
     bundle = FiniteH4FiberBundle(supplied)
     supplied[(1,0)] = inversion_transition()
