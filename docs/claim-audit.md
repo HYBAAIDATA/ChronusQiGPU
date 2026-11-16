@@ -1,37 +1,58 @@
-# Chronusv2 claim audit
+# Chronus claim audit — definitive close-out posture
 
-**Disposition: prior unsupported release, security, performance, compliance, customer, and valuation claims are withdrawn.** This document is the controlling summary for product claims in this repository until superseded by a new, evidence-backed review.
+**Review date:** 15 November 2026  
+**Candidate:** PR #93 / `closeout/triad-production-posture-20261115`
 
-## Scope and method
+This document supersedes the 8 November static review. It is the human-readable companion to:
+- `docs/QUALIFICATION_AND_CLAIMS.md`
+- `capabilities/triad_production_manifest.json`
+- `evidence/migration/chronus_historical_evidence_register.json`
 
-Reviewed on 2026-11-08 against source commit `a2768d11847de113d26535e33cfe9d4a79a009db` (`main`). This was a static source/documentation review. No tests, CI jobs, frontend build, cloud deployment, physical hardware, customer environment, cryptographic conformance suite, or independent assessment was run. Therefore, “not demonstrated” does not mean a test was run and failed; it means the repository evidence reviewed does not substantiate the claim.
+## Governing rule
 
-The review covered the README, executive proposal and summaries, release decisions, benchmark/scientific/press reports, valuation material, system-update status and evidence documents, plus the relevant implementation paths noted below. Historical working notes under `docs/directives/` are not accepted as evidence or approved product documentation; their claims should not be repeated externally without separate review.
+A current product statement needs the exact source revision, the applicable test or measurement, the environment, the retained evidence artifact and the relevant admission gate. Historical results remain provenance until rerun or reconciled to the current candidate.
 
-## Claim-by-claim disposition
+## Current dispositions
 
-| Claim area | Disposition | Source-based finding / evidence needed |
-|---|---|---|
-| “GO,” production-qualified, release gates passed | **Withdrawn / not qualified** | No current, commit-linked release-gate evidence was established in this review. Earlier release decisions cite historical counts/claims, not current qualification. Require a defined release suite, successful current CI, signed results, and independent review. |
-| Test totals such as 120/120, 242/242, 88 invariants, or 10/10 CI | **Unverified; do not quote** | Historical documents are not current CI attestations. This review did not run tests or verify workflow results. Publish only reproducible, commit-specific logs and define what each count measures. |
-| FIPS-204 / ML-DSA / Dilithium | **Not conformant; security claim withdrawn** | `src/chronus/security/signers.py` implements a SHAKE-derived demonstration scheme with local-secret-dependent verification, not the standardized ML-DSA algorithm. Do not use it for signatures or claim FIPS 204 compliance. Replace with a vetted, conformant implementation and run applicable validation before reconsidering. |
-| STARK, FRI, or sound zero-knowledge verification | **Not established** | `src/chronus/security/stark.py` contains limited proof-shaped checks; source review did not find a complete, sound AIR/FRI transcript, low-degree, and query verification protocol. It is not evidence of a production STARK verifier. Any soundness/security claims are withdrawn. |
-| Cloud KMS, Vault, PKCS#11, HSM, customer-held keys | **Not implemented as claimed** | `src/chronus/security/kms.py` provider paths fall back to `LocalMemoryKeyProvider`; the related custody flow does not establish real remote KMS/HSM operations. Do not claim customer-controlled custody, FIPS-validated modules, or HSM protection. Demonstrate actual provider calls and key custody in an approved test environment first. |
-| Instant onboarding, 500 live tenants, provisioning SLA, HA | **Local simulation only / unverified** | `src/chronus/service/instant_provisioning.py` and `ciaas_store.py` exercise in-process/local flows and static data. Simulation counts are not live tenant activations or an SLA. Require real infrastructure integration, concurrency/failure tests, operational telemetry, and customer-authorized evidence. |
-| Compliance, sovereign status, FIPS 140-3, NCSC, FedRAMP, or other certifications | **Unsupported; withdrawn** | Static labels and seeded/demo values in service code are not assessments, authorizations, or certifications. No certificate, scope, assessor, control evidence, or authorization record was verified. |
-| Performance, energy, GPU/NVLink, “breakthrough,” or comparative benchmark claims | **Withdrawn / not measured** | No reproducible benchmark protocol and verified physical-device results were established. The CPU reference path and opt-in OpenCL adapter do not demonstrate GPU acceleration or comparative advantage. Require identified hardware, workload, baselines, repetitions, raw results, and independent reproduction. |
-| Live console status, fleet metrics, pods, 32-lane/242-of-242 status | **Demo/static presentation, not live evidence** | Frontend and service fixtures include hard-coded/sample status and metrics. Do not present these as production telemetry or verified hardware state. Frontend build and API wiring were not validated; the source review also found an apparent unresolved `@/lib/api-client` import that needs build verification. |
-| Durable/distributed Theseus storage | **Not established** | `src/chronus/storage/theseus.py` uses process-local in-memory structures and marks the implementation non-durable. Content addressing does not by itself provide persistence, replication, or disaster recovery. |
-| Pricing, reconciled settlement, savings, revenue, TAM, or valuation | **Not substantiated** | `ciaas_store.py` and related settlement logic use hard-coded or synthetic values; arithmetic over supplied inputs is not invoice reconciliation or realized savings. The valuation document has no verified customer, contract, or market dataset. Withdraw monetary and market-size figures until supported by a documented model and primary evidence. |
-| Customer base, offices, sovereign deployments, partner or JV status | **Not independently verified** | Strategic statements in documents are not proof of offices, customers, deployments, partnership, or affiliation. Do not name McKinsey or Accenture in a way implying endorsement, partnership, or joint venture. |
-| RTL/hardware and physical accelerator readiness | **Source artifacts only; readiness not demonstrated** | RTL, dispatcher, or adapter files are not proof of fabrication, deployment, physical correctness, or measured hardware execution. Require target-device, toolchain, synthesis/verification, and hardware test evidence. |
-| CPU exact-math reference workload | **Implemented in bounded reference form** | `src/chronus/execution/reference.py` provides a CPU reference route for supported mathematical workloads. This does not imply general-purpose acceleration, constant memory for materialized outputs, or suitability for arbitrary finance, healthcare, legal, or enterprise workloads. |
-| API, tenant filtering, and SQLite | **Code present; deployment assurance not established** | Service, SDK, tenant-scoped access paths, and SQLite workload storage are present in source. This is not a security audit, production identity system, durable distributed store, or proof of deployed multi-tenant isolation. |
+| Claim area | Current disposition | Evidence boundary |
+| --- | --- | --- |
+| CHRONUS execution/fleet | Implemented | Current CI required; physical scaling/performance remains environment-specific |
+| Tensor software runtime | Implemented and elevated in PR #93 | Current branch regressions required |
+| OpenCL tensor backend | Implemented, fail closed | Physical GPU evidence required |
+| CUDA tensor backend | Implemented, fail closed | Physical NVIDIA device evidence required |
+| Metal tensor backend | Implemented, fail closed | Physical Apple device evidence required |
+| OVID transform/materialise | Implemented | Current round-trip/digest tests required |
+| THESEUS durable local custody | Implemented in PR #93 | Restart, corruption, concurrency and journal tests required |
+| Triad restart/replay | Implemented in PR #93 | Exact-current CI required |
+| External customer-held key custody | Not established by provider interfaces | Actual provider operation + attested `FN-CUSTODY` PASS required |
+| Multi-region durability / HA | Not established by local SQLite/WAL durability | Deployment-specific failover, RTO/RPO and replication evidence required |
+| Current comparative performance | Evidence-specific | Historical device and benchmark records are retained but not promoted automatically |
+| Regulatory / external certification | Not awarded by this repository | External authority/assessor evidence required |
+| Customer deployment / SLA | Not inferred from source or fixtures | Customer/deployment evidence required |
+| Production admission | Evidence gated | Exact candidate CI + verified artifact attestation + every mandatory product gate PASS |
 
-## Required documentation rule
+## Qualification controls
 
-For every future quantitative, security, compliance, customer, or performance statement, identify the exact code version, method, environment, evidence artifact, limitations, and reviewer. A source file, test name, simulated result, static dashboard label, or CI configuration is not evidence that a test or deployment passed.
+The current mandatory gates are:
+- `CO-SIGN`
+- `RS-RECEIPT`
+- `RS-REPLAY`
+- `FN-CLAIMS`
+- `FN-CUSTODY`
 
-## Documents revised with this audit
+The close-out removes prior self-certifying paths:
+- the package facade no longer forces a production result;
+- the local manifest no longer embeds a key or awards production status;
+- the legacy sovereign dossier is local software evidence only;
+- a provider name cannot satisfy custody;
+- historical test counts cannot satisfy an exact-current gate.
 
-This commit replaces or corrects the root README, executive summary/proposal, release decisions, benchmark and historical report summaries, valuation material, and system-update evidence/status pages. The revised documents intentionally distinguish implementation, simulation, aspiration, and externally verified results.
+## Historical evidence
+
+Historical tensor, fleet, storage and device records are preserved in `evidence/migration/chronus_historical_evidence_register.json` and summarized in `docs/production/TEST_AND_BENCHMARK_PROVENANCE.md`.
+
+They remain visible for provenance and regression design without being represented as current PR #93 results.
+
+## Current CI condition
+
+PR #93 triggered the repository's GitHub Actions and CodeQL checks. At the time of this update, the sampled jobs fail before usable logs are produced and the log endpoint returns Azure `BlobNotFound`. This is recorded as an infrastructure condition, not as a software pass or failure. The merge/release decision must use a successful rerun or another retained exact-current execution record before production admission.

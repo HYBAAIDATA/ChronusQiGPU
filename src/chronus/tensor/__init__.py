@@ -62,6 +62,27 @@ from chronus.tensor.adaptive_contraction import (
 from chronus.tensor.causal_intelligence import (
     CausalInterferenceEngine,
 )
+from chronus.tensor.folded_state import ExactFoldState
+from chronus.tensor.folded_inference import FoldedInferencePilot
+from chronus.tensor.geodesic import (
+    BackendProfile,
+    EnergyComparison,
+    EnergyModel,
+    GeodesicScheduler,
+    HybridGPU,
+    IntegrityVerdict,
+    KernelBoundary,
+    KernelLaunchConfig,
+    MetricTensor,
+    PhiGPU,
+    PhiMemoryHierarchy,
+    PhiTensorCore,
+    ProfiledHybridRouter,
+    TopologicalIntegrityGate,
+)
+from chronus.tensor.opencl_backend import OpenCLTensorBackend, OpenCLTensorUnavailable
+from chronus.tensor.cuda_backend import CUDATensorBackend, CUDATensorUnavailable
+from chronus.tensor.metal_backend import MetalTensorBackend, MetalTensorUnavailable
 from chronus.tensor.types import (
     BondId,
     ChargeTuple,
@@ -140,4 +161,26 @@ __all__ = [
     "E3_honest_1000_node_claim",
     "PUBLISH",
     "reference_statevector_simulation",
+    "ExactFoldState",
+    "FoldedInferencePilot",
+    "BackendProfile",
+    "EnergyComparison",
+    "EnergyModel",
+    "GeodesicScheduler",
+    "HybridGPU",
+    "IntegrityVerdict",
+    "KernelBoundary",
+    "KernelLaunchConfig",
+    "MetricTensor",
+    "PhiGPU",
+    "PhiMemoryHierarchy",
+    "PhiTensorCore",
+    "ProfiledHybridRouter",
+    "TopologicalIntegrityGate",
+    "OpenCLTensorBackend",
+    "OpenCLTensorUnavailable",
+    "CUDATensorBackend",
+    "CUDATensorUnavailable",
+    "MetalTensorBackend",
+    "MetalTensorUnavailable",
 ]

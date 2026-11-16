@@ -309,8 +309,8 @@ class CIaaSStore:
             "status": "OPERATIONAL",
             "virtual_crossbar": {
                 "bandwidth": "130 Tb/s",
-                "routing_protocol": "H4 600-Cell Polytope Discrete Exterior Calculus (DEC) Lie-Poisson Routing",
-                "polytope": "H4_600_CELL",
+                "routing_protocol": "H4 Polytope Discrete Exterior Calculus (DEC) Lie-Poisson Routing",
+                "polytope": "H4_POLYTOPE",
                 "vertices": 120,
                 "edges": 720,
                 "bus_saturation_percentage": 100,

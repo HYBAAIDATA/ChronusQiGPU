@@ -16,6 +16,7 @@ from chronus.backends.lattice import (
 from chronus.execution import execution_router
 from chronus.execution.qigpu import QiGPUOrchestrator
 from chronus.sdk.client import ChronusAPISDK, ChronusSDKError
+from chronus.service.auth_middleware import Role, require_roles
 from chronus.service.dependencies import get_current_tenant, security, service_config
 from chronus.service.models import (
     ErrorResponse,
@@ -26,9 +27,148 @@ from chronus.service.models import (
 )
 import hashlib
 import time
+from chronus.core.seal import find_banned_tokens, scrub_dict_strings
+from chronus.core.workload_alias import (
+    INTERNAL_INGEST_WORKLOAD,
+    INTERNAL_SCALING_WORKLOAD,
+    externalize_scaling_result,
+    normalize_workload_type,
+)
+from chronus.qualification import QualificationHarness, Tier
+from chronus.qualification.harness import verify_transcript_integrity
+from chronus.qualification.transcript_store import clear_class as clear_qualification_class
+from chronus.qualification.transcript_store import remember as remember_transcript
+from chronus.qualification.transcript_store import recall_by_class
+from chronus.qualification.transcript_store import recall_by_hash
 from chronus.security.receipt_signer import receipt_signer
 from chronus.storage.connectors import zero_copy_connector_manager
 from chronus.service.workload_store import get_workload_store
+
+
+def _sealed_error_message(message: str) -> str:
+    """Customer-visible errors must not leak mechanism tokens."""
+    if find_banned_tokens(message):
+        return "Workload rejected: invalid or unsupported request."
+    return message
+
+
+def _suspended_tier_fields(contract) -> dict:
+    economics = {
+        "tier": Tier.SUSPENDED.value,
+        "service_level": "envelope.suspended",
+        "escalation_threshold": "model_risk_alarm",
+        "review_budget_ccu": 0,
+        "relative_price_weight": 0.0,
+    }
+    return {
+        "tier": Tier.SUSPENDED.value,
+        "qualification_evidence_hash": contract.qualification_evidence_hash,
+        "envelope": contract.to_public_dict()["envelope"],
+        "tier_contract_version": contract.tier_contract_version,
+        "tier_suspended": True,
+        "metadata_tier_economics": economics,
+        "metadata_qualification_scope": "reference_model_class",
+    }
+
+
+# Include the submission index in reference-model probes when it is small
+# enough for exact Decimal residual measurement. Not a backend re-probe.
+_MAX_SUBMISSION_PROBE_INDEX = 256
+
+
+def _scaling_index_from_result(result: object) -> int | None:
+    if not isinstance(result, dict):
+        return None
+    payload = result.get("result")
+    if not isinstance(payload, dict):
+        payload = result
+    index = payload.get("index")
+    if isinstance(index, int) and not isinstance(index, bool) and index >= 0:
+        return index
+    representation = payload.get("representation")
+    if isinstance(representation, dict):
+        nested = representation.get("index")
+        if isinstance(nested, int) and not isinstance(nested, bool) and nested >= 0:
+            return nested
+    return None
+
+
+def _attach_tier_fields(
+    workload_type: object,
+    *,
+    status: WorkloadStatus,
+    result: object = None,
+) -> dict:
+    """Attach reference-model qualification for scaling.v1.
+
+    Scope is still ``reference_model_class``: residuals come from the harness
+    model, not a re-probe of the selected execution backend. When the
+    submission index is available and within the probe budget, it is included
+    in the measured envelope so evidence tracks the customer's working size.
+    """
+    if status != WorkloadStatus.COMPLETED:
+        return {}
+    internal = normalize_workload_type(workload_type)
+    if internal != INTERNAL_SCALING_WORKLOAD:
+        return {}
+    seed = int(hashlib.sha256(b"qualify:" + internal.encode()).hexdigest()[:16], 16)
+    harness = QualificationHarness()
+    prior = recall_by_class(internal)
+    if prior is not None:
+        # Sticky suspension: do not auto-clear on the next job.
+        if prior.contract.suspended or prior.tier == Tier.SUSPENDED:
+            return _suspended_tier_fields(prior.contract)
+        if not verify_transcript_integrity(prior.audit_transcript):
+            from chronus.qualification.tiers import TIER_CONTRACT_VERSION, TierContract
+
+            suspended = TierContract(
+                tier=Tier.SUSPENDED,
+                tier_contract_version=TIER_CONTRACT_VERSION,
+                residual_bound_by_size=prior.contract.residual_bound_by_size,
+                qualification_evidence_hash=prior.evidence_hash,
+                suspended=True,
+            )
+            return _suspended_tier_fields(suspended)
+        reverified = harness.reverify_contract(prior)
+        class_updated = remember_transcript(reverified)
+        if reverified.contract.suspended:
+            return _suspended_tier_fields(reverified.contract)
+        if not class_updated:
+            # A concurrent suspension won the class row; do not return clean.
+            current = recall_by_class(internal)
+            if current is not None and (
+                current.contract.suspended or current.tier == Tier.SUSPENDED
+            ):
+                return _suspended_tier_fields(current.contract)
+    from chronus.qualification.harness import _default_probe_sizes
+
+    sizes = _default_probe_sizes(seed)
+    submission_index = _scaling_index_from_result(result)
+    included_submission = False
+    if (
+        submission_index is not None
+        and submission_index <= _MAX_SUBMISSION_PROBE_INDEX
+    ):
+        sizes = tuple(sorted(set(sizes) | {submission_index}))
+        included_submission = True
+    qualified = harness.qualify(internal, seed=seed, sizes=sizes)
+    if not remember_transcript(qualified):
+        current = recall_by_class(internal)
+        if current is not None and (
+            current.contract.suspended or current.tier == Tier.SUSPENDED
+        ):
+            return _suspended_tier_fields(current.contract)
+    public = qualified.public_decision_fields()
+    return {
+        "tier": public["tier"],
+        "qualification_evidence_hash": public["qualification_evidence_hash"],
+        "envelope": public["envelope"],
+        "tier_contract_version": public["tier_contract_version"],
+        "tier_suspended": public["suspended"],
+        "metadata_tier_economics": public["economics"],
+        "metadata_qualification_scope": public["qualification_scope"],
+        "metadata_submission_index_probed": included_submission,
+    }
 
 _workload_ed25519_signer = receipt_signer
 from chronus.service.telemetry import (
@@ -45,6 +185,56 @@ workload_store = get_workload_store()
 
 def workload_counts() -> tuple[int, int]:
     return workload_store.counts()
+
+
+@router.post(
+    "/qualification/reset",
+    summary="Reset sticky qualification suspension after operator review",
+    description=(
+        "System-operator action: clear the sticky suspended state for "
+        "scaling.v1 so the next completed job may re-qualify. Requires "
+        "system_admin or admin. The prior suspension transcript remains "
+        "available by evidence hash in the shared qualification store."
+    ),
+)
+async def reset_qualification_suspension(
+    identity=Depends(require_roles(Role.SYSTEM_ADMIN, Role.ADMIN)),
+) -> dict:
+    """Clear sticky class suspension; preserve suspension evidence by hash."""
+    cleared = clear_qualification_class(INTERNAL_SCALING_WORKLOAD)
+    if cleared is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=ErrorResponse(
+                error="qualification_state_absent",
+                error_code="WL010",
+                message="No sticky qualification state is present for scaling.v1.",
+            ).model_dump(),
+        )
+    if not cleared.get("cleared", True):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=ErrorResponse(
+                error="qualification_state_changed",
+                error_code="WL011",
+                message=(
+                    "Qualification state changed during reset; a newer sticky "
+                    "record was left intact. Retry after review."
+                ),
+            ).model_dump(),
+        )
+    preserved = cleared["preserved_evidence_hash"]
+    transcript = recall_by_hash(preserved)
+    return {
+        "status": "reset",
+        "workload_type": "scaling.v1",
+        "preserved_evidence_hash": preserved,
+        "suspension_transcript_retained": transcript is not None,
+        "was_suspended": cleared["was_suspended"],
+        "operator_tenant": identity.tenant_id,
+        "operator_roles": [role.value for role in identity.roles],
+        "store_scope": "shared-sqlite",
+    }
 
 
 @router.post(
@@ -105,6 +295,12 @@ async def submit_workload(
             parsed_id = UUID(workload_id)
             backend_status = WorkloadStatus(submission["status"])
             result = submission.get("result")
+            if (
+                normalize_workload_type(request.workload_type) == INTERNAL_SCALING_WORKLOAD
+                and isinstance(result, dict)
+            ):
+                result = externalize_scaling_result(result)
+                scrub_dict_strings(result, context="scaling.v1 adapter result")
             receipt = submission.get("verification_receipt")
             ccu_cost = submission.get("ccu_cost")
         else:
@@ -113,8 +309,18 @@ async def submit_workload(
                 backend_preference = QiGPUOrchestrator(execution_router).auto_select(
                     request.workload_type
                 )[0]
-            is_folding = str(request.workload_type) in ("PV_LATTICE_FOLD", "TRINITY_SCALE_FOLD_STORE", "BINET_ZECKENDORF_INGEST")
-            is_storage = str(request.workload_type) in ("PHYLOTAXIS_STORE", "THESEUS_RETRIEVE", "OVID_NORM_PROOF", "ZERO_COPY_CONNECTOR_EXECUTE")
+            internal_workload = request.internal_workload_type()
+            is_folding = internal_workload in (
+                "PV_LATTICE_FOLD",
+                "TRINITY_SCALE_FOLD_STORE",
+                INTERNAL_INGEST_WORKLOAD,
+            )
+            is_storage = internal_workload in (
+                "PHYLOTAXIS_STORE",
+                "THESEUS_RETRIEVE",
+                "OVID_NORM_PROOF",
+                "ZERO_COPY_CONNECTOR_EXECUTE",
+            )
             with trace_span("execution_dispatch", {"backend": backend_preference, "workload_type": str(request.workload_type)}):
                 if is_folding:
                     with trace_span("algebraic_folding"):
@@ -125,12 +331,15 @@ async def submit_workload(
                 execution = await run_in_threadpool(
                     execution_router.execute,
                     request.payload_bytes,
-                    request.workload_type,
+                    internal_workload,
                     backend_preference,
                 )
             parsed_id = uuid4()
             backend_status = WorkloadStatus.COMPLETED
             result = execution.to_dict()
+            if internal_workload == INTERNAL_SCALING_WORKLOAD and isinstance(result, dict):
+                result = externalize_scaling_result(result)
+                scrub_dict_strings(result, context="scaling.v1 result")
             raw_digest = (result.get("result") or {}).get("execution_digest") if isinstance(result, dict) else None
             if not raw_digest:
                 raw_digest = hashlib.sha256(str(result).encode("utf-8")).hexdigest()
@@ -166,7 +375,7 @@ async def submit_workload(
             detail=ErrorResponse(
                 error="invalid_or_unsupported_workload",
                 error_code="WL001",
-                message=str(exc),
+                message=_sealed_error_message(str(exc)),
             ).model_dump(),
         ) from exc
     except ChronusSDKError as exc:
@@ -197,6 +406,24 @@ async def submit_workload(
             ).model_dump(),
         ) from exc
 
+    tier_fields = _attach_tier_fields(
+        request.workload_type, status=backend_status, result=result
+    )
+    economics = tier_fields.pop("metadata_tier_economics", None)
+    qualification_scope = tier_fields.pop("metadata_qualification_scope", None)
+    submission_index_probed = tier_fields.pop("metadata_submission_index_probed", None)
+    metadata = dict(request.metadata or {})
+    if economics is not None:
+        metadata["tier_economics"] = economics
+    if qualification_scope is not None:
+        metadata["qualification_scope"] = qualification_scope
+    if submission_index_probed is not None:
+        metadata["submission_index_probed"] = submission_index_probed
+    # Relative price weight is a multiplier on a measured/base CCU only.
+    # Do not invent an absolute cost from the weight when no meter exists.
+    if economics is not None and ccu_cost is not None:
+        ccu_cost = float(ccu_cost) * float(economics.get("relative_price_weight", 1.0))
+
     workload = WorkloadResponse(
         workload_id=parsed_id,
         status=backend_status,
@@ -209,12 +436,17 @@ async def submit_workload(
         result=result,
         verification_receipt=receipt,
         callback_url=request.callback_url,
-        metadata=request.metadata,
+        metadata=metadata or None,
         completed_at=(
             datetime.now(timezone.utc)
             if backend_status == WorkloadStatus.COMPLETED
             else None
         ),
+        tier=tier_fields.get("tier"),
+        qualification_evidence_hash=tier_fields.get("qualification_evidence_hash"),
+        envelope=tier_fields.get("envelope"),
+        tier_contract_version=tier_fields.get("tier_contract_version"),
+        tier_suspended=tier_fields.get("tier_suspended"),
     )
     current_workload_id.set(str(parsed_id))
     elapsed_duration = time.time() - start_wall_time

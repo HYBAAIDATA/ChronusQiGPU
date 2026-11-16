@@ -1,29 +1,39 @@
 # Current implementation assessment
 
-**Snapshot:** static review of `a2768d11847de113d26535e33cfe9d4a79a009db` (`main`), 2026-11-08. This is not a test report, deployment inspection, security audit, or release certification. No tests or builds were run for this update.
+**Snapshot:** close-out branch `closeout/triad-production-posture-20261115`, 15 November 2026. This document records source state; exact-current CI results are attached to the pull request and remain the release authority.
 
 ## Capability and evidence boundaries
 
-| Area | Source-level status | Boundary |
-|---|---|---|
-| Mathematical execution | CPU reference code for selected exact arithmetic and Lucas/PV workloads is present under `src/chronus/execution/`. | Bounded reference functionality; no general-purpose acceleration or workload-specific performance claim. |
-| Execution backends | Native reference is the default; OpenCL is opt-in. | No physical GPU was tested. Adapter code alone does not establish device execution or speedup. |
-| Workload API/SDK | Service and SDK code are present under `src/chronus/service/`. | Source presence is not deployment, availability, or independent security evidence. |
-| Workload storage | SQLite is the default local persistence path; optional PostgreSQL-related code exists. | No HA, replication, disaster recovery, or deployed PostgreSQL evidence was verified. |
-| Theseus storage | `src/chronus/storage/theseus.py` uses process-local structures and indicates non-durable behavior. | Not durable or distributed storage. |
-| Provisioning | `src/chronus/service/instant_provisioning.py` includes local/in-process flows and simulations. | Simulation is not live cloud provisioning, customer onboarding, tenant capacity, or an SLA. |
-| Status, fleet, and commercial demo data | Service code includes static/seeded demo values and synthetic calculations. | Do not present as live telemetry, certified status, actual settlement, realized savings, or revenue. |
-| Frontend | Frontend source is present. It contains fixed/sample status and metric presentation. | Build and live API integration were not verified. Static source review found an apparent unresolved `@/lib/api-client` import; verify with the actual frontend build before claiming it builds. |
-| ML-DSA | `src/chronus/security/signers.py` contains a SHAKE-derived demonstration signer. | Not a conformant ML-DSA implementation; no FIPS 204 or production-signature claim. |
-| STARK/FRI | `src/chronus/security/stark.py` contains limited proof-shaped checks. | Full AIR/FRI soundness and a conformant proof verifier are not established. Do not describe it as production zero-knowledge security. |
-| KMS/HSM | `src/chronus/security/kms.py` provider abstractions fall back to local memory in the reviewed paths. | No verified remote KMS, Vault, PKCS#11, HSM, or customer-held key operation. |
-| CI/release | Workflow configuration exists in the repository. | A workflow definition is not proof of a passing run. This review did not inspect a passing, current run or execute a release gate. |
-| RTL/physical hardware | Hardware-related source artifacts exist. | No physical target validation, device deployment, or measured hardware result was established. |
+| Area | Source-level status | Qualification boundary |
+| --- | --- | --- |
+| CHRONUS execution | Maintained reference, fleet, workload and backend routing paths | Physical route and performance claims remain device-specific |
+| Tensor runtime | Maintained tensor engine plus migrated Geodesic compatibility surfaces | Current branch tests required; device routes need hardware evidence |
+| OpenCL tensor | Physical GPU-only backend and kernels implemented | Must run on identified OpenCL GPU for physical promotion |
+| CUDA tensor | Chronus-owned CUDA C kernels through explicit CuPy route | Must run on identified CUDA GPU; no generic fleet promotion inferred |
+| Metal tensor | MLX/Metal explicit route | Must run on identified Apple GPU; no generic fleet promotion inferred |
+| OVID | Versioned reversible transform/materialisation service implemented | OVID is not durable authority |
+| THESEUS | SQLite/WAL durable custody with restart verification and journal continuity implemented | Local durability does not establish multi-region HA |
+| Triad composition | Transform → durable commit → restart → verified materialisation implemented | Current exact-commit CI required |
+| Workload API/SDK | Maintained service and SDK code present | Deployment availability remains environment-specific |
+| Enterprise connectors | Connector plane and user-journey code present | Real provider calls/evidence required for provider-specific claims |
+| External key custody | Provider interfaces present | Current cloud/Vault/PKCS#11 paths still use local fallback; FN-CUSTODY remains held |
+| CI/release | GitHub Actions active; evidence-gated qualification hardened | Workflow/run result for exact commit is authoritative |
+| Historical benchmarks | Migrated into evidence register | Historical result remains provenance until current rerun/reconciliation |
 
 ## Release posture
 
-**Not release-qualified.** The old “GO” and related production, certification, benchmark, test-count, tenant-volume, and valuation claims are withdrawn pending new evidence. See the [claim audit](../claim-audit.md) and [release decision](../../RELEASE_DECISION_MCKINSEY_TECH.md).
+The close-out source is **production-shaped and evidence gated**. It is not self-certified.
 
-## Minimum evidence for a new assessment
+Production admission requires:
+1. exact release commit;
+2. current CI;
+3. verified artifact attestation;
+4. all mandatory product gates PASS;
+5. environment-specific evidence for any advertised physical/deployment capability.
 
-Record source commit and environment; run and retain functional, security, frontend, integration, and deployment results; replace demonstration cryptography with vetted conformant components; demonstrate key custody and operational controls; and test any claimed hardware path on identified physical devices. Assign owners and acceptance criteria before describing any gate as passed.
+The repository no longer permits a provider name, local manifest, invariant count or self-issued dossier to create production status.
+
+See:
+- [Production close-out](../production/TRIAD_PRODUCTION_CLOSEOUT.md)
+- [Capability matrix](../production/TRIAD_CAPABILITY_MATRIX.md)
+- [Test/benchmark provenance](../production/TEST_AND_BENCHMARK_PROVENANCE.md)

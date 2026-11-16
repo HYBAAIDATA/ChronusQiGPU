@@ -22,6 +22,17 @@ from chronus.security.al_haras.sovereign import SovereignGovernanceEngine, sover
 _SELF_TEST_TRACE = bytes(range(256)) * 2
 
 
+# Customer-visible ids for run_self_tests(); mechanism names stay internal-only.
+_PUBLIC_SELF_TEST_IDS: Dict[str, str] = {
+    "braid_relations_exact": "braid_relations_exact",
+    "binet_lucas_identity_exact": "sequence_identity_exact",
+    "zeckendorf_representation_exact": "canonical_digit_representation_exact",
+    "reed_solomon_repair_verified": "reed_solomon_repair_verified",
+    "paley_257_ramanujan_certified": "paley_257_expander_certified",
+    "elliptic_point_count_consistent": "elliptic_point_count_consistent",
+}
+
+
 def run_self_tests() -> Dict[str, bool]:
     """Exact self-tests; each value is recomputed on every call."""
     relations = braids.verify_relations()
@@ -44,6 +55,18 @@ def run_self_tests() -> Dict[str, bool]:
         "reed_solomon_repair_verified": rs_ok,
         "paley_257_ramanujan_certified": paley["is_ramanujan"],
         "elliptic_point_count_consistent": fp["independent_trace_check"] and fp["hasse_bound_satisfied"],
+    }
+
+
+def public_self_tests(tests: Dict[str, bool] | None = None) -> Dict[str, bool]:
+    """Sealed self-test view for customer-facing API surfaces.
+
+    Pass already-computed ``run_self_tests()`` results to avoid a second run.
+    """
+    source = tests if tests is not None else run_self_tests()
+    return {
+        _PUBLIC_SELF_TEST_IDS.get(name, name): passed
+        for name, passed in source.items()
     }
 
 

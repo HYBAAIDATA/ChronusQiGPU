@@ -7,9 +7,11 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 try:
-    from cryptography.hazmat.primitives.asymmetric import ml_dsa
+    from cryptography.hazmat.primitives.asymmetric import mldsa as ml_dsa
+    from cryptography.exceptions import UnsupportedAlgorithm
 except ImportError:
     ml_dsa = None
+    UnsupportedAlgorithm = Exception
 
 ML_DSA_65_PK_SIZE = 1952
 ML_DSA_65_SIG_SIZE = 3309
@@ -54,7 +56,13 @@ class MlDsa65Signer:
     def generate(cls, key_id: str) -> "MlDsa65Signer":
         if ml_dsa is None:
             raise SignerUnavailable("ML-DSA-65 unavailable in this cryptography/OpenSSL stack")
-        return cls("ML-DSA-65", key_id, ml_dsa.MLDSA65PrivateKey.generate())
+        try:
+            key = ml_dsa.MLDSA65PrivateKey.generate()
+        except UnsupportedAlgorithm as exc:
+            raise SignerUnavailable(
+                "ML-DSA-65 unavailable in this cryptography/OpenSSL stack"
+            ) from exc
+        return cls("ML-DSA-65", key_id, key)
 
     def sign(self, message: bytes) -> bytes:
         return self._key.sign(message)
@@ -63,7 +71,13 @@ class MlDsa65Signer:
         return self._key.public_key().public_bytes_raw()
 
 def ml_dsa_available() -> bool:
-    return ml_dsa is not None
+    if ml_dsa is None:
+        return False
+    try:
+        ml_dsa.MLDSA65PrivateKey.generate()
+    except (UnsupportedAlgorithm, ValueError):
+        return False
+    return True
 
 def verify(algorithm: str, public_bytes: bytes, message: bytes, signature: bytes) -> None:
     if algorithm == "Ed25519":

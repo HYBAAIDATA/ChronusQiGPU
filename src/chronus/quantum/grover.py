@@ -1,4 +1,4 @@
-"""Exact Grover iteration over F_257 statevectors.
+"""Finite-field Grover-shaped operator iteration over algebraic state vectors.
 
 The oracle is an exact phase flip (multiply by -1 = 256 mod 257) and the
 diffusion operator D = 2|s><s| - I is an exact Householder reflection over

@@ -7,7 +7,7 @@
 #   prefer:  ours (the Chronus iGPU, even where the host has a GPU) | host
 # The runner follows the choice: macOS for metal, Ubuntu otherwise. A named
 # backend the runner does not offer fails closed (the job goes red).
-# PR #33 owns .github/workflows/hyba-mine.yml (the Azure deploy); this file is separate.
+# This test-only workflow is independent of any future hosting decision.
 name: "HYBA Mine (Mac runtime)"
 
 on:

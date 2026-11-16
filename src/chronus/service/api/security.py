@@ -72,12 +72,24 @@ def _token_table() -> dict[str, Principal]:
         raise ApiError(500, "auth_not_configured", "Authentication is not configured",
                        "CHRONUS_TENANT_TOKENS must be an object or array.")
 
+    # Two documented layouts share CHRONUS_TENANT_TOKENS:
+    #   api:    {"<token>": {"tenant_id": "...", "scopes": [...]}}
+    #   deploy: {"<tenant_id>": "<token>"}  (AuthService legacy)
+    default_scopes = frozenset(
+        {"workloads:read", "workloads:write", "fleet:read", "evidence:read"}
+    )
     table: dict[str, Principal] = {}
-    for token, meta in pairs:
-        if not token or not isinstance(meta, dict) or not meta.get("tenant_id"):
+    for key, meta in pairs:
+        if not key:
+            continue
+        if isinstance(meta, str) and meta.strip():
+            # Deploy layout: key is tenant_id, value is the bearer token.
+            table[_digest(meta.strip())] = Principal(str(key), default_scopes)
+            continue
+        if not isinstance(meta, dict) or not meta.get("tenant_id"):
             continue
         scopes = frozenset(s for s in meta.get("scopes", []) if s in SCOPES)
-        table[_digest(str(token))] = Principal(str(meta["tenant_id"]), scopes)
+        table[_digest(str(key))] = Principal(str(meta["tenant_id"]), scopes)
 
     if not table:
         raise ApiError(500, "auth_not_configured", "Authentication is not configured",

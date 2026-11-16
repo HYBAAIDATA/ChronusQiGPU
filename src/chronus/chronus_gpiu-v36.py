@@ -7074,10 +7074,18 @@ class ChronusVerificationOrchestrator:
         manifest["invariants_passed"] = 94
         manifest["invariant_summary"] = "All 94 Architectural Invariants (I1-I94) Green"
 
-        out_paths = [
-            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "manifests", "qualification_manifest_v36.json"),
-            "manifests/qualification_manifest_v36.json",
-        ]
+        # The release manifest is written to the repository by default.
+        # CHRONUS_MANIFEST_OUT_DIR redirects it, which lets a caller collect
+        # the artefact somewhere disposable instead of overwriting the
+        # tracked one.
+        out_dir = os.environ.get("CHRONUS_MANIFEST_OUT_DIR")
+        if out_dir:
+            out_paths = [os.path.join(out_dir, "qualification_manifest_v36.json")]
+        else:
+            out_paths = [
+                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "manifests", "qualification_manifest_v36.json"),
+                "manifests/qualification_manifest_v36.json",
+            ]
         if os.path.exists('/workspace/out'):
             out_paths.append('/workspace/out/qualification_manifest_v36.json')
 
