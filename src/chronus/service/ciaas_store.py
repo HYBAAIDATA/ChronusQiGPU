@@ -327,8 +327,35 @@ class CIaaSStore:
             },
             "instanton_healer": {
                 "name": "DSW 4D Instanton Monopole Self-Healer",
+                "spacetime_manifold": "3D_SPATIAL_NODE_LATTICE_x_1D_EXECUTION_CLOCK",
+                "cobordism": "W: Sigma_1 -> Sigma_2",
                 "health": "UNVERIFIED",
                 "repair_latency_cycles": None,
+                "context_rollback_bytes": None,
+                "stream_rollback_bytes": None,
+            },
+            "memory_access_classes": [
+                {"class": "LOCAL_ZERO_COPY", "status": "DECLARED_NOT_MEASURED"},
+                {"class": "SAME_HOST_SHARED_MEMORY", "status": "DECLARED_NOT_MEASURED"},
+                {"class": "DEVICE_SHARED_MEMORY", "status": "DECLARED_NOT_MEASURED"},
+                {"class": "REMOTE_REFERENCE", "status": "DECLARED_NOT_MEASURED"},
+                {"class": "REMOTE_TRANSFER", "status": "DECLARED_NOT_MEASURED"},
+                {"class": "REMOTE_MATERIALISATION", "status": "DECLARED_NOT_MEASURED"},
+            ],
+            "disaggregated_pools": {
+                "prefill_pool": {
+                    "role": "Compute-Bound", "hardware": "NVFP4 Tensor Cores",
+                    "status": "DECLARED_NOT_DEPLOYED",
+                },
+                "decode_pool": {
+                    "role": "Memory-Bandwidth-Bound", "hardware": "HBM3e Streamers",
+                    "status": "DECLARED_NOT_DEPLOYED",
+                },
+                "cryo_quantum_pool": {
+                    "role": "Hilbert State & Holonomy Evaluation",
+                    "bridge": "Sub-microsecond NVQLink Bridge",
+                    "status": "DECLARED_NOT_DEPLOYED",
+                },
             },
             "pods": [
                 {"pod": pod, "region": region, "nodes": None,
