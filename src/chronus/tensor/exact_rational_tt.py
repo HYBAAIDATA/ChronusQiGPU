@@ -134,6 +134,12 @@ class ExactRationalTensorTrain:
             previous = rank
         if previous != 1:
             raise ValueError("terminal tensor train bond must be one")
+        if self.digest:
+            payload = json.dumps({"shape": self.shape, "cores": [[[[str(v) for v in bond]
+                      for bond in physical] for physical in core] for core in self.cores]},
+                      sort_keys=True, separators=(",", ":"))
+            if sha256(payload.encode()).hexdigest() != self.digest:
+                raise ValueError("tensor train core digest mismatch")
 
     @property
     def bond_dimensions(self) -> tuple[int, ...]:
