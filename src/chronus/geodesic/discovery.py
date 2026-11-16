@@ -42,7 +42,7 @@ def exact_determinant(matrix: Matrix) -> Q:
     n = len(matrix)
     if any(len(row) != n for row in matrix):
         raise ValueError("determinant requires square matrix")
-    a = [list(row) for row in matrix]
+    a = [[Q(value) for value in row] for row in matrix]
     det = Q(1)
     for c in range(n):
         pivot = next((r for r in range(c, n) if a[r][c]), None)
@@ -186,14 +186,15 @@ class ManifoldDiscovery:
         choices = []
         if (graph_vertices, graph_edges, regular_degree) == (120, 720, 12):
             choices.append("H4_600_CELL_GRAPH")
-        for key, spec in catalog().items():
-            if root_count is not None and root_count != spec.get("roots"):
-                continue
-            if (root_ambient_dimension is not None and
-                    root_ambient_dimension != spec["ambient_dimension"]):
-                continue
-            if key != "Leech":
-                choices.append(f"ROOT_{key}")
+        if root_count is not None or root_ambient_dimension is not None:
+            for key, spec in catalog().items():
+                if root_count is not None and root_count != spec.get("roots"):
+                    continue
+                if (root_ambient_dimension is not None and
+                        root_ambient_dimension != spec["ambient_dimension"]):
+                    continue
+                if key != "Leech":
+                    choices.append(f"ROOT_{key}")
         return {
             "candidates": sorted(set(choices)),
             "classification": "EXACT_SIGNATURE_MATCH_NOT_GROUP_ISOMORPHISM",
