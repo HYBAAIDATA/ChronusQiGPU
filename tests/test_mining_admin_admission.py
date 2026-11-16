@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -66,7 +67,7 @@ def test_other_tenant_subject_or_role_cannot_control_global_engine(
         headers=signed_headers(tenant, user, role),
     )
     assert denied.status_code == 403
-    assert not __import__("os").path.exists(path)
+    assert not Path(path).exists()
 
 
 def test_legacy_tenant_token_cannot_control_global_engine(guarded):
@@ -80,7 +81,7 @@ def test_legacy_tenant_token_cannot_control_global_engine(guarded):
         headers={"Authorization": "Bearer legacy-mining-test-token"},
     )
     assert response.status_code == 403
-    assert not __import__("os").path.exists(path)
+    assert not Path(path).exists()
 
 
 def test_missing_roster_dev_mode_and_missing_key_fail_closed(guarded, monkeypatch):
