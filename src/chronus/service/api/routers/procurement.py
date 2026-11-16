@@ -191,7 +191,13 @@ CAPACITY_OPENAPI_PATHS = (
 )
 # Follow local component refs used by FastAPI OpenAPI (schemas, reusable
 # requestBodies/responses/parameters). Unrelated legacy routes stay out.
-_COMPONENT_SECTIONS = ("schemas", "responses", "requestBodies", "parameters")
+_COMPONENT_SECTIONS = (
+    "schemas",
+    "responses",
+    "requestBodies",
+    "parameters",
+    "headers",
+)
 _COMPONENT_REF_PREFIX = "#/components/"
 
 

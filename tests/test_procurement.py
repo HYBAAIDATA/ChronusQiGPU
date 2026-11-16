@@ -301,6 +301,44 @@ class ProcurementBookTests(unittest.TestCase):
                     },
                 }
             )
+        # Response → reusable header → schema must also be sealed.
+        with self.assertRaises(AssertionError):
+            capacity_openapi_fragment(
+                {
+                    "paths": {
+                        path: {
+                            "get": {
+                                "responses": {
+                                    "200": {
+                                        "description": "ok",
+                                        "headers": {
+                                            "X-Quota": {
+                                                "$ref": "#/components/headers/Quota"
+                                            }
+                                        },
+                                    }
+                                }
+                            }
+                        }
+                        for path in CAPACITY_OPENAPI_PATHS
+                    },
+                    "components": {
+                        "headers": {
+                            "Quota": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/QuotaBody"
+                                }
+                            }
+                        },
+                        "schemas": {
+                            "QuotaBody": {
+                                "type": "object",
+                                "properties": {"phi": {"type": "number"}},
+                            }
+                        },
+                    },
+                }
+            )
 
 
 if __name__ == "__main__":
