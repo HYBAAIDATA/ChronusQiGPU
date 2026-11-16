@@ -78,3 +78,29 @@ private repository's `chronus.tensor` package initializer. The new
 `tests/test_exact_rational_tt_recovery.py` and the modified
 `tests/test_geodesic_tensor_migration.py` must run on the exact commit in
 the repository CI before a test-pass claim is made for the integrated code.
+
+
+## Focused safety review replay (after PR #135 review feedback)
+
+The new exact rational TT source was patched with **bounded iterator
+consumption** and with the **same shape/site/entry policy at replay** as at
+factorisation. Reviewers Qodo and Codex identified those two real gaps on
+the original PR head.
+
+A local isolated source fixture was updated with the same algorithm and
+three negative tests (infinite source, 65,536-element digest-valid forged
+replay, zero-dimension replay). Re-executed in Python 3.13.5:
+
+```
+$ python -m pytest -q test_exact_rational_tt.py
+.........                                                                [100%]
+9 passed in 0.05s
+```
+
+Output SHA-256:
+`3f2a7d474201c0ea38d8bf1671a9f35e691f355933bdef622342047561fb3da4`.
+
+The **GitHub repository module and its ten-case focused test file** still
+require independent exact-commit CI. Standalone source replay never
+substitutes for package import, CI result, CodeRabbit/Qodo closure or a
+production release verdict.
