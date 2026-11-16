@@ -104,7 +104,7 @@ def _gate_receipts() -> tuple[bool, str]:
         if len(reopened) != 1 or reopened.head_digest != signed.digest:
             return False, "THESEUS restart replay did not recover signed receipt"
         ok, detail = reopened.verify_chain(public_key)
-        if not ok or reopened.verify_chain(b"\\0" * 32)[0]:
+        if not ok or reopened.verify_chain(bytes(32))[0]:
             return False, "THESEUS receipt chain accepted wrong key or invalid evidence"
         return True, f"{detail}; local THESEUS restart and tamper checks passed"
 
