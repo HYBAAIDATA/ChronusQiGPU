@@ -89,7 +89,5 @@ def test_matrix_result_budget_before_allocation():
 def test_window_rejects_numerical_precision_narrowing(replacement):
     executor = FoldedTensorExecutor(depth=2)
     operand = executor.fold(np.arange(12, dtype=np.float64))
-    if np.can_cast(replacement.dtype, np.dtype("float64"), casting="safe"):
-        pytest.skip("host platform considers this scalar type a safe widening input")
     with pytest.raises(ValueError, match="truncate"):
         executor.update_window(operand, replacement, start=1, stop=2)
