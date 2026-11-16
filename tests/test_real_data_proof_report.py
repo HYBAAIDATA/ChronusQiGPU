@@ -106,7 +106,7 @@ def test_truthy_strings_are_not_valid_custody_or_recovery_proof(field):
         p['entries'][0][field] = 'false'
     else:
         p['entries'][0]['workload'][field] = 'false'
-    with pytest.raises(ValueError, match='verified|verification'):
+    with pytest.raises(ValueError, match='custody restart|verified|verification'):
         verified_report(_redigest(p))
 
 
