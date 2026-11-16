@@ -70,3 +70,47 @@ def test_mutated_tensor_core_fingerprint_fails():
     mutated = replace(t, cores=tuple(cores))
     with pytest.raises(ValueError, match="digest"):
         mutated.verify()
+
+
+def test_excess_input_generator_stops_at_one_over_budget():
+    observed = {"consumed": 0}
+
+    def infinite_source():
+        while True:
+            observed["consumed"] += 1
+            yield 1
+
+    with pytest.raises(ValueError, match="flat tensor data"):
+        TT.factor((2, 2), infinite_source())
+    # No arbitrary materialisation of the infinite tail.
+    assert observed["consumed"] == 5
+
+
+def test_replayed_state_reapplies_source_shape_and_memory_policy():
+    import hashlib
+    import json
+
+    # Each bond has rank one. A legitimate SHA-256 digest of its cores must
+    # not authorise a reconstruction with 4**8 = 65,536 entries.
+    shape = (4,) * 8
+    site = (tuple((Fraction(1),) for _ in range(4)),)
+    cores = tuple(site for _ in shape)
+    payload = json.dumps(
+        {"shape": shape, "cores": [
+            [[[str(v) for v in bond] for bond in physical]
+             for physical in core] for core in cores
+        ]}, sort_keys=True, separators=(",", ":"),
+    )
+    forged = TT(shape, cores, hashlib.sha256(payload.encode()).hexdigest())
+    with pytest.raises(ValueError, match="dimensions exceed"):
+        forged.verify()
+    with pytest.raises(ValueError, match="dimensions exceed"):
+        forged.reconstruct()
+
+
+def test_replayed_zero_dimension_cannot_enter_core_indexing():
+    malformed = TT((0,), tuple(), "a" * 64)
+    with pytest.raises(ValueError, match="dimensions exceed"):
+        malformed.verify()
+    with pytest.raises(ValueError, match="dimensions exceed"):
+        malformed.reconstruct()
