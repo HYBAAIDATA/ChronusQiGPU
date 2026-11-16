@@ -29,7 +29,8 @@ the corresponding existing implementation.
 - Every produced device result is independently checked against the
   reference operation before return. Matrix multiplication uses a
   componentwise floating-point error bound of the Higham form,
-  `gamma_k * (abs(A) @ abs(B))`, with allowance for the float64
+  `gamma_(2k) * (abs(A) @ abs(B))` for conservative coverage of
+  non-fused multiply/add, with allowance for the float64
   reference computation. Reference verification is **included in the
   application latency** and cannot be reported as GPU-only speed.
 
