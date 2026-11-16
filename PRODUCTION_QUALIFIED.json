@@ -1,33 +1,32 @@
 {
-  "status": "PRODUCTION_QUALIFIED",
-  "timestamp": "2026-11-08 23:20:43 UTC",
-  "gates": {
-    "pytest": "PASS",
-    "purity": "PASS",
-    "determinism": "PASS",
-    "endian_fuzz": "PASS",
-    "replay": "PASS",
-    "meta_test_mutation": "PASS",
-    "sovereign_difc_attestation": "PASS",
-    "mypy_strict": "PASS",
-    "sv_lint": null
+  "status": "NOT_QUALIFIED",
+  "record_type": "historical_release_status_correction",
+  "reviewed_at": "2026-11-15",
+  "repository": "HYBAAIDATA/ChronusQiGPU",
+  "reviewed_main_sha": "dc920a82c38ee408fb9698d3206631139f9d0d97",
+  "source_of_truth": "docs/release-blocker-audit-2026-11-15.md",
+  "not_a_qualification_verdict": true,
+  "reason": "Prior locally signed manifest is not a valid production certificate. Product gates require verified exact-commit evidence.",
+  "local_ci": {
+    "reviewed_main_status": "FAILED",
+    "evidence_runs": [
+      43669370042,
+      43669369942,
+      43669370018,
+      43669370069
+    ]
   },
-  "measurements": {
-    "gatekeeper_p99_us": null,
-    "submit_rate_achieved_sec": 15,
-    "shares_local_dropped": 0,
-    "blocks_found": null,
-    "stale_share_rate": null
+  "release_qualification": {
+    "status": "HELD",
+    "attested_ci_verdict": null,
+    "qualified_release_commit": null,
+    "independent_signature_conformance": null,
+    "managed_key_custody": null,
+    "physical_device_certificate": null,
+    "reference_vs_device_differential": null,
+    "soak_recovery_result": null,
+    "live_pool_acknowledgement": null,
+    "production_deployment_approval": null
   },
-  "provenance": {
-    "git_sha": "d095b3adbea2acb59db5f300fbbdf1ed6215f219",
-    "python": "3.12.10",
-    "lock_hash": "1897644c4da5e6480eebcd8fc02fcdab20d96e9e58abf2ae4b17e1c1b9d58b92"
-  },
-  "verification_procedure": {
-    "algorithm": "HMAC-SHA256",
-    "key_reference": "SECRET_BUILD_KEY (RFC 2104)",
-    "canonicalization": "json.dumps(manifest_data_without_signature, sort_keys=True).encode('utf-8')"
-  },
-  "signature": "6206d74a292a9e7a8ffdfa9286a1bc61ef0329dfdf8ba87800ed95a2dc8d7a24"
+  "signature": null
 }
