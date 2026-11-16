@@ -78,7 +78,7 @@ class ProcurementBookTests(unittest.TestCase):
             self.book,
             CONTRACT_VERSION,
             self.evidence,
-            {**self.quote, "size": 1_000, "space_bytes": 8_000_000},
+            self.quote,
             "key-over",
             now=1_000.0,
         )

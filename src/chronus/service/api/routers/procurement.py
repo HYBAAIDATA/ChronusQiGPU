@@ -129,6 +129,7 @@ async def reserve_route(
             live_evidence_hash(),
             body.quote,
             body.idempotency_key,
+            tenant_id=principal.tenant_id,
         )
     except Refusal as exc:
         raise _refusal_to_api(exc) from exc
@@ -151,7 +152,12 @@ async def admit_route(
 ) -> dict[str, Any]:
     book = _book_singleton()
     try:
-        result = admit(book, body.reservation_id, body.actual_size)
+        result = admit(
+            book,
+            body.reservation_id,
+            body.actual_size,
+            tenant_id=principal.tenant_id,
+        )
     except Refusal as exc:
         raise _refusal_to_api(exc) from exc
     _ledger_singleton().record(result, tenant_id=principal.tenant_id)

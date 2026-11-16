@@ -49,6 +49,7 @@ class Reservation:
     evidence_hash: str
     expires_at: float
     consumed: bool = False
+    tenant_id: str = ""
 
     def expired(self, now: float) -> bool:
         return now >= self.expires_at
@@ -112,6 +113,22 @@ def reserve(
     space = int(quote["space_bytes"])
     if size <= 0 or space <= 0:
         raise Refusal("invalid_quote", "size and space_bytes must be positive")
+    # Never trust client-supplied economics: recompute the envelope server-side.
+    tier = str(quote.get("tier"))
+    if tier not in PUBLIC_TIERS:
+        raise Refusal("invalid_quote", "unknown tier")
+    canonical = build_quote(
+        size,
+        tier=tier,
+        contract_version=contract_version,
+        evidence_hash=evidence_hash,
+    )
+    if (
+        space != canonical["space_bytes"]
+        or tier != canonical["tier"]
+        or size != canonical["size"]
+    ):
+        raise Refusal("invalid_quote", "quote does not match server envelope")
     if book.committed(now) + space > book.pool_bytes:
         raise Refusal(
             "pool_exhausted",
@@ -127,8 +144,9 @@ def reserve(
         contract_version=contract_version,
         evidence_hash=evidence_hash,
         expires_at=now + book.ttl_s,
+        tenant_id=tenant_id,
     )
-    book._by_key[idempotency_key] = reservation
+    book._by_key[scoped_key] = reservation
     book._live[reservation.id] = reservation
     LOG.info(
         "reserved %s tier=%s size=%d space=%d pool_source=%s",
@@ -146,11 +164,14 @@ def admit(
     reservation_id: str,
     actual_size: int,
     now: float | None = None,
+    *,
+    tenant_id: str = "",
 ) -> dict[str, Any]:
     now = time.time() if now is None else now
     book.sweep(now)
     reservation = book._live.get(reservation_id)
-    if reservation is None:
+    # A foreign tenant's reservation is indistinguishable from an unknown one.
+    if reservation is None or reservation.tenant_id != tenant_id:
         raise Refusal("unknown_reservation", reservation_id)
     if reservation.consumed:
         raise Refusal("already_consumed", reservation_id)
