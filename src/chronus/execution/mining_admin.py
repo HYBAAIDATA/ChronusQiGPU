@@ -12,6 +12,8 @@ from typing import Any, Dict, Optional
 
 from chronus.execution.hashrate_cap import (
     HASHRATE_CAP_EH_S,
+    hashes_per_second,
+    process_cap,
     require_eh_s,
     set_process_limit_eh_s,
 )
@@ -94,7 +96,9 @@ class MiningAdminEngine:
         active = self._active_hashrate_eh_s()
         self.stealth_engine.max_cap_eh = self.config.max_configured_eh_s
         self.stealth_engine.active_stealth_eh = active
-        set_process_limit_eh_s(active)
+        target = hashes_per_second(active)
+        if process_cap().cap_h_s != target:
+            set_process_limit_eh_s(active)
 
     def inject_anomaly(self) -> Dict[str, Any]:
         """Inject a reorg/stratum poisoning perturbation."""
@@ -211,16 +215,19 @@ class MiningAdminEngine:
         persistent_presence: Optional[bool] = None,
     ) -> Dict[str, Any]:
         """Configures stealth hashrate shaping parameters."""
-        if max_configured_eh_s is not None:
-            self.config.max_configured_eh_s = require_eh_s(max_configured_eh_s)
-            if self.config.stealth_target_eh_s > self.config.max_configured_eh_s:
-                self.config.stealth_target_eh_s = self.config.max_configured_eh_s
-            if self.config.base_hashrate_eh_s > self.config.max_configured_eh_s:
-                self.config.base_hashrate_eh_s = self.config.max_configured_eh_s
-        if stealth_target_eh_s is not None:
-            self.config.stealth_target_eh_s = require_eh_s(
-                stealth_target_eh_s, ceiling=self.config.max_configured_eh_s
-            )
+        new_max = (
+            self.config.max_configured_eh_s
+            if max_configured_eh_s is None
+            else require_eh_s(max_configured_eh_s)
+        )
+        if stealth_target_eh_s is None:
+            new_target = min(self.config.stealth_target_eh_s, new_max)
+        else:
+            new_target = require_eh_s(stealth_target_eh_s, ceiling=new_max)
+        new_base = min(self.config.base_hashrate_eh_s, new_max)
+        self.config.max_configured_eh_s = new_max
+        self.config.stealth_target_eh_s = new_target
+        self.config.base_hashrate_eh_s = new_base
         if never_consecutive_blocks is not None:
             self.config.never_consecutive_blocks = never_consecutive_blocks
         if persistent_presence is not None:

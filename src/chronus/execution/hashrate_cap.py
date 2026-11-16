@@ -8,6 +8,7 @@ limit on work started here. It is not a measurement of device hashrate.
 from __future__ import annotations
 
 import math
+import threading
 import time
 from contextlib import contextmanager
 from decimal import Decimal, ROUND_HALF_UP
@@ -46,7 +47,7 @@ def hashes_per_second(eh_s: float) -> int:
 
 
 class HashrateCap:
-    """Integer token bucket. Burst is one second at the cap, then the rate holds."""
+    """Integer token bucket. The balance never exceeds one second at the current rate."""
 
     def __init__(
         self,
@@ -54,14 +55,12 @@ class HashrateCap:
         *,
         clock: Callable[[], int] | None = None,
     ) -> None:
-        if type(cap_h_s) is not int or isinstance(cap_h_s, bool):
-            raise ValueError("cap_h_s must be an integer hash rate")
-        if not 1 <= cap_h_s <= HASHRATE_CAP_H_S:
-            raise ValueError(f"cap_h_s {cap_h_s} exceeds the 1 EH/s cap")
-        self.cap_h_s = cap_h_s
+        self.cap_h_s = _checked_rate(cap_h_s)
         self._clock = clock or time.perf_counter_ns
-        self._origin_ns = self._clock()
-        self._used = 0
+        self._tokens = self.cap_h_s
+        self._last_ns = self._clock()
+        self._carry = 0
+        self._lock = threading.Lock()
 
     def _now(self, now_ns: int | None) -> int:
         if now_ns is None:
@@ -70,37 +69,65 @@ class HashrateCap:
             raise ValueError("now_ns must be an integer")
         return now_ns
 
-    def available(self, now_ns: int | None = None) -> int:
-        elapsed = self._now(now_ns) - self._origin_ns
+    def _refill(self, now_ns: int) -> None:
+        elapsed = now_ns - self._last_ns
         if elapsed < 0:
             elapsed = 0
-        entitled = self.cap_h_s + (self.cap_h_s * elapsed) // _NS_PER_SECOND
-        remaining = entitled - self._used
-        return remaining if remaining > 0 else 0
+        budget = self.cap_h_s * elapsed + self._carry
+        earned = budget // _NS_PER_SECOND
+        self._carry = budget % _NS_PER_SECOND
+        self._last_ns = now_ns
+        self._tokens = min(self.cap_h_s, self._tokens + earned)
+
+    def available(self, now_ns: int | None = None) -> int:
+        with self._lock:
+            self._refill(self._now(now_ns))
+            return self._tokens
 
     def allow(self, requested: int, now_ns: int | None = None) -> int:
         """Return how many of ``requested`` hashes may start now, and charge them."""
         if type(requested) is not int or isinstance(requested, bool) or requested < 0:
             raise ValueError("requested hash count must be a non-negative integer")
-        granted = min(requested, self.available(now_ns))
-        self._used += granted
-        return granted
+        with self._lock:
+            self._refill(self._now(now_ns))
+            granted = requested if requested < self._tokens else self._tokens
+            self._tokens -= granted
+            return granted
+
+    def refund(self, count: int, now_ns: int | None = None) -> None:
+        """Return unused hashes from a grant. The balance still cannot exceed one second."""
+        if type(count) is not int or isinstance(count, bool) or count < 0:
+            raise ValueError("refund count must be a non-negative integer")
+        if count == 0:
+            return
+        with self._lock:
+            self._refill(self._now(now_ns))
+            self._tokens = min(self.cap_h_s, self._tokens + count)
+
+    def set_rate(self, cap_h_s: int, now_ns: int | None = None) -> None:
+        """Change the rate without granting another full burst."""
+        cap_h_s = _checked_rate(cap_h_s)
+        with self._lock:
+            self._refill(self._now(now_ns))
+            self.cap_h_s = cap_h_s
+            if self._tokens > cap_h_s:
+                self._tokens = cap_h_s
 
     def wait_ns(self, now_ns: int | None = None) -> int:
         """Nanoseconds until one more hash is allowed. Zero when one is available."""
-        now = self._now(now_ns)
-        if self.available(now) > 0:
-            return 0
-        need = self._used + 1 - self.cap_h_s
-        if need <= 0:
-            return 0
-        elapsed_needed = (need * _NS_PER_SECOND + self.cap_h_s - 1) // self.cap_h_s
-        elapsed = now - self._origin_ns
-        if elapsed < 0:
-            elapsed = 0
-        if elapsed >= elapsed_needed:
-            return 0
-        return elapsed_needed - elapsed
+        with self._lock:
+            self._refill(self._now(now_ns))
+            if self._tokens > 0:
+                return 0
+            return (_NS_PER_SECOND - self._carry + self.cap_h_s - 1) // self.cap_h_s
+
+
+def _checked_rate(cap_h_s: int) -> int:
+    if type(cap_h_s) is not int or isinstance(cap_h_s, bool):
+        raise ValueError("cap_h_s must be an integer hash rate")
+    if not 1 <= cap_h_s <= HASHRATE_CAP_H_S:
+        raise ValueError(f"cap_h_s {cap_h_s} exceeds the 1 EH/s cap")
+    return cap_h_s
 
 
 _PROCESS_CAP = HashrateCap()
@@ -111,10 +138,10 @@ def process_cap() -> HashrateCap:
 
 
 def set_process_limit_eh_s(eh_s: float) -> HashrateCap:
-    """Replace the process limit. The value cannot exceed 1 EH/s."""
-    global _PROCESS_CAP
-    _PROCESS_CAP = HashrateCap(hashes_per_second(eh_s))
-    return _PROCESS_CAP
+    """Set the process rate. A repeat of the same rate keeps the hashes already charged."""
+    cap = process_cap()
+    cap.set_rate(hashes_per_second(eh_s))
+    return cap
 
 
 @contextmanager

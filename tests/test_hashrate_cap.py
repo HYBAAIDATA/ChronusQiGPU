@@ -45,6 +45,45 @@ def test_bucket_grants_one_second_then_waits():
     assert cap.allow(4) == 4
 
 
+def test_idle_time_does_not_raise_the_burst_and_republish_does_not_refill():
+    now = {"ns": 0}
+    cap = HashrateCap(4, clock=lambda: now["ns"])
+    now["ns"] = 10 * 1_000_000_000
+    assert cap.allow(100) == 4
+    assert cap.allow(1) == 0
+    cap.set_rate(4)
+    assert cap.allow(1) == 0
+
+
+def test_an_early_hit_returns_the_unsearched_grant():
+    cap = HashrateCap(10, clock=lambda: 0)
+    with override_process_cap(cap):
+        hit = GeometricGaloisMiner().solve_header_range(bytes(76), (1 << 256) - 1, 0, 10)
+    assert hit.found is True
+    assert hit.iterations_evaluated == 1
+    assert cap.available() == 9
+
+
+def test_concurrent_callers_cannot_share_one_grant():
+    import threading
+
+    cap = HashrateCap(100, clock=lambda: 0)
+    grants: list[int] = []
+    lock = threading.Lock()
+
+    def take() -> None:
+        granted = cap.allow(100)
+        with lock:
+            grants.append(granted)
+
+    threads = [threading.Thread(target=take) for _ in range(8)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert sum(grants) == 100
+
+
 def test_galois_search_and_cpu_range_stop_at_the_cap():
     cap = HashrateCap(3, clock=lambda: 0)
     with override_process_cap(cap):

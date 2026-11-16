@@ -72,11 +72,19 @@ class TestMiningAdminEngine:
         assert res["base_hashrate_eh_s"] == 0.5
         assert res["effective_hashrate_eh_s"] == 0.5
         assert process_cap().cap_h_s == 5 * 10**17
-        with pytest.raises(ValueError):
-            admin_engine.configure_hashrate_and_capacity(base_hashrate_eh_s=950.0)
         assert res["active_warps"] == 128
         assert res["core_voltage_v"] == 1.05
         assert res["fan_speed_pct"] == 90.0
+        with pytest.raises(ValueError):
+            admin_engine.configure_hashrate_and_capacity(base_hashrate_eh_s=950.0)
+
+    def test_rejected_stealth_update_leaves_the_cap_unchanged(self, admin_engine):
+        with pytest.raises(ValueError):
+            admin_engine.configure_stealth(max_configured_eh_s=0.1, stealth_target_eh_s=0.5)
+        assert admin_engine.config.max_configured_eh_s == 1.0
+        assert admin_engine.config.stealth_target_eh_s == 1.0
+        assert admin_engine.config.base_hashrate_eh_s == 1.0
+        assert process_cap().cap_h_s == 10**18
 
     def test_engine_5_mode_intelligence_rebalancing(self, admin_engine):
         res = admin_engine.configure_intelligence_modes(

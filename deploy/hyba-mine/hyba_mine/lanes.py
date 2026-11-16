@@ -113,6 +113,13 @@ class ProcessLanes:
         return {"backend": self.name, "lanes": self.lanes, "processes": self.lanes}
 
     def search(self, header80: bytes, start: int, stop: int, target: int) -> List[int]:
+        from chronus.execution.hashrate_cap import process_cap
+
+        granted = process_cap().allow(max(0, stop - start))
+        self.last_span = granted
+        if granted <= 0:
+            return []
+        stop = start + granted
         chunks = split_range(start, stop, self.lanes)
         futures = [self._pool.submit(reference_scan, bytes(header80), a, b, target) for a, b in chunks]
         hits: List[int] = []
@@ -147,7 +154,9 @@ class OpenCLLanes:
         return {"backend": self.name, "lanes": self.lanes, "device": self.device}
 
     def search(self, header80: bytes, start: int, stop: int, target: int) -> List[int]:
-        return self._backend.search(bytes(header80), start, stop, target)
+        matches = self._backend.search(bytes(header80), start, stop, target)
+        self.last_span = self._backend._last_span
+        return matches
 
     def close(self) -> None:
         return None

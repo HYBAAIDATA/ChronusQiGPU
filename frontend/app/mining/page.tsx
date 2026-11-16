@@ -88,6 +88,10 @@ export default function MiningDashboardPage() {
         if (typeof data.base_hashrate_eh_s === 'number') {
           setBaseHashrate(Math.min(data.base_hashrate_eh_s, cap));
         }
+        const throttle = data.patroclus?.stealth_target_eh_s;
+        if (typeof throttle === 'number') {
+          setStealthActiveEhs(Math.min(throttle, cap));
+        }
         if (typeof data.active_warps === 'number') setActiveWarps(data.active_warps);
         if (typeof data.core_voltage_v === 'number') setCoreVoltage(data.core_voltage_v);
         if (typeof data.fan_speed_pct === 'number') setFanSpeed(data.fan_speed_pct);
@@ -119,7 +123,9 @@ export default function MiningDashboardPage() {
 
   // No synthetic obstruction — system is in harmonic consensus
   const h1Obstruction = false
-  const effectiveHashrate = Number(Math.min(baseHashrate, hashrateCap).toFixed(1));
+  const effectiveHashrate = Number(
+    Math.min(baseHashrate, hashrateCap, stealthActiveEhs).toFixed(1),
+  );
 
   // Admin Actions with API Integration
   async function handleToggleMining() {
