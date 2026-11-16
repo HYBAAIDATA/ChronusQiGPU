@@ -14,6 +14,7 @@ The previous dossier claimed “100% PRODUCTION QUALIFIED” from an unrelated h
 ## Observed blockers
 
 - The current main baseline had reproducible source-level failures in package collection, hygiene, qualification import paths and test fixtures. PR #136 carries the fixes on top of main, including the missing Geodesic evidence packet, clean-checkout TURING import path, secure tenant-capacity test credentials, rollback fixture setup, claim-token allowlisting and the HYBA Mine/TURING installation seam.
+- The frontend lockfile also carried 20 pnpm advisories through the Tailwind/PostCSS transitive graph (including one critical). PR #136 refreshes the locked graph; local `pnpm audit` now reports zero advisories, the Next production build passes, and all four Ciaas acceptance tests pass.
 - Local exact-current verification on the review checkout passed `2340 passed, 38 skipped, 1 xfailed` (Python 3.12.14), with the focused package, acceleration, storage, build, Bandit, purity and mutation checks passing. This is local evidence, not GitHub-hosted CI evidence.
 - The PR's GitHub Actions runs fail before retaining usable job steps/logs; sampled log downloads return Azure `BlobNotFound`. That is recorded as infrastructure unavailable, not as a passing release gate.
 - No physical GPU/device certificate, reference-vs-device differential, sustained thermal/soak run, failure/recovery record, or literal live-pool acknowledgement is present.

@@ -51,6 +51,9 @@ main baseline without weakening the fail-closed release boundary:
 - Test fixtures now authenticate tenant-capacity reads, create rollback roots,
   and keep the existing security checks intact. Unused imports and the exact
   mathematical claim-token policy are corrected.
+- The frontend dependency graph is refreshed to remove the audited Tailwind /
+  PostCSS transitive advisories (local `pnpm audit`: zero findings), and the
+  acceptance harness starts the checked-in Next binary directly.
 
 Local exact-current evidence is `2340 passed, 38 skipped, 1 xfailed` on Python
 3.12.14, plus the focused package, acceleration, storage, build, Bandit,
