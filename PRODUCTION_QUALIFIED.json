@@ -1,6 +1,6 @@
 {
   "status": "NOT_QUALIFIED",
-  "timestamp": "2026-11-16 09:58:27 UTC",
+  "timestamp": "2026-11-16 10:06:54 UTC",
   "local_ci_checks": "PASS",
   "local_gate_status": "PASS",
   "external_release_evidence": {
@@ -43,7 +43,7 @@
     "stale_share_rate": null
   },
   "provenance": {
-    "git_sha": "1e26dc3244fe7c5f60e70b72856652832b43feca",
+    "git_sha": "50187b18eff41d8388ed1b385823169af810020e",
     "python": "3.12.14",
     "lock_hash": "0f824bee21844d703b46314aac95d0cfa3957bf338d843d55ed24bff64a9fa8c"
   },

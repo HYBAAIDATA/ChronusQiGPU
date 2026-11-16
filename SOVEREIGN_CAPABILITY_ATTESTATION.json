@@ -5,13 +5,13 @@
   "status": "SOFTWARE_EVIDENCE_PASS",
   "production_qualified": false,
   "external_certification": false,
-  "timestamp_utc": "2026-11-16 09:58:27 UTC",
+  "timestamp_utc": "2026-11-16 10:06:54 UTC",
   "evaluation_authority": "repository self-test; not an external authority",
   "legacy_filename_notice": "SOVEREIGN_CAPABILITY_ATTESTATION.json is retained for compatibility only.",
   "pillars": {
     "al_haras": {
       "status": "PASS",
-      "latency_us": 99226.71,
+      "latency_us": 84497.19,
       "invariants": {
         "sheaf_global_section_exact": true,
         "sheaf_disagreement_detected_exact": true,
@@ -30,7 +30,7 @@
     },
     "theseus_ovid": {
       "status": "PASS",
-      "latency_us": 5519.97,
+      "latency_us": 3761.86,
       "invariants": {
         "theseus_lossless_roundtrip": true,
         "restart_recovery_roundtrip": true,
@@ -41,7 +41,7 @@
     },
     "chronus_stratum": {
       "status": "PASS",
-      "latency_us": 201.03,
+      "latency_us": 113.93,
       "invariants": {
         "f257_galois_phases": true,
         "zeckendorf_conservation": true,
@@ -53,7 +53,7 @@
     },
     "legacy_millennium_modules": {
       "status": "PASS",
-      "latency_us": 552.57,
+      "latency_us": 485.22,
       "exact_checks_passed": {
         "ollivier_ricci_curvature_certified": true,
         "hodge_decomposition_identities": true,
@@ -66,7 +66,7 @@
     },
     "toe_quantum": {
       "status": "PASS",
-      "latency_us": 11.29,
+      "latency_us": 11.53,
       "invariants": {
         "f257_bell_state_evolution": true,
         "exact_field_hadamard": true,
@@ -94,7 +94,7 @@
   "content_integrity": {
     "algorithm": "SHA-256",
     "domain": "CHRONUS_SOFTWARE_EVIDENCE_V2",
-    "content_sha256": "0789b691325d3621ab1a112ff57076a5f73e7ca21c94899b2cfbd0b5decbce83",
+    "content_sha256": "7a7cbe28726233ce806220174b767c707092651c0dd0768e2d00cdab7e64fe5d",
     "keyed_signature": false,
     "external_attestation": false
   }
