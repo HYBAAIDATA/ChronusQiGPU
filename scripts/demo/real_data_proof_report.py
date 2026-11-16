@@ -38,9 +38,12 @@ def verified_report(evidence: dict) -> str:
         raise ValueError('unexpected external attestation or hardware assertion')
 
     safe_rows = []
+    source_classes = set()
     for entry in entries:
-        if not isinstance(entry, dict) or entry.get('source_class') != 'OPERATOR_DECLARED_PRODUCTION':
-            raise ValueError('customer proof requires real-input declarations, not test fixtures')
+        if not isinstance(entry, dict) or entry.get('source_class') not in {
+                'OPERATOR_DECLARED_PRODUCTION', 'PUBLIC_OBSERVED_DATASET'}:
+            raise ValueError('proof requires declared observational inputs, never test fixtures')
+        source_classes.add(entry['source_class'])
         sha, size = entry.get('source_sha256'), entry.get('input_bytes')
         if not isinstance(sha, str) or not HEX64.fullmatch(sha) or type(size) is not int or size < 1:
             raise ValueError('invalid source identity or size')
@@ -60,6 +63,14 @@ def verified_report(evidence: dict) -> str:
             raise ValueError('unknown/unvalidated workload operation')
         safe_rows.append(f'| `{sha[:16]}…` | {size:,} | {kind} | PASS (local readback) |')
 
+    if len(source_classes) != 1:
+        raise ValueError('mixed customer and public evidence must be reported separately')
+    is_public = 'PUBLIC_OBSERVED_DATASET' in source_classes
+    header = ('# Chronus public-data benchmark demonstration — internal review'
+              if is_public else '# Chronus data-service proof — internal customer review')
+    data_class = ('publicly sourced observed dataset, not customer production data'
+                  if is_public else 'operator-declared local software execution')
+
     commit = evidence.get('git_commit')
     if not isinstance(commit, str) or not re.fullmatch('[0-9a-f]{40,64}', commit):
         commit = 'UNAVAILABLE'
@@ -68,12 +79,12 @@ def verified_report(evidence: dict) -> str:
         timestamp = 'UNAVAILABLE'
     total_bytes = sum(entry['input_bytes'] for entry in entries)
     return '\n'.join([
-        '# Chronus data-service proof — internal customer review',
+        header,
         '',
         f'- Source commit: `{commit}`',
         f'- Local measurement timestamp: `{timestamp}`',
         f'- Inputs declared by operator: **{len(entries)}** ({total_bytes:,} bytes)',
-        '- Evidence classification: **operator-declared local software execution**',
+        f'- Evidence classification: **{data_class}**',
         '- Independent source authentication: **UNVERIFIED**',
         '- Physical device/backend qualification: **UNVERIFIED**',
         '- Production/release qualification: **UNVERIFIED**',
@@ -91,7 +102,7 @@ def verified_report(evidence: dict) -> str:
         '',
         '## What this proves and does not prove',
         '',
-        'This summary is derived from a recorded local software run with operator-declared inputs.',
+        'This summary is derived from a recorded local software run using provenance-labelled inputs.',
         'It is **not** independent attestation of dataset rights, physical durability, cloud deployment,',
         'tenant access controls, service availability, hardware advantage, net compression, or savings.',
         'It is **not** a customer acceptance certificate or evidence of an approved public release.',
