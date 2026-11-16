@@ -28,7 +28,10 @@ interface ModeWeights {
 
 export default function MiningDashboardPage() {
   // Mining Engine Administration State
-  const [isRunning, setIsRunning] = useState<boolean>(true);
+  const [isRunning, setIsRunning] = useState<boolean>(false);
+  const [backendConnected, setBackendConnected] = useState<boolean>(false);
+  const [operatorJwt, setOperatorJwt] = useState('');
+  const [controlError, setControlError] = useState<string | null>(null);
   const [hashrateCap, setHashrateCap] = useState<number>(1);
   const baseEdited = useRef(false);
   const throttleEdited = useRef(false);
@@ -78,13 +81,21 @@ export default function MiningDashboardPage() {
   // Blockchain Resonance Horizon
   const [blockHistoryWindow, setBlockHistoryWindow] = useState<number>(256);
 
-  // Sync state from backend on mount
+  // Only an authenticated backend result may establish live control state.
   useEffect(() => {
     let mounted = true;
-    ChronusAPIClient.getMiningStatus()
+    setBackendConnected(false);
+    setIsRunning(false);
+    if (!operatorJwt.trim()) {
+      setControlError('Verified system-admin operator JWT required for mining controls.');
+      return () => { mounted = false; };
+    }
+    ChronusAPIClient.getMiningStatus(operatorJwt.trim())
       .then((data) => {
-        if (!mounted || !data) return;
-        if (typeof data.status === 'string') setIsRunning(data.status === 'RUNNING');
+        if (!mounted || !data || typeof data.status !== 'string') return;
+        setBackendConnected(true);
+        setControlError(null);
+        setIsRunning(data.status === 'RUNNING');
         const cap = typeof data.hashrate_cap_eh_s === 'number' ? data.hashrate_cap_eh_s : 1;
         setHashrateCap(cap);
         if (!baseEdited.current && typeof data.base_hashrate_eh_s === 'number') {
@@ -99,12 +110,26 @@ export default function MiningDashboardPage() {
         if (typeof data.fan_speed_pct === 'number') setFanSpeed(data.fan_speed_pct);
       })
       .catch(() => {
-        // Fallback to local default parameters when API is offline
+        if (!mounted) return;
+        setBackendConnected(false);
+        setIsRunning(false);
+        setControlError('Mining status unavailable or operator access denied; no control was applied.');
       });
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    return () => { mounted = false; };
+  }, [operatorJwt]);
+
+  function requireOperatorJwt(): string {
+    if (!operatorJwt.trim() || !backendConnected) {
+      throw new Error('Verified operator authentication and backend status required.');
+    }
+    return operatorJwt.trim();
+  }
+
+  function denyControl() {
+    setBackendConnected(false);
+    setIsRunning(false);
+    setControlError('Mining action not confirmed by backend. Reauthenticate before retrying.');
+  }
 
   // Normalization of intelligence modes
   const totalWeight = weights.predictive + weights.causal + weights.counterfactual + weights.topological + weights.geometric || 1;
@@ -130,75 +155,86 @@ export default function MiningDashboardPage() {
     .replace(/0+$/, "")
     .replace(/\.$/, "");
 
-  // Admin Actions with API Integration
+  // No optimistic operational state; update only after confirmed backend responses.
   async function handleToggleMining() {
-    const nextState = !isRunning;
-    setIsRunning(nextState);
     try {
-      if (nextState) {
-        await ChronusAPIClient.startMining(baseHashrate, activeWarps);
-      } else {
-        await ChronusAPIClient.stopMining();
+      const jwt = requireOperatorJwt();
+      const result = isRunning
+        ? await ChronusAPIClient.stopMining(jwt)
+        : await ChronusAPIClient.startMining(baseHashrate, activeWarps, jwt);
+      if (result?.status !== (isRunning ? 'STOPPED' : 'RUNNING')) {
+        denyControl();
+        return;
       }
+      setIsRunning(result.status === 'RUNNING');
+      setControlError(null);
     } catch {
-      // Local state already updated
+      denyControl();
     }
   }
 
   async function handleUpdateCapacity(newBase: number, newWarps: number, newV: number, newFan: number) {
-    baseEdited.current = true;
-    setBaseHashrate(newBase);
-    setActiveWarps(newWarps);
-    setCoreVoltage(newV);
-    setFanSpeed(newFan);
     try {
-      await ChronusAPIClient.configureMiningCapacity(newBase, newWarps, newV, newFan);
+      await ChronusAPIClient.configureMiningCapacity(
+        newBase, newWarps, newV, newFan, requireOperatorJwt()
+      );
+      baseEdited.current = true;
+      setBaseHashrate(newBase);
+      setActiveWarps(newWarps);
+      setCoreVoltage(newV);
+      setFanSpeed(newFan);
+      setControlError(null);
     } catch {
-      // Retain local state
+      denyControl();
     }
   }
 
   async function handleUpdateWeights(newWeights: ModeWeights) {
-    setWeights(newWeights);
     try {
       await ChronusAPIClient.configureMiningIntelligence(
         newWeights.predictive,
         newWeights.causal,
         newWeights.counterfactual,
         newWeights.topological,
-        newWeights.geometric
+        newWeights.geometric,
+        requireOperatorJwt()
       );
+      setWeights(newWeights);
+      setControlError(null);
     } catch {
-      // Retain local state
+      denyControl();
     }
   }
 
   async function handleIntervention(type: string) {
-    setActiveIntervention(type);
-    if (type === 'UNDERVOLT_1_10V') setCoreVoltage(1.10);
-    if (type === 'FAN_100_PCT') setFanSpeed(100);
     try {
-      await ChronusAPIClient.applyCausalIntervention(type);
+      await ChronusAPIClient.applyCausalIntervention(type, requireOperatorJwt());
+      setActiveIntervention(type);
+      if (type === 'UNDERVOLT_1_10V') setCoreVoltage(1.10);
+      if (type === 'FAN_100_PCT') setFanSpeed(100);
+      setControlError(null);
     } catch {
-      // Retain local state
+      denyControl();
     }
   }
 
   async function handleUpdateStealth(maxCap?: number, targetEhs?: number, consecutive?: boolean, presence?: boolean) {
-    if (targetEhs !== undefined) throttleEdited.current = true;
-    if (maxCap !== undefined) setMaxConfiguredEhs(maxCap);
-    if (targetEhs !== undefined) setStealthActiveEhs(targetEhs);
-    if (consecutive !== undefined) setNeverConsecutive(consecutive);
-    if (presence !== undefined) setPersistentPresence(presence);
     try {
       await ChronusAPIClient.configureMiningStealth(
         maxCap,
         targetEhs ?? stealthActiveEhs,
         consecutive ?? neverConsecutive,
-        presence ?? persistentPresence
+        presence ?? persistentPresence,
+        requireOperatorJwt()
       );
+      if (targetEhs !== undefined) throttleEdited.current = true;
+      if (maxCap !== undefined) setMaxConfiguredEhs(maxCap);
+      if (targetEhs !== undefined) setStealthActiveEhs(targetEhs);
+      if (consecutive !== undefined) setNeverConsecutive(consecutive);
+      if (presence !== undefined) setPersistentPresence(presence);
+      setControlError(null);
     } catch {
-      // Retain local state
+      denyControl();
     }
   }
 
