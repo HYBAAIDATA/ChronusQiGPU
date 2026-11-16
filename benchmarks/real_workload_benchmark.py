@@ -7,6 +7,7 @@ A successful local integrity result is not production or hardware qualification.
 from __future__ import annotations
 
 import argparse
+import ast
 from datetime import datetime, timezone
 import hashlib
 import io
@@ -23,6 +24,7 @@ import time
 import numpy as np
 import yaml
 
+from chronus.config import runtime_bounds
 from chronus.pulvini import fold_verified, unfold_verified
 from chronus.tensor.folded_state import ExactFoldState
 from chronus.tensor.geodesic import GeodesicScheduler, MetricTensor, PhiTensorCore
@@ -68,7 +70,10 @@ def discover(manifest_path: Path, *, max_bytes: int = MAX_BYTES) -> list[dict]:
     if max_bytes < 1 or max_bytes > MAX_BYTES:
         raise ValueError("max_bytes outside bounded policy")
     manifest_path = Path(manifest_path).resolve(strict=True)
-    document = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    try:
+        document = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        raise ValueError("invalid YAML source manifest") from exc
     if not isinstance(document, dict) or document.get("schema") != MANIFEST_SCHEMA:
         raise ValueError("unsupported data manifest schema")
     entries = document.get("data_sources")
@@ -101,8 +106,9 @@ def discover(manifest_path: Path, *, max_bytes: int = MAX_BYTES) -> list[dict]:
                 kind == "snapshot" and path.suffix.lower() not in SNAPSHOT_EXTS):
             raise ValueError(f"no safe registered decoder for {kind}: {path.suffix}")
         size = path.stat().st_size
-        if not 0 < size <= max_bytes:
-            raise ValueError(f"source outside byte policy: {path.name}")
+        custody_max = runtime_bounds()["max_payload_bytes"]
+        if not 0 < size <= max_bytes or size + (size % 2) > custody_max:
+            raise ValueError(f"source exceeds input or effective OVID/THESEUS custody limit: {path.name}")
         discovered.append({
             "path": path, "kind": kind, "sha256": digest,
             "size_bytes": size, "source_class": source_class,
@@ -124,9 +130,55 @@ def _read_verified(source: dict) -> bytes:
     return payload
 
 
+
+def _load_bounded_npy(payload: bytes) -> np.ndarray:
+    """Validate an NPY header *before* NumPy can allocate decoded storage."""
+    if len(payload) < 10 or payload[:6] != b"\\x93NUMPY":
+        raise ValueError("invalid NPY magic")
+    version = payload[6]
+    if version == 1:
+        offset, length_bytes = 10, 2
+    elif version in (2, 3):
+        offset, length_bytes = 12, 4
+    else:
+        raise ValueError("unsupported NPY version")
+    if len(payload) < offset:
+        raise ValueError("truncated NPY header")
+    header_length = int.from_bytes(payload[8:8 + length_bytes], "little")
+    if header_length < 1 or header_length > 4096 or offset + header_length > len(payload):
+        raise ValueError("NPY header outside bounded policy")
+    encoding = "utf-8" if version == 3 else "latin1"
+    try:
+        header = ast.literal_eval(payload[offset:offset + header_length].decode(encoding))
+    except (ValueError, SyntaxError, UnicodeError, TypeError) as exc:
+        raise ValueError("malformed NPY header") from exc
+    if not isinstance(header, dict) or set(header) != {"descr", "fortran_order", "shape"}:
+        raise ValueError("invalid NPY metadata keys")
+    if type(header["fortran_order"]) is not bool:
+        raise ValueError("invalid NPY array order")
+    shape = header["shape"]
+    if not isinstance(shape, tuple) or len(shape) > 8 or any(
+            type(dim) is not int or dim < 0 or dim > 1_000_000 for dim in shape):
+        raise ValueError("NPY shape outside bounded policy")
+    count = math.prod(shape)
+    if not 1 <= count <= 1_000_000:
+        raise ValueError("NPY element count outside bounded policy")
+    try:
+        dtype = np.dtype(header["descr"])
+    except (TypeError, ValueError) as exc:
+        raise ValueError("invalid NPY dtype") from exc
+    if dtype.kind not in "iufc" or dtype.hasobject or dtype.fields is not None:
+        raise ValueError("unsafe or unsupported NPY dtype")
+    if offset + header_length + count * dtype.itemsize != len(payload):
+        raise ValueError("NPY declared shape does not match payload length")
+    array = np.load(io.BytesIO(payload), allow_pickle=False)
+    if not isinstance(array, np.ndarray) or array.shape != shape or array.dtype != dtype:
+        raise ValueError("decoded NPY contract mismatch")
+    return array
+
 def _tensor_workload(payload: bytes, *, depth: int) -> dict:
     try:
-        array = np.load(io.BytesIO(payload), allow_pickle=False)
+        array = _load_bounded_npy(payload)
     except (ValueError, TypeError, OSError) as exc:
         raise ValueError("invalid or unsafe NumPy tensor input") from exc
     if not isinstance(array, np.ndarray) or array.dtype.kind not in "iufc":
@@ -155,14 +207,20 @@ def _tensor_workload(payload: bytes, *, depth: int) -> dict:
         metric = MetricTensor.euclidean(4)
         scheduler = GeodesicScheduler()
         started = time.perf_counter_ns()
-        scheduler.submit((a, b), metric.distance(a, b))
-        selected_a, selected_b = scheduler.pop()
-        path = metric.walk_manifold(selected_a, selected_b, 8)
-        geo_ns = time.perf_counter_ns() - started
-        if not np.allclose(path[0], a, rtol=0, atol=1e-12) or not np.allclose(path[-1], b, rtol=0, atol=1e-12):
-            raise ValueError("geodesic endpoints are not preserved")
-        geodesic = {"metric": "euclidean-reference-4d", "steps": 8,
-                    "call_ns": geo_ns, "endpoint_verified": True}
+        distance = metric.distance(a, b)
+        if not math.isfinite(distance):
+            geodesic = {"status": "UNAVAILABLE",
+                        "reason": "Euclidean metric overflow for finite source values",
+                        "metric": "euclidean-reference-4d"}
+        else:
+            scheduler.submit((a, b), distance)
+            selected_a, selected_b = scheduler.pop()
+            path = metric.walk_manifold(selected_a, selected_b, 8)
+            geo_ns = time.perf_counter_ns() - started
+            if not np.allclose(path[0], a, rtol=0, atol=1e-12) or not np.allclose(path[-1], b, rtol=0, atol=1e-12):
+                raise ValueError("geodesic endpoints are not preserved")
+            geodesic = {"status": "VERIFIED", "metric": "euclidean-reference-4d",
+                        "steps": 8, "call_ns": geo_ns, "endpoint_verified": True}
 
     started = time.perf_counter_ns()
     state, receipt = fold_verified(array, depth=depth, max_elements=1_000_000)
@@ -171,8 +229,9 @@ def _tensor_workload(payload: bytes, *, depth: int) -> dict:
     restored = unfold_verified(state, receipt=receipt)
     unfold_ns = time.perf_counter_ns() - started
     canonical = np.asarray(array, dtype=np.complex128 if np.iscomplexobj(array) else np.float64)
-    if not np.allclose(restored, canonical, rtol=0, atol=1e-12):
-        raise ValueError("PULVINI reconstructed tensor exceeds 1e-12 absolute tolerance")
+    if (not np.all(np.isfinite(restored)) or
+            not np.allclose(restored, canonical, rtol=1e-12, atol=1e-12)):
+        raise ValueError("PULVINI reconstructed tensor exceeds recorded numerical tolerance")
     return {
         "operation": "tensor_reference_add_and_pulvini",
         "shape": list(array.shape), "dtype": str(array.dtype),
