@@ -58,6 +58,12 @@ signed contract to **THESEUS** via `DurableTheseusService`, versioned
 SHA-256 public-key fingerprint, Ed25519 verification and strict sequence and
 predecessor checks.
 
+Each signed-receipt envelope also contains a second **domain-separated Ed25519
+signature** over tenant ID, stream ID and receipt digest. Recovery verifies that
+binding against the pinned key and rejects copied envelopes whose stream
+identifier was changed, plus missing signature bindings. See
+`test_signed_envelope_cannot_be_replayed_into_another_stream`.
+
 It requires the trusted public key to be provided by an independent
 authenticated key source, not inferred from the stored receipt. Private keys
 are **never** stored in THESEUS by this module. Each append is committed to
