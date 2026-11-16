@@ -14,7 +14,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from fractions import Fraction
 
-from chronus.geodesic.dual_120cell import Point4, build_dual_120_cell
+from chronus.geodesic.dual_120cell import build_dual_120_cell
 
 
 @dataclass(frozen=True)
