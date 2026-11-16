@@ -279,9 +279,19 @@ def run_benchmark(manifest: Path, custody_db: Path, *, depth: int = 4,
         raise ValueError("depth must be 0..32")
     if sources is None:
         sources = discover(manifest, max_bytes=max_bytes)
+    if not isinstance(sources, list) or not sources:
+        raise ValueError("no operator-declared workload files; refusing custody creation")
+    if any(not isinstance(source, dict) or not isinstance(source.get("path"), Path)
+           for source in sources):
+        raise ValueError("sources require a validated discovered file path")
     custody_db = Path(custody_db).resolve()
-    if custody_db in {source["path"] for source in sources}:
-        raise ValueError("custody database must not overwrite a source")
+    protected = [Path(manifest).resolve(strict=True)] + [s["path"] for s in sources]
+    sqlite_family = (custody_db, Path(str(custody_db) + "-wal"),
+                     Path(str(custody_db) + "-shm"), Path(str(custody_db) + "-journal"))
+    for path in sqlite_family:
+        if path in protected or (
+                path.exists() and any(path.samefile(source) for source in protected)):
+            raise ValueError("custody database or SQLite sidecar aliases a protected source")
     validated = [(source, _read_verified(source)) for source in sources]
     # Complete all deterministic validation and decoding before opening custody;
     # a bad later asset must never persist data from an earlier asset.
