@@ -57,3 +57,109 @@ Other local measured data: the restored HERMES FoldState addition (including com
 6. The additional Notion phases ZIP remains not inspected; this registry is broad but not all workspace pages or all bytes.
 
 No protected PULVINI formal source, mining acceptance authority, TURING, or canonical ownership was changed by this PR.
+
+---
+
+## Additional rolling artifacts recovered and cross-checked — 16 November 2026
+
+The November **owner handoff**, discovered in the user's ChatGPT Library rather
+than assumed absent, was opened and SHA-256 verified:
+
+- `HYBA_PULVINI_V3_OWNER_RESEARCH_HANDOFF_20261115.zip` SHA-256:
+  `561d0b9cec7aa4ae80117f9267f44abc53328ecfe46445c51123261e846032cc`.
+- Its protected formal, interop, package `__init__`, research-lock test,
+  source lock verifier, and research guard workflow have **exact Git blob IDs
+  equal to main**. They were already integrated; this PR does **not** overwrite
+  or duplicate those paths.
+- The handoff's `OWNER_CLOSEOUT.md` cites [PR #97](https://github.com/HYBAAIDATA/ChronusQiGPU/pull/97)
+  and [issue #98](https://github.com/HYBAAIDATA/ChronusQiGPU/issues/98):
+  earlier research seams were not the full enterprise migration. CODEOWNERS
+  and a source SHA guard alone do not constitute immutable branch rulesets.
+
+Additional source fingerprints:
+- July Geodesic extended ZIP: SHA-256
+  `43d4d3a39fd13fb525bf3acf0b822af1ef55c6b801616aeb9bf326a76dcfa44b`;
+  3 original source/test files; archived tests 115/115, **historical**.
+- Chronos iGPU v3.10 resident-projection ZIP: SHA-256
+  `33f807d0a12e9b7f72f7a84c29258974dad0db70031c011db5fbc7251601b428`;
+  357 entries including older tensor and execution evidence. This is a
+  separately dated lineage, not automatically modern ChronusQiGPU main.
+- The Notion [Artifact Repository](https://app.notion.com/p/2539733ebb7848c9a84ae4e3d7429822)
+  includes `pulvini_v3_phases_11_13_14_20260724.zip`: reference and signed
+  source location resolved, **original bytes not inspected**, no merge asserted.
+
+## Further code elevation now in PR #138
+
+- `src/chronus/pulvini/operator_calculus.py` reintroduces bounded full-state
+  fold matrices, induced metric, condition certificates, linear operator lift
+  and action verification from the 24 July Enterprise `operator_calculus.py`,
+  delegating to the locked original `PhiRecursiveOperator`. It rejects
+  nonrepresentable integer inputs and nonfinite/overflowed lifts.
+- `src/chronus/pulvini/linear_arithmetic.py` performs genuine linear
+  combinations on **both the folded and retained-kernel channels**. It does
+  not reimplement the formal fold. Every input is verified before use and the
+  result is checked against a separately evaluated NumPy reference. **This is
+  CPU/NumPy reference folded-channel arithmetic, not a GPU or cost advantage.**
+- `FoldedTensorExecutor.execute_folded_linear` exposes the new route without
+  replacing old array-dispatch semantics. The complete state remains retained.
+- Precision regression: NumPy 2.3 can classify int64→float64 as a safe dtype
+  cast even when individual values above 2**53 lose bits. The new update path
+  checks each converted value by round-trip to its original dtype, and lift
+  preflights numeric representability.
+- Custody provenance: the source SHA embedded in a reconstructible fold is
+  **unsigned operator-declared metadata**, not independent source attestation.
+  Both encoded artifacts and decoded operands now expose the unverified status.
+
+The locally reconstructed equivalent modules, including new calculus and
+linear operation tests, passed **69/69 isolated tests**. This is not a
+complete exact-current-repository CI pass or a live THESEUS restart certificate.
+
+### Second real-public-data measurement (same algorithms; different local run)
+
+The same SHA-pinned UCI observed arrays were rerun on the isolated CPU worker,
+using a 64-element selected read, 61 alternating measurements and depth 4.
+Index compilation/full verification is recorded separately.
+
+| Dataset | Index compile | Selected median | Full reconstruction + slice | Complete retained/original |
+| --- | ---: | ---: | ---: | ---: |
+| UCI wine | 0.232 ms | 113.287 µs | 97.684 µs | 1.527× |
+| UCI breast-cancer | 0.356 ms | 161.108 µs | 258.752 µs | 1.528× |
+| UCI digits | 1.254 ms | 119.186 µs | 1,095.766 µs | 1.528× |
+
+The wine regression is retained. No general performance superiority is
+claimed, and index construction, input validation, full retained kernels,
+storage and custody are part of true total cost. Timings are single-host
+microbenchmarks and must not be presented as hardware performance evidence.
+
+## Historical Enterprise V3 module-to-authority reconciliation
+
+These 19 historical package files and their present disposition have been
+compared. `REQUIRES CONTRACT MATCH` is not an assertion that modern code
+lacks all corresponding functionality.
+
+| July module | Modern owner / relevant area | Disposition this PR |
+| --- | --- | --- |
+| `formal.py` | PULVINI | SHA-identical protected implementation; preserved |
+| `operator_calculus.py` | PULVINI | Bounded full-state matrix/action subset implemented and tested |
+| `ledger.py` | THESEUS | Do not install competing ledger; canonical Triad custody adapter implemented |
+| `service.py` | CHRONUS service + OVID | Complete-fold codec adapter implemented; historical API not yet mapped |
+| `backends.py` | CHRONUS tensor hardware | REQUIRES CONTRACT MATCH; no physical device measurement |
+| `neural.py` | CHRONUS tensor / optional PyTorch | REQUIRES CONTRACT MATCH to folded inference and adjoint gradient |
+| `cloud.py` | CHRONUS service | REQUIRES CONTRACT MATCH to deployed connectors and IAM |
+| `api.py` | CHRONUS service | REQUIRES CONTRACT MATCH to existing routers, not duplicate API |
+| `verifier.py` | PULVINI / AL HARAS evidence | Receipt/reconstruction checks implemented; attestation unverified |
+| `gap_closure.py` | CHRONUS tensor / TURING | REQUIRES CONTRACT MATCH to exact MPS/MPO/TT paths |
+| `formal_contracts.py` | PULVINI | Current source-lock tests + matrix calculus, not entire old suite |
+| `reproducibility.py` | CHRONUS benchmarks/Theseus | Local proof provenance added; CI/deployment unverified |
+| `quantum_formalism.py` | TURING independent VQC | Historical only, **do not** import into Chronus quantum identity |
+| `benchmarking.py` | CHRONUS evaluation | Real UCI benchmarks, no old numerical claim promotion |
+| `regenerative.py` | SALAMANDER | Historical reference; **do not** steal self-healing authority |
+| `pulvini_objects.py` | PULVINI representation | REQUIRES CONTRACT MATCH for remaining object-level semantics |
+| `extended_benchmarks.py` | CHRONUS evaluation | Public-data slices measured, not complete archival coverage |
+| `hamiltonian.py` | CHRONUS tensor / TURING scope | REQUIRES CONTRACT MATCH to modern Hamiltonian implementation |
+| `__init__.py` | PULVINI | Protected existing interface preserved |
+
+**Scope boundary:** The table records actual ported components and explicit
+unmapped contracts. It does not declare the remaining enterprise components
+done, does not assume a 357-file historic archive should overwrite modern
+source, and does not convert local tests into production qualification.
