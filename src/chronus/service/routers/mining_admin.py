@@ -160,31 +160,45 @@ async def configure_stealth(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
 
-@router.post("/patroclus/simulate", summary="Execute Master End-to-End Stratum handshake & share simulation")
+@router.post(
+    "/patroclus/simulate",
+    summary="Run a local-loopback Stratum rehearsal (NOT live pool acceptance)",
+)
 async def simulate_patroclus_session(
     req: SimulatePatroclusRequest,
     tenant_id: str = Depends(get_current_tenant),
 ) -> Dict[str, Any]:
+    """Rehearse the fixed local fixtures; never report external pool acceptance.
+
+    The underlying runner binds 127.0.0.1 fixture servers. Its responses do
+    not qualify a deployment, certify a device or prove live mining shares.
+    """
+    if req.pools is not None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Only the fixed local-loopback fixtures are supported; omit pools.",
+        )
+
     from chronus.execution.master_e2e_engine import execute_master_end_to_end
+
     try:
         await execute_master_end_to_end()
-        return {
-            "status": "SUCCESS",
-            "message": "All 4 Stratum pool sessions (ViaBTC, Braiins, NiceHash, CKPool) executed and accepted 100%.",
-            "decision_points": [
-                {"point": "System Invariants I17-I21", "status": "VERIFIED"},
-                {"point": "Classical PCI Purity (is_quantum = False)", "status": "VERIFIED"},
-                {"point": "32-bit Word Swapped PrevHash", "status": "VERIFIED"},
-                {"point": "Unreversed Merkle Root in Little-Endian", "status": "VERIFIED"},
-                {"point": "BIP310 Version-Rolling (Masked)", "status": "VERIFIED"},
-                {"point": "Dynamic ExtraNonce2 Zero-Padding", "status": "VERIFIED"},
-                {"point": "Arbitrary-Precision Rational Target (0 floats)", "status": "VERIFIED"},
-                {"point": "3us Local Pre-Submit Gatekeeper Assertion", "status": "VERIFIED"},
-                {"point": "Never Consecutive Blocks Stealth Rule", "status": "VERIFIED"},
-                {"point": "6-Parameter Wire Submit Payload", "status": "VERIFIED"},
-            ],
-            "patroclus_status": _engine.get_patroclus_status(),
-        }
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Local-loopback Stratum rehearsal failed; no production evidence.",
+        ) from exc
 
+    return {
+        "status": "REHEARSAL_COMPLETED",
+        "evidence_class": "LOCAL_LOOPBACK_FIXTURE",
+        "transport": "127.0.0.1",
+        "live_pool_acceptance": "UNAVAILABLE",
+        "pool_acknowledgements": [],
+        "production_qualified": False,
+        "decision_points": [],
+        "message": (
+            "Fixed local-loopback Stratum fixtures completed. "
+            "No external pool sessions or accepted shares were verified."
+        ),
+    }
