@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
 Chronus Production Qualification Manifest Generator (§5.3, F3.1-F3.18, H1).
-Executes local verification gates and writes a signed manifest whose release status remains NOT_QUALIFIED until the external evidence packet is present.
+Executes local verification gates and writes unsigned diagnostic results.
+Release admission is owned by the separately verified release-evidence path.
 """
 
 import hashlib
-import hmac
 import json
 import os
 import shutil
@@ -20,7 +20,6 @@ if SRC_DIR not in sys.path:
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
-SECRET_BUILD_KEY = b"CHRONUS_PRODUCTION_QUALIFIED_HMAC_KEY_v36"
 
 
 def run_cmd(cmd: str) -> bool:
@@ -125,9 +124,6 @@ def main():
         git_sha = None
 
     external_evidence = collect_release_evidence()
-    release_qualified = (
-        all_passed and external_evidence["status"] == "PRESENT"
-    )
 
     # Lockfile hash: hash actual lockfile if present; otherwise None (never hardcode empty hash)
     lock_hash = None
@@ -164,12 +160,9 @@ def main():
             pass
 
     manifest_data = {
-        "status": (
-            "PRODUCTION_QUALIFIED" if release_qualified
-            else "QUALIFICATION_FAILED" if not all_passed
-            else "NOT_QUALIFIED"
-        ),
+        "status": "NOT_QUALIFIED",
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
+        "local_ci_checks": "PASS" if all_passed else "FAIL",
         "local_gate_status": "PASS" if all_passed else "FAIL",
         "external_release_evidence": external_evidence,
         "gates": {
@@ -180,13 +173,13 @@ def main():
             "replay": "PASS" if p_replay else "FAIL",
             "meta_test_mutation": "PASS" if p_meta else "FAIL",
             "sovereign_difc_attestation": "PASS" if p_sovereign else "FAIL",
-            "mypy_strict": "PASS",
+            "mypy_strict": None,
             "sv_lint": sv_lint_status
         },
         "measurements": {
             "gatekeeper_p99_us": gatekeeper_p99_us,
-            "submit_rate_achieved_sec": 15,
-            "shares_local_dropped": 0,
+            "submit_rate_achieved_sec": None,
+            "shares_local_dropped": None,
             "blocks_found": blocks_found,
             "stale_share_rate": stale_share_rate
         },
@@ -195,28 +188,17 @@ def main():
             "python": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
             "lock_hash": lock_hash
         },
-        "verification_procedure": {
-            "algorithm": "HMAC-SHA256",
-            "key_reference": "SECRET_BUILD_KEY (RFC 2104)",
-            "canonicalization": "json.dumps(manifest_data_without_signature, sort_keys=True).encode('utf-8')"
-        }
+        "verification_procedure": {"algorithm": None,
+                                   "reason": "Local diagnostics are not a signed release attestation."},
+        "signature": None,
     }
-
-    # Compute HMAC-SHA256 signature over canonical manifest body
-    canonical_bytes = json.dumps(manifest_data, sort_keys=True).encode("utf-8")
-    sig = hmac.new(SECRET_BUILD_KEY, canonical_bytes, "sha256").hexdigest()
-    manifest_data["signature"] = sig
 
     manifest_path = os.path.join(REPO_ROOT, "PRODUCTION_QUALIFIED.json")
     with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(manifest_data, f, indent=2)
 
     print(f"Manifest written to {manifest_path}")
-    print(f"HMAC Signature: {sig}")
 
-    if release_qualified:
-        print("SYSTEM QUALIFICATION COMPLETED WITH LOCAL AND EXTERNAL EVIDENCE.")
-        sys.exit(0)
     if all_passed:
         print(
             "LOCAL GATES PASSED; RELEASE REMAINS NOT QUALIFIED: "

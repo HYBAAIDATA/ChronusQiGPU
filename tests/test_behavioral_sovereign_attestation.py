@@ -9,6 +9,8 @@ import os
 import sys
 import unittest
 from decimal import Decimal
+import tempfile
+from pathlib import Path
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SRC_DIR = os.path.join(REPO_ROOT, "src")
@@ -48,7 +50,9 @@ class TestBehavioralSovereignAttestation(unittest.TestCase):
         proof = verify_theseus_ovid_pillar()
         self.assertEqual(proof["status"], "PASS")
         self.assertTrue(proof["invariants"]["theseus_lossless_roundtrip"])
-        self.assertTrue(proof["invariants"]["restart_recovery_roundtrip"])\n        self.assertTrue(proof["invariants"]["journal_continuity_verified"])\n        self.assertTrue(proof["invariants"]["durable_custody"])
+        self.assertTrue(proof["invariants"]["restart_recovery_roundtrip"])
+        self.assertTrue(proof["invariants"]["journal_continuity_verified"])
+        self.assertTrue(proof["invariants"]["durable_custody"])
 
     def test_pillar_3_chronus_stratum_qualification(self):
         proof = verify_chronus_stratum_pillar()
@@ -91,11 +95,12 @@ class TestBehavioralSovereignAttestation(unittest.TestCase):
         self.assertIn("chronus.stratum", proof["contained_modules"])
 
     def test_attestation_file_tamper_evidence(self):
-        attestation_path = os.path.join(REPO_ROOT, "SOVEREIGN_CAPABILITY_ATTESTATION.json")
-        self.assertTrue(os.path.exists(attestation_path), "Evidence file missing.")
-
-        with open(attestation_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        # Exercise this revision's generator; historical repository JSON is provenance.
+        from sovereign_attestation import main
+        with tempfile.TemporaryDirectory() as directory:
+            attestation_path = Path(directory) / "evidence.json"
+            main(str(attestation_path))
+            data = json.loads(attestation_path.read_text())
 
         self.assertFalse(data["production_qualified"])
         self.assertFalse(data["external_certification"])

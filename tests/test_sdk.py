@@ -43,7 +43,8 @@ def test_sdk_submits_and_retrieves_workload_through_service(tmp_path, monkeypatc
         )
         return httpx.Response(
             response.status_code,
-            headers=response.headers,
+            headers={key: value for key, value in response.headers.items()
+                     if key.lower() not in {"content-encoding", "content-length"}},
             content=response.content,
             request=request,
         )

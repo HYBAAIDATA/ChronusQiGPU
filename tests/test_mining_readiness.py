@@ -1,6 +1,7 @@
 """Mining release regressions using synthetic work and a loopback Stratum pool."""
 
 import asyncio
+import os
 import importlib.util
 import json
 import sys
@@ -11,6 +12,8 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
+
+pytestmark = pytest.mark.usefixtures("mining_custody")
 
 from chronus.execution.mining_entrypoint import ChronusRealMiningEngine
 from chronus.stratum.gateway import StratumGateway
@@ -125,6 +128,7 @@ class TestMiningReadiness(unittest.IsolatedAsyncioTestCase):
         miner = ChronusRealMiningEngine("localhost", 3333, "test", "x")
         miner.gateway._process_notify(notify())
         miner.running = True
+        miner.gateway.submission_policy.arm("synthetic-test", 2)
         calls = []
 
         def search(*args):
@@ -146,6 +150,7 @@ class TestMiningReadiness(unittest.IsolatedAsyncioTestCase):
         miner = ChronusRealMiningEngine("localhost", 3333, "test", "x")
         miner.gateway._process_notify(notify())
         miner.running = True
+        miner.gateway.submission_policy.arm("synthetic-test", 2)
         seen = []
 
         def search(*args):
@@ -194,7 +199,12 @@ class TestMiningReadiness(unittest.IsolatedAsyncioTestCase):
         async with server:
             miner = ChronusRealMiningEngine("127.0.0.1", server.sockets[0].getsockname()[1], "synthetic.worker", "x")
             miner.nonce_batch_size = 8
-            with pytest.raises((asyncio.IncompleteReadError, ConnectionError)):
+            with patch.dict(os.environ, {
+                "CHRONUS_ALLOWED_POOL_ENDPOINTS": json.dumps([str(miner.endpoint)]),
+                "CHRONUS_MINING_SUBMIT_ARMED": "1",
+                "CHRONUS_MINING_APPROVAL_REFERENCE": "synthetic-loopback-test",
+                "CHRONUS_MINING_ACCEPTED_SHARE_TARGET": "2",
+            }), pytest.raises((asyncio.IncompleteReadError, ConnectionError)):
                 await asyncio.wait_for(miner.run(), 3)
             await finished.wait()
         assert received
@@ -290,6 +300,7 @@ class TestMiningShutdown(unittest.IsolatedAsyncioTestCase):
         miner = ChronusRealMiningEngine("localhost", 3333, "test", "x")
         miner.gateway._process_notify(notify())
         miner.running = True
+        miner.gateway.submission_policy.arm("synthetic-test", 2)
         def search(*args):
             started.set()
             assert release.wait(2)
@@ -359,6 +370,7 @@ class TestSubmissionWatchdog(unittest.IsolatedAsyncioTestCase):
         import time
         miner = ChronusRealMiningEngine("localhost", 3333, "test", "x")
         miner.running = True
+        miner.gateway.submission_policy.arm("synthetic-test", 2)
         miner.gateway.pool_timeout_sec = 0.02
         watchdog = asyncio.create_task(miner._monitor_submissions())
         await asyncio.sleep(0)
@@ -379,6 +391,7 @@ class TestRetainedWork(unittest.IsolatedAsyncioTestCase):
         original = miner.gateway.jobs["job"]
         revision = miner.gateway.work_revision
         miner.running = True
+        miner.gateway.submission_policy.arm("synthetic-test", 2)
         calls = []
 
         def search(*args):

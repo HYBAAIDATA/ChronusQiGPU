@@ -11,6 +11,7 @@ import logging
 import os
 import sys
 import time
+import threading
 from typing import Optional, Tuple
 
 from chronus.execution.geometric_galois_miner import GeometricGaloisMiner
@@ -192,6 +193,7 @@ class ChronusRealMiningEngine:
         self.shares_accepted = 0
         self.shares_rejected = 0
         self.running = False
+        self._cancel_token = threading.Event()
         self._pending_submits = {}
         self._submission_changed = asyncio.Event()
 
@@ -213,6 +215,11 @@ class ChronusRealMiningEngine:
         try:
             await self.gateway.connect()
             await self.gateway.execute_handshake()
+            if os.getenv("CHRONUS_MINING_SUBMIT_ARMED") == "1":
+                self.gateway.submission_policy.arm(
+                    os.getenv("CHRONUS_MINING_APPROVAL_REFERENCE", ""),
+                    int(os.getenv("CHRONUS_MINING_ACCEPTED_SHARE_TARGET", "0")),
+                )
             logger.info("Handshake complete! Pool Version Mask: 0x%s", self.gateway.pool_mask_hex)
             tasks = [asyncio.create_task(self._listen_pool_events()),
                      asyncio.create_task(self._mining_loop()),
@@ -224,6 +231,7 @@ class ChronusRealMiningEngine:
                 task.result()
         finally:
             self.running = False
+            self._cancel_token.set()
             for task in tasks:
                 task.cancel()
             await asyncio.gather(*tasks, return_exceptions=True)
@@ -238,6 +246,7 @@ class ChronusRealMiningEngine:
                 continue
             if "method" in msg:
                 await self.gateway.handle_server_push(msg)
+                self._cancel_token.set()
                 continue
             rpc_id = msg.get("id")
             if type(rpc_id) is not int or rpc_id not in self._pending_submits:
@@ -251,6 +260,9 @@ class ChronusRealMiningEngine:
             self._submission_changed.set()
             if msg.get("result") is True and not msg.get("error"):
                 self.shares_accepted += 1
+                if not self.gateway.submission_policy.armed:
+                    self.running = False
+                    self._cancel_token.set()
                 SHARES_ACCEPTED.inc()
                 logger.info("[POOL SUCCESS] Share ACCEPTED (Total accepted: %d)", self.shares_accepted)
             else:
@@ -316,7 +328,7 @@ class ChronusRealMiningEngine:
         budget = self.nonce_batch_size
 
         for shard in shards:
-            if budget <= 0:
+            if budget <= 0 or self._cancel_token.is_set():
                 break
             span = shard.end_nonce - shard.start_nonce
             cursor = self._nonce_cursors.get(shard.shard_id, shard.start_nonce)
@@ -335,7 +347,7 @@ class ChronusRealMiningEngine:
             header_prefix = build_header80(
                 rolled_version, prevhash_bytes, merkle_root_bytes, ntime, nbits, 0
             )[:76]
-            result = self.search_engine.solve_header_range(header_prefix, share_target, cursor, count)
+            result = self.search_engine.solve_header_range(header_prefix, share_target, cursor, count, cancel_token=self._cancel_token)
             if result.iterations_evaluated == 0:
                 self._hash_throttled = True
                 break
@@ -364,6 +376,10 @@ class ChronusRealMiningEngine:
         logger.info("Starting bounded SHA-256d nonce search across disjoint shards.")
         while self.running:
             apply_published_limit()
+            policy = self.gateway.submission_policy
+            if (not policy.armed or policy.accepted + len(policy.pending) >= policy.accepted_share_target):
+                await asyncio.sleep(0.01)
+                continue
             if not self.gateway.jobs:
                 await asyncio.sleep(0.2)
                 continue
@@ -415,6 +431,7 @@ class ChronusRealMiningEngine:
                     diff_val if isinstance(diff_val, Fraction) else Fraction(str(diff_val))
                 )
                 share_target = compute_share_target_exact(diff_frac)
+                self._cancel_token.clear()
                 batch = asyncio.create_task(asyncio.to_thread(
                     self._search_nonce_batch,
                     job,
@@ -425,6 +442,7 @@ class ChronusRealMiningEngine:
                 try:
                     candidate = await asyncio.shield(batch)
                 except asyncio.CancelledError:
+                    self._cancel_token.set()
                     # Finish this bounded worker before closing or reusing the
                     # session; to_thread cancellation cannot stop its thread.
                     await batch

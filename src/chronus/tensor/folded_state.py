@@ -41,6 +41,8 @@ class ExactFoldState:
     @classmethod
     def from_array(cls, value: np.ndarray) -> "ExactFoldState":
         array = np.ascontiguousarray(value)
+        if array.dtype.hasobject or array.dtype.fields is not None:
+            raise ValueError("folded arrays require a numeric dtype without object pointers or structured fields")
         state = cls.from_bytes(array.tobytes(order="C"))
         return cls(
             folded=state.folded,

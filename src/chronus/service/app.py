@@ -16,6 +16,8 @@ from fastapi.responses import JSONResponse
 from chronus.service.api.errors import ApiError, problem_response
 from chronus.service.api.routers import procurement as procurement_routes
 from chronus.service.dependencies import service_config
+from chronus.service.routers.execute import router as execute_router
+from chronus.service.execution_body_limit import ExecutionBodyLimit
 from chronus.service.models import ErrorResponse
 from chronus.service.routers import (
     al_haras_router,
@@ -86,6 +88,7 @@ def create_app() -> FastAPI:
             ],
         )
     app.add_middleware(GZipMiddleware, minimum_size=1000)
+    app.add_middleware(ExecutionBodyLimit)
 
     # Procurement routes raise ApiError; map them without replacing existing handlers.
     @app.exception_handler(ApiError)
@@ -161,6 +164,7 @@ def create_app() -> FastAPI:
 
     # Sealed capacity procurement (quote → reserve → admit). Same router as
     # chronus.service.api.app; auth is CHRONUS_TENANT_TOKENS bearer scopes.
+    app.include_router(execute_router)
     app.include_router(workloads_router)
     app.include_router(verify_router)
     app.include_router(health_router)
