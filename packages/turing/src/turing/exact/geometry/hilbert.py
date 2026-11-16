@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from fractions import Fraction
+from types import MappingProxyType
 from typing import Mapping
 
 
@@ -64,6 +65,7 @@ class TensorHilbert:
     factors: tuple[int, ...]
 
     def __post_init__(self):
+        object.__setattr__(self, "factors", tuple(self.factors))
         if not self.factors or any(type(n) is not int or n < 1 for n in self.factors):
             raise ValueError("all Hilbert factor dimensions must be positive integers")
 
@@ -98,6 +100,8 @@ class SparseState:
     amplitudes: Mapping[int, ExactComplex] = field(default_factory=dict)
 
     def __post_init__(self):
+        object.__setattr__(self, "amplitudes",
+                           MappingProxyType(dict(self.amplitudes)))
         for index, value in self.amplitudes.items():
             if type(index) is not int or not 0 <= index < self.space.dimension:
                 raise ValueError("amplitude basis index outside range")
@@ -137,10 +141,13 @@ class SignedInvolution:
     images: Mapping[int, tuple[int, int]]
 
     def __post_init__(self):
+        object.__setattr__(self, "images",
+                           MappingProxyType(dict(self.images)))
         for src, (dst, sign) in self.images.items():
             if not (type(src) is int and type(dst) is int and
                     0 <= src < self.space.dimension and
-                    0 <= dst < self.space.dimension and sign in (-1, 1)):
+                    0 <= dst < self.space.dimension and type(sign) is int and
+                    sign in (-1, 1)):
                 raise ValueError("invalid signed involution entry")
             back = self.images.get(dst, (dst, 1))
             if back != (src, sign):
@@ -159,6 +166,8 @@ class SignedInvolution:
         """Exactly exp(-i*pi*steps/2 H) with NO truncation or float."""
         if type(steps) is not int:
             raise TypeError("steps must be integer")
+        if not isinstance(state, SparseState) or state.space != self.space:
+            raise ValueError("space mismatch")
         phase = steps % 4
         if phase == 0:
             return state
@@ -182,10 +191,14 @@ class SignedInvolution:
 def phase_injection(state: SparseState,
                     phases: Mapping[int, ExactComplex]) -> SparseState:
     """Apply an exactly unit-modulus diagonal phase and verify it."""
-    out: dict[int, ExactComplex] = {}
-    for idx, z in state.amplitudes.items():
-        phase = phases.get(idx, ONE)
+    # Validate EVERY supplied phase, including unoccupied indices, before
+    # any output is constructed; an absent amplitude does not waive gates.
+    for idx, phase in phases.items():
+        if type(idx) is not int or not 0 <= idx < state.space.dimension:
+            raise ValueError("phase index outside finite Hilbert space")
         if not isinstance(phase, ExactComplex) or phase.norm2() != 1:
             raise ValueError("phase must have exact unit norm")
-        out[idx] = phase * z
+    out: dict[int, ExactComplex] = {}
+    for idx, z in state.amplitudes.items():
+        out[idx] = phases.get(idx, ONE) * z
     return SparseState(state.space, out)
