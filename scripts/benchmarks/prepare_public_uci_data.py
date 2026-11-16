@@ -13,7 +13,9 @@ import io
 import json
 from pathlib import Path
 import platform
+import shutil
 import sys
+import tempfile
 
 import numpy as np
 import yaml
@@ -43,8 +45,8 @@ def prepare(output: Path) -> dict:
     if sklearn.__version__ != "1.8.0":
         raise ValueError("requires scikit-learn 1.8.0 to reproduce pinned inputs")
     output = Path(output).expanduser().resolve()
-    if output.exists() and any(output.iterdir()):
-        raise ValueError("destination must be empty; never overwrite an existing source")
+    if output.exists():
+        raise ValueError("destination must not already exist; never overwrite an existing source")
     loaders = {"digits": load_digits, "wine": load_wine,
                "breast_cancer": load_breast_cancer}
     planned = []
@@ -78,23 +80,33 @@ def prepare(output: Path) -> dict:
         "source_class": SOURCE_CLASS,
         "provenance": "Unmodified bundled sklearn.datasets.data/wine_data.csv, original observed source bytes; not a deployed state",
     })
-    output.mkdir(parents=True, exist_ok=True)
-    for filename, payload in planned:
-        with (output / filename).open("xb") as stream:
-            stream.write(payload)
-    manifest = {"schema": SCHEMA, "data_sources": sources}
-    with (output / "manifest.yaml").open("x", encoding="utf-8") as stream:
-        yaml.safe_dump(manifest, stream, sort_keys=False)
-    report = {"schema": "chronus.public-uci-provenance/1",
-              "classification": SOURCE_CLASS,
-              "input_data_generated": False,
-              "upstream": "UCI observational datasets redistributed in scikit-learn",
-              "scikit_learn": sklearn.__version__,
-              "numpy": np.__version__, "python": platform.python_version(),
-              "datasets": [{"name": filename, "bytes": len(payload),
-                            "sha256": PINNED[filename]} for filename, payload in planned]}
-    with (output / "provenance.json").open("x", encoding="utf-8") as stream:
-        json.dump(report, stream, indent=2)
+    # Stage all objects first; a failed conversion/write never leaves a
+    # misleading or unretryable partially created destination.
+    output.parent.mkdir(parents=True, exist_ok=True)
+    stage = Path(tempfile.mkdtemp(prefix=".uci-source-staging-", dir=output.parent))
+    try:
+        for filename, payload in planned:
+            with (stage / filename).open("xb") as stream:
+                stream.write(payload)
+        manifest = {"schema": SCHEMA, "data_sources": sources}
+        with (stage / "manifest.yaml").open("x", encoding="utf-8") as stream:
+            yaml.safe_dump(manifest, stream, sort_keys=False)
+        report = {"schema": "chronus.public-uci-provenance/1",
+                  "classification": SOURCE_CLASS,
+                  "input_data_generated": False,
+                  "upstream": "UCI observational datasets redistributed in scikit-learn",
+                  "scikit_learn": sklearn.__version__,
+                  "numpy": np.__version__, "python": platform.python_version(),
+                  "datasets": [{"name": filename, "bytes": len(payload),
+                                "sha256": PINNED[filename]} for filename, payload in planned]}
+        with (stage / "provenance.json").open("x", encoding="utf-8") as stream:
+            json.dump(report, stream, indent=2)
+        if output.exists():
+            raise ValueError("destination appeared while preparing input")
+        stage.rename(output)
+    finally:
+        # No-op after successful rename; cleans partial staging on exceptions.
+        shutil.rmtree(stage, ignore_errors=True)
     return report
 
 
