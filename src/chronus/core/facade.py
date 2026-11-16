@@ -138,7 +138,7 @@ def _gate_claim_audit() -> tuple[bool, str]:
 
 GATES: tuple[tuple[str, str, Callable[[], tuple[bool, str]]], ...] = (
     ("G1", "signer conformance", _gate_signers),
-    ("G2", "receipt integrity", _gate_receipts),
+    ("G2", "signed receipt integrity + THESEUS restart replay", _gate_receipts),
     ("G3", "canonical bytes", _gate_canonical_json),
     ("G4", "purity scan", _gate_purity),
     ("G5", "claim evidence audit", _gate_claim_audit),
