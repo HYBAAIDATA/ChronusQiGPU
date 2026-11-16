@@ -31,8 +31,10 @@ the corresponding existing implementation.
   componentwise floating-point error bound of the Higham form,
   `gamma_(2k) * (abs(A) @ abs(B))` for conservative coverage of
   non-fused multiply/add, with allowance for the float64
-  reference computation. Reference verification is **included in the
-  application latency** and cannot be reported as GPU-only speed.
+  reference computation and a small absolute float32 subnormal
+  rounding allowance; flush-to-zero that exceeds this bound is refused.
+  Reference verification is **included in the application latency**
+  and cannot be reported as GPU-only speed.
 
 ## Important measurement and claim limits
 
@@ -42,7 +44,9 @@ been newly measured or qualified by the source-only work.**
 
 The code-level tests exercise the host numerical verifier, dtype refusal,
 kernel mapping, and presence of operation checks. A separate optional
-hardware-executed test skips without a physical OpenCL GPU; a skip is
+hardware-executed test skips only without an OpenCL GPU; a discovered
+GPU with a failed kernel build or known-answer qualification fails rather
+than skipping. A skip is
 **UNAVAILABLE**, not a successful device qualification.
 
 The generic `TopologicalIntegrityGate.verify()` remains a strict
