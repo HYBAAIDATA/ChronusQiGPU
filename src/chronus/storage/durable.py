@@ -156,6 +156,27 @@ class DurableTheseusService:
             scale_index=int(row["scale_index"]),
         )
 
+
+    def _verify_record_geometry(self, row: sqlite3.Row) -> None:
+        """Fail closed if logical phyllotaxis coordinates differ from their inputs."""
+        try:
+            sequence = int(row["sequence"])
+            digest = bytes.fromhex(str(row["object_id"]))
+            expected = phyllotaxis_coordinate(sequence, digest, self.lane_count)
+            actual = PhyllotaxisCoordinate(
+                sequence=sequence,
+                golden_turns_numerator=int(row["golden_turns_numerator"]),
+                golden_turns_denominator=int(row["golden_turns_denominator"]),
+                lane=int(row["lane"]),
+            )
+            scale_index = int(row["scale_index"])
+        except (ValueError, TypeError, OverflowError) as exc:
+            raise StorageIntegrityError("invalid phyllotaxis metadata") from exc
+        if actual != expected or scale_index < 0:
+            raise StorageIntegrityError(
+                f"phyllotaxis metadata mismatch for {row['object_id']}"
+            )
+
     def store(self, tenant_id: str, payload: bytes, scale_index: int = 0) -> TheseusRecord:
         self._validate_payload(tenant_id, payload, scale_index)
         object_id = hashlib.sha256(payload).hexdigest()
@@ -237,6 +258,7 @@ class DurableTheseusService:
             ).fetchone()
         if row is None:
             raise KeyError(object_id)
+        self._verify_record_geometry(row)
         return self._record_from_row(row)
 
     def reconstruct(self, tenant_id: str, object_id: str) -> bytes:
@@ -381,6 +403,17 @@ class DurableTheseusService:
         for expected_sequence, entry in enumerate(entries):
             if entry.sequence != expected_sequence or entry.prev_entry_hash != expected_prev:
                 return False
+            if entry.tenant_id != tenant_id or entry.ovid_namespace != f"o1_{tenant_id}":
+                return False
+            try:
+                coordinate = phyllotaxis_coordinate(
+                    entry.coordinate.sequence, bytes.fromhex(entry.object_id),
+                    self.lane_count,
+                )
+            except (ValueError, TypeError, OverflowError):
+                return False
+            if entry.coordinate != coordinate:
+                return False
             self.reconstruct(tenant_id, entry.object_id)
             material = (
                 f"{entry.ovid_namespace}|{entry.sequence}|{entry.event_type}|"
@@ -402,6 +435,16 @@ class DurableTheseusService:
                 if hashlib.sha256(payload).hexdigest() != row["object_id"]:
                     raise StorageIntegrityError(
                         f"durable content {row['object_id']} failed digest verification"
+                    )
+            records = db.execute(
+                "SELECT r.*, o.size_bytes AS object_size "
+                "FROM records AS r JOIN objects AS o USING (object_id)"
+            ).fetchall()
+            for record in records:
+                self._verify_record_geometry(record)
+                if int(record["size_bytes"]) != int(record["object_size"]):
+                    raise StorageIntegrityError(
+                        f"durable record size mismatch for {record['object_id']}"
                     )
             tenants = [
                 str(row["tenant_id"])
