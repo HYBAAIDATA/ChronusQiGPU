@@ -25,6 +25,7 @@ import numpy as np
 import yaml
 
 from chronus.config import runtime_bounds
+from chronus.ovid.transform import OvidTransformService
 from chronus.pulvini import fold_verified, unfold_verified
 from chronus.tensor.folded_state import ExactFoldState
 from chronus.tensor.geodesic import PhiTensorCore
@@ -281,15 +282,32 @@ def run_benchmark(manifest: Path, custody_db: Path, *, depth: int = 4,
     if custody_db in {source["path"] for source in sources}:
         raise ValueError("custody database must not overwrite a source")
     validated = [(source, _read_verified(source)) for source in sources]
+    # Complete all deterministic validation and decoding before opening custody;
+    # a bad later asset must never persist data from an earlier asset.
+    pending: list[tuple[dict, bytes, dict]] = []
+    ovid = OvidTransformService()
+    payload_limit = runtime_bounds()["max_payload_bytes"]
+    tenant_id = "real-workload-benchmark"
+    for source, payload in validated:
+        representation = ovid.fold(payload)
+        receipt_bytes = json.dumps({
+            **representation.envelope(),
+            "tenant_id": tenant_id,
+            "representation_object_id": sha256(representation.payload),
+        }, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        if len(representation.payload) > payload_limit or len(receipt_bytes) > payload_limit:
+            raise ValueError("source representation or custody receipt exceeds effective custody limit")
+        workload = (_tensor_workload(payload, depth=depth)
+                    if source["kind"] == "tensor" else _snapshot_workload(payload))
+        pending.append((source, payload, workload))
+
     custody_db.parent.mkdir(parents=True, exist_ok=True)
     triad = ProductionTriad(str(custody_db))
     results: list[dict] = []
     stored: list[tuple[object, bytes]] = []
-    for source, payload in validated:
-        workload = (_tensor_workload(payload, depth=depth)
-                    if source["kind"] == "tensor" else _snapshot_workload(payload))
+    for source, payload, workload in pending:
         t0 = time.perf_counter_ns()
-        receipt = triad.put("real-workload-benchmark", payload)
+        receipt = triad.put(tenant_id, payload)
         write_ns = time.perf_counter_ns() - t0
         stored.append((receipt, payload))
         results.append({
@@ -348,8 +366,13 @@ def main(argv: list[str] | None = None) -> int:
         # Check all destinations before processing or persisting customer bytes.
         sources = discover(args.manifest, max_bytes=args.max_bytes)
         target = args.output.resolve()
-        if target == args.custody_db.resolve() or target in {source["path"] for source in sources}:
-            raise ValueError("evidence destination cannot overwrite input or custody")
+        db = args.custody_db.resolve()
+        protected = {source["path"] for source in sources}
+        protected.update({args.manifest.resolve(), db,
+                          Path(str(db) + "-wal"), Path(str(db) + "-shm"),
+                          Path(str(db) + "-journal")})
+        if target in protected:
+            raise ValueError("evidence destination cannot overwrite manifest, input or custody files")
         if target.exists():
             raise ValueError("evidence destination already exists; refusing overwrite")
         evidence = run_benchmark(args.manifest, args.custody_db,
