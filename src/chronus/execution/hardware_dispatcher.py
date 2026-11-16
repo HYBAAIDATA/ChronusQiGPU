@@ -78,6 +78,15 @@ class HardwareAcceleratorDispatcher:
             is_avail = b.is_available() if hasattr(b, "is_available") else True
             mode = getattr(b, "execution_mode", SOFTWARE_EXECUTION)
             classification = getattr(b, "runtime_classification", mode)
+            # A backend may declare a maximum capability while actually running a
+            # software fallback (for example when a native library is absent).
+            # Report what will really execute, never the aspirational maximum.
+            effective_mode = getattr(b, "effective_execution_mode", None)
+            if callable(effective_mode):
+                mode = effective_mode()
+            effective_classification = getattr(b, "effective_runtime_classification", None)
+            if callable(effective_classification):
+                classification = effective_classification()
             summary[name] = {
                 "name": name,
                 "backend_name": name,

@@ -222,7 +222,15 @@ class ResidentLogicalScheduler:
 
 
 class NativeSIMDBackendAdapter:
-    """Hardware execution adapter for C++ AVX2 Native SIMD & Resident Scheduler."""
+    """Hardware execution adapter for C++ AVX2 Native SIMD & Resident Scheduler.
+
+    The runtime classification is a property of what actually executed, not of
+    the intent. When the compiled C++ library is loaded the adapter performs
+    native SIMD work and reports PHYSICAL_HARDWARE_EXECUTION. When it is not
+    loaded the adapter runs the verified pure-Python reference implementation
+    and must report SOFTWARE_EXECUTION; it may never claim physical hardware
+    execution it did not perform (Axiom 1: representation truth).
+    """
 
     name = "cpp-native-simd"
     execution_mode = "HARDWARE_SIMD_EXECUTION"
@@ -249,21 +257,46 @@ class NativeSIMDBackendAdapter:
     def supports(self, workload_type: str) -> bool:
         return workload_type in self.supported_workloads
 
+    def effective_execution_mode(self) -> str:
+        """The execution mode that actually applies to the next execution."""
+        if self._bridge.is_loaded:
+            return self.execution_mode
+        return "SOFTWARE_REFERENCE_EXECUTION"
+
+    def effective_runtime_classification(self) -> str:
+        """The runtime classification that actually applies to the next execution.
+
+        PHYSICAL_HARDWARE_EXECUTION is only honest when the compiled native
+        library is loaded. The pure-Python fallback is software execution.
+        """
+        if self._bridge.is_loaded:
+            return self.runtime_classification
+        return "SOFTWARE_EXECUTION"
+
     def probe_silicon(self) -> Dict[str, Any]:
+        native = self._bridge.is_loaded
         return {
             "backend_name": self.name,
             "architecture": "x86_64_AVX2" if self._bridge.has_avx2 else "Host_SIMD_Universal",
-            "native_cpp_library_loaded": self._bridge.is_loaded,
+            "native_cpp_library_loaded": native,
             "library_path": self._bridge.lib_path,
             "virtual_units_resident": self.config.virtual_units,
             "unified_memory_resident": True,
             "zero_pcie_copy": True,
             "honesty_invariant": "logical_scheduling_lattice_not_physical_dies",
+            "execution_mode": self.effective_execution_mode(),
+            "runtime_classification": self.effective_runtime_classification(),
+            "native_simd_executed": native,
         }
 
     def execute(self, payload: bytes, workload_type: str) -> Dict[str, Any]:
         if not self.supports(workload_type):
             raise ValueError(f"workload {workload_type} not supported by {self.name}")
+
+        # The classification recorded with the result must describe the work
+        # that actually ran, not the backend's maximum capability.
+        executed_mode = self.effective_execution_mode()
+        executed_classification = self.effective_runtime_classification()
 
         if workload_type == "M15_SIMD_FOLD":
             res = fold_pairs_vectorized(payload)
@@ -273,6 +306,9 @@ class NativeSIMDBackendAdapter:
                 "input_len": len(payload),
                 "pairs_folded": len(payload) // 2,
                 "mode": "in-place-dual-space",
+                "execution_mode": executed_mode,
+                "runtime_classification": executed_classification,
+                "native_simd_executed": self._bridge.is_loaded,
             }
         elif workload_type == "M15_SIMD_UNFOLD":
             res = unfold_pairs_vectorized(payload)
@@ -281,6 +317,9 @@ class NativeSIMDBackendAdapter:
                 "output_bytes": res,
                 "input_len": len(payload),
                 "pairs_unfolded": len(payload) // 2,
+                "execution_mode": executed_mode,
+                "runtime_classification": executed_classification,
+                "native_simd_executed": self._bridge.is_loaded,
             }
         elif workload_type == "DUAL_SPACE_QUERY":
             # payload is split into query and target
@@ -292,6 +331,9 @@ class NativeSIMDBackendAdapter:
                 "workload_type": workload_type,
                 "dual_space_inner_product": val,
                 "zero_unfold_evaluated": True,
+                "execution_mode": executed_mode,
+                "runtime_classification": executed_classification,
+                "native_simd_executed": self._bridge.is_loaded,
             }
 
         # PV_LATTICE_FOLD via native SIMD reference
@@ -307,4 +349,7 @@ class NativeSIMDBackendAdapter:
             "values": serialize_lattice(outputs),
             "order": order,
             "device": self.probe_silicon(),
+            "execution_mode": executed_mode,
+            "runtime_classification": executed_classification,
+            "native_simd_executed": self._bridge.is_loaded,
         }

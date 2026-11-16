@@ -462,8 +462,15 @@ class DurableTheseusService:
                 )
 
     def checkpoint(self) -> dict:
-        with sqlite3.connect(self.path, timeout=30.0) as db:
-            row = db.execute("PRAGMA wal_checkpoint(FULL)").fetchone()
+        # sqlite3's connection context manager commits or rolls back the
+        # transaction; it does NOT close the handle. Using it here leaked an
+        # open connection, which keeps the database file locked and makes the
+        # enclosing temporary directory undeletable on Windows.
+        connection = sqlite3.connect(self.path, timeout=30.0)
+        try:
+            row = connection.execute("PRAGMA wal_checkpoint(FULL)").fetchone()
+        finally:
+            connection.close()
         return {
             "mode": "sqlite-wal",
             "busy": int(row[0]),
