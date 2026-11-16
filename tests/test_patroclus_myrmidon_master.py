@@ -383,5 +383,13 @@ class TestIntegrationAndE2E:
         sdk._request.assert_called_with(
             "POST",
             "/v1/mining/admin/patroclus/simulate",
-            json={"pools": None},
+            json={},
         )
+        with pytest.raises(ValueError, match="fixed local-loopback"):
+            sdk.simulate_patroclus_mining(pools=[])
+        with pytest.raises(ValueError, match="fixed local-loopback"):
+            sdk.simulate_patroclus_mining(pools=["stratum+tcp://unauthorised.example:3333"])
+        sdk._request.assert_called_with(
+            "POST", "/v1/mining/admin/patroclus/simulate", json={}
+        )
+
