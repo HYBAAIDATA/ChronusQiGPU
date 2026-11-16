@@ -9,6 +9,7 @@ a phi-weighted metric alone is not evidence of twisting.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from types import MappingProxyType
 from typing import Mapping
 
 from chronus.geodesic.dual_120cell import build_dual_120_cell
@@ -75,6 +76,11 @@ class FiniteH4FiberBundle:
     transitions: Mapping[tuple[int, int], Permutation]
 
     def __post_init__(self) -> None:
+        # Freeze the exact graph-automorphism transition certificate before
+        # validation, otherwise later caller mutation bypasses the gates.
+        snapshot = {tuple(edge): tuple(perm)
+                    for edge, perm in self.transitions.items()}
+        object.__setattr__(self, "transitions", MappingProxyType(snapshot))
         for (i, j), perm in self.transitions.items():
             if i == j or not 0 <= i < BASE_SIZE or not 0 <= j < BASE_SIZE:
                 raise ValueError("transition endpoints must be distinct M32 indices")
