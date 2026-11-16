@@ -7,9 +7,18 @@ and execution of the three year-one consortium acceptance experiments (E1, E2, E
 from __future__ import annotations
 
 from typing import Any
+import os
 
-from fastapi import APIRouter, HTTPException, status
+import numpy as np
+from starlette.concurrency import run_in_threadpool
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
+
+from chronus.service.auth_middleware import (
+    AuthenticatedIdentity, Role, require_roles,
+)
+from chronus.tensor.folded_compute import FoldedTensorExecutor
 
 from chronus.tensor.charter import (
     CharterViolation,
@@ -179,3 +188,68 @@ def run_or_inspect_experiment(exp_id: str) -> dict[str, Any]:
             "planner_theorem": result.certificate.planner_theorem if result.certificate else None,
         } if result.certificate else None,
     }
+
+
+class PulviniLinearRequest(BaseModel):
+    """Bounded authenticated experimental tensor operation; no source storage."""
+
+    left: list[float] = Field(..., min_length=1, max_length=4096)
+    right: list[float] = Field(..., min_length=1, max_length=4096)
+    alpha: float = Field(default=1.0, allow_inf_nan=False)
+    beta: float = Field(default=1.0, allow_inf_nan=False)
+    depth: int = Field(default=4, ge=0, le=16)
+
+
+@router.post(
+    "/pulvini/linear", response_model=dict[str, Any],
+    summary="Authenticated, opt-in complete-fold PULVINI linear arithmetic",
+)
+async def run_pulvini_linear(
+    request: PulviniLinearRequest,
+    identity: AuthenticatedIdentity = Depends(
+        require_roles(Role.DEVELOPER, Role.TENANT_ADMIN,
+                      Role.ADMIN, Role.SYSTEM_ADMIN)),
+) -> dict[str, Any]:
+    """Execute verified numerical folded-channel arithmetic on in-memory inputs.
+
+    Entire input and output fold states (including kernels) are validated.
+    The default is OFF: enabling this *does not* qualify hardware or production.
+    Never persist raw customer data in this experimental route.
+    """
+    if os.getenv("CHRONUS_PULVINI_API_ENABLED", "").strip() != "1":
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                            detail="PULVINI experimental compute endpoint not enabled")
+    if not isinstance(identity.tenant_id, str) or not identity.tenant_id.strip():
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="authenticated tenant context is required")
+    x = np.asarray(request.left, dtype=np.float64)
+    y = np.asarray(request.right, dtype=np.float64)
+    if not np.all(np.isfinite(x)) or not np.all(np.isfinite(y)):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            detail="non-finite tensor input refused")
+    if x.shape != y.shape:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            detail="folded input shapes must match")
+
+    def compute():
+        executor = FoldedTensorExecutor(depth=request.depth, max_elements=4096)
+        result = executor.execute_folded_linear(
+            executor.fold(x), executor.fold(y),
+            alpha=request.alpha, beta=request.beta,
+        )
+        output = executor.materialise(result.operand)
+        return {"status": "PASS", "operation": result.operation,
+                "output": output.tolist(), "elements": int(output.size),
+                "tenant_id": identity.tenant_id,
+                "fold_power_d": request.depth,
+                "metrics": result.public_metrics(),
+                "source_attestation": "UNVERIFIED_UNSIGNED",
+                "production_qualification": "UNVERIFIED",
+                "hardware_execution": "UNVERIFIED",
+                "raw_input_persisted": False}
+
+    try:
+        return await run_in_threadpool(compute)
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            detail=str(exc)) from exc
