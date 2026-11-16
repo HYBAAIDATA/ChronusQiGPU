@@ -115,6 +115,47 @@ commit classification and the explicit admission boundaries. Sequential and
 H4-BFS exhaustive walks deliberately make the same number of queries.
 Improved ordering or timing does **not** demonstrate quantum advantage.
 
+## Installing the optional workbench
+
+The TURING mathematics package is a **separately built internal distribution**.
+A base `pip install .` of Chronus does not include it. Install the
+repo-local TURING distribution first, then the workbench extra:
+
+```sh
+python -m pip install -e packages/turing
+python -m pip install -e '.[workbench]'
+```
+
+The `workbench` extra declares `hyba-turing==0.2.0.dev0`, IPython,
+ipywidgets and Matplotlib. This is a local application inspection surface;
+it is not proof of a live iGPU, a public dependency release or a hardware
+quantum execution service.
+
+## Compute Abstraction Layer for finite 32×600 states
+
+The implemented `chronus.compute` bridge exposes exact host algebra and
+optional physical Metal float32 numerical operations as separate execution
+classes. **No unqualified GPU substitution and no dense 19,200×19,200
+matrix allocation** is permitted.
+
+```sh
+python -m chronus.compute --mode geometry
+python -m chronus.compute --mode exact-known-answer
+# On Apple Silicon with MLX installed and an available Metal GPU:
+python -m chronus.compute --mode metal-known-answer
+# For a caller-supplied finite float32 32x600 tensor:
+python -m chronus.compute --mode metal-state \
+  --state-npy input.npy --output-npy output.npy
+```
+
+The Metal path invokes the already maintained `MetalTensorBackend` and
+verifies readback against a host calculation with a declared tolerance.
+Input/output SHA-256 and measured worker timing are emitted. Reported
+device metadata are **not hardware attestation**. No `mx.time()`,
+truncated-Taylor-as-exact `expm`, nonunitary amplitude rescaling called
+Grover, unmeasured 40–50× acceleration or assumed fixed memory capacity
+from the supplied prototype was adopted.
+
 ## Using the mathematical workbench
 
 ```python
