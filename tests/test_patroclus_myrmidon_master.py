@@ -349,8 +349,12 @@ class TestIntegrationAndE2E:
         resp = client.post("/v1/mining/admin/patroclus/simulate", json={}, headers=AUTH_HEADERS)
         assert resp.status_code == 200
         data = resp.json()
-        assert data["status"] == "SUCCESS"
-        assert len(data["decision_points"]) == 10
+        assert data["status"] == "REHEARSAL_COMPLETED"
+        assert data["evidence_class"] == "LOCAL_LOOPBACK_FIXTURE"
+        assert data["live_pool_acceptance"] == "UNAVAILABLE"
+        assert data["pool_acknowledgements"] == []
+        assert data["production_qualified"] is False
+        assert data["decision_points"] == []
 
     def test_sdk_patroclus_and_stealth_methods(self):
         sdk = ChronusClient(tenant_id="test-tenant", access_token="test-token", base_url="http://testserver")
