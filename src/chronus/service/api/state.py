@@ -562,8 +562,8 @@ def all_records(table: str) -> list[dict]:
         with _MEMORY_LOCK:
             return [dict(record) for record in _MEMORY[table].values()]
     with connection() as conn:
-        rows = conn.execute(  # nosec B608: table is whitelist-validated
-            f"SELECT record_json FROM api_{table}"
+        rows = conn.execute(
+            f"SELECT record_json FROM api_{table}"  # nosec B608: table is whitelist-validated
         ).fetchall()
     return [json.loads(row[0]) for row in rows]
 

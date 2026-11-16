@@ -1,6 +1,8 @@
 import asyncio
 import json
 import unittest
+import os
+from unittest.mock import patch
 from fractions import Fraction
 from chronus.stratum.gateway import StratumGateway
 
@@ -161,7 +163,8 @@ class TestGateway(unittest.TestCase):
             gw = StratumGateway(host="127.0.0.1", port=port, worker_name="worker_mock")
             try:
                 # First connect
-                await gw.connect()
+                with patch.dict(os.environ, {"CHRONUS_ALLOWED_POOL_ENDPOINTS": json.dumps([f"stratum+tcp://127.0.0.1:{port}"])}):
+                    await gw.connect()
                 self.assertEqual(gw.connection_generation, 1)
 
                 # Read the two notify frames
@@ -192,7 +195,8 @@ class TestGateway(unittest.TestCase):
                 self.assertEqual(len(gw.jobs), 2)
 
                 # Trigger Reconnect
-                await gw.connect()
+                with patch.dict(os.environ, {"CHRONUS_ALLOWED_POOL_ENDPOINTS": json.dumps([f"stratum+tcp://127.0.0.1:{port}"])}):
+                    await gw.connect()
 
                 # Verify generation incremented
                 self.assertEqual(gw.connection_generation, 2)
@@ -241,7 +245,8 @@ class TestGateway(unittest.TestCase):
             port = server.sockets[0].getsockname()[1]
             gw = StratumGateway(host="127.0.0.1", port=port, worker_name="worker_mock")
             try:
-                await gw.connect()
+                with patch.dict(os.environ, {"CHRONUS_ALLOWED_POOL_ENDPOINTS": json.dumps([f"stratum+tcp://127.0.0.1:{port}"])}):
+                    await gw.connect()
                 # send_rpc must not crash on malformed line; it must drop it and return valid response
                 res = await gw.send_rpc("mining.test", [])
                 self.assertEqual(res.get("result"), "ok")

@@ -63,7 +63,11 @@ def scan(root: Path, policy: dict) -> list[dict]:
         exempt = rule.get("exempt", [])
         seen: set[Path] = set()
         for path_glob in rule["paths"]:
-            for path in sorted(root.glob(path_glob)):
+            matches = list(root.glob(path_glob))
+            paths = set()
+            for match in matches:
+                paths.update(match.rglob("*")) if match.is_dir() else paths.add(match)
+            for path in sorted(paths):
                 if not path.is_file() or path.suffix not in EXTENSIONS or path in seen:
                     continue
                 seen.add(path)

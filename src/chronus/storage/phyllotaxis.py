@@ -69,6 +69,21 @@ def phyllotaxis_coordinate(
     )
 
 
+
+def fibonacci_cassini_witness(n: int) -> int:
+    """Exact F_(n-1)*F_(n+1)-F_n**2 witness; not error correction."""
+    if not isinstance(n, int) or isinstance(n, bool) or n < 1:
+        raise ValueError("n must be a positive integer")
+    before, current = 0, 1
+    for _ in range(n - 1):
+        before, current = current, before + current
+    witness = before * (before + current) - current * current
+    expected = -1 if n % 2 else 1
+    if witness != expected:
+        raise ArithmeticError("Cassini identity failed")
+    return witness
+
+
 def metallic_conjugate_64(m: int) -> int:
     """floor(2**64 * frac(sigma_m)): the m-th metallic fixed-point constant.
 

@@ -220,6 +220,33 @@ async def deliver_hermiten_usage(
         from chronus.storage.durable import DurableTheseusService
 
         custody = DurableTheseusService(custody_path)
+        # THESEUS owns already-recorded provider acknowledgements. A retry
+        # must not cause a second provider side effect when we hold a receipt.
+        for prior in custody.get_journal(tenant_id):
+            if prior.event_type not in ("HERMITEN_USAGE_INTENT", "HERMITEN_USAGE_ACK"):
+                continue
+            prior_payload = json.loads(
+                custody.reconstruct(tenant_id, prior.object_id)
+            )
+            if prior_payload.get("workload_id") != str(workload_id):
+                continue
+            if (prior_payload.get("payload_sha256") != digest
+                    or prior_payload.get("account_id") != account_id):
+                raise HTTPException(
+                    status_code=409,
+                    detail="Previously journalled billing payload differs; manual reconciliation required.",
+                )
+            if prior.event_type == "HERMITEN_USAGE_ACK":
+                return {
+                    "status": "ALREADY_ACKNOWLEDGED",
+                    "account_id": account_id,
+                    "workload_id": str(workload_id),
+                    "provider_receipt_id": prior_payload["provider_receipt_id"],
+                    "payload_sha256": digest,
+                    "theseus_entry_hash": prior.entry_hash,
+                    "meter_quality": "REPORTED_NOT_INDEPENDENTLY_VERIFIED",
+                    "invoice": False,
+                }
         intent = {
             "schema": "chronus.hermiten.delivery-intent/v1",
             "account_id": account_id,
@@ -231,6 +258,8 @@ async def deliver_hermiten_usage(
             tenant_id, "HERMITEN_USAGE_INTENT",
             json.dumps(intent, sort_keys=True).encode("utf-8"),
         )
+    except HTTPException:
+        raise
     except Exception:
         raise HTTPException(status_code=503, detail="THESEUS custody is unavailable; no usage was sent.") from None
     try:

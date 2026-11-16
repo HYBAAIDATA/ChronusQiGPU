@@ -10,17 +10,14 @@ Renamed per Consortium Charter:
 
 from __future__ import annotations
 
-import math
 import time
-from typing import Any, Dict, List, Optional, Tuple
-import numpy as np
+from typing import Any, Dict, List, Tuple
 
 from chronus.tensor.enhanced_representation import (
     ContractionTree,
     EnhancedTensorRepresentation,
     search_contraction_trees,
     select_best_tree,
-    parallel_evaluate,
 )
 
 

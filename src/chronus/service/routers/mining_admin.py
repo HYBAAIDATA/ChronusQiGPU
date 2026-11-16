@@ -1,12 +1,14 @@
 """REST API routes for Hashrate Intelligence & Mining Administration."""
 
+import logging
 from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from chronus.execution.mining_admin import MiningAdminEngine
-from chronus.service.dependencies import get_current_tenant
+from chronus.service.mining_operator import get_mining_admin_operator
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/v1/mining/admin", tags=["mining_admin"])
 _engine = MiningAdminEngine.get_instance()
 
@@ -51,12 +53,12 @@ class ConfigureStealthRequest(BaseModel):
 
 
 class SimulatePatroclusRequest(BaseModel):
-    pools: Optional[list] = Field(default=None, description="List of target pools to simulate (default: ViaBTC, Braiins, NiceHash, CKPool)")
+    pools: Optional[list] = Field(default=None, description="Deprecated and unsupported: local loopback fixture names are fixed; omit pools")
 
 
 @router.get("/status", summary="Get real-time mining administration status")
 async def get_mining_status(
-    tenant_id: str = Depends(get_current_tenant),
+    tenant_id: str = Depends(get_mining_admin_operator),
 ) -> Dict[str, Any]:
     return _engine.get_status()
 
@@ -64,7 +66,7 @@ async def get_mining_status(
 @router.post("/start", summary="Start mining engine with specified capacity")
 async def start_mining(
     req: StartMiningRequest,
-    tenant_id: str = Depends(get_current_tenant),
+    tenant_id: str = Depends(get_mining_admin_operator),
 ) -> Dict[str, Any]:
     try:
         return _engine.start_mining(
@@ -77,7 +79,7 @@ async def start_mining(
 
 @router.post("/stop", summary="Stop active mining engine")
 async def stop_mining(
-    tenant_id: str = Depends(get_current_tenant),
+    tenant_id: str = Depends(get_mining_admin_operator),
 ) -> Dict[str, Any]:
     return _engine.stop_mining()
 
@@ -85,7 +87,7 @@ async def stop_mining(
 @router.post("/configure", summary="Dynamically configure hashrate and hardware parameters")
 async def configure_capacity(
     req: ConfigureCapacityRequest,
-    tenant_id: str = Depends(get_current_tenant),
+    tenant_id: str = Depends(get_mining_admin_operator),
 ) -> Dict[str, Any]:
     try:
         return _engine.configure_hashrate_and_capacity(
@@ -101,7 +103,7 @@ async def configure_capacity(
 @router.post("/intelligence", summary="Rebalance 5-mode meta-intelligence distribution")
 async def configure_intelligence(
     req: ConfigureIntelligenceRequest,
-    tenant_id: str = Depends(get_current_tenant),
+    tenant_id: str = Depends(get_mining_admin_operator),
 ) -> Dict[str, Any]:
     return _engine.configure_intelligence_modes(
         predictive=req.predictive,
@@ -115,7 +117,7 @@ async def configure_intelligence(
 @router.post("/intervene", summary="Execute Pearl Level 2 causal do(X) intervention")
 async def apply_intervention(
     req: CausalInterventionRequest,
-    tenant_id: str = Depends(get_current_tenant),
+    tenant_id: str = Depends(get_mining_admin_operator),
 ) -> Dict[str, Any]:
     try:
         return _engine.apply_causal_intervention(req.intervention)
@@ -125,21 +127,21 @@ async def apply_intervention(
 
 @router.post("/anomaly/inject", summary="Inject reorg or stratum poisoning perturbation")
 async def inject_anomaly(
-    tenant_id: str = Depends(get_current_tenant),
+    tenant_id: str = Depends(get_mining_admin_operator),
 ) -> Dict[str, Any]:
     return _engine.inject_anomaly()
 
 
 @router.post("/anomaly/heal", summary="Execute 1-cycle DSW instanton monopole cobordism heal")
 async def execute_dsw_heal(
-    tenant_id: str = Depends(get_current_tenant),
+    tenant_id: str = Depends(get_mining_admin_operator),
 ) -> Dict[str, Any]:
     return _engine.execute_dsw_heal()
 
 
 @router.get("/patroclus", summary="Get Patroclus Gateway & 600 Myrmidon Searchers telemetry")
 async def get_patroclus_telemetry(
-    tenant_id: str = Depends(get_current_tenant),
+    tenant_id: str = Depends(get_mining_admin_operator),
 ) -> Dict[str, Any]:
     return _engine.get_patroclus_status()
 
@@ -147,7 +149,7 @@ async def get_patroclus_telemetry(
 @router.post("/stealth", summary="Configure stealth hashrate shaping and block policies")
 async def configure_stealth(
     req: ConfigureStealthRequest,
-    tenant_id: str = Depends(get_current_tenant),
+    tenant_id: str = Depends(get_mining_admin_operator),
 ) -> Dict[str, Any]:
     try:
         return _engine.configure_stealth(
@@ -160,31 +162,46 @@ async def configure_stealth(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
 
-@router.post("/patroclus/simulate", summary="Execute Master End-to-End Stratum handshake & share simulation")
+@router.post(
+    "/patroclus/simulate",
+    summary="Run a local-loopback Stratum rehearsal (NOT live pool acceptance)",
+)
 async def simulate_patroclus_session(
     req: SimulatePatroclusRequest,
-    tenant_id: str = Depends(get_current_tenant),
+    tenant_id: str = Depends(get_mining_admin_operator),
 ) -> Dict[str, Any]:
+    """Rehearse the fixed local fixtures; never report external pool acceptance.
+
+    The underlying runner binds 127.0.0.1 fixture servers. Its responses do
+    not qualify a deployment, certify a device or prove live mining shares.
+    """
+    if req.pools is not None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Only the fixed local-loopback fixtures are supported; omit pools.",
+        )
+
     from chronus.execution.master_e2e_engine import execute_master_end_to_end
+
     try:
         await execute_master_end_to_end()
-        return {
-            "status": "SUCCESS",
-            "message": "All 4 Stratum pool sessions (ViaBTC, Braiins, NiceHash, CKPool) executed and accepted 100%.",
-            "decision_points": [
-                {"point": "System Invariants I17-I21", "status": "VERIFIED"},
-                {"point": "Classical PCI Purity (is_quantum = False)", "status": "VERIFIED"},
-                {"point": "32-bit Word Swapped PrevHash", "status": "VERIFIED"},
-                {"point": "Unreversed Merkle Root in Little-Endian", "status": "VERIFIED"},
-                {"point": "BIP310 Version-Rolling (Masked)", "status": "VERIFIED"},
-                {"point": "Dynamic ExtraNonce2 Zero-Padding", "status": "VERIFIED"},
-                {"point": "Arbitrary-Precision Rational Target (0 floats)", "status": "VERIFIED"},
-                {"point": "3us Local Pre-Submit Gatekeeper Assertion", "status": "VERIFIED"},
-                {"point": "Never Consecutive Blocks Stealth Rule", "status": "VERIFIED"},
-                {"point": "6-Parameter Wire Submit Payload", "status": "VERIFIED"},
-            ],
-            "patroclus_status": _engine.get_patroclus_status(),
-        }
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    except Exception as exc:
+        logger.exception("Local loopback Stratum rehearsal failed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Local-loopback Stratum rehearsal failed; no production evidence.",
+        ) from exc
 
+    return {
+        "status": "REHEARSAL_COMPLETED",
+        "evidence_class": "LOCAL_LOOPBACK_FIXTURE",
+        "transport": "127.0.0.1",
+        "live_pool_acceptance": "UNAVAILABLE",
+        "pool_acknowledgements": [],
+        "production_qualified": False,
+        "decision_points": [],
+        "message": (
+            "Fixed local-loopback Stratum fixtures completed. "
+            "No external pool sessions or accepted shares were verified."
+        ),
+    }

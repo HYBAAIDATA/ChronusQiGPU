@@ -1,0 +1,15 @@
+# OPERATOR TEMPLATE ONLY — NOT BENCHMARK DATA OR EVIDENCE.
+# Copy to a private location. Supply real source paths and full computed SHA-256.
+schema: chronus.real-workload-manifest/1
+data_sources: []
+# Example contract (commented intentionally; never claim these assets exist):
+#  - path: /absolute/path/to/an-existing-tensor.npy
+#    kind: tensor
+#    sha256: REPLACE_WITH_VERIFIED_64_HEX_SHA256
+#    source_class: OPERATOR_DECLARED_PRODUCTION
+#    provenance: "Operator evidence reference"
+#  - path: /absolute/path/to/an-existing-state.snapshot
+#    kind: snapshot
+#    sha256: REPLACE_WITH_VERIFIED_64_HEX_SHA256
+#    source_class: OPERATOR_DECLARED_PRODUCTION
+#    provenance: "Operator evidence reference"

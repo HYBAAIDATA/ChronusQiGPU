@@ -58,32 +58,37 @@ export class ChronusAPIClient {
     get<VerifyReceiptResponse>(`v1/verify/${segment(receiptId)}`);
   static getStorage = () => get<ApiRecord>('v1/storage');
 
-  // Hashrate Intelligence & Mining Administration
-  static getMiningStatus = () => get<ApiRecord>('v1/mining/admin/status');
-  static startMining = (baseHashrateEhS?: number, activeWarps?: number) =>
+  // Shared mining administration: explicit short-lived operator JWT in memory only.
+  // Never infer authorization from a tenant token, URL path or local UI state.
+  static getMiningStatus = (operatorJwt?: string) =>
+    get<ApiRecord>('v1/mining/admin/status', operatorJwt);
+  static startMining = (baseHashrateEhS?: number, activeWarps?: number, operatorJwt?: string) =>
     post<ApiRecord>('v1/mining/admin/start', {
       base_hashrate_eh_s: baseHashrateEhS,
       active_warps: activeWarps,
-    });
-  static stopMining = () => post<ApiRecord>('v1/mining/admin/stop', {});
+    }, operatorJwt);
+  static stopMining = (operatorJwt?: string) =>
+    post<ApiRecord>('v1/mining/admin/stop', {}, operatorJwt);
   static configureMiningCapacity = (
     baseHashrateEhS?: number,
     activeWarps?: number,
     coreVoltageV?: number,
-    fanSpeedPct?: number
+    fanSpeedPct?: number,
+    operatorJwt?: string
   ) =>
     post<ApiRecord>('v1/mining/admin/configure', {
       base_hashrate_eh_s: baseHashrateEhS,
       active_warps: activeWarps,
       core_voltage_v: coreVoltageV,
       fan_speed_pct: fanSpeedPct,
-    });
+    }, operatorJwt);
   static configureMiningIntelligence = (
     predictive: number,
     causal: number,
     counterfactual: number,
     topological: number,
-    geometric: number
+    geometric: number,
+    operatorJwt?: string
   ) =>
     post<ApiRecord>('v1/mining/admin/intelligence', {
       predictive,
@@ -91,22 +96,24 @@ export class ChronusAPIClient {
       counterfactual,
       topological,
       geometric,
-    });
-  static applyCausalIntervention = (intervention: string) =>
-    post<ApiRecord>('v1/mining/admin/intervene', { intervention });
-  static getPatroclusTelemetry = () => get<ApiRecord>('v1/mining/admin/patroclus');
+    }, operatorJwt);
+  static applyCausalIntervention = (intervention: string, operatorJwt?: string) =>
+    post<ApiRecord>('v1/mining/admin/intervene', { intervention }, operatorJwt);
+  static getPatroclusTelemetry = (operatorJwt?: string) =>
+    get<ApiRecord>('v1/mining/admin/patroclus', operatorJwt);
   static configureMiningStealth = (
     maxConfiguredEhS?: number,
     stealthTargetEhS?: number,
     neverConsecutiveBlocks?: boolean,
-    persistentPresence?: boolean
+    persistentPresence?: boolean,
+    operatorJwt?: string
   ) =>
     post<ApiRecord>('v1/mining/admin/stealth', {
       max_configured_eh_s: maxConfiguredEhS,
       stealth_target_eh_s: stealthTargetEhS,
       never_consecutive_blocks: neverConsecutiveBlocks,
       persistent_presence: persistentPresence,
-    });
+    }, operatorJwt);
 
   // AL HARAS (HYBA Security). GET status is public; every POST check needs a tenant bearer token.
   // Response keys are still being revised, so responses stay ApiRecord: render only the keys present.

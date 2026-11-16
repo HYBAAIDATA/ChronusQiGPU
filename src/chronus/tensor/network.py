@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import math
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Tuple
 import numpy as np
 
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
@@ -17,7 +17,6 @@ os.environ.setdefault("MKL_NUM_THREADS", "1")
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 
 from chronus.tensor.types import (
-    BondId,
     ContractionCertificate,
     ErrorLedger,
     Leg,

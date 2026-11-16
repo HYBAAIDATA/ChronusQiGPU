@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import List, Union
 import numpy as np
 
 from chronus.tensor.types import (
@@ -145,7 +145,7 @@ def factorize_two_site(
 
     if method == "svd":
         U, S, Vh = np.linalg.svd(matrix, full_matrices=False)
-        total_weight = float(np.sum(S ** 2))
+        _total_weight = float(np.sum(S ** 2))
         rand_res = 0.0
     elif method == "rand_svd":
         # Randomized SVD (Halko-Martinsson-Tropp 2011)
@@ -158,7 +158,7 @@ def factorize_two_site(
         B = Q.conj().T @ matrix
         Ub, S, Vh = np.linalg.svd(B, full_matrices=False)
         U = Q @ Ub
-        total_weight = float(np.sum(S ** 2))
+        _total_weight = float(np.sum(S ** 2))
         rand_res = float(np.linalg.norm(matrix - Q @ (Q.conj().T @ matrix)))
     else:
         raise NotImplementedError(f"Factorization method '{method}' not implemented in factorize_two_site.")

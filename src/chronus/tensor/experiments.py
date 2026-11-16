@@ -48,7 +48,7 @@ def reference_statevector_simulation(n_qubits: int, gate_ops: List[Tuple[str, Li
     state = np.zeros(1 << n_qubits, dtype=np.complex128)
     state[0] = 1.0 + 0.0j
 
-    I = np.eye(2, dtype=np.complex128)
+    _I = np.eye(2, dtype=np.complex128)
     H = (1.0 / math.sqrt(2.0)) * np.array([[1, 1], [1, -1]], dtype=np.complex128)
     X = np.array([[0, 1], [1, 0]], dtype=np.complex128)
     Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
@@ -278,7 +278,7 @@ def E3_honest_1000_node_claim() -> ExperimentResult:
 
     # 2. Build 1D Transverse-Field Ising Model MPO (J=1, h=1, chi_mpo_max=4)
     H_terms = TFIM_terms(J=1.0, h=1.0, n_nodes=n_nodes)
-    H_mpo = build_hamiltonian_mpo(H_terms, n_nodes=n_nodes, group="Z2", chi_mpo_max=4)
+    H_mpo = build_hamiltonian_mpo(H_terms, n_nodes=n_nodes, group="none", chi_mpo_max=4)
 
     # 3. DMRG Variational Ground State Optimization
     e0_1000 = DMRG(net, ledger, H_mpo, chi_max=512, sweeps=2)
@@ -289,7 +289,7 @@ def E3_honest_1000_node_claim() -> ExperimentResult:
     )
 
     # 4. Cross-check at n=32 against exact qsim ground energy
-    net32 = truncate_to_first_32(net)
+    _net32 = truncate_to_first_32(net)
     energy_32_reference = qsim_ground_energy_32(H_terms)
 
     # 32-site ground energy density cross check:

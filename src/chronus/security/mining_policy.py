@@ -1,0 +1,111 @@
+"""AL HARAS local mining policy: explicit endpoints, arming and bounded shares.
+
+This policy is an operator configuration boundary, not remote attestation.
+"""
+from __future__ import annotations
+
+import json
+import hashlib
+import os
+from collections import deque
+from pathlib import Path
+import time
+from uuid import uuid4
+
+from chronus.stratum.endpoint import PoolEndpoint, parse_endpoint
+
+
+class MiningSubmissionPolicy:
+    def __init__(self):
+        self.armed = False
+        self.approval_reference = None
+        self.accepted_share_target = None
+        self.accepted = 0
+        self.pending: set[int] = set()
+        self.events = deque(maxlen=256)
+        self._custody = None
+        self._key = None
+        self._tenant = None
+        self.session_id = str(uuid4())
+
+    @staticmethod
+    def check_endpoint(endpoint: PoolEndpoint) -> None:
+        raw = os.getenv("CHRONUS_ALLOWED_POOL_ENDPOINTS", "[]")
+        try:
+            values = json.loads(raw)
+            if not isinstance(values, list) or not all(isinstance(v, str) for v in values):
+                raise ValueError
+            allowed = {parse_endpoint(value) for value in values}
+        except (ValueError, TypeError) as exc:
+            raise PermissionError("CHRONUS_ALLOWED_POOL_ENDPOINTS must be a JSON array of endpoints") from exc
+        if endpoint not in allowed:
+            raise PermissionError("Pool endpoint is not in the operator allowlist")
+
+    def arm(self, approval_reference: str, accepted_share_target: int) -> None:
+        if not isinstance(approval_reference, str) or not approval_reference.strip():
+            raise ValueError("operator approval reference is required")
+        if type(accepted_share_target) is not int or accepted_share_target < 1:
+            raise ValueError("accepted_share_target must be a positive integer")
+        if self.pending:
+            raise RuntimeError("cannot arm with unresolved submissions")
+        from chronus.storage.durable import DurableTheseusService
+        try:
+            self._tenant = os.environ["CHRONUS_MINING_TENANT_ID"]
+            self._key = Path(os.environ["CHRONUS_MINING_KEY_FILE"]).read_bytes()
+            if not self._tenant.strip() or len(self._key) != 32:
+                raise ValueError("invalid custody identity or key")
+            self._custody = DurableTheseusService(os.environ["CHRONUS_MINING_CUSTODY_PATH"])
+        except (KeyError, OSError, ValueError) as exc:
+            raise PermissionError("Encrypted mining custody and local identity must be configured before arming") from exc
+        self._record("MINING_SUBMISSION_ARMED", {"approval_reference": approval_reference,
+                                               "accepted_share_target": accepted_share_target})
+        self.approval_reference = approval_reference
+        self.accepted_share_target = accepted_share_target
+        self.accepted = 0
+        self.armed = True
+        self.events.append("SUBMISSION_ARMED")
+
+    def _record(self, event: str, record: dict) -> None:
+        from chronus.execution.authority import _seal
+        record = {"producer": "CHRONUS", "schema_version": 1, "timestamp_ns": time.time_ns(),
+                  "session_id": self.session_id, "tenant_id": self._tenant, **record}
+        sealed = _seal(record, self._key, self._tenant)
+        self._custody.append_journal_event(self._tenant, event, sealed)
+
+    def authorize(self, rpc_id: int, evidence: dict | None = None) -> None:
+        if not self.armed:
+            raise PermissionError("Share submission is not armed")
+        if self.accepted + len(self.pending) >= self.accepted_share_target:
+            raise PermissionError("Share target capacity is exhausted or awaiting acknowledgement")
+        self._record("MINING_SUBMIT_AUTHORIZED", {"rpc_id": rpc_id, "candidate": evidence})
+        self.pending.add(rpc_id)
+
+    def observe(self, response: dict) -> None:
+        rpc_id = response.get("id")
+        if type(rpc_id) is not int or rpc_id not in self.pending:
+            return
+        if response.get("result") is not True and response.get("result") is not False and not response.get("error"):
+            return
+        self._record("MINING_POOL_ACKNOWLEDGEMENT", {
+            "rpc_id": rpc_id, "accepted": response.get("result") is True and not response.get("error"),
+            "response_sha256": hashlib.sha256(
+                json.dumps(response, sort_keys=True, default=str).encode()).hexdigest(),
+        })
+        self.pending.remove(rpc_id)
+        if response.get("result") is True and not response.get("error"):
+            self.accepted += 1
+            if self.accepted >= self.accepted_share_target:
+                self.disarm("AUTO_DISARMED_TARGET_REACHED")
+
+    def disarm(self, reason="SUBMISSION_DISARMED") -> None:
+        self.armed = False
+        self.events.append(reason)
+        if self._custody is not None:
+            self._record(reason, {"shares_accepted": self.accepted, "pending_submissions": len(self.pending)})
+
+    def status(self) -> dict:
+        return {"share_submit_armed": self.armed,
+                "accepted_share_target": self.accepted_share_target,
+                "shares_accepted": self.accepted,
+                "pending_submissions": len(self.pending),
+                "approval_reference": self.approval_reference}

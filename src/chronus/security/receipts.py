@@ -1,4 +1,4 @@
-"""Canonical signed receipt chain; in-memory until THESEUS persistence is integrated."""
+"""Canonical in-memory signed receipt chain.\n\nFor durable AL HARAS receipts use ``chronus.security.durable_receipts.DurableReceiptLog``,\nwhich binds this signature contract to THESEUS custody and restart replay.\n"""
 from __future__ import annotations
 import hashlib
 from dataclasses import asdict, dataclass, replace

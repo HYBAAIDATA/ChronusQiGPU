@@ -22,19 +22,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import math
 import time
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 import warnings
 import numpy as np
 
-from chronus.tensor.types import (
-    BondId,
-    ChargeTuple,
-    Leg,
-    LegDirection,
-    Node,
-    SymmetricTensor,
-    theory_saving,
-)
 from chronus.tensor.network import (
     HARD_CAP_THEOREM,
     TensorNetwork,
@@ -576,7 +567,7 @@ class EnhancedTensorRepresentation:
         t0_ns = time.perf_counter_ns()
         trees = self.parallel_pathway_search()
         best_tree = self.weighted_pathway_aggregation(trees)
-        sharded_res = execute_sharded_contraction(self.shard_plan, best_tree)
+        _sharded_res = execute_sharded_contraction(self.shard_plan, best_tree)
         t1_ns = time.perf_counter_ns()
         latency_ms = (t1_ns - t0_ns) / 1_000_000.0
 

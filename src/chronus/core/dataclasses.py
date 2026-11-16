@@ -7,7 +7,7 @@ and machine-checkable labels for capacity claims.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from .enums import (
     AdapterBackend,

@@ -41,7 +41,7 @@ class TopologicalIntegrityGate:
     """Operation-output verification gate with explicit tolerance."""
 
     def __init__(self, tolerance: float = 1e-10) -> None:
-        if tolerance < 0:
+        if not math.isfinite(tolerance) or tolerance < 0:
             raise ValueError("tolerance must be non-negative")
         self.tolerance = tolerance
         self.checks_performed = 0
@@ -54,8 +54,16 @@ class TopologicalIntegrityGate:
         dtype_match = a.dtype == e.dtype
         if not shape_match:
             return IntegrityVerdict(False, float("inf"), False, dtype_match)
-        error = float(np.max(np.abs(a - e))) if a.size else 0.0
-        passed = bool(error <= self.tolerance)
+        if a.dtype.kind in "iu" and e.dtype.kind in "iu":
+            # Fixed-width subtraction can overflow and turn a large error negative.
+            delta = np.abs(a.astype(object) - e.astype(object))
+        elif a.dtype.kind == "b" and e.dtype.kind == "b":
+            delta = np.not_equal(a, e)
+        else:
+            delta = np.abs(a - e)
+        error = float(np.max(delta)) if a.size else 0.0
+        passed = bool(dtype_match and np.all(np.isfinite(a)) and np.all(np.isfinite(e))
+                      and error <= self.tolerance)
         if passed:
             self.checks_passed += 1
         return IntegrityVerdict(passed, error, shape_match, dtype_match)
@@ -191,8 +199,28 @@ class PhiMemoryHierarchy:
 
     TIERS = ("register", "sram", "l2", "hbm")
 
-    def __init__(self) -> None:
+    def __init__(self, capacity_bytes: dict[str, int] | None = None) -> None:
         self._storage: dict[str, dict[str, ExactFoldState]] = {}
+        self.capacity_bytes = dict(capacity_bytes or {})
+        if any(tier not in self.TIERS or type(limit) is not int or limit < 1
+               for tier, limit in self.capacity_bytes.items()):
+            raise ValueError("tier capacity must name a valid tier and positive byte count")
+        self._hits = 0
+        self._misses = 0
+        self._promotions = 0
+
+    def _check_capacity(self, key: str, state: ExactFoldState, tier: str) -> None:
+        used = sum(len(states[tier].folded) for name, states in self._storage.items()
+                   if name != key and tier in states)
+        if tier in self.capacity_bytes and used + len(state.folded) > self.capacity_bytes[tier]:
+            raise MemoryError("folded residency exceeds configured tier byte budget")
+
+    def telemetry(self) -> dict:
+        return {"scope": "software_residency_not_physical_cache", "hits": self._hits,
+                "misses": self._misses, "tier_transfers": self._promotions,
+                "resident_bytes": {tier: sum(len(states[tier].folded) for states in self._storage.values()
+                                             if tier in states) for tier in self.TIERS},
+                "capacity_bytes": dict(self.capacity_bytes)}
 
     def store(self, key: str, value: np.ndarray, tier: str = "hbm") -> ExactFoldState:
         if tier not in self.TIERS:
@@ -200,11 +228,18 @@ class PhiMemoryHierarchy:
         if not key:
             raise ValueError("key is required")
         state = ExactFoldState.from_array(np.asarray(value))
+        self._check_capacity(key, state, tier)
         self._storage.setdefault(key, {})[tier] = state
         return state
 
     def state(self, key: str, tier: str = "hbm") -> ExactFoldState:
-        return self._storage[key][tier]
+        try:
+            state = self._storage[key][tier]
+        except KeyError:
+            self._misses += 1
+            raise
+        self._hits += 1
+        return state
 
     def load(self, key: str, tier: str = "hbm") -> np.ndarray:
         return self.state(key, tier).unfold_array()
@@ -215,7 +250,10 @@ class PhiMemoryHierarchy:
     def promote(self, key: str, source: str, target: str) -> None:
         if source not in self.TIERS or target not in self.TIERS:
             raise ValueError("unknown memory tier")
-        self._storage.setdefault(key, {})[target] = self._storage[key][source]
+        state = self.state(key, source)
+        self._check_capacity(key, state, target)
+        self._storage.setdefault(key, {})[target] = state
+        self._promotions += 1
 
     demote = promote
 

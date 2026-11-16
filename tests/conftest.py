@@ -141,3 +141,13 @@ if __name__ == "__main__":
     for nodeid in sorted(known_failure_tests()):
         print(nodeid)
     sys.exit(0)
+
+
+@pytest.fixture
+def mining_custody(tmp_path, monkeypatch):
+    """Explicit local encrypted custody for synthetic mining-policy tests."""
+    key = tmp_path / "customer-test.key"
+    key.write_bytes(bytes(range(32)))
+    monkeypatch.setenv("CHRONUS_MINING_TENANT_ID", "synthetic-test-tenant")
+    monkeypatch.setenv("CHRONUS_MINING_KEY_FILE", str(key))
+    monkeypatch.setenv("CHRONUS_MINING_CUSTODY_PATH", str(tmp_path / "mining.sqlite3"))

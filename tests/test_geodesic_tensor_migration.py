@@ -164,3 +164,43 @@ def test_metal_tensor_backend_is_real_or_fails_closed():
     else:
         with pytest.raises(MetalTensorUnavailable):
             backend.execute("add", np.ones(2, dtype=np.float32), np.ones(2, dtype=np.float32))
+
+
+def test_live_mining_scheduler_dispatches_through_existing_geodesic_organs(monkeypatch):
+    from chronus.execution.mining_scheduler import TuringMiningScheduler
+    scheduler = TuringMiningScheduler(bytes(range(32)))
+    # Full decode cannot satisfy this integration.
+    monkeypatch.setattr(ExactFoldState, "unfold", lambda self: (_ for _ in ()).throw(AssertionError("full unfold")))
+    for _ in range(3):
+        order = scheduler.order(32)
+        assert sorted(order) == list(range(32))
+        evidence = scheduler.last_evidence["geodesic"]
+        assert evidence["coverage"] == "exact_permutation"
+        assert evidence["representation_bytes"] == evidence["source_bytes"]
+        assert evidence["hashrate_multiplier"] is None
+    def fail(*args, **kwargs):
+        raise RuntimeError("scheduler failed")
+    monkeypatch.setattr(scheduler.geodesic, "submit", fail)
+    with pytest.raises(RuntimeError, match="scheduler failed"):
+        scheduler.order(32)
+
+
+def test_memory_tier_capacity_enforced_without_corrupting_existing_state():
+    memory = PhiMemoryHierarchy(capacity_bytes={"sram": 8, "hbm": 16})
+    value = np.arange(4, dtype=np.uint16)
+    memory.store("first", value, "sram")
+    with pytest.raises(MemoryError):
+        memory.store("second", value, "sram")
+    np.testing.assert_array_equal(memory.load("first", "sram"), value)
+    memory.store("second", value, "hbm")
+    with pytest.raises(MemoryError):
+        memory.promote("second", "hbm", "sram")
+    assert memory.telemetry()["resident_bytes"]["sram"] == 8
+    assert memory.telemetry()["scope"] == "software_residency_not_physical_cache"
+
+
+def test_folded_arrays_reject_process_local_object_pointers():
+    with pytest.raises(ValueError):
+        ExactFoldState.from_array(np.array([object()], dtype=object))
+    with pytest.raises(ValueError):
+        ExactFoldState.from_array(np.zeros(2, dtype=[("x", np.int32)]))

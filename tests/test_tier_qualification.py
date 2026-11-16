@@ -179,7 +179,7 @@ class HarnessTests(unittest.TestCase):
 
     def test_envelope_violation_suspends_tier(self) -> None:
         harness = QualificationHarness()
-        clean = harness.qualify("LUCAS_PV_SCALING", seed=5)
+        _clean = harness.qualify("LUCAS_PV_SCALING", seed=5)
 
         class InflatingHarness(QualificationHarness):
             def qualify(self, *args, **kwargs):
