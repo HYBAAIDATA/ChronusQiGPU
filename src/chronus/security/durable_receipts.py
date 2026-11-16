@@ -11,7 +11,8 @@ import hashlib
 import json
 from dataclasses import fields
 
-from chronus.crypto.signers import Ed25519Signer
+from cryptography.exceptions import InvalidSignature
+from chronus.crypto.signers import Ed25519Signer, verify as verify_signature
 from chronus.security.canonical import canonical_bytes
 from chronus.security.receipts import Receipt, ReceiptLog, SignedReceipt
 from chronus.storage.durable import DurableTheseusService
@@ -77,7 +78,7 @@ class DurableReceiptLog(ReceiptLog):
                     continue
                 if set(data) != {
                     "schema", "stream_id", "signing_key_sha256",
-                    "receipt", "digest", "signature",
+                    "receipt", "digest", "signature", "stream_binding_signature",
                 }:
                     raise ValueError("signed-receipt envelope fields invalid")
                 if data["signing_key_sha256"] != self.public_key_sha256:
@@ -91,6 +92,16 @@ class DurableReceiptLog(ReceiptLog):
                 digest = data["digest"]
                 signature = bytes.fromhex(data["signature"])
                 signed = SignedReceipt(receipt, digest, signature)
+                binding = canonical_bytes({
+                    "domain": "chronus.signed-receipt-stream-binding/1",
+                    "tenant_id": self.tenant_id,
+                    "stream_id": self.stream_id,
+                    "receipt_digest": digest,
+                })
+                verify_signature(
+                    "Ed25519", self.public_key, binding,
+                    bytes.fromhex(data["stream_binding_signature"]),
+                )
                 if (
                     receipt.sequence != len(recovered)
                     or receipt.prev_digest != previous
@@ -99,7 +110,7 @@ class DurableReceiptLog(ReceiptLog):
                     raise ValueError("signed-receipt chain/signature mismatch")
                 recovered.append(signed)
                 previous = signed.digest
-            except (KeyError, TypeError, ValueError, UnicodeError) as exc:
+            except (KeyError, TypeError, ValueError, UnicodeError, InvalidSignature) as exc:
                 raise ReceiptCustodyError("invalid stored signed-receipt envelope") from exc
         return recovered
 
@@ -123,6 +134,12 @@ class DurableReceiptLog(ReceiptLog):
         signed = SignedReceipt(receipt, digest, key.sign(bytes.fromhex(digest)))
         if not ReceiptLog.verify(signed, self.public_key):
             raise ReceiptCustodyError("new receipt signature failed independent verification")
+        binding = canonical_bytes({
+            "domain": "chronus.signed-receipt-stream-binding/1",
+            "tenant_id": self.tenant_id,
+            "stream_id": self.stream_id,
+            "receipt_digest": signed.digest,
+        })
         payload = canonical_bytes({
             "schema": _SCHEMA,
             "stream_id": self.stream_id,
@@ -130,6 +147,7 @@ class DurableReceiptLog(ReceiptLog):
             "receipt": receipt.unsigned(),
             "digest": signed.digest,
             "signature": signed.signature.hex(),
+            "stream_binding_signature": key.sign(binding).hex(),
         })
         # This single THESEUS call must complete before local state advances.
         self.custody.append_journal_event(self.tenant_id, _EVENT, payload)
