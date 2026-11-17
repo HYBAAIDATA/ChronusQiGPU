@@ -88,3 +88,18 @@ def test_canonical_triad_entrypoint_with_reopen(tmp_path):
     again = ProductionTriad(path)
     assert again.recover_protected_payload(receipt, root) == payload
     assert again.theseus.verify_journal_continuity("tenant-A")
+
+def test_oversized_corrupt_shard_is_bounded_one_erasure(tmp_path):
+    service = ProtectedTheseusService(
+        DurableTheseusService(str(tmp_path / "bounded.sqlite3")),
+        tmp_path / "shards",
+    )
+    source = b"observed-bytes" * 128
+    receipt = service.store("tenant-A", source)
+    folder = service._directory("tenant-A", receipt.payload_sha256)
+    # Actual oversized file is not read into memory; its size fails policy.
+    (folder / "0.shard").write_bytes(b"x" * 500_000)
+    assert service.reconstruct(receipt) == source
+    (folder / "1.shard").write_bytes(b"y" * 500_000)
+    with pytest.raises(ValueError, match="multiple failures"):
+        service.reconstruct(receipt)
