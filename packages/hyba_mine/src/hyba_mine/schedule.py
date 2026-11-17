@@ -58,7 +58,7 @@ def header_key(job_key: Any, version: int, en2_counter: int) -> tuple:
 def unit_key(unit: WorkUnit) -> tuple:
     """The header a unit searches: (job key, full nVersion, extranonce2 counter)."""
     version = unit.version if unit.version is not None else unit.version_bits
-    return header_key(unit.job.key if unit.job is not None else None, version, unit.en2_counter)
+    return header_key(unit.job.schedule_key if unit.job is not None else None, version, unit.en2_counter)
 
 
 @dataclass(frozen=True)
@@ -244,13 +244,13 @@ class WorkScheduler:
         # A new version mask restarts the job's schedule in the new version space. An
         # explicit override list is consumed once per job; its version indices are checked
         # against the mask in force when each unit is taken (by the runtime).
-        key = job.key if self.override else (job.key, mask)
+        key = job.schedule_key if self.override else (job.schedule_key, mask)
         if key == self._schedule_key:
             return
-        if job.key != self._job_key:
+        if job.schedule_key != self._job_key:
             if self._job_key is not None:
                 self.registry.retire_job(self._job_key)
-            self._job_key = job.key
+            self._job_key = job.schedule_key
         self._schedule_key = key
         self._job = job
         self._mask = mask
@@ -261,7 +261,7 @@ class WorkScheduler:
     def _uncovered(self, job: MiningJob, mask: int, spec: UnitSpec) -> Optional[UnitSpec]:
         """The first part of ``spec`` not yet issued for its header; the rest goes back to the queue."""
         version, _bits = roll_version(job.base_version, mask, spec.version_index)
-        issued = self.registry.issued(header_key(job.key, version, spec.en2_counter))
+        issued = self.registry.issued(header_key(job.schedule_key, version, spec.en2_counter))
         if not issued:
             return spec
         begin, end = spec.start, spec.start + spec.count

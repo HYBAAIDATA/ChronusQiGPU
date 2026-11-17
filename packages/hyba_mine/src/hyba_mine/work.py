@@ -116,6 +116,16 @@ class MiningJob:
         return (self.pool_id, self.generation, self.epoch, self.job.job_id)
 
     @property
+    def schedule_key(self) -> tuple:
+        """Identity of the work itself: ``key`` plus clean_seq and a digest of the whole notify.
+
+        A pool may re-send a job_id with a new header (merkle, ntime, clean_jobs); that is different
+        work, so it must not reuse the cursor or issued ranges of the earlier notify.
+        """
+        header = hashlib.sha256(repr(self.job).encode("utf-8")).hexdigest()
+        return (*self.key, self.clean_seq, header)
+
+    @property
     def en2_limit(self) -> int:
         return 1 << (8 * self.extranonce2_size)
 

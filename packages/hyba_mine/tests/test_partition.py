@@ -309,6 +309,25 @@ class TestScheduler(unittest.TestCase):
         # The replaced job's ranges are retired; the new job's units are new headers.
         self.assertEqual(scheduler.registry.issued(unit_key(unit)), [])
 
+    def test_a_resent_job_id_with_a_new_header_is_scheduled_from_the_start(self):
+        scheduler, (r0, r1) = self._scheduler()
+        old = _job("j1")
+        spec, _ = scheduler.take(r0, old)
+        scheduler.complete(r0, scheduler.issue(r0, old, spec, Fraction(1)))
+        # The pool re-sends job_id "j1" with a new ntime: different work under the same job_id.
+        resent = replace(old, job=replace(old.job, ntime=f"{(int(old.job.ntime, 16) + 1) & 0xFFFFFFFF:08x}"))
+        spec, resumed = scheduler.take(r1, resent)
+        self.assertFalse(resumed)
+        self.assertEqual((spec.en2_counter, spec.start), (0, 0))
+        unit = scheduler.issue(r1, resent, spec, Fraction(1))
+        scheduler.registry.assert_disjoint()
+        self.assertEqual(scheduler.registry.issued(unit_key(unit)), [(0, 1 << 24)])
+        # A clean_jobs re-send of the identical header is new work too (clean_seq is part of the key).
+        scheduler.complete(r1, unit)
+        again = replace(resent, clean_seq=resent.clean_seq + 1)
+        spec, _ = scheduler.take(r0, again)
+        self.assertEqual((spec.en2_counter, spec.start), (0, 0))
+
 
 class _StandInMetal(StandInLane):
     """Stand-in for an Apple GPU lane: Mode A computing under the Metal route name (test only)."""
