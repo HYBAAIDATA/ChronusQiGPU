@@ -51,7 +51,7 @@ class ProtectedTheseusService:
         if path.is_symlink():
             raise ValueError("shard symlink refused")
         if path.exists():
-            if not path.is_file() or path.read_bytes() != content:
+            if not path.is_file() or path.stat().st_size != len(content) or path.read_bytes() != content:
                 raise ValueError("immutable shard conflicts with existing file")
             return
         try:
@@ -60,7 +60,7 @@ class ProtectedTheseusService:
                 stream.flush()
                 os.fsync(stream.fileno())
         except FileExistsError:
-            if not path.is_file() or path.is_symlink() or path.read_bytes() != content:
+            if not path.is_file() or path.is_symlink() or path.stat().st_size != len(content) or path.read_bytes() != content:
                 raise ValueError("concurrent immutable shard conflict") from None
 
     def store(self, tenant_id: str, payload: bytes, *, shard_count: int = 4) -> ProtectedReceipt:
@@ -133,7 +133,12 @@ class ProtectedTheseusService:
             if path.is_symlink():
                 raise ValueError("shard symlink refused")
             try:
-                part = path.read_bytes()
+                if path.stat().st_size != stripe.shard_bytes:
+                    part = None  # bounded file-size mismatch is one erasure
+                elif not path.is_file():
+                    raise ValueError("shard path must be a regular file")
+                else:
+                    part = path.read_bytes()
             except FileNotFoundError:
                 part = None
             parts.append(part)
