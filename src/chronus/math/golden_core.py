@@ -39,7 +39,7 @@ from chronus.math.binet_lucas import fibonacci_fast, lucas_fast
 
 __all__ = [
     "FAMILY_COEFFS", "FOLD_MODULUS", "M15", "M15_INV", "RootEnclosure",
-    "cassini_check", "family_pisot_modulus", "family_root", "fibonacci", "lucas",
+    "cassini_check", "family_pisot_modulus", "family_pisot_modulus_squared_bounds", "family_root", "fibonacci", "lucas",
     "t_phi_fold", "t_phi_unfold", "zeckendorf_decode", "zeckendorf_encode",
 ]
 
@@ -170,8 +170,28 @@ def family_root(name: str, precision: int = 50) -> RootEnclosure:
         return RootEnclosure(name, +value, low, high)
 
 
+def family_pisot_modulus_squared_bounds(name: str, precision: int = 50) -> Tuple[Fraction, Fraction]:
+    """Certified exact rational bounds (low, high) on |mu|^2, the squared modulus of the largest conjugate.
+
+    Uses the enclosure of the dominant root alpha: |mu|^2 = (c0/alpha)^2 for quadratic families and
+    |c0| / alpha for cubic families. Both are decreasing in alpha, so the bounds come from the
+    opposite ends of the root enclosure.
+    """
+    coeffs = FAMILY_COEFFS[name]
+    root = family_root(name, precision)
+    c0 = Fraction(abs(coeffs[-1]))
+    quadratic = len(coeffs) - 1 == 2
+
+    def squared(alpha: Fraction) -> Fraction:
+        return c0 * c0 / (alpha * alpha) if quadratic else c0 / alpha
+
+    return squared(root.high), squared(root.low)
+
+
 def family_pisot_modulus(name: str, precision: int = 50) -> Decimal:
-    """Largest modulus among the Galois conjugates of the dominant root (< 1 for a Pisot number).
+    """Decimal approximation of the largest modulus among the Galois conjugates (< 1 for a Pisot number).
+
+    Approximate only: for a certified enclosure use ``family_pisot_modulus_squared_bounds``.
 
     Quadratic families: the conjugate is -c0 / alpha (product of the roots), so |mu| = |c0| / alpha.
     Cubic families here have one real root and a complex-conjugate pair, so |mu|^2 = |c0| / alpha.
