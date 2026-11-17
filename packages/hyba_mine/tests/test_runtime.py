@@ -145,12 +145,20 @@ class TestStaleAndSilence(unittest.TestCase):
                 result = await self.inner.run(unit)
                 if not self.fired:
                     self.fired = True
-                    await self.pool.push_job("job-new", "495fab2c", clean=True)
-                    session = self.box[0].session
-                    for _ in range(200):
-                        if session.current is not None and session.current.job_id == "job-new":
-                            break
-                        await asyncio.sleep(0.01)
+                    # The runtime aborts the unit in flight as soon as clean_jobs lands, and may
+                    # cancel this run() while we wait. Returning the finished result anyway models
+                    # the race in which a whole result arrives together with the abort, so the
+                    # second safety net (stale hits dropped, never submitted) is exercised
+                    # deterministically on every OS instead of depending on event-loop timing.
+                    try:
+                        await self.pool.push_job("job-new", "495fab2c", clean=True)
+                        session = self.box[0].session
+                        for _ in range(200):
+                            if session.current is not None and session.current.job_id == "job-new":
+                                break
+                            await asyncio.sleep(0.01)
+                    except asyncio.CancelledError:
+                        return result
                 return result
 
             def close(self):
