@@ -158,3 +158,86 @@ export function evidenceBundle(state: JourneyState) {
     verification: state.verification ? { observed_at: state.verification.observedAt, response: pick(state.verification.data, verificationFields) } : null,
   };
 }
+
+export type WorkloadDraft = {
+  tenantId: string;
+  credential: string;
+  mode: 'guided' | 'json';
+  input: string;
+  workloadType: string;
+};
+type ObservationBundle = NonNullable<ReturnType<typeof evidenceBundle>>;
+type DownloadEnvironment = {
+  createObjectURL(blob: Blob): string;
+  revokeObjectURL(url: string): void;
+  createLink(): Pick<HTMLAnchorElement, 'href' | 'download' | 'click'>;
+  defer(callback: () => void, milliseconds: number): unknown;
+};
+
+/** Browser effects are injected in contract tests; no browser success is inferred. */
+export function downloadObservation(bundle: ObservationBundle, environment: DownloadEnvironment = {
+  createObjectURL: (blob) => URL.createObjectURL(blob),
+  revokeObjectURL: (url) => URL.revokeObjectURL(url),
+  createLink: () => document.createElement('a'),
+  defer: (callback, milliseconds) => window.setTimeout(callback, milliseconds),
+}) {
+  const blob = new Blob([JSON.stringify(bundle, null, 2) + '\n'], { type: 'application/json' });
+  const url = environment.createObjectURL(blob);
+  try {
+    const link = environment.createLink();
+    link.href = url;
+    link.download = 'chronus-workload-observation.json';
+    link.click();
+  } finally {
+    environment.defer(() => environment.revokeObjectURL(url), 1_000);
+  }
+}
+
+/** These are the actual page event handlers, not a parallel test-only workflow. */
+export function createWorkloadPageActions(options: {
+  journey: WorkloadJourney;
+  getDraft(): WorkloadDraft;
+  setTenantId(value: string): void;
+  setCredential(value: string): void;
+  setValidation(value: string): void;
+  setDraftChanged(value: boolean): void;
+  setDownloaded(value: boolean): void;
+  setDownloadError(value: string): void;
+  download?: (bundle: ObservationBundle) => void;
+}) {
+  const { journey, getDraft, setValidation, setDraftChanged, setDownloaded, setDownloadError } = options;
+  const busy = () => journey.getSnapshot().pending !== null;
+  const changeIdentity = (update: () => void) => {
+    journey.clear(); update(); setValidation(''); setDraftChanged(false); setDownloaded(false); setDownloadError('');
+  };
+  return {
+    changeIdentity,
+    changeDraft(update: () => void) { update(); setValidation(''); setDraftChanged(Boolean(journey.getSnapshot().record)); },
+    clearAccess() { if (!busy()) changeIdentity(() => { options.setCredential(''); options.setTenantId(''); }); },
+    async submit(event: { preventDefault(): void }) {
+      event.preventDefault();
+      const draft = getDraft();
+      if (busy() || !draft.tenantId.trim() || !draft.credential.trim()) return;
+      setValidation('');
+      let body;
+      try { body = buildWorkloadRequest(draft.tenantId, draft.mode, draft.input, draft.workloadType); }
+      catch (cause) { setValidation(cause instanceof Error ? cause.message : 'Check your inputs.'); return; }
+      setDraftChanged(false);
+      await journey.submit(body, draft.credential);
+    },
+    inspect(id: string) {
+      const draft = getDraft();
+      // A history read cannot establish that this record matches the current draft.
+      // In particular, a failed read retains both the old snapshot and its warning.
+      return journey.inspect(id, draft.tenantId, draft.credential);
+    },
+    downloadEvidence() {
+      if (busy()) return;
+      const bundle = evidenceBundle(journey.getSnapshot());
+      if (!bundle) return;
+      setDownloaded(false); setDownloadError('');
+      try { (options.download || downloadObservation)(bundle); setDownloaded(true); }
+      catch { setDownloadError('Download could not be started. Try again or inspect the API response directly.'); }
+    },
+  };
+}

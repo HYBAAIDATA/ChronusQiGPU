@@ -6,7 +6,7 @@ import ts from 'typescript';
 // Use the declared compiler so this suite also runs on the documented Node 20 minimum.
 const source = await readFile(new URL('../lib/workload-journey.ts', import.meta.url), 'utf8');
 const compiled = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } });
-const { WorkloadJourney, buildWorkloadRequest, describeExecution, evidenceBundle, isStale, requestIssue, verificationLabel } = await import(`data:text/javascript;base64,${Buffer.from(compiled.outputText).toString('base64')}`);
+const { WorkloadJourney, buildWorkloadRequest, createWorkloadPageActions, describeExecution, downloadObservation, evidenceBundle, isStale, requestIssue, verificationLabel } = await import(`data:text/javascript;base64,${Buffer.from(compiled.outputText).toString('base64')}`);
 
 // Synthetic transport fixtures only: these tests do not execute a backend or use real credentials.
 const observedAt = '2026-11-16T09:00:00.000Z';
@@ -211,4 +211,140 @@ test('evidence omits unapproved metadata and callbacks; stale observations are l
   assert.equal(isStale(observedAt, Date.parse(observedAt) + 59_999), false);
   assert.equal(isStale(observedAt, Date.parse(observedAt) + 60_000), true);
   assert.equal(isStale('invalid'), true);
+});
+
+function pageActions(journey, download) {
+  const draft = { tenantId: 'fixture-tenant', credential: 'fixture-access', mode: 'guided', input: '10', workloadType: 'scaling.v1' };
+  const view = { validation: '', draftChanged: false, downloaded: false, downloadError: '' };
+  const actions = createWorkloadPageActions({
+    journey, getDraft: () => draft, download,
+    setTenantId: (value) => { draft.tenantId = value; },
+    setCredential: (value) => { draft.credential = value; },
+    setValidation: (value) => { view.validation = value; },
+    setDraftChanged: (value) => { view.draftChanged = value; },
+    setDownloaded: (value) => { view.downloaded = value; },
+    setDownloadError: (value) => { view.downloadError = value; },
+  });
+  return { draft, view, actions };
+}
+
+test('page submission handler prevents navigation, validates before transport, and submits the configured draft once', async () => {
+  const { journey, calls } = setup();
+  const { draft, view, actions } = pageActions(journey);
+  let prevented = 0;
+  const event = { preventDefault() { prevented += 1; } };
+  draft.input = 'invalid';
+  await actions.submit(event);
+  assert.match(view.validation, /whole-number/);
+  assert.equal(calls.length, 0);
+  draft.mode = 'json'; draft.input = '[]';
+  await actions.submit(event);
+  assert.match(view.validation, /JSON payload must be an object/);
+  assert.equal(calls.length, 0);
+  draft.mode = 'guided'; draft.input = '10';
+  await actions.submit(event);
+  assert.equal(prevented, 3);
+  assert.equal(view.validation, '');
+  assert.deepEqual(calls, [['submit', body(), 'fixture-access']]);
+  assert.equal(journey.getSnapshot().record.data.status, 'COMPLETED');
+});
+
+test('page handlers ignore submission without access and guard clear/download while a request is pending', async () => {
+  let resolve;
+  const { journey } = setup({ dispatchWorkload: () => new Promise((done) => { resolve = done; }) });
+  let downloads = 0;
+  const { draft, actions } = pageActions(journey, () => { downloads += 1; });
+  draft.credential = ' ';
+  await actions.submit({ preventDefault() {} });
+  assert.equal(journey.getSnapshot().pending, null);
+  draft.credential = 'fixture-access';
+  const waiting = actions.submit({ preventDefault() {} });
+  actions.clearAccess(); actions.downloadEvidence();
+  assert.equal(draft.credential, 'fixture-access');
+  assert.equal(journey.getSnapshot().pending, 'submit');
+  assert.equal(downloads, 0);
+  resolve(record()); await waiting;
+});
+
+test('page clear-access handler clears both credentials and every retained observation and message', async () => {
+  const { journey } = setup();
+  const { draft, view, actions } = pageActions(journey);
+  await actions.submit({ preventDefault() {} });
+  await journey.verify();
+  await journey.loadHistory(draft.tenantId, draft.credential);
+  Object.assign(view, { validation: 'old validation', draftChanged: true, downloaded: true, downloadError: 'old failure' });
+  actions.clearAccess();
+  assert.equal(draft.tenantId, '');
+  assert.equal(draft.credential, '');
+  assert.deepEqual(view, { validation: '', draftChanged: false, downloaded: false, downloadError: '' });
+  for (const field of ['record', 'history', 'verification', 'submitIssue', 'recordIssue', 'historyIssue', 'verificationIssue', 'pending']) assert.equal(journey.getSnapshot()[field], null);
+});
+
+test('page inspection handler preserves draft-mismatch warning and the old result after a failed history inspection', async () => {
+  const { journey } = setup({ getWorkload: async () => { throw { status: 503 }; } });
+  const { draft, view, actions } = pageActions(journey);
+  await actions.submit({ preventDefault() {} });
+  const previous = journey.getSnapshot().record;
+  actions.changeDraft(() => { draft.input = '20'; });
+  assert.equal(view.draftChanged, true);
+  await actions.inspect('a-different-history-record');
+  assert.equal(journey.getSnapshot().record, previous);
+  assert.equal(journey.getSnapshot().record.data.result.result.index, 10);
+  assert.equal(draft.input, '20');
+  assert.equal(view.draftChanged, true, 'a failed read must not remove the earlier-request warning');
+  assert.equal(journey.getSnapshot().recordIssue.title, 'Observation unavailable');
+});
+
+function downloadEnvironment(click = () => {}) {
+  const effects = { blobs: [], revoked: [], deferred: [], link: { href: '', download: '', click } };
+  return { effects, environment: {
+    createObjectURL: (blob) => { effects.blobs.push(blob); return 'blob:synthetic-fixture'; },
+    revokeObjectURL: (url) => effects.revoked.push(url),
+    createLink: () => effects.link,
+    defer: (callback, delay) => effects.deferred.push({ callback, delay }),
+  } };
+}
+
+test('page download handler creates the actual scoped JSON Blob, names/clicks the link and schedules URL cleanup', async () => {
+  const { journey } = setup();
+  let clicks = 0;
+  const { effects, environment } = downloadEnvironment(() => { clicks += 1; });
+  const { view, actions } = pageActions(journey, (bundle) => downloadObservation(bundle, environment));
+  actions.downloadEvidence();
+  assert.equal(effects.blobs.length, 0, 'empty view cannot fabricate an observation download');
+  await actions.submit({ preventDefault() {} });
+  actions.downloadEvidence();
+  assert.equal(clicks, 1);
+  assert.equal(effects.link.href, 'blob:synthetic-fixture');
+  assert.equal(effects.link.download, 'chronus-workload-observation.json');
+  assert.equal(effects.blobs[0].type, 'application/json');
+  const text = await effects.blobs[0].text();
+  assert.deepEqual(JSON.parse(text), evidenceBundle(journey.getSnapshot()));
+  assert.doesNotMatch(text, /fixture-access|payload_bytes/);
+  assert.equal(view.downloaded, true);
+  assert.equal(view.downloadError, '');
+  assert.equal(effects.revoked.length, 0);
+  assert.equal(effects.deferred[0].delay, 1_000);
+  effects.deferred[0].callback();
+  assert.deepEqual(effects.revoked, ['blob:synthetic-fixture']);
+});
+
+test('a download API failure reports recovery instead of a successful download and still cleans up its URL', async () => {
+  const { journey } = setup();
+  const { effects, environment } = downloadEnvironment(() => { throw new Error('synthetic browser API failure'); });
+  const { view, actions } = pageActions(journey, (bundle) => downloadObservation(bundle, environment));
+  await actions.submit({ preventDefault() {} });
+  actions.downloadEvidence();
+  assert.equal(view.downloaded, false);
+  assert.match(view.downloadError, /Download could not be started/);
+  effects.deferred[0].callback();
+  assert.deepEqual(effects.revoked, ['blob:synthetic-fixture']);
+});
+
+test('WorkloadsPage binds the tested submit, clear, download and inspection handlers without separate inline action logic', async () => {
+  const page = await readFile(new URL('../app/workloads/page.tsx', import.meta.url), 'utf8');
+  assert.match(page, /<form onSubmit=\{actions\.submit\}/);
+  assert.match(page, /onClick=\{actions\.clearAccess\}/);
+  assert.match(page, /onClick=\{actions\.downloadEvidence\}/);
+  assert.match(page, /onClick=\{\(\) => void actions\.inspect\(item\.workload_id\)\}/);
 });

@@ -1,12 +1,12 @@
 'use client';
 
-import React, { type FormEvent, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { ArrowDown, ArrowRight, Download, RotateCw } from 'lucide-react';
 import { StatusPill } from '@/components/console/status-pill';
 import { ChronusAPIClient } from '@/lib/api-client';
 import {
-  WorkloadJourney, asObject, buildWorkloadRequest, describeExecution, evidenceBundle,
+  WorkloadJourney, asObject, buildWorkloadRequest, createWorkloadPageActions, describeExecution,
   isStale, verificationLabel, type JourneyIssue,
 } from '@/lib/workload-journey';
 
@@ -36,6 +36,7 @@ export default function WorkloadsPage() {
   const [validation, setValidation] = useState('');
   const [draftChanged, setDraftChanged] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
+  const [downloadError, setDownloadError] = useState('');
   const resultHeading = useRef<HTMLHeadingElement>(null);
   const validationBox = useRef<HTMLDivElement>(null);
   const busy = state.pending !== null;
@@ -50,33 +51,16 @@ export default function WorkloadsPage() {
   let requestPreview = '';
   try { requestPreview = JSON.stringify(buildWorkloadRequest(tenantId, mode, requestInput, workloadType), null, 2); } catch { /* Inline validation appears on submit. */ }
 
-  useEffect(() => { if (state.record) { resultHeading.current?.focus(); setDownloaded(false); } }, [state.record]);
+  useEffect(() => { if (state.record) { resultHeading.current?.focus(); setDownloaded(false); setDownloadError(''); } }, [state.record]);
   useEffect(() => { if (validation) validationBox.current?.focus(); }, [validation]);
   useEffect(() => () => journey.clear(), [journey]);
 
-  function changeIdentity(update: () => void) {
-    journey.clear(); update(); setValidation(''); setDraftChanged(false); setDownloaded(false);
-  }
-  function changeDraft(update: () => void) { update(); setValidation(''); setDraftChanged(Boolean(record)); }
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (busy || !connected) return;
-    setValidation('');
-    let body;
-    try { body = buildWorkloadRequest(tenantId, mode, requestInput, workloadType); }
-    catch (cause) { setValidation(cause instanceof Error ? cause.message : 'Check your inputs.'); return; }
-    setDraftChanged(false);
-    await journey.submit(body, credential);
-  }
-  function downloadEvidence() {
-    const bundle = evidenceBundle(state);
-    if (!bundle) return;
-    const url = URL.createObjectURL(new Blob([JSON.stringify(bundle, null, 2) + '\n'], { type: 'application/json' }));
-    const link = document.createElement('a');
-    link.href = url; link.download = 'chronus-workload-observation.json'; link.click();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
-    setDownloaded(true);
-  }
+  const actions = createWorkloadPageActions({
+    journey,
+    getDraft: () => ({ tenantId, credential, mode, input: requestInput, workloadType }),
+    setTenantId, setCredential, setValidation, setDraftChanged, setDownloaded, setDownloadError,
+  });
+  const { changeIdentity, changeDraft } = actions;
 
   return (
     <div className="space-y-7">
@@ -95,7 +79,7 @@ export default function WorkloadsPage() {
 
       <section id="configure" aria-labelledby="configure-heading" className="console-panel scroll-mt-24">
         <div className="console-section-heading"><div><p className="console-eyebrow">01 / Input</p><h2 id="configure-heading" className="mt-1 text-xl font-semibold text-white">What would you like to calculate?</h2></div><StatusPill status="PREVIEW" label="API-backed preview" showDot={false} /></div>
-        <form onSubmit={submit} className="mt-6 space-y-6">
+        <form onSubmit={actions.submit} className="mt-6 space-y-6">
           <fieldset disabled={busy} className="space-y-4">
             <legend className="mb-1 text-sm font-semibold text-neutral-100">Access your tenant</legend>
             <p id="access-help" className="text-xs leading-5 text-neutral-400">Sign-in and credential provisioning are not available here. Use access issued by your platform operator. Credentials stay in page memory and are cleared on reload or when you leave this page; they are never included in downloads.</p>
@@ -121,7 +105,7 @@ export default function WorkloadsPage() {
           <details className="rounded-lg border border-neutral-800 p-4"><summary className="cursor-pointer text-sm font-medium text-neutral-200">Review request before sending</summary><p className="mt-3 text-xs text-neutral-400">POST /v1/workloads · authorization is sent separately and is not shown here.</p>{requestPreview ? <pre tabIndex={0} aria-label="Request JSON" className="console-code mt-3">{requestPreview}</pre> : <p className="mt-3 text-sm text-neutral-400">Enter a tenant ID and valid input to preview the request.</p>}</details>
           {validation && <div ref={validationBox} tabIndex={-1} role="alert" className="console-issue">{validation}</div>}
           <Issue issue={state.submitIssue} />
-          <div className="flex flex-wrap items-center gap-3"><button type="submit" disabled={busy || !connected} className="console-button-primary">{state.pending === 'submit' ? 'Submitting request…' : 'Submit workload'}<ArrowRight aria-hidden="true" className="h-4 w-4" /></button><button type="button" onClick={() => changeIdentity(() => { setCredential(''); setTenantId(''); })} disabled={busy || (!credential && !tenantId)} className="console-button">Clear access and observations</button></div>
+          <div className="flex flex-wrap items-center gap-3"><button type="submit" disabled={busy || !connected} className="console-button-primary">{state.pending === 'submit' ? 'Submitting request…' : 'Submit workload'}<ArrowRight aria-hidden="true" className="h-4 w-4" /></button><button type="button" onClick={actions.clearAccess} disabled={busy || (!credential && !tenantId)} className="console-button">Clear access and observations</button></div>
           {!connected && <p className="text-xs leading-5 text-neutral-400">A tenant ID and bearer credential are required to submit or read tenant records. This does not create an account.</p>}
           <p className="text-xs leading-5 text-neutral-400">Submission requests real execution on the configured service. Requests are never retried automatically; a timeout does not prove the workload did not run.</p>
         </form>
@@ -142,7 +126,7 @@ export default function WorkloadsPage() {
           {record.status === 'COMPLETED' && output?.family === 'scaling.v1' && <div className="grid gap-4 sm:grid-cols-2">{[['Sequence value', output.sequence_value], ['Companion value', output.companion_value]].map(([label, value]) => <div key={String(label)} className="min-w-0 rounded-lg border border-blue-400/20 bg-blue-400/5 p-4"><h3 className="text-xs font-medium text-blue-200">{String(label)}</h3><p className="mt-2 max-h-48 overflow-auto break-all font-mono text-xl text-white">{shown(value)}</p><p className="mt-2 text-xs text-neutral-400">API-returned value · index {shown(output.index)}</p></div>)}</div>}
           {!runtime && <p className="text-sm text-neutral-400">No result is attached to this snapshot. Refresh the record if execution is still in progress.</p>}
           {record.status === 'FAILED' && <p className="console-issue">API failure detail: {shown(record.error_message)}</p>}
-          <div className="flex flex-wrap gap-3"><button type="button" disabled={busy || !connected} onClick={() => void journey.inspect(record.workload_id, tenantId, credential)} className="console-button"><RotateCw aria-hidden="true" className="h-4 w-4" />Refresh this record</button><a href="#configure" className="console-button">Configure another request</a></div>
+          <div className="flex flex-wrap gap-3"><button type="button" disabled={busy || !connected} onClick={() => void actions.inspect(record.workload_id)} className="console-button"><RotateCw aria-hidden="true" className="h-4 w-4" />Refresh this record</button><a href="#configure" className="console-button">Configure another request</a></div>
           <details className="rounded-lg border border-neutral-800 p-4"><summary className="cursor-pointer text-sm font-medium text-neutral-200">Inspect full API response and tier evidence</summary><p className="mt-3 text-xs leading-5 text-neutral-400">API-reported tier, envelope and evidence hashes are not independent qualification. Backend names and timings do not establish physical hardware execution or comparative performance.</p><pre tabIndex={0} aria-label="Workload API response" className="console-code mt-3">{JSON.stringify(record, null, 2)}</pre></details>
         </div> : <div className="mt-5 rounded-lg border border-dashed border-neutral-700 p-6 text-sm leading-6 text-neutral-400">{state.pending === 'submit' ? 'Request sent. Waiting for an actual API response; no result is available yet.' : 'No workload record is confirmed in this view. Submit a request above, or load history below to inspect an existing record.'}</div>}
       </section>
@@ -155,8 +139,9 @@ export default function WorkloadsPage() {
           {!record.verification_receipt && <p className="text-sm text-neutral-400">Verification is unavailable until the API attaches a receipt. You can still download the observation or refresh the record.</p>}
           <Issue issue={state.verificationIssue} />
           {state.verification && <div className="space-y-3 rounded-lg border border-neutral-700 p-4"><h3 role="status" className="font-semibold text-neutral-100">{verificationLabel(verification)}</h3><SnapshotTime value={state.verification.observedAt} /><p className="text-sm text-neutral-300">Reason: {shown(verification?.reason)}</p><details><summary className="cursor-pointer text-sm text-neutral-200">Inspect verifier response</summary><pre tabIndex={0} aria-label="Receipt verifier response" className="console-code mt-3">{JSON.stringify(verification, null, 2)}</pre></details></div>}
-          <div className="flex flex-wrap gap-3"><button type="button" onClick={() => void journey.verify()} disabled={busy || !record.verification_receipt} className="console-button">{state.pending === 'verify' ? 'Verifying receipt…' : 'Verify attached receipt'}</button><button type="button" onClick={downloadEvidence} disabled={busy} className="console-button"><Download aria-hidden="true" className="h-4 w-4" />Download observation JSON</button></div>
+          <div className="flex flex-wrap gap-3"><button type="button" onClick={() => void journey.verify()} disabled={busy || !record.verification_receipt} className="console-button">{state.pending === 'verify' ? 'Verifying receipt…' : 'Verify attached receipt'}</button><button type="button" onClick={actions.downloadEvidence} disabled={busy} className="console-button"><Download aria-hidden="true" className="h-4 w-4" />Download observation JSON</button></div>
           <p className="text-xs leading-5 text-neutral-400">The download contains the observed result, identifiers, timestamps and any verifier response, not your bearer credential or input payload. Treat results as potentially sensitive. It is an observation, not an attestation.</p>
+          {downloadError && <p role="alert" className="console-issue">{downloadError}</p>}
           <p role="status" className="text-xs text-blue-200">{downloaded ? 'Observation download requested. Check your browser downloads.' : ''}</p>
         </div> : <p className="mt-5 text-sm text-neutral-400">Inspect a workload first. Receipt verification and evidence download become available only when there is an observed record.</p>}
       </section>
@@ -168,7 +153,7 @@ export default function WorkloadsPage() {
         {history && state.history ? <div className="mt-5 space-y-4">
           <SnapshotTime value={state.history.observedAt} />
           {record && <p className="text-xs text-neutral-400">History is a separate snapshot. Refresh it to include subsequent submissions or status changes.</p>}
-          {history.items.length === 0 ? <p className="rounded-lg border border-dashed border-neutral-700 p-6 text-sm text-neutral-300">No records were returned for this tenant on this page. Configure a request above, or check another page.</p> : <ul className="space-y-2">{history.items.map((item) => <li key={item.workload_id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-800 bg-neutral-950 p-4"><div className="min-w-0 flex-1 basis-48"><p className="break-all font-mono text-xs leading-5 text-neutral-100">{item.workload_id}</p><p className="mt-1 text-xs leading-5 text-neutral-400">{item.workload_type} · submitted {shown(item.submitted_at)}</p></div><StatusPill status={item.status} showDot={false} /><button type="button" onClick={() => { setDraftChanged(false); void journey.inspect(item.workload_id, tenantId, credential); }} disabled={busy || !connected} aria-label={`Inspect workload ${item.workload_id}`} className="console-button">Inspect<ArrowRight aria-hidden="true" className="h-4 w-4" /></button></li>)}</ul>}
+          {history.items.length === 0 ? <p className="rounded-lg border border-dashed border-neutral-700 p-6 text-sm text-neutral-300">No records were returned for this tenant on this page. Configure a request above, or check another page.</p> : <ul className="space-y-2">{history.items.map((item) => <li key={item.workload_id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-800 bg-neutral-950 p-4"><div className="min-w-0 flex-1 basis-48"><p className="break-all font-mono text-xs leading-5 text-neutral-100">{item.workload_id}</p><p className="mt-1 text-xs leading-5 text-neutral-400">{item.workload_type} · submitted {shown(item.submitted_at)}</p></div><StatusPill status={item.status} showDot={false} /><button type="button" onClick={() => void actions.inspect(item.workload_id)} disabled={busy || !connected} aria-label={`Inspect workload ${item.workload_id}`} className="console-button">Inspect<ArrowRight aria-hidden="true" className="h-4 w-4" /></button></li>)}</ul>}
           <div className="flex flex-wrap items-center gap-3"><p className="mr-auto text-xs text-neutral-400">{history.total} records reported · page {history.page} · up to 20 per page</p><button type="button" onClick={() => void journey.loadHistory(tenantId, credential, history.page - 1)} disabled={busy || !connected || history.page <= 1} className="console-button">Previous page</button><button type="button" onClick={() => void journey.loadHistory(tenantId, credential, history.page + 1)} disabled={busy || !connected || history.page * 20 >= history.total} className="console-button">Next page</button></div>
         </div> : <p className="mt-5 rounded-lg border border-dashed border-neutral-700 p-6 text-sm text-neutral-400">History has not been requested. No tenant records or activity counts are assumed.</p>}
       </section>

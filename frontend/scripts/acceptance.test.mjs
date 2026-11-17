@@ -87,16 +87,23 @@ async function getHtml(path) {
   return (await response.text()).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<!--.*?-->/gs, '');
 }
 
-test('workload controller, API transport and Next proxy complete a synthetic HTTP journey without resubmitting', async () => {
-  const { WorkloadJourney, buildWorkloadRequest, evidenceBundle } = await loadFrontendModule('workload-journey');
+test('page actions, controller, API transport and Next proxy complete a synthetic HTTP journey without resubmitting', async () => {
+  const { WorkloadJourney, createWorkloadPageActions, evidenceBundle } = await loadFrontendModule('workload-journey');
   const { ChronusAPIClient } = await loadFrontendModule('api-client');
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (url, init) => originalFetch(typeof url === 'string' && url.startsWith('/api/chronus') ? `${baseUrl}${url}` : url, init);
   try {
     const journey = new WorkloadJourney(ChronusAPIClient);
-    await journey.submit(buildWorkloadRequest('http-fixture', 'guided', '10'), 'http-fixture-access');
+    const draft = { tenantId: 'http-fixture', credential: 'http-fixture-access', mode: 'guided', input: '10', workloadType: 'scaling.v1' };
+    let downloaded;
+    const actions = createWorkloadPageActions({
+      journey, getDraft: () => draft, download: (bundle) => { downloaded = bundle; },
+      setTenantId: (value) => { draft.tenantId = value; }, setCredential: (value) => { draft.credential = value; },
+      setValidation: () => {}, setDraftChanged: () => {}, setDownloaded: () => {}, setDownloadError: () => {},
+    });
+    await actions.submit({ preventDefault() {} });
     assert.equal(journey.getSnapshot().record?.data.status, 'QUEUED');
-    await journey.inspect(fixtureRecord.workload_id, 'http-fixture', 'http-fixture-access');
+    await actions.inspect(fixtureRecord.workload_id);
     assert.equal(journey.getSnapshot().record?.data.status, 'COMPLETED');
     assert.equal(journey.getSnapshot().record.data.result.result.sequence_value, '123');
     await journey.verify();
@@ -107,7 +114,11 @@ test('workload controller, API transport and Next proxy complete a synthetic HTT
     const exported = evidenceBundle(journey.getSnapshot());
     assert.equal(exported.workload.verification_receipt, 'http-fixture-receipt');
     assert.doesNotMatch(JSON.stringify(exported), /http-fixture-access/);
-    journey.clear();
+    actions.downloadEvidence();
+    assert.deepEqual(downloaded, exported);
+    actions.clearAccess();
+    assert.equal(draft.credential, '');
+    assert.equal(draft.tenantId, '');
     await journey.loadHistory('http-fixture', '');
     assert.equal(journey.getSnapshot().historyIssue.title, 'Authentication required');
     assert.equal(journey.getSnapshot().history, null);
