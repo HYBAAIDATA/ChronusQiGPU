@@ -18,6 +18,7 @@ from hyba_mine.plan import (
     STRIDE_INVERSE,
     NoncePlan,
     PythiaItinerary,
+    RouteSizer,
     UnitSpec,
     hendrix_lane_table,
     hendrix_slot_of_lane,
@@ -175,6 +176,90 @@ class TestUnit(unittest.TestCase):
         self.assertEqual(list(PythiaItinerary(override=spec).units(2)), list(spec))
         with self.assertRaises(ValueError):
             list(PythiaItinerary(override=(UnitSpec(5, 0, 1),)).units(2))
+
+
+class TestItineraryCursor(unittest.TestCase):
+    def test_cursor_take_is_window_aligned_contiguous_and_rolls_extranonce2(self):
+        itinerary = PythiaItinerary(window_bits=24)
+        window = itinerary.window_size
+        cursor = itinerary.cursor(en2_limit=2)
+        sizes = [1, 3 << 24, 1 << 30, 5 << 24, (1 << 24) + 7]
+        taken, index = [], 0
+        while True:
+            spec = cursor.take(sizes[index % len(sizes)])
+            index += 1
+            if spec is None:
+                break
+            taken.append(spec)
+        self.assertTrue(cursor.exhausted)
+        self.assertIsNone(cursor.take(window))
+        for en2 in (0, 1):
+            specs = [s for s in taken if s.en2_counter == en2]
+            self.assertEqual(specs[0].start, 0)
+            end = 0
+            for spec in specs:
+                self.assertEqual(spec.start, end)
+                self.assertEqual(spec.count % window, 0)
+                self.assertGreaterEqual(spec.count, window)
+                end = spec.start + spec.count
+            self.assertEqual(end, NONCE_SPACE)
+        self.assertEqual([s.en2_counter for s in taken], sorted(s.en2_counter for s in taken))
+        with self.assertRaises(ValueError):
+            cursor.take(0)
+
+    def test_two_routes_interleaved_takes_cover_the_space_exactly_once(self):
+        cursor = PythiaItinerary(window_bits=24).cursor(en2_limit=1)
+        choices = _det_values(b"interleave", 4096, 2)
+        sizes = {0: 1 << 24, 1: 1 << 27}
+        received = {0: [], 1: []}
+        index = 0
+        while True:
+            route = choices[index % len(choices)]
+            index += 1
+            spec = cursor.take(sizes[route])
+            if spec is None:
+                break
+            received[route].append((spec.start, spec.start + spec.count))
+        self.assertTrue(received[0] and received[1])
+        intervals = sorted(received[0] + received[1])
+        position = 0
+        for start, end in intervals:
+            self.assertEqual(start, position)
+            position = end
+        self.assertEqual(position, NONCE_SPACE)
+
+    def test_cursor_rolls_versions_inside_each_extranonce2(self):
+        cursor = PythiaItinerary(window_bits=30).cursor(en2_limit=2, version_count=2)
+        order = []
+        while (spec := cursor.take(1 << 31)) is not None:
+            order.append((spec.en2_counter, spec.version_index, spec.start))
+        self.assertEqual(order, [(0, 0, 0), (0, 0, 1 << 31), (0, 1, 0), (0, 1, 1 << 31),
+                                 (1, 0, 0), (1, 0, 1 << 31), (1, 1, 0), (1, 1, 1 << 31)])
+
+    def test_units_wrapper_is_unchanged_by_the_cursor(self):
+        units = list(PythiaItinerary(window_bits=30).units(3))[:9]
+        expected = [UnitSpec(en2, i << 30, 1 << 30) for en2 in range(3) for i in range(4)][:9]
+        self.assertEqual(units, expected)
+
+    def test_override_cursor_yields_each_spec_once_and_ignores_size(self):
+        specs = (UnitSpec(1, 4096, 4096), UnitSpec(0, 0, 12288))
+        cursor = PythiaItinerary(override=specs).cursor(en2_limit=2)
+        self.assertEqual([cursor.take(1), cursor.take(1 << 30)], list(specs))
+        self.assertIsNone(cursor.take(4096))
+        with self.assertRaises(ValueError):
+            PythiaItinerary(override=(UnitSpec(5, 0, 1),)).cursor(en2_limit=2)
+
+    def test_route_sizer_resizes_per_route_only(self):
+        window = 1 << 20
+        fast, slow = RouteSizer(4 * window, window, max_size=8 * window), RouteSizer(4 * window, window)
+        fixed = RouteSizer(4 * window, window, fixed=True)
+        for _ in range(5):
+            fast.resize(0.01, 0.5)
+            slow.resize(5.0, 0.5)
+            fixed.resize(0.01, 0.5)
+        self.assertEqual(fast.unit_size, 8 * window)
+        self.assertEqual(slow.unit_size, window)
+        self.assertEqual(fixed.unit_size, 4 * window)
 
 
 class TestIntegration(unittest.TestCase):

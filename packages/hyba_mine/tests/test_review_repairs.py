@@ -3,6 +3,7 @@
 import asyncio
 import json
 import os
+import sys
 import plistlib
 import subprocess
 import unittest
@@ -110,6 +111,7 @@ class CredentialTests(unittest.TestCase):
         self.assertEqual(data['params'],['password [redacted]'])
         self.assertEqual(data['password'],'[redacted]')
 
+    @unittest.skipUnless(sys.platform == "darwin", "the Keychain store is macOS only (Windows: test_wincred_store)")
     def test_keychain_write_has_no_credentials_in_arguments_and_safe_timeout(self):
         store = KeychainStore(command=('/bin/true',))
         login = PoolLogin('private.account.worker', 'password-secret')
@@ -302,7 +304,11 @@ class DurabilityBoundaryTests(unittest.TestCase):
                 sync(fd)
             with patch('hyba_mine.ledger.os.fsync',side_effect=observe):ledger.append('after')
             self.assertEqual(events[0],'ledger')
-            self.assertEqual(events[-1],'directory')
+            if sys.platform == 'win32':
+                # No directory handle on Windows: nothing may claim a directory sync happened.
+                self.assertNotIn('directory', events)
+            else:
+                self.assertEqual(events[-1],'directory')
             self.assertLess(events.index('ledger'),events.index('intent'))
             self.assertFalse(ledger._recovery_path.exists())
             self.assertTrue(ledger.verify().ok)

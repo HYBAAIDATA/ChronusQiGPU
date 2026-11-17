@@ -17,7 +17,6 @@ hashed, with ``_redacted: true`` added to the record's data.
 
 from __future__ import annotations
 
-import fcntl
 import hashlib
 import json
 import os
@@ -28,10 +27,13 @@ from typing import Iterator, Optional
 from hyba_mine.control import utc_now
 from hyba_mine.logsafe import redact_payload
 from hyba_mine.paths import write_private_file
+from hyba_mine.portable import FileLock, fsync_directory, fsync_file
+
+_BINARY = getattr(os, "O_BINARY", 0)  # Windows: no CRLF translation in hashed bytes
 
 GENESIS_HASH = "0" * 64
 _TAIL_CHUNK = 64 * 1024
-_NO_FSYNC_KINDS = frozenset({"work"})
+_NO_FSYNC_KINDS = frozenset({"work", "hashrate_cap_window"})
 
 
 def _canonical(obj) -> bytes:
@@ -134,11 +136,8 @@ class Ledger:
         return digest.hexdigest()
 
     def _sync_directory(self) -> None:
-        fd = os.open(self.path.parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
-        try:
-            os.fsync(fd)
-        finally:
-            os.close(fd)
+        # Windows offers no directory handle; NTFS journals the metadata (portable.fsync_directory).
+        fsync_directory(self.path.parent)
 
     def _complete_recovery(self) -> None:
         """Finish a persisted recovery append; never replace existing bytes."""
@@ -154,7 +153,7 @@ class Ledger:
             written = handle.read(len(payload) + 1)
         if not payload.startswith(written):
             raise ValueError("ledger recovery suffix differs from its intent")
-        fd = os.open(self.path, os.O_WRONLY | os.O_APPEND)
+        fd = os.open(self.path, os.O_WRONLY | os.O_APPEND | _BINARY)
         try:
             self._cache = None
             remaining = memoryview(payload)[len(written):]
@@ -179,9 +178,8 @@ class Ledger:
         if clean != data:
             data = {**clean, "_redacted": True}
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        lock_fd = os.open(self.lock_path, os.O_RDWR | os.O_CREAT, 0o600)
+        lock = FileLock(self.lock_path).acquire()
         try:
-            fcntl.flock(lock_fd, fcntl.LOCK_EX)
             self._complete_recovery()
             seq, prev, ends_clean = self._tail()
             record = {"seq": seq + 1, "ts": utc_now(), "kind": kind, "data": data, "prev": prev}
@@ -204,8 +202,7 @@ class Ledger:
                 line = b"\n" + line
                 # Persist intent before completing a torn line. A second crash
                 # resumes exactly this append rather than creating nested fragments.
-                with open(self.path, "rb") as prefix:
-                    os.fsync(prefix.fileno())
+                fsync_file(self.path)
                 offset = self.path.stat().st_size
                 intent = {"offset": offset, "prefix_sha256": self._prefix_digest(offset),
                           "payload_hex": line.hex()}
@@ -214,7 +211,7 @@ class Ledger:
                 self._complete_recovery()
                 self._cache = (self.path.stat().st_size, record["seq"], record["hash"])
                 return record
-            fd = os.open(self.path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
+            fd = os.open(self.path, os.O_WRONLY | os.O_APPEND | os.O_CREAT | _BINARY, 0o600)
             try:
                 self._cache = None
                 remaining = memoryview(line)
@@ -230,8 +227,7 @@ class Ledger:
             self._cache = (self.path.stat().st_size, record["seq"], record["hash"])
             return record
         finally:
-            fcntl.flock(lock_fd, fcntl.LOCK_UN)
-            os.close(lock_fd)
+            lock.release()
 
     def records(self) -> Iterator[dict]:
         if not self.path.exists():

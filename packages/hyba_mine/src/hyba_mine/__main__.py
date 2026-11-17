@@ -5,4 +5,5 @@ import sys
 
 from hyba_mine.cli import main
 
-sys.exit(main())
+if __name__ == "__main__":  # spawn-started worker processes must not re-run the CLI
+    sys.exit(main())

@@ -5,7 +5,17 @@ Hashrate is the sum of executed candidates divided by the sum of device time
 over the ``work`` records in the trailing window; it is "not measured" when no
 device work was recorded there. Accepted and rejected shares count only pool
 replies (``pool_response`` records); a submitted share without a reply is
-"awaiting or unacknowledged", never accepted.
+"awaiting or unacknowledged", never accepted. Units aborted because their job
+went stale (or at shutdown) are counted from ``unit_aborted_*`` records; their
+partial work is not in any ``work`` record, so it never reaches hashrate.
+The hashrate cap is the configured ceiling recorded at ``session_start`` (and
+``hashrate_cap_changed``); it is shown as a ceiling, never as a rate, and
+``hashrate_cap_window`` records only say how often it held work back.
+
+When several routes mine at once (``executed_routes`` in ``session_start``),
+each route's measured rate is its executed candidates over its own device
+time, and the total is the sum of those per-route rates; a route that is not
+running is listed with the reason pre-flight recorded (``degraded_reason``).
 """
 
 from __future__ import annotations
@@ -14,7 +24,7 @@ import json
 from datetime import datetime, timedelta, timezone
 from typing import Iterable, Optional
 
-from hyba_mine.igpu import ROUTE_LABELS
+from hyba_mine.igpu import route_label
 from hyba_mine.pools import POOL_CATALOG
 
 TRAILING_SECONDS = 60
@@ -28,7 +38,7 @@ def parse_ts(text: str) -> datetime:
 def format_rate(hps: Optional[float]) -> str:
     if hps is None:
         return "not measured"
-    for unit, scale in (("GH/s", 1e9), ("MH/s", 1e6), ("kH/s", 1e3)):
+    for unit, scale in (("EH/s", 1e18), ("PH/s", 1e15), ("TH/s", 1e12), ("GH/s", 1e9), ("MH/s", 1e6), ("kH/s", 1e3)):
         if hps >= scale:
             return f"{hps / scale:.3g} {unit}"
     return f"{hps:.3g} H/s"
@@ -48,6 +58,7 @@ def summarize(records: Iterable[dict], now: Optional[datetime] = None, trailing:
     stop = None
     pool = None
     pool_down = None
+    vmask = None
     job = None
     difficulty = None
     last_reply = None
@@ -60,7 +71,12 @@ def summarize(records: Iterable[dict], now: Optional[datetime] = None, trailing:
     replies: dict = {}
     unacknowledged: set = set()
     dropped = 0
+    aborted_stale = aborted_shutdown = 0
+    cap: Optional[dict] = None
+    cap_window = [0, 0, 0, 0]  # throttled_ns, waits, clamped units, refunded hashes
     trailing_work: dict = {}
+    compute_units: dict = {}
+    routes_stopped: dict = {}
     session_work = [0, 0]
     for record in records:
         count += 1
@@ -71,15 +87,22 @@ def summarize(records: Iterable[dict], now: Optional[datetime] = None, trailing:
         if kind == "session_start":
             session, stop, fault = record, None, None
             submitted, replies, unacknowledged, dropped = {}, {}, set(), 0
+            aborted_stale = aborted_shutdown = 0
+            cap = dict(data["hashrate_cap"]) if isinstance(data.get("hashrate_cap"), dict) else None
+            cap_window = [0, 0, 0, 0]
             session_work = [0, 0]
             trailing_work = {}
-            pool = pool_down = job = difficulty = last_reply = None
+            compute_units = {}
+            routes_stopped = {}
+            pool = pool_down = job = difficulty = last_reply = vmask = None
         elif kind == "session_stop":
             stop = record
         elif kind == "preflight":
             preflight = record
         elif kind == "pool_connected":
-            pool, pool_down = record, None
+            pool, pool_down, vmask = record, None, None
+        elif kind == "version_mask":
+            vmask = record
         elif kind == "pool_disconnected":
             pool_down = record
         elif kind == "job":
@@ -95,6 +118,10 @@ def summarize(records: Iterable[dict], now: Optional[datetime] = None, trailing:
                 entry[0] += int(data.get("executed", 0))
                 entry[1] += int(data.get("device_ns", 0))
                 entry[2] += int(data.get("span_ns", 0))
+                if data.get("compute_unit"):
+                    compute_units[key] = data.get("compute_unit")
+        elif kind == "route_stopped":
+            routes_stopped[data.get("route")] = data
         elif kind == "share_submitted":
             submitted[data.get("share_id")] = record
         elif kind == "pool_response":
@@ -106,6 +133,20 @@ def summarize(records: Iterable[dict], now: Optional[datetime] = None, trailing:
             unacknowledged.add(data.get("share_id"))
         elif kind in ("share_stale_dropped", "share_duplicate_dropped"):
             dropped += 1
+        elif kind == "unit_aborted_stale":
+            aborted_stale += 1
+        elif kind == "unit_aborted_shutdown":
+            aborted_shutdown += 1
+        elif kind == "hashrate_cap_changed":
+            if cap is not None:
+                cap["cap_h_s"] = data.get("to_h_s")
+                cap["changed_at"] = ts
+        elif kind == "hashrate_cap_window":
+            if ts and parse_ts(ts) >= horizon:
+                cap_window[0] += int(data.get("throttled_ns", 0))
+                cap_window[1] += int(data.get("throttle_waits", 0))
+                cap_window[2] += int(data.get("clamped_units", 0))
+                cap_window[3] += int(data.get("refunded_hashes", 0))
         elif kind == "device_fault":
             fault = record
         elif kind in ("pool_switch_applied", "pool_switch_refused", "pool_switch_requested"):
@@ -123,7 +164,8 @@ def summarize(records: Iterable[dict], now: Optional[datetime] = None, trailing:
             total_rate = (total_rate or 0.0) + rate
             if effective is not None:
                 total_effective = (total_effective or 0.0) + effective
-            lanes.append({"node": node, "route": route, "label": ROUTE_LABELS.get(route, route),
+            lanes.append({"node": node, "route": route, "label": route_label(route),
+                          "compute_unit": compute_units.get((node, route)),
                           "executed": executed, "device_seconds": device_ns / 1e9, "hashrate_hs": rate,
                           "wall_seconds": span_ns / 1e9, "effective_hs": effective,
                           "busy_fraction": min(1.0, device_ns / span_ns) if span_ns else None})
@@ -144,9 +186,35 @@ def summarize(records: Iterable[dict], now: Optional[datetime] = None, trailing:
         else:
             state = "MINING"
     sdata = (session or {}).get("data", {})
+    executed_routes = sdata.get("executed_routes") or ([sdata["executed_route"]] if sdata.get("executed_route") else [])
     pdata = (pool or {}).get("data", {})
     jdata = (job or {}).get("data", {})
+    negotiation = pdata.get("version_negotiation")
+    version_rolling = {
+        # None (not a false "off") for ledgers written before version rolling was recorded.
+        "active": pdata.get("version_rolling"),
+        "mask": vmask["data"].get("granted_mask") if vmask is not None else pdata.get("version_mask"),
+        "negotiation": negotiation.get("outcome") if isinstance(negotiation, dict) else None,
+        "basis": "pool reply to mining.configure / mining.set_version_mask",
+    }
     pool_id = pdata.get("pool") or sdata.get("pool")
+    cap_rate = cap.get("cap_h_s") if cap is not None else None
+    cap_summary = None
+    if session is not None and isinstance(cap_rate, int) and not isinstance(cap_rate, bool):
+        cap_summary = {
+            "cap_h_s": cap_rate,
+            "display": format_rate(cap_rate),
+            "kind": "ceiling",
+            "basis": cap.get("basis"),
+            "scope": cap.get("scope"),
+            "changed_at": cap.get("changed_at"),
+            "throttled_seconds": cap_window[0] / 1e9,
+            "throttle_waits": cap_window[1],
+            "clamped_units": cap_window[2],
+            "refunded_hashes": cap_window[3],
+            "bound_in_window": cap_window[1] > 0 or cap_window[2] > 0,
+            "window_seconds": trailing,
+        }
     return {
         "source": "ledger",
         "records": count,
@@ -164,12 +232,19 @@ def summarize(records: Iterable[dict], now: Optional[datetime] = None, trailing:
         "route": None if session is None else {
             "requested": sdata.get("requested_route"),
             "executed": sdata.get("executed_route"),
-            "label": ROUTE_LABELS.get(sdata.get("executed_route"), sdata.get("executed_route")),
+            "executed_routes": executed_routes,
+            "label": " + ".join(route_label(r) for r in executed_routes) if executed_routes else None,
+            "degraded": bool(sdata.get("degraded")),
+            "degraded_reason": sdata.get("degraded_reason"),
+            "unavailable_routes": sdata.get("unavailable_routes") or [],
+            "routes_stopped": list(routes_stopped.values()),
             "fallback_reason": sdata.get("fallback_reason"),
             "requested_backend": sdata.get("requested_backend"),
             "preference": sdata.get("preference"),
             "detected_backends": sdata.get("detected_backends"),
             "executed_backend": sdata.get("executed_backend"),
+            "executed_backends": sdata.get("executed_backends")
+            or ([sdata["executed_backend"]] if sdata.get("executed_backend") else []),
         },
         "pool": None if pool_id is None else {
             "pool_id": pool_id,
@@ -179,6 +254,7 @@ def summarize(records: Iterable[dict], now: Optional[datetime] = None, trailing:
             "connected": pool is not None and pool_down is None,
             "login_fingerprint": pdata.get("login_fingerprint"),
             "worker": pdata.get("worker"),
+            "version_rolling": version_rolling,
         },
         "hashrate": {
             "hashrate_hs": total_rate,
@@ -192,6 +268,7 @@ def summarize(records: Iterable[dict], now: Optional[datetime] = None, trailing:
             "session_executed": session_work[0],
             "session_device_seconds": session_work[1] / 1e9,
         },
+        "hashrate_cap": cap_summary,
         "job": None if job is None else {
             "job_id": jdata.get("job_id"),
             "received_at": jdata.get("received_at") or job.get("ts"),
@@ -206,6 +283,11 @@ def summarize(records: Iterable[dict], now: Optional[datetime] = None, trailing:
             "unacknowledged": len(unacknowledged - set(replies)),
             "dropped_before_submit": dropped,
             "basis": "accepted and rejected count pool replies only",
+        },
+        "units": {
+            "aborted_stale": aborted_stale,
+            "aborted_shutdown": aborted_shutdown,
+            "basis": "unit_aborted_* ledger records; partial work is not counted in hashrate",
         },
         "last_pool_reply": None if last_reply is None else {
             "at": last_reply.get("ts"),
@@ -238,10 +320,17 @@ def render_text(summary: dict) -> str:
         tls = "TLS" if pool.get("tls") else "plain TCP"
         endpoint = pool.get("endpoint") or "not connected"
         lines.append(f"  Pool         {pool['name']} - {endpoint} ({tls}) - login {pool.get('login_fingerprint')}{worker}")
+        rolling = pool.get("version_rolling") or {}
+        if rolling.get("active") is True:
+            lines.append(f"  Version roll granted mask {rolling.get('mask')} (BIP310; widens the search space, not the hashrate)")
+        elif rolling.get("active") is False:
+            lines.append(f"  Version roll off ({rolling.get('negotiation') or 'not negotiated'})")
     route = summary.get("route")
     if route:
         reason = route.get("fallback_reason") or "none"
         lines.append(f"  Route        requested {route['requested']} -> executed {route['label']} (fallback_reason: {reason})")
+        if route.get("degraded"):
+            lines.append(f"  Degraded     single route: {route.get('degraded_reason')}")
         if route.get("executed_backend"):
             detected = ", ".join(route.get("detected_backends") or [])
             lines.append(f"  Backend      {route['executed_backend']} (requested {route.get('requested_backend')}, "
@@ -254,6 +343,19 @@ def render_text(summary: dict) -> str:
         lines.append(f"  Hashrate     {rate['display']} measured ({rate['basis']})")
     if rate.get("effective_hs") is not None:
         lines.append(f"               {rate['effective_display']} effective ({rate['effective_basis']})")
+    if len(rate.get("lanes") or []) > 1:
+        for lane in rate["lanes"]:
+            where = f" on {lane['compute_unit']}" if lane.get("compute_unit") else ""
+            lines.append(f"  Lane         {lane['label']}{where}: {format_rate(lane['hashrate_hs'])} measured")
+    cap = summary.get("hashrate_cap")
+    if cap:
+        line = f"  Hashrate cap {cap['display']} ceiling on work this process schedules (configured, not measured)"
+        if cap.get("bound_in_window"):
+            line += (f" - throttled {cap['throttled_seconds']:.1f} s, {cap['clamped_units']} units shortened"
+                     f" in the last {cap['window_seconds']} s")
+        lines.append(line)
+    elif session:
+        lines.append("  Hashrate cap not recorded for this session")
     job = summary.get("job")
     if job:
         lines.append(f"  Current job  {job['job_id']} received {job['received_at']} (clean_jobs: {job['clean_jobs']}), share difficulty {job['difficulty']}")
@@ -264,6 +366,10 @@ def render_text(summary: dict) -> str:
         f"  Shares       submitted {shares['submitted']} | accepted {shares['accepted']} | rejected {shares['rejected']}"
         f" | awaiting/unacknowledged {shares['awaiting_or_unacknowledged']}  (pool replies only)"
     )
+    units = summary.get("units") or {}
+    if units.get("aborted_stale") or units.get("aborted_shutdown"):
+        lines.append(f"  Aborted      {units['aborted_stale']} unit(s) on stale jobs, {units['aborted_shutdown']} at shutdown"
+                     " (partial work not counted in hashrate)")
     reply = summary.get("last_pool_reply")
     if reply:
         verdict = "accepted" if reply.get("accepted") else "rejected"

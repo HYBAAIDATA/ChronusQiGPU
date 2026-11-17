@@ -10,6 +10,7 @@ import _support
 from _support import TempHome, VerifyingPool
 
 from hyba_mine.bist import run_preflight
+from hyba_mine.cli import _routes, build_parser
 from hyba_mine.cli import main as cli_main
 from hyba_mine.control import block_pool, grant_approval, update_state
 from hyba_mine.igpu import ROUTE_MODE_A, LaneUnavailable
@@ -154,6 +155,23 @@ class TestCommandLine(unittest.TestCase):
             code, out = self._cli("start", "--console-port", "0")
             self.assertEqual(code, EXIT_CONFIG)
             self.assertIn("No pool selected", out)
+
+    def test_routes_option_parses_and_conflicts_with_an_explicit_backend(self):
+        parser = build_parser()
+        args = parser.parse_args(["start", "--routes", "igpu,metal"])
+        self.assertEqual(args.routes, "igpu,metal")
+        self.assertEqual(_routes(args, {"route": "auto", "routes": "auto"}), ("igpu", "metal"))
+        both = parser.parse_args(["start", "--routes", "metal", "--backend", "metal"])
+        with self.assertRaises(ValueError):
+            _routes(both, {"route": "auto"})
+        plain = parser.parse_args(["start"])
+        # A single backend stored by an older config keeps today's single route.
+        self.assertIsNone(_routes(plain, {"route": "igpu", "routes": "auto"}))
+        self.assertIsNone(_routes(parser.parse_args(["start", "--backend", "igpu"]), {"route": "auto"}))
+        self.assertEqual(_routes(plain, {"route": "auto", "routes": "auto"}), ("auto",))
+        self.assertEqual(_routes(plain, {"route": "auto", "routes": "igpu"}), ("igpu",))
+        with self.assertRaises(ValueError):
+            _routes(parser.parse_args(["start", "--routes", "cuda"]), {"route": "auto"})
 
     def test_pools_status_ledger_and_pool_commands(self):
         with TempHome() as home:

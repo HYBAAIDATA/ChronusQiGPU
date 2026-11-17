@@ -2,7 +2,7 @@
 """Operator state: active pool, approval, blocks and live control requests.
 
 * ``state.json`` holds settings (active pool, credential backend, TLS policy,
-  route) and a block marker set when a pool rejects the login, so a restart
+  route, the set of routes that mine concurrently) and a block marker set when a pool rejects the login, so a restart
   does not retry a rejected login against the pool.
 * ``approval.json`` is the operator's explicit approval to mine on this
   machine. It is bound to the host name and user id; without it nothing runs.
@@ -14,15 +14,14 @@
 from __future__ import annotations
 
 import json
-import fcntl
 from contextlib import contextmanager
-import os
 import socket
 import uuid
 from datetime import datetime, timezone
 from typing import Optional, Tuple
 
 from hyba_mine.paths import Layout, ensure_private_dir, write_private_file
+from hyba_mine.portable import exclusive_lock, user_identity
 from hyba_mine.pools import TLS_POLICIES, get_pool
 
 #: --backend choices. igpu is the Chronus iGPU (Mode A); metal, opencl and cuda are the host GPU.
@@ -31,6 +30,11 @@ BACKENDS = ("auto", "igpu", "metal", "opencl", "cuda", "simd", "reference")
 PREFERENCES = ("ours", "host")
 #: Accepted by --route and older state files; mode_a is the Chronus iGPU (igpu).
 ROUTES = BACKENDS + ("mode_a",)
+#: Local routes that can mine concurrently on disjoint nonce ranges (--routes).
+ROUTE_SET_BACKENDS = ("igpu", "metal", "opencl")
+ROUTE_SETS_HELP = ("auto (default): every local route that passes its known-answer tests, run concurrently on "
+                   "disjoint nonce ranges (macOS: Chronus iGPU Mode A + Metal; elsewhere: Mode A + each eligible "
+                   "OpenCL GPU); or a comma list of igpu,metal,opencl (strict: each listed route must pass)")
 APPROVAL_STATEMENT = (
     "The operator approves HYBA Mine, HYBA's internal treasury mining runtime, "
     "to mine on this machine with the pool logins stored on this machine."
@@ -55,9 +59,32 @@ def _write_json(path, data: dict) -> None:
     write_private_file(path, (json.dumps(data, indent=2, sort_keys=True) + "\n").encode("utf-8"))
 
 
+def parse_routes(text: str) -> tuple:
+    """``auto`` -> ("auto",); else a de-duplicated tuple of igpu/metal/opencl in the order given (mode_a is igpu)."""
+    if not isinstance(text, str):
+        raise ValueError("routes must be auto or a comma list of igpu,metal,opencl")
+    if text.strip().lower() == "auto":
+        return ("auto",)
+    routes: list = []
+    for item in text.split(","):
+        name = item.strip().lower()
+        if not name:
+            continue
+        name = "igpu" if name == "mode_a" else name
+        if name not in ROUTE_SET_BACKENDS:
+            if name in BACKENDS:
+                raise ValueError(f"HYBA Mine has no {name} lane on this machine to mine on concurrently; failing closed")
+            raise ValueError(f"unknown route '{name}': use auto or a comma list of {', '.join(ROUTE_SET_BACKENDS)}")
+        if name not in routes:
+            routes.append(name)
+    if not routes:
+        raise ValueError("routes must be auto or a comma list of igpu,metal,opencl")
+    return tuple(routes)
+
+
 def load_state(layout: Layout) -> dict:
     state = {"active_pool": None, "credential_store": None, "tls_policy": "prefer", "route": "auto", "prefer": "ours",
-             "blocked": None}
+             "routes": "auto", "blocked": None}
     stored = _read_json(layout.state)
     if stored:
         state.update({key: stored[key] for key in state if key in stored})
@@ -73,6 +100,7 @@ def save_state(layout: Layout, state: dict) -> dict:
         raise ValueError(f"route must be one of {', '.join(ROUTES)}")
     if state.get("prefer", "ours") not in PREFERENCES:
         raise ValueError("prefer must be ours or host")
+    state["routes"] = ",".join(parse_routes(state.get("routes") or "auto"))
     _write_json(layout.state, state)
     return state
 
@@ -80,13 +108,8 @@ def save_state(layout: Layout, state: dict) -> dict:
 @contextmanager
 def _locked(path):
     ensure_private_dir(path.parent)
-    fd = os.open(path.with_suffix(path.suffix + ".lock"), os.O_RDWR | os.O_CREAT, 0o600)
-    try:
-        fcntl.flock(fd, fcntl.LOCK_EX)
+    with exclusive_lock(path.with_suffix(path.suffix + ".lock")):
         yield
-    finally:
-        fcntl.flock(fd, fcntl.LOCK_UN)
-        os.close(fd)
 
 
 def update_state(layout: Layout, **changes) -> dict:
@@ -128,8 +151,10 @@ def block_for(layout: Layout, pool_id: str) -> Optional[dict]:
     return _blocks(load_state(layout)).get(get_pool(pool_id).pool_id)
 
 
-def _identity() -> Tuple[str, int]:
-    return socket.gethostname(), os.getuid()
+def _identity() -> Tuple[str, object]:
+    """(host, account). The account is the POSIX uid (unchanged, so existing macOS
+    approvals stay valid) or the Windows account SID."""
+    return socket.gethostname(), user_identity().value
 
 
 def grant_approval(layout: Layout) -> dict:
@@ -175,6 +200,27 @@ def read_control_request(layout: Layout) -> Optional[dict]:
     if not request or request.get("action") != "switch_pool" or not request.get("request_id"):
         return None
     return request
+
+
+def request_stop(layout: Layout, reason: str = "hyba-mine stop") -> dict:
+    """Ask a running miner to stop gracefully. Kept apart from pool switches so neither overwrites the other."""
+    request = {"request_id": uuid.uuid4().hex, "action": "stop", "reason": reason, "requested_at": utc_now()}
+    with _locked(layout.stop_request):
+        _write_json(layout.stop_request, request)
+    return request
+
+
+def read_stop_request(layout: Layout) -> Optional[dict]:
+    request = _read_json(layout.stop_request)
+    if not request or request.get("action") != "stop" or not request.get("request_id"):
+        return None
+    return request
+
+
+def clear_stop_request(layout: Layout) -> None:
+    with _locked(layout.stop_request):
+        if layout.stop_request.exists():
+            layout.stop_request.unlink()
 
 
 def clear_control_request(layout: Layout, request_id: str) -> None:
