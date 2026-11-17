@@ -1,8 +1,8 @@
 """Hard ceiling on hashes this process may start per second.
 
-1 EH/s is 10**18 hashes per second. Braiins Pool's combined hashrate is about
-15 EH/s; this process will not schedule work above 1 EH/s. The ceiling is a
-limit on work started here. It is not a measurement of device hashrate.
+1 EH/s is 10**18 hashes per second. This process will not schedule work above
+1 EH/s. The ceiling is a limit on work started here, per process (one miner runs
+per data directory). It is not a measurement of device hashrate.
 """
 
 from __future__ import annotations
