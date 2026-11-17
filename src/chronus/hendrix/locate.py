@@ -24,10 +24,14 @@ GF(2)-linear f, f(x)=f(x^s)     learn f on the basis (n + 1 queries),        n +
 
 None of these cost scales with the domain size p or 2**n, which is what makes
 the fields usable far beyond the 2**20 table limit of ``PrimeField``: a
-degree-5 polynomial over p = 2**127 - 1 has its roots located exactly, where a
-scan would need about 1.7e38 queries.
+degree-5 polynomial over a prime p below ``MR_DETERMINISTIC_LIMIT`` has its
+roots located exactly, where a scan would need about 1.7e38 queries.
 
 Boundaries (the mathematics, stated rather than hidden):
+
+* Primality is only accepted as proven below ``MR_DETERMINISTIC_LIMIT``. A
+  modulus or factorisation cofactor at or above it is refused with ValueError,
+  because the fixed Miller-Rabin bases do not prove primality there.
 
 * An oracle with no exposed algebraic structure (for example SHA-256d target
   membership) cannot be located this way. ``locate`` raises
@@ -147,11 +151,27 @@ def is_probable_prime(n: int) -> bool:
     return True
 
 
+def _is_proven_prime(n: int) -> bool:
+    """Primality as a proof: only decidable below MR_DETERMINISTIC_LIMIT.
+
+    Composites are always reported correctly by Miller-Rabin. A "prime" answer
+    at or above the limit is not a proof, so it is refused with ValueError.
+    """
+    if not is_probable_prime(n):
+        return False
+    if n >= MR_DETERMINISTIC_LIMIT:
+        raise ValueError(
+            f"primality of {n} cannot be proven with the fixed Miller-Rabin bases "
+            f"(proof limit is {MR_DETERMINISTIC_LIMIT}); refusing to treat it as prime"
+        )
+    return True
+
+
 def factorize(n: int, trial_bound: int = 1 << 20) -> dict[int, int]:
     """Prime factorisation of n >= 1 by trial division up to ``trial_bound``.
 
-    A remaining cofactor must pass ``is_probable_prime``; otherwise the
-    factorisation is refused with ValueError rather than guessed.
+    A remaining cofactor must be provably prime; otherwise the factorisation
+    is refused with ValueError rather than guessed.
     """
     _require_int(n, "n")
     if n < 1:
