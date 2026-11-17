@@ -38,8 +38,8 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 flex min-h-16 items-center justify-between gap-4 border-b border-neutral-800 bg-neutral-950/95 px-4 backdrop-blur md:px-8">
       <div className="min-w-0">
-        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-neutral-500">Chronus · product preview</p>
-        <p className="truncate text-sm font-medium text-neutral-200">Compute operations console</p>
+        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-neutral-500">HYBA Data · Chronus</p>
+        <p className="truncate text-sm font-medium text-neutral-200">Compute workspace · preview</p>
       </div>
       <div className="flex items-center gap-2 sm:gap-3">
         <StatusPill status={status.status} label={statusLabel[status.status]} />

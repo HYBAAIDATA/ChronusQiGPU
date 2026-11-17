@@ -51,11 +51,13 @@ const segment = (value: string) => encodeURIComponent(value);
 /** Thin transport for the implemented, reviewed UI routes. Failed requests never become mock success. */
 export class ChronusAPIClient {
   static getWorkloads = (authToken: string, page = 1, pageSize = 20) =>
-    get<PaginatedWorkloads>(`v1/workloads?page=${page}&page_size=${pageSize}`, authToken);
+    request<PaginatedWorkloads>(`v1/workloads?page=${page}&page_size=${pageSize}`, { signal: AbortSignal.timeout(30_000) }, authToken);
   static dispatchWorkload = (body: unknown, authToken: string) =>
-    post<WorkloadResponse>('v1/workloads', body, authToken);
+    request<WorkloadResponse>('v1/workloads', { method: 'POST', body: JSON.stringify(body), signal: AbortSignal.timeout(30_000) }, authToken);
+  static getWorkload = (workloadId: string, authToken: string) =>
+    request<WorkloadResponse>(`v1/workloads/${segment(workloadId)}`, { signal: AbortSignal.timeout(30_000) }, authToken);
   static verifyReceipt = (receiptId: string) =>
-    get<VerifyReceiptResponse>(`v1/verify/${segment(receiptId)}`);
+    request<VerifyReceiptResponse>(`v1/verify/${segment(receiptId)}`, { signal: AbortSignal.timeout(30_000) });
   static getStorage = () => get<ApiRecord>('v1/storage');
 
   // Shared mining administration: explicit short-lived operator JWT in memory only.

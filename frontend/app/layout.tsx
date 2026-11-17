@@ -16,11 +16,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" className="dark">
       <body className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-neutral-950 font-sans text-neutral-100 antialiased`}>
-        <div className="flex min-h-screen">
+        <a href="#main-content" className="sr-only z-50 rounded-lg bg-white p-3 font-medium text-neutral-950 focus:not-sr-only focus:fixed focus:left-4 focus:top-4">Skip to main content</a>
+        <div className="flex min-h-screen flex-col md:flex-row">
           <Sidebar />
           <div className="flex min-w-0 flex-1 flex-col">
             <Header />
-            <main className="flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-8">
+            <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
               <div role="note" className="mx-auto mb-6 max-w-7xl rounded-lg border border-amber-500/20 bg-amber-500/[0.06] px-4 py-3 text-xs leading-5 text-amber-100/80">
                 Product preview: the UI is not release-qualified. Some features are exploratory or intentionally withheld; verify source code, tests, and observed service responses before operational use.
               </div>

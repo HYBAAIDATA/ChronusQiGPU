@@ -36,7 +36,7 @@ export default function OverviewPage() {
       <div className="flex flex-col gap-4 border-b border-neutral-800 pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-300">Operations / Overview</p>
-          <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">Platform overview</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">Your compute workspace</h1>
           <p className="max-w-2xl text-sm leading-6 text-neutral-400">
             A source-first view of Chronus API readiness. This page reports only what the service probe returns; it is not a product or production qualification.
           </p>
@@ -53,6 +53,14 @@ export default function OverviewPage() {
           </button>
         </div>
       </div>
+
+      <section aria-labelledby="start-work-heading" className="console-panel border-blue-400/25 bg-blue-400/5">
+        <div className="console-section-heading">
+          <div className="max-w-2xl"><p className="console-eyebrow">Start with a task</p><h2 id="start-work-heading" className="mt-2 text-2xl font-semibold text-white">From input to an inspectable result</h2><p className="mt-3 text-sm leading-6 text-neutral-300">Configure a workload, read its actual execution state, then inspect the result and attached receipt. You will need an operator-issued tenant ID and credential; sign-in and provisioning are not available here.</p></div>
+          <Link href="/workloads" className="console-button-primary">Open workloads<ArrowRight aria-hidden="true" className="h-4 w-4" /></Link>
+        </div>
+        <p className="mt-4 text-xs leading-5 text-neutral-400">Use non-sensitive inputs. Readiness below is a service observation, not execution evidence or release qualification.</p>
+      </section>
 
       <Card className="overflow-hidden border-neutral-800 bg-neutral-900/70">
         <div className="grid gap-0 lg:grid-cols-[1.5fr_1fr]">
