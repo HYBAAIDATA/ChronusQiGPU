@@ -103,6 +103,8 @@ _SYSTEM_MOVES = frozenset({
     (State.PROBATION, State.DISPUTED),        # cascade
 })
 
+_APPROVAL_ROLES = (Role.REVIEWER, Role.VERIFIER, Role.SECOND_LINE)
+
 _RETRO_ROLES = (Role.REVIEWER, Role.VERIFIER, Role.DATA_OWNER, Role.INCIDENT_COMMANDER, Role.USE_CASE_OWNER)
 
 
@@ -292,6 +294,9 @@ class TrustFabric:
         clash = set(approvers) & atom.authors
         if clash:
             raise SelfApproval(f"{', '.join(sorted(clash))} proposed, generated or amended {atom.id}")
+        unauthorized = sorted(a.id for a in approvers.values() if not a.has(*_APPROVAL_ROLES))
+        if unauthorized:
+            raise NotAuthorized(f"{', '.join(unauthorized)} may not approve {atom.id}")
         if atom.risk_tier >= RiskTier.HIGH:
             humans = [a for a in approvers.values() if a.is_human]
             if len(humans) < 2:
@@ -428,6 +433,8 @@ class TrustFabric:
             raise StaleReviewPacket("the atom, its blast radius or its conflicts changed since this packet was built")
         if reviewer.id in atom.authors:
             raise SelfApproval(f"{reviewer.id} proposed, generated or amended {atom_id}")
+        if decision.upper() == "APPROVE" and not reviewer.has(*_APPROVAL_ROLES):
+            raise NotAuthorized(f"{reviewer.id} may not approve {atom_id}")
         if task.human_required and not reviewer.is_human:
             raise NotAuthorized(f"{atom_id} needs a human reviewer")
         if task.second_line_required and not reviewer.has(Role.SECOND_LINE):
