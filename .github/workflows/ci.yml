@@ -40,6 +40,7 @@ jobs:
       - name: Test and measure coverage
         env:
           CHRONUS_WORKLOAD_DB_PATH: ${{ runner.temp }}/chronus-tests.sqlite3
+          CHRONUS_QUALIFICATION_DB_PATH: ${{ runner.temp }}/chronus-merge-qualification.sqlite3
         run: python -m pytest -q --cov --cov-report=term-missing --cov-report=xml
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
@@ -59,6 +60,7 @@ jobs:
         if: github.event_name == 'pull_request'
         env:
           CHRONUS_WORKLOAD_DB_PATH: ${{ runner.temp }}/chronus-head-tests.sqlite3
+          CHRONUS_QUALIFICATION_DB_PATH: ${{ runner.temp }}/chronus-head-qualification.sqlite3
         run: python -m pytest -q --cov --cov-report=term-missing --cov-report=xml
       - name: Upload coverage artifact
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository

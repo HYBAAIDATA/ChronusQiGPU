@@ -28,7 +28,8 @@ def test_merge_result_passes_before_head_coverage_is_measured():
     assert steps[runs[1]]["if"] == "github.event_name == 'pull_request'"
     assert all("continue-on-error" not in steps[i] for i in runs)
     assert all("--cov" in shlex.split(steps[i]["run"]) for i in runs)
-    assert steps[runs[0]]["env"] != steps[runs[1]]["env"]
+    for database in ("CHRONUS_WORKLOAD_DB_PATH", "CHRONUS_QUALIFICATION_DB_PATH"):
+        assert steps[runs[0]]["env"][database] != steps[runs[1]]["env"][database]
     assert steps[head + 1]["run"] == "python -m pip install -e '.[dev]'"
     assert steps[head + 1]["if"] == "github.event_name == 'pull_request'"
     artifact = next(i for i, step in enumerate(steps)
