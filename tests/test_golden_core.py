@@ -9,6 +9,8 @@ import pytest
 from chronus.math import golden_core as g
 from chronus.math.binet_lucas import fibonacci_fast, lucas_fast
 
+pytestmark = pytest.mark.real
+
 
 def test_fibonacci_and_lucas_match_the_canonical_engines():
     for n in range(0, 300):
