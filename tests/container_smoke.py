@@ -30,6 +30,19 @@ def request(path, data=None, *, bearer=None, expected_status=200):
         return json.load(response)
 
 
+def denied(path, data=None, *, bearer=None, expected_status=401):
+    """Require an explicit authorization error, not just an HTTP failure."""
+    error, code = {
+        401: ("authentication_required", "AUTH001"),
+        403: ("tenant_mismatch", "AUTH002"),
+    }[expected_status]
+    result = request(path, data, bearer=bearer, expected_status=expected_status)
+    detail = result["detail"]
+    assert detail["error"] == error
+    assert detail["error_code"] == code
+    assert isinstance(detail["message"], str) and detail["message"].strip()
+
+
 def workload_payload(tenant="ci"):
     return {
         "tenant_id": tenant,
@@ -49,6 +62,7 @@ def completed(result):
 
 
 def verify_receipt(handle):
+    assert isinstance(handle, str) and handle.strip(), "Receipt handle is required"
     result = request("/verify/" + urllib.parse.quote(handle, safe=""))
     assert result["valid"] is True, "Receipt must verify; missing or invalid is not success"
     assert result["ed25519_verified"] is True
@@ -63,11 +77,10 @@ def verify_receipt(handle):
 
 def submit():
     token = os.environ["CHRONUS_SMOKE_TOKEN"]
-    request("/workloads/submit", workload_payload(), expected_status=401)
-    request("/workloads/submit", workload_payload(), bearer=token + "-invalid",
-            expected_status=401)
-    request("/workloads/submit", workload_payload("another-tenant"), bearer=token,
-            expected_status=403)
+    denied("/workloads/submit", workload_payload())
+    denied("/workloads/submit", workload_payload(), bearer=token + "-invalid")
+    denied("/workloads/submit", workload_payload("another-tenant"), bearer=token,
+           expected_status=403)
     result = request("/workloads/submit", workload_payload(), bearer=token,
                      expected_status=202)
     completed(result)
@@ -76,8 +89,10 @@ def submit():
 
 
 def verify(workload_id):
-    request(f"/workloads/{workload_id}", expected_status=401)
-    result = request(f"/workloads/{workload_id}", bearer=os.environ["CHRONUS_SMOKE_TOKEN"])
+    token = os.environ["CHRONUS_SMOKE_TOKEN"]
+    denied(f"/workloads/{workload_id}")
+    denied(f"/workloads/{workload_id}", bearer=token + "-invalid")
+    result = request(f"/workloads/{workload_id}", bearer=token)
     completed(result)
     assert result["workload_id"] == workload_id
     # Receipts are process-local. Only the stored computation result is restart evidence.
