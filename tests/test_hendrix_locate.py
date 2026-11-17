@@ -29,20 +29,22 @@ from chronus.hendrix.locate import (
     sqrt_mod,
 )
 
+pytestmark = pytest.mark.real
+
 MERSENNE_127 = (1 << 127) - 1
 NTT_PRIME = 3 * (1 << 30) + 1          # 3221225473, group order 3 * 2**30
 F65537 = PrimeField(65537)
 
 
 @pytest.fixture
-def no_answer_tables(monkeypatch):
+def no_answer_tables(monkeypatch):  # mock-ok: guard only; makes answer tables raise so locate must solve, nothing is substituted
     """Make every answer-reading path raise: locate must solve, not look up."""
     def refuse(*_args, **_kwargs):
         raise AssertionError("locate read an answer table or answer method")
-    monkeypatch.setattr(galois_module.PrimeField, "discrete_log", refuse)
-    monkeypatch.setattr(oracles_module.DiscreteLogOracle, "marked", refuse)
-    monkeypatch.setattr(oracles_module.PeriodOracle, "period", refuse)
-    monkeypatch.setattr(oracles_module.XorPeriodOracle, "period", refuse)
+    monkeypatch.setattr(galois_module.PrimeField, "discrete_log", refuse)  # mock-ok: guard only; makes answer tables raise so locate must solve, nothing is substituted
+    monkeypatch.setattr(oracles_module.DiscreteLogOracle, "marked", refuse)  # mock-ok: guard only; makes answer tables raise so locate must solve, nothing is substituted
+    monkeypatch.setattr(oracles_module.PeriodOracle, "period", refuse)  # mock-ok: guard only; makes answer tables raise so locate must solve, nothing is substituted
+    monkeypatch.setattr(oracles_module.XorPeriodOracle, "period", refuse)  # mock-ok: guard only; makes answer tables raise so locate must solve, nothing is substituted
 
 
 def _product_poly(roots, p, extra=(1,)):
@@ -135,7 +137,7 @@ def test_non_power_target_is_reported_empty_and_complete():
     assert result.marked == () and result.complete
 
 
-def test_undecided_discrete_log_is_raised_not_reported_as_empty(monkeypatch):
+def test_undecided_discrete_log_is_raised_not_reported_as_empty(monkeypatch):  # mock-ok: real discrete_log with a lower factor bound, to force the refusal path
     """A refusal (factor above the bound) must not become a proven-empty answer."""
     import chronus.hendrix.locate as locate_module
 
@@ -144,7 +146,7 @@ def test_undecided_discrete_log_is_raised_not_reported_as_empty(monkeypatch):
     def bounded(p, g, y, **kwargs):
         return real(p, g, y, max_prime_factor=2)   # NTT order 3 * 2**30: factor 3 is above 2
 
-    monkeypatch.setattr(locate_module, "discrete_log", bounded)
+    monkeypatch.setattr(locate_module, "discrete_log", bounded)  # mock-ok: real discrete_log with a lower factor bound, to force the refusal path
     p = NTT_PRIME
     g = next(c for c in range(2, 100) if multiplicative_order(p, c) == p - 1)
     with pytest.raises(ValueError, match="above") as caught:
