@@ -306,6 +306,8 @@ class TrustFabric:
         atom = self._require(atom_id)
         if atom.state is State.RETRACTED:
             raise NotAuthorized("un-retract goes through unretract()")
+        if atom.state is State.DEMOTED and to is State.QUARANTINED:
+            raise NotAuthorized("demoted content returns only through appeal()")
         return self._transition(atom, to, actor, rationale)
 
     def _transition(self, atom: Atom, to: State, actor: Actor, rationale: str, *,
@@ -456,11 +458,17 @@ class TrustFabric:
         if decision == "AMEND":
             if not edits or not str(edits.get("provenance", "")).strip():
                 raise TrustError("an amendment must restamp provenance")
+            # Validate every replacement before mutating the atom or the lineage index.
+            updates = {}
             for name in ("content", "evidence", "provenance", "derived_from"):
                 if name in edits:
-                    value = tuple(edits[name]) if name in ("evidence", "derived_from") else edits[name]
-                    setattr(atom, name, value)
-            if "derived_from" in edits:
+                    updates[name] = tuple(edits[name]) if name in ("evidence", "derived_from") else edits[name]
+            if "derived_from" in updates:
+                for parent in updates["derived_from"]:
+                    self._require(parent)
+            for name, value in updates.items():
+                setattr(atom, name, value)
+            if "derived_from" in updates:
                 for parent_children in self.children.values():
                     parent_children.discard(atom.id)
                 self._index_lineage(atom)
