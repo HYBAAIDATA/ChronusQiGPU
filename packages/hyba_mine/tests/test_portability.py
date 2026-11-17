@@ -2,6 +2,7 @@
 """Cross-platform layer: credential store, start-at-login, stop requests, launcher, locks."""
 
 import os
+import shlex
 import subprocess
 import sys
 import unittest
@@ -155,6 +156,54 @@ class AutostartLinuxTests(unittest.TestCase):
         self.assertIn("Restart=on-failure", text)
         self.assertIn("hyba_mine.launch", text)
         self.assertEqual(calls[-1][-2:], ["--now", autostart.SYSTEMD_UNIT])
+
+    def test_unit_is_refused_in_a_directory_others_can_write(self):
+        calls = []
+        with TempHome() as home:
+            unit_dir = home.root / "shared"
+            unit_dir.mkdir()
+            os.chmod(unit_dir, 0o775)
+            with self.assertRaisesRegex(RuntimeError, "writable by group or others"):
+                autostart.enable(autostart.Path("unused"), home.layout, start=True, platform_id="linux",
+                                 python="/usr/bin/python3", unit_dir=unit_dir,
+                                 runner=lambda a: calls.append(a) or subprocess.CompletedProcess(a, 0, "", ""))
+            self.assertFalse((unit_dir / autostart.SYSTEMD_UNIT).exists())
+        self.assertEqual(calls, [])
+
+    def test_unit_is_never_written_through_a_symlink(self):
+        with TempHome() as home:
+            unit_dir = home.root / "units"
+            unit_dir.mkdir(mode=0o700)
+            victim = home.root / "victim.txt"
+            victim.write_text("keep", encoding="utf-8")
+            os.symlink(victim, unit_dir / autostart.SYSTEMD_UNIT)
+            with self.assertRaisesRegex(RuntimeError, "symlink"):
+                autostart.enable(autostart.Path("unused"), home.layout, start=False, platform_id="linux",
+                                 python="/usr/bin/python3", unit_dir=unit_dir,
+                                 runner=lambda a: subprocess.CompletedProcess(a, 0, "", ""))
+            self.assertEqual(victim.read_text(encoding="utf-8"), "keep")
+
+    def test_unusual_paths_are_escaped_with_systemd_rules(self):
+        with TempHome() as home:
+            odd = home.root / 'odd "quoted" %h $HOME back\\slash'
+            layout = autostart.Layout(home=odd, logs=odd / "logs")
+            text = autostart.systemd_unit_text(layout, "/usr/bin/python3")
+        exec_line = next(line for line in text.splitlines() if line.startswith("ExecStart="))
+        words = shlex.split(exec_line[len("ExecStart="):])
+        # systemd: %% for specifiers, $$ for variables, backslash-escaped quotes and backslashes.
+        self.assertIn(str(odd).replace("$", "$$").replace("%", "%%"), words)
+        env = [line for line in text.splitlines() if line.startswith("Environment=")]
+        self.assertEqual(len(env), 2)
+        # Environment= values: specifiers are doubled, but $ is not expanded by systemd, so it stays single.
+        self.assertEqual(shlex.split(env[0][len("Environment="):]), [f"HYBA_MINE_HOME={str(odd).replace('%', '%%')}"])
+        self.assertEqual(shlex.split(env[1][len("Environment="):]),
+                         [f"HYBA_MINE_LOG_DIR={str(odd / 'logs').replace('%', '%%')}"])
+
+    def test_a_path_with_a_line_break_is_refused(self):
+        with TempHome() as home:
+            layout = autostart.Layout(home=home.root / "a\nExecStart=/bin/sh", logs=home.root / "logs")
+            with self.assertRaises(ValueError):
+                autostart.systemd_unit_text(layout, "/usr/bin/python3")
 
 
 class StopRequestTests(unittest.TestCase):

@@ -19,10 +19,11 @@ from __future__ import annotations
 
 import os
 import plistlib
-import shlex
 import shutil
+import stat
 import subprocess
 import sys
+import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Callable, Optional
@@ -197,14 +198,31 @@ def _windows_status(runner: Runner) -> dict:
 
 
 # -------------------------------------------------------------------- Linux
+def _systemd_word(value: str, *, exec_start: bool) -> str:
+    """One double-quoted systemd unit word, escaped with systemd rules (not shell rules).
+
+    ``\\`` and ``"`` are backslash-escaped and ``%`` (specifier) is doubled. ``$`` is doubled only in
+    ExecStart, where systemd expands variables; ``Environment=`` values are not expanded.
+    Line breaks cannot be represented in a unit line, so they are refused.
+    """
+    if any(c in value for c in "\n\r\x00"):
+        raise ValueError("paths with line breaks or NUL cannot be written to a systemd unit")
+    text = value.replace("\\", "\\\\").replace('"', '\\"').replace("%", "%%")
+    if exec_start:
+        text = text.replace("$", "$$")
+    return f'"{text}"'
+
+
 def systemd_unit_text(layout: Layout, python: str) -> str:
-    exec_start = " ".join(shlex.quote(part) for part in [python, *launcher_args(layout)])
+    exec_start = " ".join(_systemd_word(part, exec_start=True) for part in [python, *launcher_args(layout)])
+    home_env = _systemd_word(f"HYBA_MINE_HOME={layout.home}", exec_start=False)
+    logs_env = _systemd_word(f"HYBA_MINE_LOG_DIR={layout.logs}", exec_start=False)
     return (
         "[Unit]\nDescription=HYBA Mine (pre-flight runs before any mining)\n\n"
         "[Service]\nType=simple\n"
         f"ExecStart={exec_start}\n"
-        f'Environment="HYBA_MINE_HOME={layout.home}"\n'
-        f'Environment="HYBA_MINE_LOG_DIR={layout.logs}"\n'
+        f"Environment={home_env}\n"
+        f"Environment={logs_env}\n"
         "Restart=on-failure\nRestartSec=120\nKillSignal=SIGTERM\nTimeoutStopSec=30\n\n"
         "[Install]\nWantedBy=default.target\n"
     )
@@ -235,6 +253,31 @@ def _unit_path(unit_dir: Optional[Path]) -> Path:
     return (unit_dir / SYSTEMD_UNIT) if unit_dir else systemd_user_unit_path()
 
 
+def _install_unit(path: Path, text: str) -> None:
+    """Atomically install the unit file, only into a directory this account alone can write."""
+    if path.is_symlink():
+        raise RuntimeError(f"refusing to write the systemd unit through a symlink: {path}")
+    directory = path.parent
+    directory.mkdir(parents=True, exist_ok=True)
+    info = directory.stat()
+    if info.st_uid != os.getuid():
+        raise RuntimeError(f"refusing to install the systemd unit: {directory} is not owned by this account")
+    if info.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
+        raise RuntimeError(f"refusing to install the systemd unit: {directory} is writable by group or others")
+    fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=directory)
+    tmp = Path(temporary)
+    try:
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(text.encode("utf-8"))
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(tmp, 0o600)
+        os.replace(tmp, path)
+    finally:
+        if tmp.exists():
+            tmp.unlink()
+
+
 # ------------------------------------------------------------ entry points
 def _is_mac(platform_id: Optional[str]) -> bool:
     return platform_id == "macos" or (platform_id is None and is_macos())
@@ -259,9 +302,7 @@ def enable(run_script: Path, layout: Layout, *, start: bool = True, runner: Opti
     if plat == "linux":
         layout.prepare()
         path = _unit_path(unit_dir)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(systemd_unit_text(layout, python), encoding="utf-8")
-        os.chmod(path, 0o600)
+        _install_unit(path, systemd_unit_text(layout, python))
         _run_all(systemd_commands("enable", start=start), runner, "systemctl")
         return path
     raise AutostartUnsupported(f"start-at-login is not available on {plat}")
