@@ -261,7 +261,7 @@ def enable(run_script: Path, layout: Layout, *, start: bool = True, runner: Opti
         path = _unit_path(unit_dir)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(systemd_unit_text(layout, python), encoding="utf-8")
-        os.chmod(path, 0o644)
+        os.chmod(path, 0o600)
         _run_all(systemd_commands("enable", start=start), runner, "systemctl")
         return path
     raise AutostartUnsupported(f"start-at-login is not available on {plat}")
