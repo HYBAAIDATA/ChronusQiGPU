@@ -450,9 +450,11 @@ jobs:
         env:
           MINING_BRAIINS_USER: smoke.worker
           PYTHONPATH: src
+          CHRONUS_SMOKE_EVIDENCE_DIR: ${{ runner.temp }}/offline-stratum
         shell: pwsh
         run: |
-          $pool = Start-Process -PassThru -NoNewWindow -FilePath python -ArgumentList @('scripts/smoke/fake_pool.py','--port','3333','--exit-after','30')
+          # Explicit synthetic CI target (~430 expected hashes), not Bitcoin diff1.
+          $pool = Start-Process -PassThru -NoNewWindow -FilePath python -ArgumentList @('scripts/smoke/fake_pool.py','--port','3333','--difficulty','1e-7','--exit-after','30')
           $ready = $false
           foreach ($i in 1..50) {
             try {
@@ -470,9 +472,16 @@ jobs:
           }
           $code = 0
           try {
-            python scripts/smoke/stratum_smoke.py --target fake --submit-share --require-accept
+            python scripts/smoke/stratum_smoke.py --target fake --submit-share --require-accept --share-seconds 10
             $code = $LASTEXITCODE
           } finally {
             if (-not $pool.HasExited) { Stop-Process -Id $pool.Id -Force }
           }
           exit $code
+      - name: Retain current-run offline Stratum transcript
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: offline-stratum-transcript
+          path: ${{ runner.temp }}/offline-stratum/fake-*.json
+          if-no-files-found: error

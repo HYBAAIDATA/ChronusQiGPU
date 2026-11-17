@@ -60,3 +60,19 @@ def test_qigpu_measurements_override_the_project_source_filter():
     commands = "\n".join(step.get("run", "") for step in steps)
     assert "coverage run --branch --source=docs/qigpu docs/qigpu/pasted-text.txt" in commands
     assert "branch=True,source=['docs/qigpu']" in commands
+
+
+def test_offline_stratum_uses_explicit_synthetic_work_and_requires_acceptance():
+    steps = WORKFLOW["jobs"]["offline-stratum-smoke"]["steps"]
+    commands = "\n".join(step.get("run", "") for step in steps)
+    assert "'--difficulty','1e-7'" in commands
+    assert "--target fake --submit-share --require-accept" in commands
+    assert "--share-seconds 10" in commands
+    assert "$code = $LASTEXITCODE" in commands
+    assert "exit $code" in commands
+    run = next(step for step in steps if step.get("name") == "Fake pool accept round-trip")
+    assert run["env"]["CHRONUS_SMOKE_EVIDENCE_DIR"] == "${{ runner.temp }}/offline-stratum"
+    artifact = steps[-1]
+    assert artifact["if"] == "always()"
+    assert artifact["with"]["path"] == "${{ runner.temp }}/offline-stratum/fake-*.json"
+    assert artifact["with"]["if-no-files-found"] == "error"

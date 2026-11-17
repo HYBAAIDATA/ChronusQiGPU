@@ -46,7 +46,9 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 PRESETS = {"braiins": ("stratum.braiins.com", 3333), "fake": ("127.0.0.1", 3333)}
-EVIDENCE = Path(__file__).resolve().parents[2] / "evidence" / "smoke"
+EVIDENCE = Path(os.environ.get(
+    "CHRONUS_SMOKE_EVIDENCE_DIR", Path(__file__).resolve().parents[2] / "evidence" / "smoke"
+))
 AGENT = "chronus-smoke/1.0"
 DIFF1 = 0xFFFF << (8 * (0x1D - 3))
 LOW_DIFFICULTY = 23
