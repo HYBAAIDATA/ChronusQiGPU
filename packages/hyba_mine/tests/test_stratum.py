@@ -588,5 +588,33 @@ class TestVersionRolling(unittest.TestCase):
         self.assertEqual(report["version_negotiation"]["outcome"], "granted")
 
 
+class TestDifficultyChange(unittest.TestCase):
+    def test_pool_difficulty_change_makes_units_at_the_old_difficulty_stale_and_wakes_waiters(self):
+        async def scenario():
+            pool = VerifyingPool(difficulty=1)
+            await pool.start()
+            records = []
+            session = _session(pool, records)
+            task = asyncio.create_task(session.run())
+            try:
+                job = await _connected(session)
+                self.assertIsNone(session.stale_reason(job, difficulty=Fraction(1)))
+                waiter = asyncio.create_task(session.wait_stale(job, difficulty=Fraction(1)))
+                await asyncio.sleep(0.05)
+                self.assertFalse(waiter.done())
+                await pool.push_difficulty(2)
+                reason = await asyncio.wait_for(waiter, 5)
+                self.assertEqual(reason, "difficulty_changed")
+                self.assertTrue(session.is_valid(job))
+                self.assertIsNone(session.stale_reason(job, difficulty=Fraction(2)))
+            finally:
+                session.stop()
+                await session.disconnect()
+                await task
+                await pool.stop()
+
+        _support.run(scenario())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -424,7 +424,12 @@ class PoolSession:
             return False
         return version_fits(job.base_version, version, self.submit_version_bits(version), self.pool_version_mask)
 
-    def stale_reason(self, job: MiningJob, version: Optional[int] = None, version_bits: Optional[int] = None) -> Optional[str]:
+    def current_difficulty(self, job: MiningJob) -> Fraction:
+        """The share difficulty a unit on job would be issued at now."""
+        return self.difficulty if self.difficulty is not None else job.difficulty
+
+    def stale_reason(self, job: MiningJob, version: Optional[int] = None, version_bits: Optional[int] = None,
+                     difficulty: Optional[Fraction] = None) -> Optional[str]:
         """Why ``job`` can no longer be mined on this session, or None while it is valid.
 
         With ``version``/``version_bits`` (a rolled unit), a valid job whose rolled
@@ -432,6 +437,9 @@ class PoolSession:
         ``version_mask_changed``.
         """
         if self.is_valid(job):
+            # A unit issued at an earlier pool difficulty is stale once the pool changes it.
+            if difficulty is not None and difficulty != self.current_difficulty(job):
+                return "difficulty_changed"
             if version_bits is not None and not self.version_compatible(job, version, version_bits):
                 return "version_mask_changed"
             return None
@@ -445,7 +453,8 @@ class PoolSession:
             return "clean_jobs"
         return "job_dropped"
 
-    async def wait_stale(self, job: MiningJob, version: Optional[int] = None, version_bits: Optional[int] = None) -> str:
+    async def wait_stale(self, job: MiningJob, version: Optional[int] = None, version_bits: Optional[int] = None,
+                         difficulty: Optional[Fraction] = None) -> str:
         """Return the stale reason as soon as ``job`` stops being valid.
 
         Each waiter has its own event, so clearing it never hides a change from
@@ -457,7 +466,7 @@ class PoolSession:
         try:
             while True:
                 event.clear()
-                reason = self.stale_reason(job, version, version_bits)
+                reason = self.stale_reason(job, version, version_bits, difficulty)
                 if reason:
                     return reason
                 await event.wait()
@@ -692,6 +701,7 @@ class PoolSession:
                 return None
             self.difficulty = difficulty
             self.record("difficulty", {"pool": self.profile.pool_id, "generation": self.generation, "difficulty": str(difficulty), "literal": value})
+            self._notify()  # wakes unit watchers: units issued at the old difficulty are now stale
         elif method == "mining.notify":
             try:
                 job = StratumJob.from_notify(list(params))

@@ -60,6 +60,8 @@ from typing import Optional, Sequence, Union
 from chronus.execution import hashrate_cap as _hc
 
 from hyba_mine import __version__
+from hyba_mine.custody import (CustodyError, EVENT_APPLIED, EVENT_REFUSED, EVENT_REQUESTED,
+                                    PoolSwitchCustody, custody_from_environment)
 from hyba_mine.control import (
     block_pool,
     block_for,
@@ -183,6 +185,7 @@ class MinerRuntime:
         dispatcher: Union[WindowDispatcher, Sequence[WindowDispatcher]],
         pool_id: str,
         options: Optional[RuntimeOptions] = None,
+        custody: Optional[PoolSwitchCustody] = None,
     ) -> None:
         self.layout = layout
         self.ledger = ledger
@@ -219,6 +222,9 @@ class MinerRuntime:
         # The process-wide hashrate ceiling, shared by every route; the one place hashes are reserved.
         self.gate = CapGate()
         self._cap_seen: Optional[int] = None
+        # THESEUS custody of pool switches. None when HYBA_MINE_CUSTODY_PATH is unset. A misconfigured
+        # setting raises here, at start, so a switch cannot run unrecorded.
+        self.custody = custody if custody is not None else custody_from_environment()
 
     @property
     def dispatcher(self) -> WindowDispatcher:
@@ -293,11 +299,32 @@ class MinerRuntime:
         refusal = self._switch_refusal(pool_id)
         if refusal is not None:
             self.record("pool_switch_refused", {"request_id": request_id, "pool": pool_id, "reason": refusal})
+            self._custody_note(EVENT_REFUSED, request_id, pool_id, refusal)
             return
         await self._close_session()
         await self._open_session(pool_id)
         update_state(self.layout, active_pool=pool_id)
         self.record("pool_switch_applied", {"request_id": request_id, "from": previous, "to": pool_id})
+        self._custody_note(EVENT_APPLIED, request_id, pool_id, None)
+
+    def _custody_gate(self, request_id: str, pool_id: str) -> Optional[str]:
+        """Record the request in THESEUS before it can apply. Returns a refusal reason when that record fails."""
+        if self.custody is None:
+            return None
+        try:
+            self.custody.record(EVENT_REQUESTED, {"request_id": request_id, "from": self.profile.pool_id, "to": pool_id})
+        except CustodyError as exc:
+            return f"custody record unavailable: {exc}"
+        return None
+
+    def _custody_note(self, event: str, request_id: str, pool_id: str, reason: Optional[str]) -> None:
+        """Best-effort record of an outcome. A failure goes to the local ledger and is never raised."""
+        if self.custody is None:
+            return
+        try:
+            self.custody.record(event, {"request_id": request_id, "to": pool_id, "reason": reason})
+        except CustodyError as exc:
+            self.record("custody_record_failed", {"request_id": request_id, "event": event, "reason": str(exc)[:200]})
 
     # ------------------------------------------------------------ background
     def _sync_cap(self) -> None:
@@ -328,10 +355,11 @@ class MinerRuntime:
                 clear_control_request(self.layout, request["request_id"])
                 self.record("pool_switch_requested", {"request_id": request["request_id"], "pool": request["pool_id"], "source": "console"})
                 # Refuse before any route is interrupted: a refused switch must not abort in-flight units.
-                refusal = self._switch_refusal(request["pool_id"])
+                refusal = self._switch_refusal(request["pool_id"]) or self._custody_gate(request["request_id"], request["pool_id"])
                 if refusal is not None:
                     self.record("pool_switch_refused", {"request_id": request["request_id"],
                                                        "pool": request["pool_id"], "reason": refusal})
+                    self._custody_note(EVENT_REFUSED, request["request_id"], request["pool_id"], refusal)
                 else:
                     self._switch_to = (request["request_id"], request["pool_id"])
                     self._interrupt.set()
@@ -645,7 +673,7 @@ class MinerRuntime:
     async def _watch_unit(self, session: PoolSession, unit: WorkUnit) -> str:
         """Why the unit in flight must stop: its job went stale (or its rolled bits left
         the pool's version mask), a pool switch, or a stop."""
-        stale = asyncio.ensure_future(session.wait_stale(unit.job, unit.version, unit.version_bits))
+        stale = asyncio.ensure_future(session.wait_stale(unit.job, unit.version, unit.version_bits, unit.difficulty))
         try:
             while True:
                 interrupt = asyncio.ensure_future(self._interrupt.wait())
@@ -799,6 +827,9 @@ class MinerRuntime:
                 "version_bits": f"{unit.version_bits:08x}", "version_mask": f"{unit.version_mask:08x}"}
         if self.session is not session or not session.is_valid(job):
             self.record("share_stale_dropped", {**base, "reason": "job no longer valid on the pool connection"})
+            return
+        if session.current_difficulty(job) != unit.difficulty:
+            self.record("share_stale_dropped", {**base, "reason": "pool difficulty changed since the unit was issued"})
             return
         current_mask = session.version_mask if session.version_rolling else 0
         pool_mask = session.pool_version_mask if session.version_rolling else 0
