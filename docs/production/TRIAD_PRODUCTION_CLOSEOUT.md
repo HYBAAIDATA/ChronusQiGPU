@@ -117,3 +117,18 @@ A capability may be implemented and software-verified while a physical backend o
 - Deployment profile contract: `capabilities/deployment_profiles.json`
 - Current fleet contract: `docs/fleet/FLEET.md`
 - Current acceleration evidence: `capabilities/acceleration_report.md`
+
+## 8. Integrated durable shard protection (17 Nov 2026)
+
+The optional `ProductionTriad.protect_payload` / `recover_protected_payload`
+methods now route through `chronus.storage.protected.ProtectedTheseusService`.
+THESEUS holds the manifest and journal entry; bounded immutable files retain
+2–32 shards, with one XOR parity retained under the existing custody authority.
+An actual single shard-file loss can be reconstructed after reopening the
+service; two losses fail closed. This preserves OVID and the original
+put/materialise contract, and makes no whole-device loss or physical IOPS claim.
+
+Source and test details: `docs/production/PROTECTED_THESEUS_INTEGRATION.md`.
+Artifact-to-commit reconciliation is available in the maintained
+`scripts/reconcile_benchmarks.py` without running substitute workloads or
+promoting held claims.
