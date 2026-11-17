@@ -155,6 +155,21 @@ def limit_file() -> Path:
     return Path.home() / ".local/share/hyba-mine/hashrate-cap"
 
 
+def _replace_with_retry(source: Path, target: Path) -> None:
+    """os.replace fails on Windows with PermissionError while another writer or reader holds the target.
+
+    Two publishers racing on one limit file hit that window. Retry briefly, then raise.
+    """
+    for attempt in range(100):
+        try:
+            os.replace(source, target)
+            return
+        except PermissionError:
+            if attempt == 99:
+                raise
+            time.sleep(0.01)
+
+
 def publish_limit_file(eh_s: float) -> None:
     """Write the active EH/s limit for other processes to read."""
     require_eh_s(eh_s)
@@ -165,7 +180,7 @@ def publish_limit_file(eh_s: float) -> None:
     temporary = Path(name)
     try:
         temporary.write_text(f"{eh_s}\n", encoding="ascii")
-        os.replace(temporary, path)
+        _replace_with_retry(temporary, path)
     except Exception:
         temporary.unlink(missing_ok=True)
         raise
