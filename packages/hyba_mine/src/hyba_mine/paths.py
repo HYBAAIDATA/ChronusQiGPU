@@ -123,9 +123,13 @@ def ensure_private_dir(path: Path) -> Path:
         try:
             portable.restrict_to_current_user(path, directory=True)
         except OSError as exc:
-            # Credential files verify their own access list and fail closed.
-            log.warning("could not restrict %s to this account (%s)", path, exc)
-            return path
+            # Fail closed: a home other accounts can write to must not hold approval or control files.
+            log.error("could not restrict %s to this account (%s)", path, exc)
+            raise PermissionError(f"refusing to use {path}: it cannot be restricted to this account ({exc})") from exc
+        report = portable.describe_access(path)
+        if not (report.private and report.protected):
+            detail = report.error or ", ".join(report.foreign_trustees) or "access list not protected"
+            raise PermissionError(f"refusing to use {path}: other accounts can access it ({detail})")
     _restricted.add(key)
     return path
 
