@@ -16,11 +16,28 @@ from hyba_mine.igpu import ROUTE_MODE_A, LaneFault, LaneUnavailable, ModeALane
 from hyba_mine.metal import NO_PROBE, PARAMS_FORMAT, chronus_kernel_text, metal_source, model_thread, pack_params
 from hyba_mine.plan import MASK32, NoncePlan
 from hyba_mine.vectors import GENESIS, REAL_HEADERS
-from hyba_mine.work import Hit, check_result_integrity, le_words, make_device_unit
+from hyba_mine.work import Hit, UnitAborted, check_result_integrity, le_words, make_device_unit
 
 
 def sha256d(data: bytes) -> bytes:
     return hashlib.sha256(hashlib.sha256(data).digest()).digest()
+
+
+def _assert_abort_before_execute_refuses_the_unit(case, lane):
+    """The dispatcher hands a unit to an executor thread and may abort it before the lane's
+    execute() has registered it; the lane must remember the abort and refuse the unit."""
+    plan = NoncePlan.for_header(GENESIS.prefix, 12)
+    unit = make_device_unit(plan, 0, 1024, decode_nbits_target(GENESIS.nbits), "abort-before-execute")
+    case.assertTrue(lane.abort(unit.unit_id))
+    with case.assertRaises(UnitAborted) as caught:
+        lane.execute(unit)
+    case.assertEqual((caught.exception.unit_id, caught.exception.executed), (unit.unit_id, 0))
+    case.assertEqual(caught.exception.route, lane.route)
+    # The remembered abort is used once; an abort for another unit never stops this one.
+    lane.abort("some-other-unit")
+    result = lane.execute(unit)
+    case.assertEqual(result.executed, unit.count)
+    case.assertIsNone(check_result_integrity(unit, result))
 
 
 class TestVectors(unittest.TestCase):
@@ -69,6 +86,9 @@ class TestModeALaneKAT(unittest.TestCase):
         self.assertIn("executed 0", check_result_integrity(unit, short))
         wrong_probe = replace(result, probe_words=tuple((w + 1) & MASK32 for w in result.probe_words))
         self.assertIn("probe digest", check_result_integrity(unit, wrong_probe))
+
+    def test_an_abort_that_arrives_before_execute_refuses_the_unit(self):
+        _assert_abort_before_execute_refuses_the_unit(self, self.lane)
 
     def test_kat_fails_for_a_planted_faulty_lane(self):
         class OffByOneLane:
@@ -314,6 +334,10 @@ class TestMetalLanePlumbing(unittest.TestCase):
             mode_a.close()
         self.assertTrue(all(threads >= count for threads, count, _ in fake.dispatches))
         self.assertTrue(all(count <= 512 for _, count, _ in fake.dispatches))
+
+    def test_an_abort_that_arrives_before_execute_refuses_the_unit(self):
+        fake, lane = self._lane()
+        _assert_abort_before_execute_refuses_the_unit(self, lane)
 
     def test_hit_buffer_regrows_so_no_hit_is_lost(self):
         fake, lane = self._lane()

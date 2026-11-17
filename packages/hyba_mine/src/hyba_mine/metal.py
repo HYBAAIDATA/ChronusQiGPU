@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import contextlib
 import struct
+import threading
 import time
 from typing import Optional, Sequence, Tuple
 
@@ -29,7 +30,7 @@ from chronus.execution.opencl_sha256d import OpenCLSha256dMinerBackend
 
 from hyba_mine.igpu import ROUTE_LABELS, ROUTE_METAL, LaneFault, LaneUnavailable, node_name
 from hyba_mine.plan import MASK32
-from hyba_mine.work import Hit, WindowResult, WorkUnit
+from hyba_mine.work import Hit, UnitAborted, WindowResult, WorkUnit
 
 CHRONUS_KERNEL = "sha256d_search.cl"
 KERNEL_NAME = "hyba_sha256d_plan"
@@ -245,7 +246,15 @@ def _view(buffer, nbytes: int):
 
 
 class MetalLane:
-    """Chronus iGPU bound to the Apple GPU through Metal."""
+    """Chronus iGPU bound to the Apple GPU through Metal.
+
+    ``abort(unit_id)`` stops the unit at the next dispatch boundary. A
+    committed command buffer is not interrupted, so the stop waits for the
+    dispatch in flight (at most ``MAX_THREADS`` threads) to finish; the
+    executed count of an aborted unit covers whole completed dispatches only.
+    An abort that arrives before ``execute`` has registered its unit is
+    remembered, and ``execute`` then refuses that unit before any dispatch.
+    """
 
     route = ROUTE_METAL
     label = ROUTE_LABELS[ROUTE_METAL]
@@ -262,6 +271,11 @@ class MetalLane:
         limit = int(pipeline.maxTotalThreadsPerThreadgroup())
         self._group = max(width, (min(256, limit) // width) * width)
         self._shared = metal.MTLResourceStorageModeShared
+        self._state = threading.Lock()
+        self._current: Optional[str] = None
+        self._stop = threading.Event()
+        # An abort that arrived before execute() registered its unit.
+        self._pending_abort: Optional[str] = None
 
     @classmethod
     def open(cls) -> "MetalLane":
@@ -293,6 +307,7 @@ class MetalLane:
             "device": str(self._device.name()),
             "threads_per_group": self._group,
             "max_threads_per_dispatch": self.MAX_THREADS,
+            "compute_unit": "apple_gpu",
         }
 
     def _buffer(self, data: bytes):
@@ -345,27 +360,41 @@ class MetalLane:
         device_ns = 0
         timing = set()
         rel = 0
-        while rel < unit.count:
-            count = min(self.MAX_THREADS, unit.count - rel)
-            probe_index = unit.probe_offset - rel if rel <= unit.probe_offset < rel + count else NO_PROBE
-            capacity = self.MAX_HITS
-            while True:
-                params = pack_params(
-                    plan.header_prefix, unit.target, plan.offset, plan.stride, plan.window_bits,
-                    unit.start + rel, count, capacity, probe_index,
-                )
-                found, pairs, probe, elapsed, how = self._dispatch(params, lane_table, count, capacity)
-                device_ns += elapsed
-                timing.add(how)
-                if found <= capacity or capacity >= self.HARD_HIT_CAP:
-                    break
-                capacity = min(found, self.HARD_HIT_CAP)
-            if found > capacity:
-                raise LaneFault("more hits than the hit buffer can hold; target is too easy for mining")
-            hits.extend(Hit(rel + pairs[2 * i], pairs[2 * i + 1]) for i in range(len(pairs) // 2))
-            if probe_index != NO_PROBE:
-                probe_words = tuple(probe)
-            rel += count
+        with self._state:
+            pending, self._pending_abort = self._pending_abort, None
+            if pending == unit.unit_id:
+                # Aborted before it started: nothing runs, nothing is counted.
+                raise UnitAborted(unit.unit_id, 0, 0, self.route, node_name())
+            self._current = unit.unit_id
+            self._stop.clear()
+        try:
+            while rel < unit.count:
+                if self._stop.is_set():
+                    raise UnitAborted(unit.unit_id, rel, max(1, device_ns), self.route, node_name(),
+                                      hits_found=len(hits))
+                count = min(self.MAX_THREADS, unit.count - rel)
+                probe_index = unit.probe_offset - rel if rel <= unit.probe_offset < rel + count else NO_PROBE
+                capacity = self.MAX_HITS
+                while True:
+                    params = pack_params(
+                        plan.header_prefix, unit.target, plan.offset, plan.stride, plan.window_bits,
+                        unit.start + rel, count, capacity, probe_index,
+                    )
+                    found, pairs, probe, elapsed, how = self._dispatch(params, lane_table, count, capacity)
+                    device_ns += elapsed
+                    timing.add(how)
+                    if found <= capacity or capacity >= self.HARD_HIT_CAP:
+                        break
+                    capacity = min(found, self.HARD_HIT_CAP)
+                if found > capacity:
+                    raise LaneFault("more hits than the hit buffer can hold; target is too easy for mining")
+                hits.extend(Hit(rel + pairs[2 * i], pairs[2 * i + 1]) for i in range(len(pairs) // 2))
+                if probe_index != NO_PROBE:
+                    probe_words = tuple(probe)
+                rel += count
+        finally:
+            with self._state:
+                self._current = None
         return WindowResult(
             unit_id=unit.unit_id,
             executed=unit.count,
@@ -377,5 +406,20 @@ class MetalLane:
             detail={"timing": "+".join(sorted(timing)), "device": str(self._device.name())},
         )
 
+    def abort(self, unit_id: str) -> bool:
+        """Stop ``unit_id`` at the next dispatch boundary.
+
+        When that unit has not started here yet, the abort is remembered and
+        ``execute`` refuses the unit; a remembered abort for any other unit is
+        dropped when the next unit starts.
+        """
+        with self._state:
+            if self._current != unit_id:
+                self._pending_abort = unit_id
+                return True
+            self._stop.set()
+            return True
+
     def close(self) -> None:
+        self._stop.set()
         self._queue = None

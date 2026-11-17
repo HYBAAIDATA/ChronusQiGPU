@@ -20,6 +20,7 @@ classifiers = [
     "License :: Other/Proprietary License",
     "Operating System :: MacOS",
     "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -29,6 +30,7 @@ dependencies = []
 
 [project.optional-dependencies]
 metal = ["pyobjc-framework-Metal>=10.3; sys_platform == 'darwin'"]
+opencl = ["pyopencl>=2024.1"]
 
 [project.scripts]
 hyba-mine = "hyba_mine.cli:main"

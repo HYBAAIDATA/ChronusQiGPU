@@ -119,6 +119,110 @@ class TestStatus(unittest.TestCase):
         self.assertEqual(summary["state"], "NO RECENT ACTIVITY")
         self.assertIsNone(summary["hashrate"]["hashrate_hs"])
 
+    def _cap_start(self, records, cap_h_s=10 ** 18):
+        start = dict(records[0])
+        start["data"] = {**start["data"], "hashrate_cap": {
+            "cap_h_s": cap_h_s, "cap_eh_s": "1", "scope": "hashes scheduled by this hyba-mine process",
+            "basis": "configured ceiling on hashes this process may schedule per second; not a measured rate"}}
+        return [start, *records[1:]]
+
+    def test_cap_is_shown_as_a_ceiling_not_a_rate(self):
+        now = datetime.now(timezone.utc)
+        summary = summarize(self._cap_start(self._records(now)), now=now)
+        cap = summary["hashrate_cap"]
+        self.assertEqual((cap["cap_h_s"], cap["display"], cap["kind"]), (10 ** 18, "1 EH/s", "ceiling"))
+        self.assertFalse(cap["bound_in_window"])
+        self.assertIn("not a measured rate", cap["basis"])
+        self.assertEqual(summary["hashrate"]["hashrate_hs"], 2e9)
+        text = render_text(summary)
+        self.assertIn("Hashrate cap 1 EH/s ceiling", text)
+        self.assertIn("not measured", text)
+        self.assertNotIn("throttled", text)
+
+    def test_cap_window_and_change_are_summarised(self):
+        now = datetime.now(timezone.utc)
+
+        def at(seconds, kind, data):
+            return {"ts": (now - timedelta(seconds=seconds)).isoformat().replace("+00:00", "Z"), "kind": kind, "data": data}
+
+        window = {"throttled_ns": 2 * 10 ** 9, "throttle_waits": 4, "clamped_units": 3, "refunded_hashes": 7}
+        records = self._cap_start(self._records(now)) + [
+            at(250, "hashrate_cap_window", {**window, "clamped_units": 100}),
+            at(9, "hashrate_cap_changed", {"from_h_s": 10 ** 18, "to_h_s": 5000}),
+            at(8, "hashrate_cap_window", window),
+        ]
+        summary = summarize(records, now=now)
+        cap = summary["hashrate_cap"]
+        self.assertEqual(cap["cap_h_s"], 5000)
+        self.assertEqual(cap["throttled_seconds"], 2.0)
+        self.assertEqual((cap["clamped_units"], cap["throttle_waits"], cap["refunded_hashes"]), (3, 4, 7))
+        self.assertTrue(cap["bound_in_window"])
+        self.assertEqual(summary["hashrate"]["hashrate_hs"], 2e9)
+        text = render_text(summary)
+        self.assertIn("Hashrate cap 5 kH/s ceiling", text)
+        self.assertIn("throttled 2.0 s, 3 units shortened in the last 60 s", text)
+
+    def test_old_ledger_without_cap_says_not_recorded(self):
+        now = datetime.now(timezone.utc)
+        summary = summarize(self._records(now), now=now)
+        self.assertIsNone(summary["hashrate_cap"])
+        self.assertIn("Hashrate cap not recorded", render_text(summary))
+        self.assertIsNone(summarize([], now=now)["hashrate_cap"])
+
+    def test_status_sums_concurrent_routes_and_lists_each(self):
+        now = datetime.now(timezone.utc)
+
+        def at(seconds, kind, data):
+            return {"ts": (now - timedelta(seconds=seconds)).isoformat().replace("+00:00", "Z"), "kind": kind, "data": data}
+
+        mode_a, metal = "chronus_igpu_mode_a", "chronus_igpu_metal"
+        records = [
+            at(100, "session_start", {"pool": "viabtc", "requested_route": "auto", "node": "mac",
+                                      "executed_route": f"{mode_a}+{metal}", "executed_routes": [mode_a, metal],
+                                      "fallback_reason": None, "degraded": False, "unavailable_routes": []}),
+            at(10, "work", {"node": "mac", "route": mode_a, "executed": 2 * 10 ** 6, "device_ns": 10 ** 9,
+                            "span_ns": 10 ** 9, "slot": "r0", "compute_unit": "cpu_performance_cores"}),
+            at(10, "work", {"node": "mac", "route": metal, "executed": 3 * 10 ** 6, "device_ns": 10 ** 9,
+                            "span_ns": 10 ** 9, "slot": "r1", "compute_unit": "apple_gpu"}),
+            at(5, "route_stopped", {"route": metal, "executed": 3 * 10 ** 6, "state": "stopped"}),
+        ]
+        summary = summarize(records, now=now)
+        self.assertEqual(summary["hashrate"]["hashrate_hs"], 5e6)
+        lanes = {lane["route"]: lane for lane in summary["hashrate"]["lanes"]}
+        self.assertEqual((lanes[mode_a]["hashrate_hs"], lanes[metal]["hashrate_hs"]), (2e6, 3e6))
+        self.assertEqual((lanes[mode_a]["compute_unit"], lanes[metal]["compute_unit"]),
+                         ("cpu_performance_cores", "apple_gpu"))
+        route = summary["route"]
+        self.assertEqual(route["executed_routes"], [mode_a, metal])
+        self.assertEqual(route["label"], "Chronus iGPU - Mode A (software-defined GPU) + host GPU - Apple Metal (Mode B)")
+        self.assertFalse(route["degraded"])
+        self.assertEqual([r["route"] for r in route["routes_stopped"]], [metal])
+        text = render_text(summary)
+        self.assertIn("Chronus iGPU - Mode A (software-defined GPU) + host GPU - Apple Metal (Mode B)", text)
+        self.assertIn("on apple_gpu: 3 MH/s measured", text)
+        self.assertIn("on cpu_performance_cores: 2 MH/s measured", text)
+        self.assertNotIn("Degraded", text)
+
+    def test_status_says_why_a_route_is_not_running(self):
+        now = datetime.now(timezone.utc)
+        start = {"ts": now.isoformat().replace("+00:00", "Z"), "kind": "session_start",
+                 "data": {"pool": "viabtc", "requested_route": "auto", "executed_route": "chronus_igpu_mode_a",
+                          "executed_routes": ["chronus_igpu_mode_a"], "degraded": True,
+                          "degraded_reason": "METAL_UNAVAILABLE: none; mining on chronus_igpu_mode_a only",
+                          "unavailable_routes": [{"route": "chronus_igpu_metal", "backend": "metal",
+                                                  "reason": "METAL_UNAVAILABLE: none", "stage": "detect"}]}}
+        summary = summarize([start], now=now)
+        self.assertTrue(summary["route"]["degraded"])
+        self.assertEqual(summary["route"]["unavailable_routes"][0]["backend"], "metal")
+        self.assertIn("Degraded     single route: METAL_UNAVAILABLE: none", render_text(summary))
+
+    def test_format_rate_large_scales(self):
+        self.assertEqual(format_rate(1e18), "1 EH/s")
+        self.assertEqual(format_rate(2.5e15), "2.5 PH/s")
+        self.assertEqual(format_rate(3e12), "3 TH/s")
+        self.assertEqual(format_rate(2e9), "2 GH/s")
+        self.assertEqual(format_rate(1500.0), "1.5 kH/s")
+
 
 class TestConsolePage(unittest.TestCase):
     def test_page_reads_the_ledger_and_pool_switch_needs_token_and_loopback_host(self):
