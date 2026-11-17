@@ -150,7 +150,8 @@ def is_probable_prime(n: int) -> bool:
 def factorize(n: int, trial_bound: int = 1 << 20) -> dict[int, int]:
     """Prime factorisation of n >= 1 by trial division up to ``trial_bound``.
 
-    A remaining cofactor must pass ``is_probable_prime``; otherwise the
+    A remaining cofactor must be certifiably prime (below
+    ``MR_DETERMINISTIC_LIMIT`` and passing ``is_probable_prime``); otherwise the
     factorisation is refused with ValueError rather than guessed.
     """
     _require_int(n, "n")
@@ -169,20 +170,30 @@ def factorize(n: int, trial_bound: int = 1 << 20) -> dict[int, int]:
                 n //= r
         q += 6
     if n > 1:
-        if not is_probable_prime(n):
+        if not _is_certified_prime(n):
             raise ValueError(
-                f"cofactor {n} is composite with no factor <= {trial_bound}; "
-                "factorisation of the group order is required and is not available"
+                f"cofactor {n} has no factor <= {trial_bound} and its primality is not "
+                "certified; factorisation of the group order is required and is not available"
             )
         factors[n] = factors.get(n, 0) + 1
     return factors
 
 
+def _is_certified_prime(n: int) -> bool:
+    """True only when primality is proven: the fixed bases are a proof below the limit."""
+    return n < MR_DETERMINISTIC_LIMIT and is_probable_prime(n)
+
+
 def _check_prime_field(p: int) -> int:
     _require_int(p, "p")
-    if not is_probable_prime(p):
-        raise ValueError(f"p = {p} is not prime")
-    return p
+    if _is_certified_prime(p):
+        return p
+    if p >= MR_DETERMINISTIC_LIMIT and is_probable_prime(p):
+        raise ValueError(
+            f"p = {p} passes the fixed Miller-Rabin bases but is not certifiably prime "
+            f"(proof only below {MR_DETERMINISTIC_LIMIT}); refusing exact field arithmetic"
+        )
+    raise ValueError(f"p = {p} is not prime")
 
 
 def multiplicative_order(p: int, a: int, order_factors: dict[int, int] | None = None) -> int:
