@@ -30,6 +30,7 @@ context and never changes the process-wide decimal context.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from decimal import Decimal, localcontext
 from fractions import Fraction
@@ -170,6 +171,25 @@ def family_root(name: str, precision: int = 50) -> RootEnclosure:
         return RootEnclosure(name, +value, low, high)
 
 
+def family_pisot_modulus_bounds(name: str, precision: int = 50) -> Tuple[Fraction, Fraction]:
+    """Certified rational bracket [low, high] containing the conjugate modulus of ``family_pisot_modulus``.
+
+    Built from the exact enclosure of the dominant root: |mu| (quadratic) or |mu|^2 (cubic)
+    lies in [|c0|/high, |c0|/low]; the cubic case then takes integer square-root brackets at
+    scale 10**precision, so both ends are exact rationals.
+    """
+    coeffs = FAMILY_COEFFS[name]
+    enc = family_root(name, precision)
+    c0 = abs(coeffs[-1])
+    sq_low, sq_high = Fraction(c0) / enc.high, Fraction(c0) / enc.low
+    if len(coeffs) - 1 == 2:
+        return sq_low, sq_high
+    scale = 10 ** precision
+    low = Fraction(math.isqrt(math.floor(sq_low * scale * scale)), scale)
+    high = Fraction(math.isqrt(math.ceil(sq_high * scale * scale)) + 1, scale)
+    return low, high
+
+
 def family_pisot_modulus(name: str, precision: int = 50) -> Decimal:
     """Largest modulus among the Galois conjugates of the dominant root (< 1 for a Pisot number).
 
@@ -224,3 +244,4 @@ def t_phi_unfold(folded: bytes, original_len: int) -> bytes:
     if original_len < len(out) and out[-1] != 0:
         raise ValueError("pad byte is not zero; folded data was altered or original_len is wrong")
     return bytes(out[:original_len])
+ut[:original_len])
