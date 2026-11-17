@@ -33,13 +33,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal, localcontext
 from fractions import Fraction
+from math import isqrt
 from typing import Dict, List, Tuple
 
 from chronus.math.binet_lucas import fibonacci_fast, lucas_fast
 
 __all__ = [
     "FAMILY_COEFFS", "FOLD_MODULUS", "M15", "M15_INV", "RootEnclosure",
-    "cassini_check", "family_pisot_modulus", "family_root", "fibonacci", "lucas",
+    "cassini_check", "family_pisot_modulus", "family_pisot_modulus_enclosure", "family_root", "fibonacci", "lucas",
     "t_phi_fold", "t_phi_unfold", "zeckendorf_decode", "zeckendorf_encode",
 ]
 
@@ -170,22 +171,48 @@ def family_root(name: str, precision: int = 50) -> RootEnclosure:
         return RootEnclosure(name, +value, low, high)
 
 
-def family_pisot_modulus(name: str, precision: int = 50) -> Decimal:
-    """Largest modulus among the Galois conjugates of the dominant root (< 1 for a Pisot number).
+def _sqrt_bounds(q: Fraction, bits: int) -> Tuple[Fraction, Fraction]:
+    """Exact rational bounds lo <= sqrt(q) <= hi with hi - lo <= 2**-bits (q >= 0)."""
+    n = q * (1 << (2 * bits))  # sqrt(n) = sqrt(q) * 2**bits
+    floor_n = n.numerator // n.denominator
+    ceil_n = -((-n.numerator) // n.denominator)
+    lo = isqrt(floor_n)
+    hi = isqrt(ceil_n)
+    if hi * hi < ceil_n:
+        hi += 1
+    return Fraction(lo, 1 << bits), Fraction(hi, 1 << bits)
+
+
+def family_pisot_modulus_enclosure(name: str, precision: int = 50) -> Tuple[Fraction, Fraction]:
+    """Exact rational bracket (low, high) certified to contain the largest conjugate modulus.
 
     Quadratic families: the conjugate is -c0 / alpha (product of the roots), so |mu| = |c0| / alpha.
     Cubic families here have one real root and a complex-conjugate pair, so |mu|^2 = |c0| / alpha.
     The tests check that assumption (the deflated quadratic has a negative discriminant).
+    alpha is bracketed by family_root's certified enclosure, so the bounds follow from it.
     """
     coeffs = FAMILY_COEFFS[name]
-    alpha = family_root(name, precision).value
-    with localcontext() as ctx:
-        ctx.prec = precision + 10
-        ratio = Decimal(abs(coeffs[-1])) / alpha
-        result = ratio if len(coeffs) - 1 == 2 else ratio.sqrt()
+    root = family_root(name, precision)
+    c0 = Fraction(abs(coeffs[-1]))
+    ratio_low, ratio_high = c0 / root.high, c0 / root.low  # alpha in [low, high]
+    if len(coeffs) - 1 == 2:
+        return ratio_low, ratio_high
+    low, _ = _sqrt_bounds(ratio_low, precision + 10)
+    _, high = _sqrt_bounds(ratio_high, precision + 10)
+    return low, high
+
+
+def family_pisot_modulus(name: str, precision: int = 50) -> Decimal:
+    """Display value for the largest conjugate modulus (< 1 for a Pisot number).
+
+    Not exact: this is the midpoint of family_pisot_modulus_enclosure, rounded to
+    ``precision`` digits. Use the enclosure for certified comparisons.
+    """
+    low, high = family_pisot_modulus_enclosure(name, precision)
+    mid = (low + high) / 2
     with localcontext() as ctx:
         ctx.prec = precision
-        return +result
+        return +(Decimal(mid.numerator) / Decimal(mid.denominator))
 
 
 # ----------------------------------------------------------- fold: M15 over Z/256
