@@ -122,6 +122,9 @@ test('workload journey renders a usable, evidence-led empty state with accessibl
   assert.match(html, /href="#main-content"[^>]*>Skip to main content/);
   assert.match(html, /<main[^>]*id="main-content"[^>]*tabindex="-1"/);
   assert.match(html, /aria-label="Workload journey"/);
+  assert.match(html, /POST \/v1\/workloads/);
+  assert.match(html, /GET \/v1\/workloads\/\{workload_id\}/);
+  assert.match(html, /GET \/v1\/verify\/\{receipt_identifier\}/);
   assert.match(html, /aria-label="Run &amp; inspect workloads"[^>]*aria-current|aria-current="page"[^>]*aria-label="Run &amp; inspect workloads"/);
   assert.match(html, /<button[^>]*disabled[^>]*>Submit workload/);
   assert.match(html, /<input[^>]*type="password"/);
