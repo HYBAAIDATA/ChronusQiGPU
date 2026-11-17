@@ -6,6 +6,7 @@ import math
 import numpy as np
 
 PHI = (1.0 + math.sqrt(5.0)) / 2.0
+EXACT_FLOAT_INT = 2**53  # integers up to this magnitude convert to float64 without loss
 
 class ValidationError(ValueError):
     """Raised when an operator contract is violated."""
@@ -128,4 +129,6 @@ class PhiRecursiveOperator:
                 "retained_state_ratio":original.nbytes/max(1,retained),"relative_reconstruction_error":rel,
                 "input_norm":float(np.linalg.norm(original)),"retained_pair_norm":math.sqrt(pair_norm_sq),
                 "normalization":self.normalization,"complexity_contract":"O(depth*N) time; O(N) cumulative arithmetic per bounded geometric series",
+                "claim_boundary":"Folded channel alone is not an isometry; full reversible state includes every kernel."}
+ic series",
                 "claim_boundary":"Folded channel alone is not an isometry; full reversible state includes every kernel."}
