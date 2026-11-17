@@ -24,8 +24,9 @@ GF(2)-linear f, f(x)=f(x^s)     learn f on the basis (n + 1 queries),        n +
 
 None of these cost scales with the domain size p or 2**n, which is what makes
 the fields usable far beyond the 2**20 table limit of ``PrimeField``: a
-degree-5 polynomial over p = 2**127 - 1 has its roots located exactly, where a
-scan would need about 1.7e38 queries.
+degree-5 polynomial over a prime p below ``MR_DETERMINISTIC_LIMIT`` (about
+3.3e24) has its roots located exactly, where a scan would need about 3e24
+queries. Larger moduli are refused, since their primality is not proven.
 
 Boundaries (the mathematics, stated rather than hidden):
 
@@ -38,6 +39,9 @@ Boundaries (the mathematics, stated rather than hidden):
   or has a prime factor above the bound, ``discrete_log`` refuses with
   ValueError and ``locate`` propagates it: "could not decide" is never
   reported as "nothing is marked" (only ``NotInSubgroup`` means that).
+* Field moduli and factorisation cofactors at or above
+  ``MR_DETERMINISTIC_LIMIT`` are refused (ValueError): the fixed Miller-Rabin
+  bases are not a primality proof there, so they are never treated as prime.
 * Cantor-Zassenhaus splitting chooses shifts deterministically and checks
   every root; the output is exact, the running time is an expected bound.
 * The GF(2)-linear locator relies on the oracle's declared linearity (Simon's
@@ -150,8 +154,8 @@ def is_probable_prime(n: int) -> bool:
 def factorize(n: int, trial_bound: int = 1 << 20) -> dict[int, int]:
     """Prime factorisation of n >= 1 by trial division up to ``trial_bound``.
 
-    A remaining cofactor must pass ``is_probable_prime``; otherwise the
-    factorisation is refused with ValueError rather than guessed.
+    A remaining cofactor must be proven prime (``_is_proven_prime``); otherwise
+    the factorisation is refused with ValueError rather than guessed.
     """
     _require_int(n, "n")
     if n < 1:
