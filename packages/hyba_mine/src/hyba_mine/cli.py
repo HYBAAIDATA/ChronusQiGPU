@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import fcntl
 import getpass
 import json
 import logging
@@ -33,12 +32,16 @@ from hyba_mine.bist import run_preflight
 from hyba_mine.control import (
     BACKENDS,
     PREFERENCES,
+    ROUTE_SETS_HELP,
     ROUTES,
     clear_block,
+    clear_stop_request,
     block_for,
     grant_approval,
     load_state,
+    parse_routes,
     request_pool_switch,
+    request_stop,
     revoke_approval,
     update_state,
 )
@@ -47,6 +50,16 @@ from hyba_mine.dispatch import DispatchError, FleetDispatcher, LocalIGPUDispatch
 from hyba_mine.ledger import Ledger
 from hyba_mine.logsafe import configure_logging
 from hyba_mine.paths import Layout
+from hyba_mine.portable import (
+    IS_WINDOWS,
+    FileLock,
+    LockHeld,
+    bind_children_to_process,
+    install_stop_handlers,
+    process_alive,
+    process_image_name,
+    terminate_process,
+)
 from hyba_mine.pools import POOL_CATALOG, POOL_IDS, TLS_POLICIES, get_pool
 from hyba_mine.runtime import EXIT_CONFIG, EXIT_PREFLIGHT, MinerRuntime, RuntimeOptions
 from hyba_mine.status import render_text, summarize
@@ -136,12 +149,12 @@ def _miner_pid(layout: Layout) -> Optional[int]:
         pid = int(layout.pid.read_text().strip())
     except (OSError, ValueError):
         return None
-    try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
+    if not process_alive(pid):
         return None
-    except PermissionError:
-        return None
+    if IS_WINDOWS:
+        # The pid file may be stale and the number reused: require a Python image.
+        image = (process_image_name(pid) or "").lower()
+        return pid if os.path.basename(image).startswith(("python", "hyba-mine")) else None
     done = subprocess.run(["ps", "-p", str(pid), "-o", "command="], capture_output=True, text=True, check=False)
     return pid if "hyba" in done.stdout.lower() else None
 
@@ -190,13 +203,26 @@ def _print_report(report) -> None:
         mark = "PASS" if check.passed else "FAIL"
         detail = f" - {check.detail}" if check.detail else ""
         _print(f"  [{mark}] {check.name}{detail}")
-    if report.route is not None:
-        route = report.route.to_dict()
+    selected = [r for r, _ in report.selection.routes] if report.selection is not None else (
+        [report.route] if report.route is not None else [])
+    for selected_route in selected:
+        route = selected_route.to_dict()
         _print(f"  Backend: requested {route.get('requested_backend', route['requested'])}, prefer "
                f"{route.get('preference', 'ours')}, detected {', '.join(route.get('detected_backends') or [])}"
                f" -> executed {route.get('executed_backend') or route['executed']} ({route['executed']})"
                f" (fallback_reason: {route['fallback_reason'] or 'none'})")
+    if report.selection is not None and report.selection.routes:
+        for entry in report.selection.unavailable:
+            _print(f"  Route unavailable: {entry['backend']} ({entry['reason']}) - mining on "
+                   f"{' + '.join(r.executed for r in selected)} only")
+    for record in (report.selection.detection if report.selection is not None else []):
+        verdict = {True: "mining", False: "not used"}.get(record.get("eligible"), "detected")
+        where = record.get("device") or record.get("route") or record.get("backend")
+        _print(f"  Device: {record.get('backend')} {record.get('device_key') or ''} '{where}' -> {verdict} "
+               f"[{record.get('stage')}]: {record.get('reason') or ''}".replace("  '", " '"))
     _print("Pre-flight PASSED." if report.passed else "Pre-flight FAILED: mining is blocked.")
+    if not report.passed and any(not c.passed and "opencl" in c.name.lower() for c in report.checks):
+        _print("  An OpenCL GPU failed its self-test. To mine on the CPU only: hyba-mine start --routes igpu")
     metal_failed = [c for c in report.checks if not c.passed and "metal" in c.name.lower()]
     if not report.passed and metal_failed:
         _print("  The Metal lane failed its self-test. To mine on the Chronus iGPU (our software-defined GPU):")
@@ -217,16 +243,36 @@ def _preflight(args, layout: Layout, pool_id: str, network: bool, close_lane: bo
         tls_policy=args.tls or state.get("tls_policy") or "prefer",
         network=network,
         mode_a_workers=args.workers,
+        routes=_routes(args, state),
     )
     _print_report(report)
-    if close_lane and report.lane is not None:
-        report.lane.close()
+    if close_lane and report.lanes:
+        report.close_lanes()
     return report, store
 
 
 def _backend(args, state: dict) -> str:
     chosen = getattr(args, "backend", None) or getattr(args, "route", None) or state.get("route") or "auto"
     return "igpu" if chosen == "mode_a" else chosen
+
+
+def _routes(args, state: dict) -> Optional[tuple]:
+    """Concurrent routes to select, or None for the single-route selection of ``--backend``.
+
+    A named ``--backend`` (or one stored by an older ``config``) keeps today's single route;
+    otherwise ``--routes`` (or the stored route set, default auto) applies.
+    """
+    flag_backend = getattr(args, "backend", None) or getattr(args, "route", None)
+    flag_routes = getattr(args, "routes", None)
+    if flag_routes and flag_backend and flag_backend != "auto":
+        raise ValueError("use --routes or --backend, not both")
+    if flag_routes:
+        return parse_routes(flag_routes)
+    if flag_backend and flag_backend != "auto":
+        return None
+    if (state.get("route") or "auto") != "auto":
+        return None
+    return parse_routes(state.get("routes") or "auto")
 
 
 def _active_pool(args, layout: Layout) -> Optional[str]:
@@ -251,13 +297,15 @@ def cmd_preflight(args) -> int:
 def cmd_start(args) -> int:
     layout = _layout()
     configure_logging(logging.INFO, layout.log_file)
-    lock_fd = os.open(layout.instance_lock, os.O_RDWR | os.O_CREAT, 0o600)
+    instance = FileLock(layout.instance_lock)
     try:
-        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except BlockingIOError:
+        instance.acquire(blocking=False)
+    except LockHeld:
         _print("HYBA Mine is already running on this machine (see: hyba-mine status).")
         return EXIT_CONFIG
     try:
+        clear_stop_request(layout)  # a request left over from an earlier run must not stop this one
+        bind_children_to_process()  # Windows: worker processes end when the miner ends
         pool = _active_pool(args, layout)
         if pool is None:
             return EXIT_CONFIG
@@ -266,8 +314,14 @@ def cmd_start(args) -> int:
         if not report.passed:
             return EXIT_PREFLIGHT
         state = load_state(layout)
+        selection = report.selection
         if args.fleet == "on":
-            report.lane.close()
+            if selection is not None and selection.requested != ("auto",):
+                report.close_lanes()
+                _print("Concurrent routes run local lanes only; --fleet on uses one fleet dispatcher. "
+                       "Drop --routes to use the fleet.")
+                return EXIT_CONFIG
+            report.close_lanes()
             try:
                 executor = load_fleet_executor(args.fleet_coordinator, args.fleet_token_file, args.fleet_tls_ca)
             except DispatchError as exc:
@@ -276,15 +330,21 @@ def cmd_start(args) -> int:
             if executor is None:
                 _print("The iGPU fleet package (chronus.fleet) is not installed; refusing --fleet on.")
                 return EXIT_CONFIG
-            dispatcher = FleetDispatcher(executor, report.route, backend=_backend(args, state),
-                                         prefer=args.prefer or state.get("prefer") or "ours")
+            dispatchers = [FleetDispatcher(executor, report.route, backend=_backend(args, state),
+                                           prefer=args.prefer or state.get("prefer") or "ours")]
+            selection = None
+        elif selection is not None:
+            dispatchers = [LocalIGPUDispatcher(lane, route) for route, lane in selection.routes]
         else:
-            dispatcher = LocalIGPUDispatcher(report.lane, report.route)
+            dispatchers = [LocalIGPUDispatcher(report.lane, report.route)]
         options = RuntimeOptions(
             tls_policy=args.tls or state.get("tls_policy") or "prefer",
             max_seconds=args.max_seconds,
+            requested_routes=selection.requested if selection is not None else None,
+            unavailable_routes=tuple(selection.unavailable) if selection is not None else (),
+            degraded_reason=selection.degraded_reason if selection is not None else None,
         )
-        runtime = MinerRuntime(layout, _ledger(layout), store, dispatcher, pool, options)
+        runtime = MinerRuntime(layout, _ledger(layout), store, dispatchers, pool, options)
         layout.pid.write_text(f"{os.getpid()}\n")
         console = None
         if args.console_port:
@@ -295,27 +355,31 @@ def cmd_start(args) -> int:
                 _print(f"Local status page: {console.url}")
             except OSError as exc:
                 log.warning("status page not started: %s", exc)
-        _print(f"Mining on {report.route.executed} for {get_pool(pool).name}. Stop with: hyba-mine stop")
+        executed = " + ".join(d.route.executed for d in dispatchers)
+        _print(f"Mining on {executed} for {get_pool(pool).name}. Stop with: hyba-mine stop")
 
         async def main() -> int:
             loop = asyncio.get_running_loop()
-            for sig in (signal.SIGTERM, signal.SIGINT):
-                loop.add_signal_handler(sig, runtime.request_stop, f"signal {sig.name}")
-            return await runtime.run(preflight={"passed": True, "route": report.route.to_dict()})
+            _mechanisms, restore = install_stop_handlers(loop, runtime.request_stop)
+            try:
+                return await runtime.run(preflight={"passed": True, "route": report.route.to_dict(),
+                                                    "routes": [d.route.to_dict() for d in dispatchers]})
+            finally:
+                restore()
 
         try:
             code = asyncio.run(main())
         finally:
             if console is not None:
                 console.stop()
-            dispatcher.close()
+            for dispatcher in dispatchers:
+                dispatcher.close()
             if layout.pid.exists():
                 layout.pid.unlink()
         _print(f"HYBA Mine stopped (exit {code}).")
         return code
     finally:
-        fcntl.flock(lock_fd, fcntl.LOCK_UN)
-        os.close(lock_fd)
+        instance.release()
 
 
 def cmd_stop(args) -> int:
@@ -329,16 +393,23 @@ def cmd_stop(args) -> int:
     if pid is None:
         _print("HYBA Mine is not running.")
         return 0
-    os.kill(pid, signal.SIGTERM)
+    # Graceful first on every OS: the miner polls this request and stops cleanly.
+    request_stop(layout, "hyba-mine stop")
+    if not IS_WINDOWS:
+        os.kill(pid, signal.SIGTERM)  # os.kill on Windows is TerminateProcess, so only on POSIX
     deadline = time.monotonic() + args.timeout
     while time.monotonic() < deadline:
-        try:
-            os.kill(pid, 0)
-        except ProcessLookupError:
+        if not process_alive(pid):
             _print("HYBA Mine stopped.")
             return 0
         time.sleep(0.25)
-    _print(f"HYBA Mine (pid {pid}) did not stop within {args.timeout:g} s.")
+    if IS_WINDOWS and getattr(args, "force", False):
+        if terminate_process(pid, wait_seconds=5.0):
+            clear_stop_request(layout)
+            _print(f"HYBA Mine (pid {pid}) did not stop within {args.timeout:g} s; terminated (--force).")
+            return 0
+    hint = " Re-run with --force to terminate it." if IS_WINDOWS else ""
+    _print(f"HYBA Mine (pid {pid}) did not stop within {args.timeout:g} s.{hint}")
     return 1
 
 
@@ -374,6 +445,8 @@ def cmd_backends(args) -> int:
     state = load_state(_layout())
     backend = _backend(args, state)
     prefer = args.prefer or state.get("prefer") or "ours"
+    if getattr(args, "routes", None):
+        return _backends_routes(args, state, prefer)
     route, lane, checks = select_lane(backend, prefer=prefer, mode_a_workers=args.workers, full_window=args.full_window)
     if lane is not None:
         lane.close()
@@ -394,16 +467,46 @@ def cmd_backends(args) -> int:
     return 0 if passed else EXIT_PREFLIGHT
 
 
+def _backends_routes(args, state: dict, prefer: str) -> int:
+    """``backends --routes``: select the concurrent routes and run each one's known-answer tests."""
+    from hyba_mine.bist import select_routes
+
+    selection = select_routes(_routes(args, state), prefer=prefer, mode_a_workers=args.workers,
+                              full_window=args.full_window)
+    passed = bool(selection.routes) and all(check.passed for check in selection.checks)
+    selection.close()
+    if args.json:
+        _print(json.dumps({"passed": passed, **selection.to_dict(),
+                           "checks": [c.to_dict() for c in selection.checks]}, indent=2, default=str))
+    else:
+        for check in selection.checks:
+            _print(f"  [{'PASS' if check.passed else 'FAIL'}] {check.name}{' - ' + check.detail if check.detail else ''}")
+        for route, _ in selection.routes:
+            _print(f"Route: {route.executed} (backend {route.executed_backend})")
+        for entry in selection.unavailable:
+            _print(f"Route unavailable: {entry['backend']} ({entry['reason']})")
+        if not passed:
+            _print(f"Routes {','.join(selection.requested)} (prefer {prefer}) are not available here; failing closed.")
+    return 0 if passed else EXIT_PREFLIGHT
+
+
 def cmd_config(args) -> int:
     layout = _layout()
     backend = args.backend or args.route
     backend = "igpu" if backend == "mode_a" else backend
-    changes = {key: value for key, value in (("route", backend), ("prefer", args.prefer), ("tls_policy", args.tls))
-               if value}
+    routes = ",".join(parse_routes(args.routes)) if getattr(args, "routes", None) else None
+    if routes and backend and backend != "auto":
+        raise ValueError("use --routes or --backend, not both")
+    if routes:
+        # Concurrent routes apply only while no single backend is stored.
+        backend = "auto"
+    changes = {key: value for key, value in (("route", backend), ("routes", routes), ("prefer", args.prefer),
+                                             ("tls_policy", args.tls)) if value}
     state = update_state(layout, **changes) if changes else load_state(layout)
     if changes:
         _ledger(layout).append("config_changed", changes)
-    shown = {key: state.get(key) for key in ("active_pool", "route", "prefer", "tls_policy", "credential_store")}
+    shown = {key: state.get(key) for key in ("active_pool", "route", "routes", "prefer", "tls_policy",
+                                             "credential_store")}
     shown["backend"] = shown.pop("route")
     _print(json.dumps(shown, indent=2))
     return 0
@@ -430,6 +533,7 @@ def _backend_options(p) -> None:
     p.add_argument("--prefer", choices=PREFERENCES,
                    help="ours (default): the Chronus iGPU even when the Mac has a GPU; host: Metal when it passes")
     p.add_argument("--route", choices=ROUTES, help=argparse.SUPPRESS)
+    p.add_argument("--routes", type=str, help=ROUTE_SETS_HELP)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -441,7 +545,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("login", help="store a pool login on this machine")
     p.add_argument("pool", choices=POOL_IDS)
-    p.add_argument("--store", choices=("keychain", "file"))
+    p.add_argument("--store", choices=("keychain", "wincred", "file"),
+                   help="where the login is kept (default: keychain on macOS, wincred on Windows, file elsewhere)")
     p.add_argument("--username")
     p.add_argument("--password-stdin", action="store_true", help="read the password from standard input")
     p.set_defaults(func=cmd_login)
@@ -482,6 +587,8 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("stop", help="stop the running miner")
     p.add_argument("--disable-autostart", action="store_true")
     p.add_argument("--timeout", type=float, default=20.0)
+    p.add_argument("--force", action="store_true",
+                   help="Windows: terminate the miner if it has not stopped within --timeout")
     p.set_defaults(func=cmd_stop)
 
     p = sub.add_parser("status", help="status computed from the ledger")

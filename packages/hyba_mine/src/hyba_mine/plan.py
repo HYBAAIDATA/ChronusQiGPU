@@ -7,9 +7,13 @@ job-bound order:
 
 1. **PYTHIA itinerary.** Plan positions ``0 .. 2**32 - 1`` are cut into
    windows of ``2**window_bits`` consecutive positions. The itinerary hands out
-   (extranonce2, position range) work units in order: every window of
-   extranonce2 0, then of extranonce2 1, and so on. Units are disjoint and
-   together cover every position exactly once.
+   (extranonce2, version index, position range) work units in order: every
+   window of extranonce2 0 under rolled version 0, then under version 1 (when
+   the pool granted BIP310 version rolling), ..., then extranonce2 1, and so
+   on. Each rolled version is its own header prefix with its own plan, so
+   units are disjoint over (extranonce2, version, position) and together cover
+   every position of every header exactly once. Version is the middle loop so
+   the merkle root (which depends on extranonce2 only) is reused.
 2. **Hendrix traversal.** Inside a window the 256 lanes (``2**(window_bits-8)``
    positions each) are visited in the order of the F_257 generator cycle read
    from the Hendrix tables: slot ``k`` holds lane ``GF257.antilog(k + r) - 1``.
@@ -154,11 +158,12 @@ class NoncePlan:
 
 @dataclass(frozen=True)
 class UnitSpec:
-    """One itinerary step: extranonce2 counter and a plan position range."""
+    """One itinerary step: extranonce2 counter, plan position range and rolled version index."""
 
     en2_counter: int
     start: int
     count: int
+    version_index: int = 0
 
 
 class PythiaItinerary:
@@ -203,16 +208,108 @@ class PythiaItinerary:
         elif device_seconds > target_seconds * 2 and self.unit_size > self.window_size:
             self.unit_size //= 2
 
-    def units(self, en2_limit: int) -> Iterator[UnitSpec]:
-        if self.override is not None:
-            for unit in self.override:
+    def cursor(self, en2_limit: int, version_count: int = 1) -> "ItineraryCursor":
+        """A forward-only cursor over this job's units: the one place their order is decided."""
+        return ItineraryCursor(self, en2_limit, version_count)
+
+    def units(self, en2_limit: int, version_count: int = 1) -> Iterator[UnitSpec]:
+        """Units for one job; ``version_count`` is the number of rolled versions (1 without BIP310).
+
+        ``unit_size`` is read at every pull, so ``resize`` between pulls takes effect.
+        """
+        cursor = self.cursor(en2_limit, version_count)
+        while True:
+            spec = cursor.take(self.unit_size)
+            if spec is None:
+                return
+            yield spec
+
+
+class ItineraryCursor:
+    """Hands out one job's units in itinerary order; never hands out a position twice.
+
+    Order: every position range of (extranonce2, version 0), then version 1, ...,
+    then the next extranonce2. ``take(max_count)`` returns the next whole-window
+    range of at most ``max_count`` positions (at least one window), clamped so it
+    never crosses a (version, extranonce2) boundary. Callers with different unit
+    sizes (one per route) can share one cursor: the cursor only moves forward, so
+    their units are disjoint by construction. An override list is returned spec by
+    spec, unchanged, whatever ``max_count`` is.
+    """
+
+    def __init__(self, itinerary: PythiaItinerary, en2_limit: int, version_count: int = 1) -> None:
+        if not isinstance(version_count, int) or version_count < 1:
+            raise ValueError("version_count must be >= 1")
+        self.window_size = itinerary.window_size
+        self.en2_limit = en2_limit
+        self.version_count = version_count
+        self.en2_counter = itinerary.en2_start
+        self.version_index = 0
+        self.start = 0
+        self._override: Optional[list] = None
+        self._override_index = 0
+        if itinerary.override is not None:
+            for unit in itinerary.override:
                 if not 0 <= unit.en2_counter < en2_limit:
                     raise ValueError("override unit extranonce2 counter is out of range")
-                yield unit
+                if not 0 <= unit.version_index < version_count:
+                    raise ValueError("override unit version index is out of range")
+            self._override = list(itinerary.override)
+
+    @property
+    def exhausted(self) -> bool:
+        if self._override is not None:
+            return self._override_index >= len(self._override)
+        return self.en2_counter >= self.en2_limit
+
+    def position(self) -> tuple:
+        """(extranonce2 counter, version index, next start) of the next scheduled unit."""
+        return self.en2_counter, self.version_index, self.start
+
+    def take(self, max_count: int) -> Optional[UnitSpec]:
+        if not isinstance(max_count, int) or max_count < 1:
+            raise ValueError("max_count must be an integer >= 1")
+        if self._override is not None:
+            if self._override_index >= len(self._override):
+                return None
+            spec = self._override[self._override_index]
+            self._override_index += 1
+            return spec
+        if self.en2_counter >= self.en2_limit:
+            return None
+        window = self.window_size
+        count = max(window, (max_count // window) * window)
+        count = min(count, NONCE_SPACE - self.start)
+        spec = UnitSpec(self.en2_counter, self.start, count, self.version_index)
+        self.start += count
+        if self.start >= NONCE_SPACE:
+            self.start = 0
+            self.version_index += 1
+            if self.version_index >= self.version_count:
+                self.version_index = 0
+                self.en2_counter += 1
+        return spec
+
+
+class RouteSizer:
+    """One route's unit size, doubled or halved (in whole windows) toward a target device time.
+
+    Each route sizes its own units, so a fast route and a slow one sharing one
+    itinerary cursor do not pull a shared unit size back and forth.
+    """
+
+    def __init__(self, unit_size: int, window_size: int, max_size: int = 1 << 30, fixed: bool = False) -> None:
+        if unit_size < 1 or window_size < 1:
+            raise ValueError("unit and window sizes must be >= 1")
+        self.unit_size = unit_size
+        self.window_size = window_size
+        self.max_size = max_size
+        self.fixed = fixed
+
+    def resize(self, device_seconds: float, target_seconds: float) -> None:
+        if self.fixed or device_seconds <= 0:
             return
-        for en2_counter in range(self.en2_start, en2_limit):
-            start = 0
-            while start < NONCE_SPACE:
-                size = min(self.unit_size, NONCE_SPACE - start)
-                yield UnitSpec(en2_counter, start, size)
-                start += size
+        if device_seconds < target_seconds / 2 and self.unit_size * 2 <= self.max_size:
+            self.unit_size *= 2
+        elif device_seconds > target_seconds * 2 and self.unit_size > self.window_size:
+            self.unit_size //= 2

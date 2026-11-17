@@ -1,5 +1,5 @@
 # Copyright (c) 2026 HYBA Software Ltd. All rights reserved.
-"""Pool logins: macOS Keychain, or a 0600 file outside any repository.
+"""Pool logins: macOS Keychain, Windows Credential Manager, or a private file outside any repository.
 
 A login never leaves the operator's machine. It is entered at the terminal
 (``hyba-mine login <pool>``), stored in the login keychain (service
@@ -7,6 +7,10 @@ A login never leaves the operator's machine. It is entered at the terminal
 HYBA Mine home, and read only when a pool connection is opened. Nothing here
 logs a value or puts one in an exception message; ``PoolLogin`` hides both
 fields from ``repr``.
+
+On Windows the login is a generic credential (target ``HYBA-Mine:pool:<pool id>``,
+persisted for this user on this machine) written and read through the Win32
+Credential Manager API in-process, so it never appears in a command line.
 
 The keychain is driven through ``/usr/bin/security -i``. Writes pass an
 encoded command on standard input, keeping credentials out of process arguments.
@@ -24,7 +28,8 @@ from typing import Optional, Protocol
 
 from hyba_mine.control import _locked
 from hyba_mine.logsafe import login_fingerprint, register_login, worker_label
-from hyba_mine.paths import Layout, is_macos, refuse_inside_repository, write_private_file
+from hyba_mine.paths import Layout, is_macos, is_windows, refuse_inside_repository, write_private_file
+from hyba_mine.portable import describe_access
 from hyba_mine.pools import get_pool, validate_password, validate_username
 
 KEYCHAIN_SERVICE = "HYBA-Mine"
@@ -159,10 +164,11 @@ class FileStore:
     def _load(self) -> dict:
         if not self.path.exists():
             return {}
-        mode = self.path.stat().st_mode & 0o777
-        if mode & 0o077:
+        access = describe_access(self.path)
+        if not access.private:
+            fix = "run: chmod 600" if access.mechanism == "posix_mode" else "restrict its access list to your account, or run: hyba-mine login again"
             raise CredentialStoreError(
-                f"{self.path} is readable by other users (mode {mode:o}); run: chmod 600 '{self.path}'"
+                f"{self.path} is accessible to other accounts ({', '.join(access.foreign_trustees) or access.error}); {fix}"
             )
         try:
             data = json.loads(self.path.read_text(encoding="utf-8"))
@@ -189,11 +195,11 @@ class FileStore:
 
     def _write(self, data: dict) -> None:
         write_private_file(self.path, (json.dumps(data, indent=2, sort_keys=True) + "\n").encode("utf-8"))
-        if self.path.stat().st_mode & 0o077:
+        if not describe_access(self.path).private:
             self.path.unlink()
             raise CredentialStoreError(
-                f"the filesystem holding {self.path.parent} does not keep file permissions; "
-                "use the macOS Keychain or set HYBA_MINE_HOME on a local disk"
+                f"the filesystem holding {self.path.parent} does not keep access restrictions; "
+                "use the system credential store or set HYBA_MINE_HOME on a local disk"
             )
 
     def delete(self, pool_id: str) -> bool:
@@ -205,17 +211,73 @@ class FileStore:
             return removed
 
 
+class WindowsCredentialStore:
+    """Windows Credential Manager, generic credential per pool, this user on this machine."""
+
+    backend = "wincred"
+    TARGET_PREFIX = f"{KEYCHAIN_SERVICE}:pool:"
+
+    def __init__(self, api=None) -> None:
+        if api is None:
+            from hyba_mine import _win32 as api  # Windows only; imported lazily
+        self._api = api
+
+    def _target(self, pool_id: str) -> str:
+        return self.TARGET_PREFIX + get_pool(pool_id).pool_id
+
+    def get(self, pool_id: str) -> Optional[PoolLogin]:
+        try:
+            record = self._api.cred_read(self._target(pool_id))
+        except OSError as exc:
+            raise CredentialStoreError(f"Credential Manager read failed (error {getattr(exc, 'winerror', '?')})") from None
+        if record is None:
+            return None
+        try:
+            login = _decode(record.blob.decode("utf-8"))
+        except UnicodeDecodeError:
+            raise CredentialStoreError("stored login is not readable") from None
+        register_login(login.username, login.password)
+        return login
+
+    def put(self, pool_id: str, login: PoolLogin) -> None:
+        register_login(login.username, login.password)
+        try:
+            self._api.cred_write(self._target(pool_id), f"pool:{get_pool(pool_id).pool_id}",
+                                 "HYBA Mine pool login", _encode(login).encode("utf-8"))
+        except OSError as exc:
+            raise CredentialStoreError(f"Credential Manager write failed (error {getattr(exc, 'winerror', '?')})") from None
+
+    def delete(self, pool_id: str) -> bool:
+        try:
+            return bool(self._api.cred_delete(self._target(pool_id)))
+        except OSError as exc:
+            raise CredentialStoreError(f"Credential Manager delete failed (error {getattr(exc, 'winerror', '?')})") from None
+
+
+STORE_BACKENDS = ("keychain", "wincred", "file")
+
+
 def default_backend() -> str:
-    return "keychain" if is_macos() and Path(SECURITY_TOOL).exists() else "file"
+    if is_macos() and Path(SECURITY_TOOL).exists():
+        return "keychain"
+    if is_windows():
+        return "wincred"
+    return "file"
 
 
 def open_store(backend: Optional[str], layout: Layout) -> CredentialStore:
     chosen = backend or default_backend()
     if chosen == "keychain":
+        if not is_macos():
+            raise ValueError("the keychain store is macOS only; use 'wincred' on Windows or 'file'")
         return KeychainStore()
+    if chosen == "wincred":
+        if not is_windows():
+            raise ValueError("the wincred store is Windows only; use 'keychain' on macOS or 'file'")
+        return WindowsCredentialStore()
     if chosen == "file":
         return FileStore(layout.credentials)
-    raise ValueError("credential store must be 'keychain' or 'file'")
+    raise ValueError(f"credential store must be one of {', '.join(STORE_BACKENDS)}")
 
 
 def make_login(pool_id: str, username: str, password: str) -> PoolLogin:

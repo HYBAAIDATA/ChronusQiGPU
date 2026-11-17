@@ -4,9 +4,10 @@
 ``StratumConnection`` is one socket (plain TCP or ``stratum+ssl`` with
 certificate and host-name verification) with a reader task that matches
 replies to requests by id and queues server pushes. ``PoolSession`` runs the
-handshake (``mining.subscribe``, optional ``mining.extranonce.subscribe``,
-``mining.authorize``), applies ``mining.set_difficulty``, ``mining.notify``,
-``mining.set_extranonce`` and ``client.reconnect``, reconnects with a doubling
+handshake (BIP310 ``mining.configure`` for version rolling, ``mining.subscribe``,
+optional ``mining.extranonce.subscribe``, ``mining.authorize``), applies
+``mining.set_difficulty``, ``mining.notify``, ``mining.set_extranonce``,
+``mining.set_version_mask`` and ``client.reconnect``, reconnects with a doubling
 back-off across the pool's published endpoints (also when the pool has been
 silent for ``IDLE_TIMEOUT_SECONDS``, which catches a connection that died
 while the Mac slept), and submits shares. ``client.reconnect`` is honoured
@@ -19,6 +20,20 @@ is stale: a job belongs to one connection generation and one extranonce
 epoch, ``clean_jobs`` drops every earlier job, and a reconnect drops them all.
 A pool reply is returned exactly as received; nothing is inferred from
 silence.
+
+Version rolling (BIP310) rolls only bits that the pool granted and HYBA Mine
+asked for (``1fffe000``): ``version_mask`` is that intersection. The pool
+rebuilds nVersion with the mask *it* sent (``pool_version_mask``, which may be
+wider), as ``(job_version & ~pool_mask) | (bits & pool_mask)``, so the 6th
+submit param is the hashed version under the pool's mask
+(``submit_version_bits``), never the bits under the narrower rolling mask.
+A pool that answers ``mining.configure`` with an error, ``false``, a malformed
+mask or not at all gets unrolled work and 5-param submits; a pool that closes
+the connection on ``mining.configure`` is reconnected without it
+(``configure_dropped``) and also gets unrolled work. ``mining.set_version_mask``
+changes the masks at once and does not cancel jobs; a share whose hashed
+version the pool's current mask would not rebuild is never sent
+(``VersionMaskMismatch``).
 """
 
 from __future__ import annotations
@@ -33,13 +48,19 @@ from fractions import Fraction
 from typing import Any, Callable, Optional
 
 from chronus.execution.stratum import StratumJob
+from chronus.stratum.bip310 import (
+    DEFAULT_CLIENT_MASK_HEX,
+    build_mining_submit_params,
+    parse_and_intersect_version_mask,
+)
 
 from hyba_mine import __version__
 from hyba_mine.control import utc_now
 from hyba_mine.credentials import PoolLogin
 from hyba_mine.logsafe import SECRETS, redact_payload
 from hyba_mine.pools import PoolEndpoint, PoolProfile
-from hyba_mine.work import MiningJob
+from hyba_mine.plan import MASK32
+from hyba_mine.work import CLIENT_VERSION_MASK, VERSION_ROLLING_MIN_BITS, MiningJob, version_fits
 
 log = logging.getLogger("hyba_mine.stratum")
 
@@ -51,6 +72,7 @@ MAX_PUSH_BACKLOG = 64
 REQUEST_TIMEOUT_SECONDS = 60.0
 BACKOFF_SECONDS = (1, 2, 4, 8, 16, 32, 60)
 IDLE_TIMEOUT_SECONDS = 300.0
+CONFIGURE_TIMEOUT_SECONDS = 5.0
 DISCONNECTED = "_hyba.disconnected"
 _HEX = frozenset("0123456789abcdefABCDEF")
 
@@ -71,6 +93,10 @@ class AuthorizationRejected(StratumError):
     """The pool refused the login; reconnecting would not help."""
 
 
+class VersionMaskMismatch(StratumError):
+    """Rolled version bits that the pool's current version mask does not allow."""
+
+
 def make_ssl_context(cafile: Optional[str] = None) -> ssl.SSLContext:
     context = ssl.create_default_context(cafile=cafile)
     context.minimum_version = ssl.TLSVersion.TLSv1_2
@@ -89,6 +115,13 @@ def literal(message: Optional[dict]) -> Optional[dict]:
 
 def _is_hex(text: str, length: Optional[int] = None) -> bool:
     return isinstance(text, str) and len(text) % 2 == 0 and set(text) <= _HEX and (length is None or len(text) == length)
+
+
+def _mask_hex(value: Any) -> Optional[str]:
+    """A BIP310 mask as 8 lower-case hex digits, or None when it is not 1..8 hex digits."""
+    if not isinstance(value, str) or not 1 <= len(value) <= 8 or not set(value) <= _HEX:
+        return None
+    return f"{int(value, 16):08x}"
 
 
 def validate_job(job: StratumJob) -> None:
@@ -289,6 +322,8 @@ class Submission:
     future: asyncio.Future
     endpoint: PoolEndpoint
     generation: int
+    # The 6th submit param as sent, or None when 5 params were sent (no version rolling).
+    version_bits: Optional[str] = None
 
 
 class PoolSession:
@@ -308,6 +343,8 @@ class PoolSession:
         backoff: tuple = BACKOFF_SECONDS,
         endpoints: Optional[tuple] = None,
         idle_timeout: float = IDLE_TIMEOUT_SECONDS,
+        version_rolling: bool = True,
+        configure_timeout: float = CONFIGURE_TIMEOUT_SECONDS,
     ) -> None:
         self.profile = profile
         self.login = login
@@ -334,6 +371,21 @@ class PoolSession:
         self._stopping = asyncio.Event()
         self._finished = False
         self._productive = False
+        self.clean_seq = 0
+        self._watchers: set[asyncio.Event] = set()
+        # BIP310: whether to ask for version rolling, whether the pool granted it on
+        # this connection (6-param submits), the mask HYBA Mine rolls (the pool's mask
+        # intersected with the request), the pool's own mask (what the pool rebuilds
+        # nVersion with) and the last outcome.
+        self.request_version_rolling = version_rolling
+        self.configure_timeout = configure_timeout
+        self.version_rolling = False
+        self.version_mask = 0
+        self.pool_version_mask = 0
+        self.version_negotiation: dict = {}
+        # Set when the pool closed the connection in answer to mining.configure: later
+        # connections of this session skip mining.configure (unrolled work, 5-param submits).
+        self._skip_configure = False
 
     # ----------------------------------------------------------------- state
     def is_valid(self, job: MiningJob) -> bool:
@@ -348,15 +400,84 @@ class PoolSession:
         job = self.current
         return job if job is not None and self.is_valid(job) else None
 
+    def submit_version_bits(self, version: int) -> int:
+        """The 6th submit param for a header hashed with ``version``.
+
+        The pool rebuilds nVersion as ``(job & ~pool_mask) | (bits & pool_mask)``
+        with its own mask, so the bits sent are the hashed version under that mask.
+        Bits the pool's mask covers but HYBA Mine does not roll carry the job's own
+        value, so the rebuilt header is the hashed one.
+        """
+        return version & self.pool_version_mask & MASK32
+
+    def version_compatible(self, job: MiningJob, version: Optional[int], version_bits: int) -> bool:
+        """True when the pool, with its current mask, rebuilds the header version that was hashed.
+
+        ``version_bits`` are the unit's rolled bits and must lie inside the mask HYBA
+        Mine asked for; what is checked against the pool's mask is ``version`` itself.
+        """
+        if version is None:
+            return False
+        if not self.version_rolling:
+            return version == job.base_version and version_bits == 0
+        if version_bits & ~CLIENT_VERSION_MASK & MASK32:
+            return False
+        return version_fits(job.base_version, version, self.submit_version_bits(version), self.pool_version_mask)
+
+    def stale_reason(self, job: MiningJob, version: Optional[int] = None, version_bits: Optional[int] = None) -> Optional[str]:
+        """Why ``job`` can no longer be mined on this session, or None while it is valid.
+
+        With ``version``/``version_bits`` (a rolled unit), a valid job whose rolled
+        version no longer fits the pool's version mask is stale as
+        ``version_mask_changed``.
+        """
+        if self.is_valid(job):
+            if version_bits is not None and not self.version_compatible(job, version, version_bits):
+                return "version_mask_changed"
+            return None
+        if self._stopping.is_set() or self._finished or self.fatal is not None:
+            return "session_stopped"
+        if not self.connected.is_set() or job.generation != self.generation:
+            return "connection_lost"
+        if job.epoch != self.epoch:
+            return "extranonce_changed"
+        if job.clean_seq < self.clean_seq:
+            return "clean_jobs"
+        return "job_dropped"
+
+    async def wait_stale(self, job: MiningJob, version: Optional[int] = None, version_bits: Optional[int] = None) -> str:
+        """Return the stale reason as soon as ``job`` stops being valid.
+
+        Each waiter has its own event, so clearing it never hides a change from
+        another waiter. A notify with clean_jobs=false leaves earlier jobs
+        valid, so it does not end the wait.
+        """
+        event = asyncio.Event()
+        self._watchers.add(event)
+        try:
+            while True:
+                event.clear()
+                reason = self.stale_reason(job, version, version_bits)
+                if reason:
+                    return reason
+                await event.wait()
+        finally:
+            self._watchers.discard(event)
+
+    def _notify(self) -> None:
+        self.changed.set()
+        for event in list(self._watchers):
+            event.set()
+
     def _invalidate(self) -> None:
         self.jobs.clear()
         self.current = None
-        self.changed.set()
+        self._notify()
 
     # ------------------------------------------------------------- lifecycle
     def stop(self) -> None:
         self._stopping.set()
-        self.changed.set()
+        self._notify()
 
     async def disconnect(self) -> None:
         if self._conn is not None:
@@ -376,7 +497,7 @@ class PoolSession:
                 self.fatal = exc
                 self.record("pool_auth_rejected", {"pool": self.profile.pool_id, "endpoint": endpoint.url, "reply": literal(exc.args[0] if exc.args and isinstance(exc.args[0], dict) else None)})
                 self._finished = True
-                self.changed.set()
+                self._notify()
                 return
             except (OSError, ssl.SSLError, asyncio.TimeoutError, StratumError) as exc:
                 self.record(
@@ -429,6 +550,10 @@ class PoolSession:
                     "generation": self.generation,
                     "extranonce1": self.extranonce1.hex(),
                     "extranonce2_size": self.extranonce2_size,
+                    "version_rolling": self.version_rolling,
+                    "version_mask": f"{self.version_mask:08x}",
+                    "pool_version_mask": f"{self.pool_version_mask:08x}",
+                    "version_negotiation": self.version_negotiation,
                     **self.login.public(),
                 },
             )
@@ -458,6 +583,7 @@ class PoolSession:
         return established
 
     async def _handshake(self, conn: StratumConnection) -> None:
+        await self._configure(conn)
         reply = await conn.call("mining.subscribe", [self.user_agent], self.rpc_timeout)
         result = reply.get("result")
         if reply.get("error") or not isinstance(result, list) or len(result) < 3:
@@ -475,6 +601,77 @@ class PoolSession:
         reply = await conn.call("mining.authorize", [self.login.username, self.login.password], self.rpc_timeout)
         if reply.get("result") is not True or reply.get("error"):
             raise AuthorizationRejected(reply)
+
+    async def _configure(self, conn: StratumConnection) -> None:
+        """BIP310 ``mining.configure``: adopt only the mask the pool granted.
+
+        A pool that ignores, refuses or mangles the request gets unrolled work. A
+        pool that closes the connection on it raises ``ConnectionLost`` out of this
+        attempt; later connections then skip ``mining.configure`` (``configure_dropped``).
+        """
+        self.version_rolling = False
+        self.version_mask = 0
+        self.pool_version_mask = 0
+        if not self.request_version_rolling:
+            self.version_negotiation = {"outcome": "disabled"}
+            return
+        if self._skip_configure:
+            self.version_negotiation = {
+                "outcome": "configure_dropped",
+                "reason": "the pool closed the connection in answer to mining.configure; "
+                          "not sent again in this session",
+            }
+            return
+        requested = {"version-rolling.mask": DEFAULT_CLIENT_MASK_HEX,
+                     "version-rolling.min-bit-count": VERSION_ROLLING_MIN_BITS}
+        reply: Optional[dict] = None
+        pool_hex: Optional[str] = None
+        try:
+            reply = await conn.call("mining.configure", [["version-rolling"], requested], self.configure_timeout)
+        except asyncio.TimeoutError:
+            outcome = "no_reply"
+        except ConnectionLost:
+            # A legacy pool may hang up on an unknown method: reconnect without it.
+            self._skip_configure = True
+            self.record("pool_protocol_warning", {"method": "mining.configure", "pool": self.profile.pool_id,
+                                                  "reason": "the pool closed the connection in answer to "
+                                                            "mining.configure; reconnecting without version rolling"})
+            raise
+        else:
+            result = reply.get("result")
+            if reply.get("error"):
+                outcome = "unsupported"
+            elif not isinstance(result, dict):
+                outcome = "malformed"
+            elif result.get("version-rolling") is not True:
+                outcome = "declined"
+            else:
+                pool_hex = _mask_hex(result.get("version-rolling.mask"))
+                if pool_hex is None:
+                    outcome = "malformed"
+                else:
+                    granted = int(parse_and_intersect_version_mask(pool_hex, DEFAULT_CLIENT_MASK_HEX,
+                                                                   VERSION_ROLLING_MIN_BITS), 16)
+                    if granted == 0:
+                        outcome = "below_min_bits"
+                    else:
+                        outcome = "granted"
+                        self.version_rolling = True
+                        self.version_mask = granted
+                        self.pool_version_mask = int(pool_hex, 16)
+        negotiation = {
+            "outcome": outcome,
+            "requested_mask": DEFAULT_CLIENT_MASK_HEX,
+            "min_bit_count": VERSION_ROLLING_MIN_BITS,
+            "pool_mask": pool_hex,
+            "granted_mask": f"{self.version_mask:08x}",
+        }
+        if pool_hex is not None and int(pool_hex, 16) & ~CLIENT_VERSION_MASK:
+            # Not rolled, but covered by the pool's mask: submits carry the job's own value there.
+            negotiation["pool_bits_not_rolled"] = f"{int(pool_hex, 16) & ~CLIENT_VERSION_MASK & MASK32:08x}"
+        if outcome != "granted":
+            negotiation["reply"] = literal(reply)
+        self.version_negotiation = negotiation
 
     def _apply(self, message: dict, conn: StratumConnection) -> Optional[str]:
         method = message.get("method")
@@ -503,6 +700,7 @@ class PoolSession:
                 self.record("pool_protocol_warning", {"method": method, "reason": str(exc)[:200]})
                 return None
             if job.clean_jobs:
+                self.clean_seq += 1
                 self.jobs.clear()
             difficulty = self.difficulty
             mining_job = MiningJob(
@@ -514,6 +712,7 @@ class PoolSession:
                 extranonce2_size=self.extranonce2_size,
                 difficulty=difficulty if difficulty is not None else Fraction(1),
                 received_at=utc_now(),
+                clean_seq=self.clean_seq,
             )
             self.jobs[job.job_id] = mining_job
             while len(self.jobs) > MAX_JOBS:
@@ -524,7 +723,7 @@ class PoolSession:
             if difficulty is None:
                 view["difficulty_source"] = "stratum default (no mining.set_difficulty received yet)"
             self.record("job", view)
-            self.changed.set()
+            self._notify()
         elif method == "mining.set_extranonce":
             if len(params) < 2 or not _is_hex(params[0]) or not isinstance(params[1], int) or isinstance(params[1], bool) or not 1 <= params[1] <= 32:
                 self.record("pool_protocol_warning", {"method": method, "reason": "unusable extranonce"})
@@ -534,6 +733,25 @@ class PoolSession:
             self.epoch += 1
             self._invalidate()
             self.record("extranonce", {"pool": self.profile.pool_id, "generation": self.generation, "epoch": self.epoch, "extranonce1": params[0], "extranonce2_size": params[1]})
+        elif method == "mining.set_version_mask":
+            if not self.version_rolling:
+                self.record("pool_protocol_warning", {"method": method, "reason": "mining.set_version_mask without negotiated version rolling; ignored"})
+                return None
+            mask_hex = _mask_hex(params[0] if params else None)
+            if mask_hex is None:
+                # Fail closed: roll nothing until the pool sends a usable mask.
+                new, pool_mask = 0, 0
+                self.record("pool_protocol_warning", {"method": method, "reason": "unusable version mask; rolling paused (mask 00000000)"})
+            else:
+                new = int(parse_and_intersect_version_mask(mask_hex, DEFAULT_CLIENT_MASK_HEX, VERSION_ROLLING_MIN_BITS), 16)
+                pool_mask = int(mask_hex, 16)
+            previous, self.version_mask = self.version_mask, new
+            self.pool_version_mask = pool_mask
+            self.record("version_mask", {"pool": self.profile.pool_id, "generation": self.generation,
+                                         "previous_mask": f"{previous:08x}", "pool_mask": mask_hex,
+                                         "granted_mask": f"{new:08x}", "literal": literal({"params": params})})
+            # BIP310: jobs stay valid; units rolled under the old mask are checked by their watchers.
+            self._notify()
         elif method == "client.reconnect":
             self.record("pool_reconnect_requested", {"pool": self.profile.pool_id, "literal": literal({"params": params})})
             return "reconnect"
@@ -543,12 +761,21 @@ class PoolSession:
 
     # ---------------------------------------------------------------- submit
     async def submit(self, job: MiningJob, en2: bytes, nonce: int, *,
+                     version: Optional[int] = None, version_bits: int = 0,
                      reply_expiry: float = 2 * REQUEST_TIMEOUT_SECONDS) -> Submission:
         if self._conn is None or not self.is_valid(job):
             raise ConnectionLost("the job is no longer valid on this connection")
-        params = [self.login.username, job.job_id, en2.hex(), job.job.ntime, f"{nonce:08x}"]
+        if version is None and version_bits == 0:
+            version = job.base_version
+        if not self.version_compatible(job, version, version_bits):
+            raise VersionMaskMismatch("rolled version bits are outside the pool's current version mask")
+        params = build_mining_submit_params(
+            self.login.username, job.job_id, en2.hex(), job.job.ntime, f"{nonce:08x}",
+            f"{self.submit_version_bits(version):08x}" if self.version_rolling else None,
+        )
         request_id, future = await self._conn.request("mining.submit", params, expiry=reply_expiry)
-        return Submission(request_id, future, self._conn.endpoint, self.generation)
+        return Submission(request_id, future, self._conn.endpoint, self.generation,
+                          params[5] if len(params) == 6 else None)
 
     async def wait_for_job(self, timeout: Optional[float] = None) -> Optional[MiningJob]:
         deadline = None if timeout is None else asyncio.get_running_loop().time() + timeout
@@ -603,6 +830,10 @@ async def handshake_probe(
                 "first_job_id": job.job_id,
                 "difficulty": str(job.difficulty),
                 "difficulty_from_pool": session.difficulty is not None,
+                "version_rolling": session.version_rolling,
+                "version_mask": f"{session.version_mask:08x}",
+                "pool_version_mask": f"{session.pool_version_mask:08x}",
+                "version_negotiation": session.version_negotiation,
             }
         if isinstance(session.fatal, AuthorizationRejected):
             raise session.fatal
