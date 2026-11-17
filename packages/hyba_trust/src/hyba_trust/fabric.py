@@ -306,6 +306,8 @@ class TrustFabric:
         atom = self._require(atom_id)
         if atom.state is State.RETRACTED:
             raise NotAuthorized("un-retract goes through unretract()")
+        if atom.state is State.DEMOTED and to is State.QUARANTINED:
+            raise NotAuthorized("demoted content returns only through appeal()")
         return self._transition(atom, to, actor, rationale)
 
     def _transition(self, atom: Atom, to: State, actor: Actor, rationale: str, *,
