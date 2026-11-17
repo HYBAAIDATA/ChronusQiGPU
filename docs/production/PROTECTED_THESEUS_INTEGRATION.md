@@ -27,7 +27,7 @@ The OVID `put`/`materialise` contract is unchanged; this is an additional protec
 
 Tests committed in `tests/test_protected_theseus.py` instantiate the real maintained `DurableTheseusService`, exercise restart and shard deletion, single-corruption repair, multiple-failure refusal, tenant separation and protection against symlinks and conflicting writes. These must be executed in a full maintained checkout before representing them as proven complete-repository tests.
 
-A separate isolated test environment executed nine corresponding file-deletion, restart, isolation and integrity checks using a SQLite-backed **interface test double**, and five benchmark-reconciler contract checks (14 passing tests total). A genuine UCI Wine observational `.npy` source (SHA-256 `09af9db3ce2a52b3f168d5d9eb1d4d4ceba584fad9e0e9aba63ff536c192c6a6`) also survived a real shard-file deletion and fresh-process-style reconstruction in that local harness. This does **not** assert full-repository test verification.
+A separate isolated test environment executed ten corresponding file-deletion, restart, isolation and integrity checks using a SQLite-backed **interface test double**, and five benchmark-reconciler contract checks (15 passing tests total). A genuine UCI Wine observational `.npy` source (SHA-256 `09af9db3ce2a52b3f168d5d9eb1d4d4ceba584fad9e0e9aba63ff536c192c6a6`) also survived a real shard-file deletion and fresh-process-style reconstruction in that local harness. This does **not** assert full-repository test verification.
 
 ## Failure envelope and evidence boundaries
 
