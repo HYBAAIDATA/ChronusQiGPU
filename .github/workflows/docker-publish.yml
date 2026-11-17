@@ -1,0 +1,216 @@
+name: Docker Hub images
+
+# PRs validate without credentials. Only successful CI for a main push can publish.
+on:
+  pull_request:
+    paths:
+      - .github/workflows/docker-publish.yml
+      - Dockerfile
+      - .dockerignore
+      - docker-compose.yml
+      - frontend/**
+      - src/**
+      - packages/turing/**
+      - pyproject.toml
+      - chronus_live_miner.py
+      - scripts/ci/check_dockerhub_repositories.py
+      - tests/container_smoke.py
+      - tests/test_dockerhub_publishing.py
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-publish-${{ github.event.workflow_run.head_sha || github.sha }}
+  cancel-in-progress: false
+
+env:
+  SOURCE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+jobs:
+  build-and-smoke:
+    if: >-
+      github.event_name == 'pull_request'
+      || (github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.event == 'push'
+      && github.event.workflow_run.head_branch == 'main'
+      && github.event.workflow_run.head_repository.full_name == github.repository
+      && github.event.workflow_run.path == '.github/workflows/ci.yml')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - name: Build all three commit-tagged images
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          for image in api web miner; do
+            context=.
+            dockerfile=Dockerfile
+            target="${image}-runtime"
+            if [[ "$image" == web ]]; then
+              context=frontend
+              dockerfile=frontend/Dockerfile
+              target=runtime
+            fi
+            docker build --file "$dockerfile" --target "$target" \
+              --label "org.opencontainers.image.revision=$SOURCE_SHA" \
+              --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
+              --tag "chronus-${image}:sha-${SOURCE_SHA}" "$context"
+          done
+      - name: Smoke all images offline and verify restart persistence
+        shell: bash
+        env:
+          # Synthetic, runner-local test identity; never a live tenant credential.
+          CHRONUS_TENANT_TOKENS: '{"ci":"ci-example-token"}'
+          CHRONUS_SMOKE_TOKEN: ci-example-token
+          CHRONUS_SMOKE_URL: http://127.0.0.1:8000
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/chronus-images"
+          api_id= web_id=
+          volume="chronus-smoke-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          cleanup() {
+            for id in "$api_id" "$web_id"; do
+              if [[ -n "$id" ]]; then docker rm -f "$id" >/dev/null || true; fi
+            done
+            docker volume rm "$volume" >/dev/null || true
+          }
+          trap cleanup EXIT
+          docker volume create "$volume" >/dev/null
+          start_api() {
+            api_id=$(docker run --detach --network none --env CHRONUS_TENANT_TOKENS \
+              --mount "type=volume,src=$volume,dst=/var/lib/chronus" "chronus-api:sha-${SOURCE_SHA}")
+            docker cp tests/container_smoke.py "$api_id:/tmp/container_smoke.py"
+          }
+          ready_api() {
+            for attempt in {1..30}; do
+              if docker exec "$api_id" python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)"; then return 0; fi
+              sleep 1
+            done
+            return 1
+          }
+          smoke_api() {
+            docker exec --env CHRONUS_SMOKE_TOKEN --env CHRONUS_SMOKE_URL \
+              "$api_id" python /tmp/container_smoke.py "$@"
+          }
+          start_api
+          ready_api
+          workload_id=$(smoke_api submit)
+          docker restart "$api_id" >/dev/null
+          ready_api
+          smoke_api verify "$workload_id"
+          docker rm -f "$api_id" >/dev/null
+          api_id=
+          start_api
+          ready_api
+          smoke_api verify "$workload_id"
+          printf '%s\n' 'Authenticated workload survived restart and container recreation.' \
+            > "$RUNNER_TEMP/chronus-images/api-smoke.txt"
+          web_id=$(docker run --detach --network none "chronus-web:sha-${SOURCE_SHA}")
+          web_ready=false
+          for attempt in {1..30}; do
+            if docker exec "$web_id" node -e "fetch('http://127.0.0.1:3000', {signal: AbortSignal.timeout(3000)}).then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"; then
+              web_ready=true
+              break
+            fi
+            sleep 1
+          done
+          test "$web_ready" = true
+          printf '%s\n' 'Web image served HTTP offline.' > "$RUNNER_TEMP/chronus-images/web-smoke.txt"
+          # Override the real entrypoint: known-answer/synthetic work only, no pool.
+          docker run --rm --network none --entrypoint python "chronus-miner:sha-${SOURCE_SHA}" \
+            -m chronus.execution.mining_selftest > "$RUNNER_TEMP/chronus-images/miner-smoke.json"
+      - name: Retain the exact tested images and their identities for UAT and publishing
+        shell: bash
+        run: |
+          set -euo pipefail
+          images=("chronus-api:sha-${SOURCE_SHA}" "chronus-web:sha-${SOURCE_SHA}" "chronus-miner:sha-${SOURCE_SHA}")
+          docker image inspect "${images[@]}" > "$RUNNER_TEMP/chronus-images/images.json"
+          docker save --output "$RUNNER_TEMP/chronus-images/images.tar" "${images[@]}"
+          (cd "$RUNNER_TEMP/chronus-images" && sha256sum images.tar > images.tar.sha256)
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: chronus-images-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/chronus-images/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  publish:
+    needs: build-and-smoke
+    if: >-
+      github.event_name == 'workflow_run'
+      && github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.event == 'push'
+      && github.event.workflow_run.head_branch == 'main'
+      && github.event.workflow_run.head_repository.full_name == github.repository
+      && github.event.workflow_run.path == '.github/workflows/ci.yml'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DOCKER_USER: ${{ vars.DOCKER_USER }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: chronus-images-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/chronus-images/
+      - name: Load and verify the tested artifacts without rebuilding
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/chronus-images"
+          sha256sum --check images.tar.sha256
+          docker load --input images.tar
+          for image in api web miner; do
+            ref="chronus-${image}:sha-${SOURCE_SHA}"
+            test "$(docker inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$ref")" = "$SOURCE_SHA"
+            expected=$(jq -er --arg ref "$ref" '.[] | select(.RepoTags | index($ref)) | .Id' images.json)
+            test "$(docker inspect --format '{{.Id}}' "$ref")" = "$expected"
+          done
+      - name: Require fresh credentials and all existing private repositories
+        env:
+          DOCKER_PAT: ${{ secrets.DOCKER_PAT }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker_config=$(mktemp -d "${RUNNER_TEMP}/chronus-docker.XXXXXX")
+          echo "DOCKER_CONFIG=$docker_config" >> "$GITHUB_ENV"
+          for image in api web miner; do
+            python3 scripts/ci/check_dockerhub_repositories.py --repository "chronus-$image"
+          done
+      - name: Authenticate to Docker Hub through standard input
+        env:
+          DOCKER_PAT: ${{ secrets.DOCKER_PAT }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s' "$DOCKER_PAT" | docker login docker.io --username "$DOCKER_USER" --password-stdin
+      - name: Publish only the tested image identities to private destinations
+        env:
+          DOCKER_PAT: ${{ secrets.DOCKER_PAT }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for image in api web miner; do
+            python3 scripts/ci/check_dockerhub_repositories.py --repository "chronus-$image"
+            destination="docker.io/${DOCKER_USER}/chronus-${image}:sha-${SOURCE_SHA}"
+            docker tag "chronus-${image}:sha-${SOURCE_SHA}" "$destination"
+            docker push "$destination"
+          done
+      - name: End the runner's Docker Hub session
+        if: always()
+        run: docker logout docker.io
