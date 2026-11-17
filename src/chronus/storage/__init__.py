@@ -41,6 +41,7 @@ from chronus.storage.prime_codec import (
     encode as encode_prime_symbols,
 )
 from chronus.storage.theseus import TheseusRecord, TheseusService
+from chronus.storage.protected import ProtectedReceipt, ProtectedTheseusService
 
 __all__ = [
     "ALHarasConnectorGuard",
@@ -63,6 +64,8 @@ __all__ = [
     "PhyllotaxisMesh",
     "PrimeCodecError",
     "PrimeCodecIntegrityError",
+    "ProtectedReceipt",
+    "ProtectedTheseusService",
     "RegisteredConnector",
     "SchemaDiscoveryMiddleware",
     "TheseusRecord",

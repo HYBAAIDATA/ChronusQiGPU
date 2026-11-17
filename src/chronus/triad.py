@@ -9,6 +9,7 @@ from pathlib import Path
 
 from chronus.ovid.transform import OvidRepresentation, OvidTransformService
 from chronus.storage.durable import DurableTheseusService
+from chronus.storage.protected import ProtectedReceipt, ProtectedTheseusService
 
 
 @dataclass(frozen=True)
@@ -94,6 +95,26 @@ class ProductionTriad:
         if hashlib.sha256(payload).hexdigest() != receipt.source_sha256:
             return False
         return self.theseus.verify_journal_continuity(receipt.tenant_id)
+
+    def protect_payload(
+        self, tenant_id: str, payload: bytes, shard_root: str | Path,
+        *, shard_count: int = 4,
+    ) -> ProtectedReceipt:
+        """Commit redundant immutable shards under THESEUS custody.
+
+        Optional resilience surface: does not alter OVID transformation contracts
+        or the normal put/materialise API. The parity-bearing manifest is
+        recorded in the same canonical THESEUS journal.
+        """
+        return ProtectedTheseusService(self.theseus, shard_root).store(
+            tenant_id, payload, shard_count=shard_count,
+        )
+
+    def recover_protected_payload(
+        self, receipt: ProtectedReceipt, shard_root: str | Path,
+    ) -> bytes:
+        """Reopen custodied shards and reconstruct at most one unavailable shard."""
+        return ProtectedTheseusService(self.theseus, shard_root).reconstruct(receipt)
 
     def production_posture(self) -> dict:
         evidence = self.theseus.evidence()
