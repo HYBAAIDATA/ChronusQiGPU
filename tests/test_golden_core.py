@@ -58,7 +58,7 @@ def test_pisot_roots_are_certified_and_pisot(family):
     f_high = sum(c * root.high ** (len(coeffs) - 1 - i) for i, c in enumerate(coeffs))
     assert (f_low > 0) != (f_high > 0)
     assert root.low > 1
-    assert g.family_pisot_modulus(family) < 1
+    assert g.family_pisot_modulus(family).high < 1
 
 
 @pytest.mark.parametrize("family", ["plastic", "supergolden", "tribonacci"])
@@ -70,6 +70,21 @@ def test_cubic_conjugates_are_a_complex_pair(family):
     q = b + r * p
     assert p * p - 4 * q < 0  # complex pair, so |mu|^2 = q = |c| / r
     assert abs(q - Fraction(abs(c)) / r) < Fraction(1, 10 ** 30)
+
+
+@pytest.mark.parametrize("family", list(g.FAMILY_COEFFS))
+def test_pisot_modulus_is_a_certified_enclosure(family):
+    # |mu|^p * alpha == |c0| exactly (p = 1 for quadratics, 2 for cubics), so the certified bracket
+    # of |mu| must satisfy low^p * alpha_low <= |c0| <= high^p * alpha_high.
+    precision = 40
+    m = g.family_pisot_modulus(family, precision)
+    root = g.family_root(family, precision)
+    power = 1 if len(g.FAMILY_COEFFS[family]) == 3 else 2
+    c0 = abs(g.FAMILY_COEFFS[family][-1])
+    assert m.low < m.high < 1
+    assert m.width < Fraction(1, 10 ** 12)
+    assert m.low ** power * root.low <= c0 <= m.high ** power * root.high
+    assert m.low <= Fraction(m.value) <= m.high
 
 
 def test_known_constants():

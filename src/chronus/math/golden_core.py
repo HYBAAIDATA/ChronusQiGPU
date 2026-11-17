@@ -30,6 +30,7 @@ context and never changes the process-wide decimal context.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from decimal import Decimal, localcontext
 from fractions import Fraction
@@ -38,7 +39,7 @@ from typing import Dict, List, Tuple
 from chronus.math.binet_lucas import fibonacci_fast, lucas_fast
 
 __all__ = [
-    "FAMILY_COEFFS", "FOLD_MODULUS", "M15", "M15_INV", "RootEnclosure",
+    "FAMILY_COEFFS", "FOLD_MODULUS", "M15", "M15_INV", "ModulusEnclosure", "RootEnclosure",
     "cassini_check", "family_pisot_modulus", "family_root", "fibonacci", "lucas",
     "t_phi_fold", "t_phi_unfold", "zeckendorf_decode", "zeckendorf_encode",
 ]
@@ -170,22 +171,63 @@ def family_root(name: str, precision: int = 50) -> RootEnclosure:
         return RootEnclosure(name, +value, low, high)
 
 
-def family_pisot_modulus(name: str, precision: int = 50) -> Decimal:
+@dataclass(frozen=True)
+class ModulusEnclosure:
+    """Largest Galois-conjugate modulus |mu|: exact rational bracket [low, high] containing it.
+
+    ``value`` is a display-only Decimal approximation; comparisons must use ``low``/``high``.
+    """
+    family: str
+    value: Decimal
+    low: Fraction
+    high: Fraction
+
+    @property
+    def width(self) -> Fraction:
+        return self.high - self.low
+
+
+def _sqrt_lower(q: Fraction, bits: int) -> Fraction:
+    """Exact rational lower bound of sqrt(q) (q >= 0) with denominator 2**bits."""
+    floor_scaled = (q.numerator << (2 * bits)) // q.denominator
+    return Fraction(math.isqrt(floor_scaled), 1 << bits)
+
+
+def _sqrt_upper(q: Fraction, bits: int) -> Fraction:
+    """Exact rational upper bound of sqrt(q) (q >= 0) with denominator 2**bits."""
+    ceil_scaled = -((-(q.numerator << (2 * bits))) // q.denominator)
+    return Fraction(math.isqrt(ceil_scaled) + 1, 1 << bits)
+
+
+def family_pisot_modulus(name: str, precision: int = 50) -> ModulusEnclosure:
     """Largest modulus among the Galois conjugates of the dominant root (< 1 for a Pisot number).
 
     Quadratic families: the conjugate is -c0 / alpha (product of the roots), so |mu| = |c0| / alpha.
     Cubic families here have one real root and a complex-conjugate pair, so |mu|^2 = |c0| / alpha.
     The tests check that assumption (the deflated quadratic has a negative discriminant).
+
+    The bound is derived from the certified enclosure [low, high] of alpha (``family_root``), using
+    exact Fraction arithmetic; the Decimal ``value`` is only a display approximation.
     """
     coeffs = FAMILY_COEFFS[name]
-    alpha = family_root(name, precision).value
+    root = family_root(name, precision)
+    c0 = abs(coeffs[-1])
+    bits = 2 * (precision + 10)
+    # alpha lies in [root.low, root.high], so the ratio lies in [c0/high, c0/low].
+    ratio_low, ratio_high = Fraction(c0) / root.high, Fraction(c0) / root.low
+    if len(coeffs) - 1 == 2:
+        low, high = ratio_low, ratio_high
+    else:
+        low, high = _sqrt_lower(ratio_low, bits), _sqrt_upper(ratio_high, bits)
+    if not high < 1:
+        raise ArithmeticError(f"{name}: certified modulus bound is not below 1")
     with localcontext() as ctx:
         ctx.prec = precision + 10
-        ratio = Decimal(abs(coeffs[-1])) / alpha
-        result = ratio if len(coeffs) - 1 == 2 else ratio.sqrt()
+        ratio = Decimal(c0) / root.value
+        display = ratio if len(coeffs) - 1 == 2 else ratio.sqrt()
     with localcontext() as ctx:
         ctx.prec = precision
-        return +result
+        return ModulusEnclosure(name, +display, low, high)
 
 
 # ----------------------------------------------------------- fold: M15 over Z/256
