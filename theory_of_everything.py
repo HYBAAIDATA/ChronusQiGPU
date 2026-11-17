@@ -1929,8 +1929,11 @@ class Hamiltonian:
 class TimeEvolution:
     @staticmethod
     def evolve(state: QuantumState, hamiltonian: Hamiltonian, time: float):
-        """|psi(t)> = exp(-iHt)|psi> — the spectral decomposition of the evolution operator.
-        H is self-adjoint, so its spectrum is real and the exponential is unitary (exact)."""
+        """Evaluate exp(-iHt)|psi> by floating-point spectral decomposition.
+
+        For self-adjoint H the mathematical evolution is unitary; NumPy's
+        eigensolver, phase evaluation and matrix products incur rounding error.
+        """
         w, V = np.linalg.eigh(hamiltonian.matrix())
         U = (V * np.exp(-1j * w * time)) @ V.conj().T
         return QuantumState(U @ state.amplitudes, labels=state.labels)

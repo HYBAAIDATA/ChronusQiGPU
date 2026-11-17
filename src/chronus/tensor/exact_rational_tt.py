@@ -73,7 +73,7 @@ class ExactRationalTensorTrain:
                 _product(dims) > MAX_ELEMENTS):
             raise ValueError("tensor dimensions exceed exact reference policy")
         expected = _product(dims)
-        # Consume only expected + 1 entries: an infinite or oversized iterable
+        # Consume only expected + 1 entries: a nonterminating or oversized iterable
         # must never bypass the memory budget before validation.
         data = tuple(_rational(v) for v in islice(iter(values), expected + 1))
         if len(data) != expected:

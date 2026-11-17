@@ -75,14 +75,14 @@ def test_mutated_tensor_core_fingerprint_fails():
 def test_excess_input_generator_stops_at_one_over_budget():
     observed = {"consumed": 0}
 
-    def infinite_source():
+    def nonterminating_source():
         while True:
             observed["consumed"] += 1
             yield 1
 
     with pytest.raises(ValueError, match="flat tensor data"):
-        TT.factor((2, 2), infinite_source())
-    # No arbitrary materialisation of the infinite tail.
+        TT.factor((2, 2), nonterminating_source())
+    # No arbitrary materialisation of the nonterminating tail.
     assert observed["consumed"] == 5
 
 

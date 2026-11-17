@@ -88,7 +88,7 @@ factorisation. Reviewers Qodo and Codex identified those two real gaps on
 the original PR head.
 
 A local isolated source fixture was updated with the same algorithm and
-three negative tests (infinite source, 65,536-element digest-valid forged
+three negative tests (nonterminating source, 65,536-element digest-valid forged
 replay, zero-dimension replay). Re-executed in Python 3.13.5:
 
 ```

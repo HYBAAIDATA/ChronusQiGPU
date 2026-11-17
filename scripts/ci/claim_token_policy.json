@@ -198,9 +198,9 @@
     {
       "path": "src/chronus/tensor/enhanced_representation.py",
       "token": 3,
-      "count": 3,
+      "count": 2,
       "basis": "refusal-or-denial",
-      "note": "Listed among refused claims returned to callers"
+      "note": "Current source has two refusals: FORBIDDEN_HYPE_STRINGS and optimize_contraction.refused_claims; neither asserts information-density gain"
     },
     {
       "path": "src/chronus/tensor/evolution.py",
@@ -236,6 +236,20 @@
       "count": 1,
       "basis": "refusal-or-denial",
       "note": "Test asserts the claim audit refuses the phrase"
+    },
+    {
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "token": 1,
+      "count": 1,
+      "basis": "refusal-or-denial",
+      "note": "vqe_solve.claim_boundary explicitly denies a global optimum or speed guarantee; the numerical optimizer is not evidence of an advantage"
+    },
+    {
+      "path": "src/chronus/pulvini/recovered/quantum_optimizer.py",
+      "token": 1,
+      "count": 3,
+      "basis": "mathematical-term",
+      "note": "AnnealingSchedule enum name, serialized value and compute_temperature branch describe initial_temperature * exp(-5 * t_ratio), not a speed or capacity claim"
     },
     {
       "path": "src/chronus/qualification/harness.py",

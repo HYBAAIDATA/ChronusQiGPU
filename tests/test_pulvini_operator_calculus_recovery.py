@@ -82,7 +82,7 @@ def test_nonrepresentable_integer_operator_rejected_before_lift():
         calc.lift(np.array([[2**53+1]], dtype=np.int64))
 
 
-def test_finite_large_matrix_cannot_return_infinite_lift():
+def test_finite_large_matrix_cannot_return_nonfinite_lift():
     calc = PulviniOperatorCalculus()
     A = np.full((2, 2), np.finfo(np.float64).max)
     with pytest.raises(ValueError, match="overflow"):

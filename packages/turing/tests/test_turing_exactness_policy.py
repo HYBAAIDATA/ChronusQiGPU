@@ -19,6 +19,9 @@ if not (PACKAGE / "src" / "turing").is_dir():
 
 SOURCE_FILES = sorted((PACKAGE / "src" / "turing" / "algebra").glob("*.py")) + \
     sorted((PACKAGE / "src" / "turing" / "algorithms").glob("*.py"))
+# Geometry is included in numeric/import checks, not the older wording check:
+# its operator documentation explicitly denies the capability claims it names.
+GEOMETRY_FILES = sorted((PACKAGE / "src" / "turing" / "exact" / "geometry").rglob("*.py"))
 TEST_FILES = sorted((PACKAGE / "tests").glob("test_turing_*.py"))
 DOCUMENT = PACKAGE / "docs" / "algorithms.md"
 
@@ -46,9 +49,17 @@ WORDING = _decode(
 )
 BANNED_CALLS = {"float", "complex", "round"}
 BANNED_MODULES = {"random", "numpy", "cmath", "decimal", "statistics", "secrets", "chronus"}
-EXACT_MATH = {"isqrt", "gcd", "lcm", "comb", "perm", "factorial"}
+# prod multiplies the integer factors of TensorHilbert; it needs no rounding.
+EXACT_MATH = {"isqrt", "gcd", "lcm", "comb", "perm", "factorial", "prod"}
 LEGACY_MODULES = {"state", "operator", "gates", "measurement", "tensor"}
 NEW_SUBPACKAGES = {"algebra", "algorithms"}
+GEOMETRY_PACKAGE = "turing.exact.geometry"
+GEOMETRY_MODULES = {f"{GEOMETRY_PACKAGE}.{name}" for name in ("hilbert", "operators")}
+
+
+def _allowed_turing_import(module):
+    parts = module.split(".")
+    return (len(parts) > 1 and parts[1] in NEW_SUBPACKAGES) or module in GEOMETRY_MODULES
 
 
 def _violations(path):
@@ -70,7 +81,7 @@ def _violations(path):
                 parts = alias.name.split(".")
                 if parts[0] == "math" or parts[0] in BANNED_MODULES:
                     found.append((line, f"import {alias.name}"))
-                if parts[0] == "turing" and (len(parts) == 1 or parts[1] not in NEW_SUBPACKAGES):
+                if parts[0] == "turing" and not _allowed_turing_import(alias.name):
                     found.append((line, f"import {alias.name}"))
         elif isinstance(node, ast.ImportFrom):
             module = node.module or ""
@@ -80,8 +91,12 @@ def _violations(path):
                     found.append((line, f"from {module} import"))
                 if parts[0] == "math" and any(alias.name not in EXACT_MATH for alias in node.names):
                     found.append((line, "non-exact math import"))
-                if parts[0] == "turing" and (len(parts) == 1 or parts[1] not in NEW_SUBPACKAGES):
-                    found.append((line, f"from {module} import"))
+                if parts[0] == "turing":
+                    geometry_children = module == GEOMETRY_PACKAGE and all(
+                        f"{module}.{alias.name}" in GEOMETRY_MODULES for alias in node.names
+                    )
+                    if not (_allowed_turing_import(module) or geometry_children):
+                        found.append((line, f"from {module} import"))
             if node.level >= 2:
                 targets = parts[:1] if parts else [alias.name for alias in node.names]
                 if any(target in LEGACY_MODULES for target in targets):
@@ -95,13 +110,18 @@ def test_new_files_are_present():
                      "bernstein_vazirani.py", "simon.py", "grover.py", "qft.py", "qpe.py", "shor.py",
                      "clifford.py", "structured.py"):
         assert expected in names
+    assert {path.relative_to(PACKAGE / "src").as_posix() for path in GEOMETRY_FILES} >= {
+        "turing/exact/geometry/__init__.py",
+        "turing/exact/geometry/hilbert.py",
+        "turing/exact/geometry/operators.py",
+    }
     assert len(TEST_FILES) >= 10
     assert DOCUMENT.is_file()
 
 
 def test_no_floating_point_randomness_or_legacy_imports():
     problems = []
-    for path in SOURCE_FILES + TEST_FILES:
+    for path in SOURCE_FILES + GEOMETRY_FILES + TEST_FILES:
         problems.extend((path.name, line, message) for line, message in _violations(path))
     assert problems == []
 
@@ -118,8 +138,57 @@ def test_wording_and_claim_tokens():
 
 def test_new_modules_do_not_load_floating_point_modules():
     tree_imports = set()
-    for path in SOURCE_FILES:
+    for path in SOURCE_FILES + GEOMETRY_FILES:
         for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
             if isinstance(node, ast.ImportFrom) and node.level >= 1 and node.module:
                 tree_imports.add(node.module.split(".")[0])
     assert tree_imports.isdisjoint(LEGACY_MODULES)
+
+
+@pytest.mark.parametrize("source", [
+    "from turing.exact.geometry.hilbert import SparseState",
+    "from turing.exact.geometry.operators import inner_product",
+    "import turing.exact.geometry.hilbert as geometry",
+    "from turing.exact.geometry import hilbert, operators",
+    "from turing.algebra import CyclotomicField",
+    "from turing.algorithms import qft",
+    "from math import prod",
+])
+def test_reviewed_exact_imports_pass(tmp_path, source):
+    path = tmp_path / "candidate.py"
+    path.write_text(source, encoding="utf-8")
+    assert _violations(path) == []
+
+
+@pytest.mark.parametrize("source", [
+    "import turing",
+    "from turing import QuantumState",
+    "from turing.state import QuantumState",
+    "import turing.operator",
+    "from turing.gates import HADAMARD",
+    "from turing.measurement import born_probabilities",
+    "from turing.tensor import tensor_states",
+    "from ..state import QuantumState",
+    "from .. import operator",
+    "from turing.exact import StateZetaP",
+    "from turing.exact.core.state import StateZetaP",
+    "from turing.exact.geometry import unreviewed",
+    "from turing.exact.geometry import *",
+    "from turing.exact.geometry.unreviewed import State",
+    "import turing.exact.geometry.hilbert.unreviewed",
+    "import chronus",
+    "import numpy as np",
+    "from numpy import array",
+    "import math",
+    "from math import prod, sqrt",
+    "value = 0.5",
+    "value = 1j",
+    "value = float(1)",
+    "value = complex(1)",
+    "value = round(1)",
+    "value = 1 / 2",
+])
+def test_unreviewed_imports_and_numeric_operations_stay_blocked(tmp_path, source):
+    path = tmp_path / "candidate.py"
+    path.write_text(source, encoding="utf-8")
+    assert _violations(path)
