@@ -739,9 +739,11 @@ class PoolSession:
                 return None
             mask_hex = _mask_hex(params[0] if params else None)
             if mask_hex is None:
-                # Fail closed: roll nothing until the pool sends a usable mask.
-                new, pool_mask = 0, 0
-                self.record("pool_protocol_warning", {"method": method, "reason": "unusable version mask; rolling paused (mask 00000000)"})
+                # Fail closed: roll nothing new until the pool sends a usable mask. The pool still
+                # rebuilds nVersion with the last mask it sent, so keep that mask: shares already
+                # hashed under it must keep matching the version the pool reconstructs.
+                new, pool_mask = 0, self.pool_version_mask
+                self.record("pool_protocol_warning", {"method": method, "reason": "unusable version mask; rolling paused (new units use no version bits)"})
             else:
                 new = int(parse_and_intersect_version_mask(mask_hex, DEFAULT_CLIENT_MASK_HEX, VERSION_ROLLING_MIN_BITS), 16)
                 pool_mask = int(mask_hex, 16)

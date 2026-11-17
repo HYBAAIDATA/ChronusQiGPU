@@ -446,6 +446,23 @@ class TestVersionRolling(unittest.TestCase):
 
         self._with_session({"difficulty": 1, "version_rolling": "1fffe000"}, body)
 
+    def test_a_malformed_set_version_mask_keeps_the_pool_mask_for_submits(self):
+        async def body(pool, session, job, records):
+            await pool.push_version_mask("ffffffff")
+            await _until(lambda: session.pool_version_mask == 0xFFFFFFFF)
+            hashed = make_unit(job, 0, 0, 4096, Fraction(1), 20, version_mask=0x1FFFE000, version_index=16)
+            await pool.push_version_mask("xyz")
+            await _until(lambda: session.version_mask == 0)
+            # Rolling is paused, but the pool still rebuilds nVersion with the mask it last sent.
+            self.assertEqual(session.pool_version_mask, 0xFFFFFFFF)
+            self.assertTrue(session.version_compatible(job, hashed.version, hashed.version_bits))
+            sub = await session.submit(job, GENESIS_EN2, GENESIS_NONCE)
+            self.assertEqual(sub.version_bits, f"{job.base_version:08x}")
+            reply = await asyncio.wait_for(sub.future, 5)
+            self.assertEqual(reply["result"], True, reply)
+
+        self._with_session({"difficulty": 1, "version_rolling": "1fffe000"}, body)
+
     def test_pool_that_hangs_up_on_configure_is_mined_unrolled(self):
         async def body(pool, session, job, records):
             self.assertFalse(session.version_rolling)
