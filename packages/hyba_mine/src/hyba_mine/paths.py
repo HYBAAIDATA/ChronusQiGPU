@@ -120,12 +120,11 @@ def ensure_private_dir(path: Path) -> Path:
         return path
     report = portable.describe_access(path)
     if not (report.private and report.protected):
-        try:
-            portable.restrict_to_current_user(path, directory=True)
-        except OSError as exc:
-            # Credential files verify their own access list and fail closed.
-            log.warning("could not restrict %s to this account (%s)", path, exc)
-            return path
+        # Fail closed: a directory that cannot be made owner-only must not be used for state or control files.
+        portable.restrict_to_current_user(path, directory=True)
+        report = portable.describe_access(path)
+        if not (report.private and report.protected):
+            raise PermissionError(f"{path} is not private to this account after restricting it")
     _restricted.add(key)
     return path
 
