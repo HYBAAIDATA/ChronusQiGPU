@@ -33,6 +33,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal, localcontext
 from fractions import Fraction
+from math import isqrt
 from typing import Dict, List, Tuple
 
 from chronus.math.binet_lucas import fibonacci_fast, lucas_fast
@@ -170,8 +171,34 @@ def family_root(name: str, precision: int = 50) -> RootEnclosure:
         return RootEnclosure(name, +value, low, high)
 
 
+def _sqrt_bounds(q: Fraction, digits: int) -> Tuple[Fraction, Fraction]:
+    """Rational bounds lo <= sqrt(q) <= hi with hi - lo = 10^-digits (exact integer arithmetic)."""
+    scale = 10 ** digits
+    floor_scaled_sq = q.numerator * scale * scale // q.denominator
+    lo_int = isqrt(floor_scaled_sq)  # floor(sqrt(q) * scale)
+    return Fraction(lo_int, scale), Fraction(lo_int + 1, scale)
+
+
+def family_pisot_modulus_enclosure(name: str, precision: int = 50) -> Tuple[Fraction, Fraction]:
+    """Certified rational bracket (low, high) containing the largest Galois-conjugate modulus.
+
+    Built from ``family_root``'s exact enclosure: |mu| = |c0| / alpha (quadratic) or
+    |mu|^2 = |c0| / alpha (cubic), both monotone decreasing in alpha, so the bounds
+    follow from the root bracket endpoints.
+    """
+    coeffs = FAMILY_COEFFS[name]
+    enc = family_root(name, precision)
+    c0 = Fraction(abs(coeffs[-1]))
+    q_low, q_high = c0 / enc.high, c0 / enc.low
+    if len(coeffs) - 1 == 2:
+        return q_low, q_high
+    return _sqrt_bounds(q_low, precision + 2)[0], _sqrt_bounds(q_high, precision + 2)[1]
+
+
 def family_pisot_modulus(name: str, precision: int = 50) -> Decimal:
-    """Largest modulus among the Galois conjugates of the dominant root (< 1 for a Pisot number).
+    """Decimal approximation of the largest Galois-conjugate modulus (< 1 for a Pisot number).
+
+    Approximation only: use ``family_pisot_modulus_enclosure`` for certified bounds.
 
     Quadratic families: the conjugate is -c0 / alpha (product of the roots), so |mu| = |c0| / alpha.
     Cubic families here have one real root and a complex-conjugate pair, so |mu|^2 = |c0| / alpha.
@@ -224,3 +251,4 @@ def t_phi_unfold(folded: bytes, original_len: int) -> bytes:
     if original_len < len(out) and out[-1] != 0:
         raise ValueError("pad byte is not zero; folded data was altered or original_len is wrong")
     return bytes(out[:original_len])
+inal_len])
