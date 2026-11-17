@@ -120,12 +120,11 @@ def ensure_private_dir(path: Path) -> Path:
         return path
     report = portable.describe_access(path)
     if not (report.private and report.protected):
-        try:
-            portable.restrict_to_current_user(path, directory=True)
-        except OSError as exc:
-            # Credential files verify their own access list and fail closed.
-            log.warning("could not restrict %s to this account (%s)", path, exc)
-            return path
+        # Fail closed: a directory another local account can write or delete entries in is not private.
+        portable.restrict_to_current_user(path, directory=True)
+        verified = portable.describe_access(path)
+        if not (verified.private and verified.protected):
+            raise PermissionError(f"{path} is not private to this account; refusing to use it")
     _restricted.add(key)
     return path
 
