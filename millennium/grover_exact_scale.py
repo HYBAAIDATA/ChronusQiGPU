@@ -38,8 +38,6 @@ conservation witness.
 
 from __future__ import annotations
 
-import cmath
-import math
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
@@ -57,17 +55,21 @@ except (ImportError, SystemError, Exception):  # pragma: no cover
     from kellogg import scales as lucas_cassini  # type: ignore[no-redef]
 
 
-PHI = (1.0 + math.sqrt(5.0)) / 2.0
-PSI = (1.0 - math.sqrt(5.0)) / 2.0  # = -1/phi, |psi| < 1 (Pisot conjugate)
-
 LUCAS_LADDER = SCALE_RUNGS
 ITERATION_CAP = 2_000_000  # folded-state steps; beyond -> closed form
 
 from python_backend.exact_folded_grover import (  # noqa: E402
     ITERATION_CAP as _EXACT_ITERATION_CAP,
+    PHI,
+    PSI,
     FoldedGrover,
     analytical_success,
+    binet_lucas,
+    binet_residual,
+    convergence_bits,
     optimal_iterations,
+    pisot_damp,
+    pisot_drift,
     run_folded,
 )
 ITERATION_CAP = _EXACT_ITERATION_CAP
@@ -76,24 +78,6 @@ ITERATION_CAP = _EXACT_ITERATION_CAP
 # ---------------------------------------------------------------------------
 # BINET + ZECKENDORF + CASSINI (exact-integer storage layer)
 # ---------------------------------------------------------------------------
-
-
-def binet_lucas(n: int) -> float:
-    """Binet closed form L_n = phi^n + psi^n."""
-    return PHI**n + PSI**n
-
-
-def binet_residual(n: int) -> float:
-    """|phi^n - L_n| = |psi|^n — the Pisot drift, exact by Binet.
-
-    Evaluated as |psi|^n, not |phi^n - L_n|: the two are identical by
-    Binet's formula, but float64 subtraction loses all significance to
-    cancellation once phi^n outgrows the 53-bit mantissa (n > ~74 —
-    e.g. the raw difference returns ~19 instead of ~1.3e-16 at n = 76).
-    |psi|^n stays accurate until it underflows to 0.0 (n > ~1500), the
-    same "below float64 resolution" convention theta_of uses.
-    """
-    return abs(PSI) ** n
 
 
 def zeckendorf(n: int) -> List[int]:
@@ -117,13 +101,9 @@ def zeckendorf(n: int) -> List[int]:
 
 
 
-# FoldedGrover, optimal_iterations, analytical_success, run_folded:
-# python_backend.exact_folded_grover (integer / Fraction, canonical +/-1 phases).
-
-def pisot_damp(n: int) -> float:
-    """Quantum convergence factor (1 - |psi|^n), per pisotScaledTime."""
-    return 1.0 - abs(PSI) ** n
-
+# FoldedGrover, optimal_iterations, analytical_success, run_folded,
+# binet_lucas, binet_residual, pisot_damp, convergence_bits, PHI, PSI:
+# python_backend.exact_folded_grover (Z[phi] via kellogg.scales).
 
 def min_lucas_index(value: int) -> int:
     """Smallest n with L_n >= value — the exact Lucas ceiling for value."""
@@ -155,19 +135,33 @@ def pool_kernel_score(N: int, M: int, ceiling_n: Optional[int] = None) -> Dict[s
     # bytes(2) placeholder was passed, so the fold bound never saw the state.)
     import struct as _struct
 
+    from fractions import Fraction as _Frac
+
     if 0 < M < N and k <= ITERATION_CAP:
         _st = FoldedGrover.uniform(N, M)
         for _ in range(k):
             _st.step()
-        _ar, _br = float(_st.a), float(_st.b)
+        _af, _bf = _Frac(_st.a), _Frac(_st.b)
     else:
-        _ar, _br = 1.0, 1.0
-    folded_state = _struct.pack("<4d", _ar, 0.0, _br, 0.0)
+        _af, _bf = _Frac(1), _Frac(1)
+
+    def _limb(x: int) -> int:
+        return x % (1 << 64)
+
+    # 32-byte pack of exact Fraction limbs (no float). Size is what the
+    # folded_kernel bound consumes; arithmetic stays in Q.
+    folded_state = _struct.pack(
+        "<4Q",
+        _limb(_af.numerator),
+        _limb(_af.denominator),
+        _limb(_bf.numerator),
+        _limb(_bf.denominator),
+    )
     fold_pair_ops = (len(folded_state) + 1) // 2
     fold_ceiling_n = max(ceiling_n, min_lucas_index(fold_pair_ops))
     fold = lucas_pool.get("folded_kernel")(folded_state, fold_ceiling_n)
     # Unit-modulus 2-cycle of the Grover iterate; no angle is required.
-    spectrum = [1.0, 1.0]
+    spectrum = [1, 1]
     amp = lucas_pool.get("amplitude_kernel")(spectrum, ceiling_n)
     bounded = (
         bool(step["is_lucas_bounded"])
@@ -188,11 +182,6 @@ def pool_kernel_score(N: int, M: int, ceiling_n: Optional[int] = None) -> Dict[s
         "amplitude_bounded": bool(amp["is_lucas_bounded"]),
         "is_lucas_bounded": bounded,
     }
-
-
-def convergence_bits(n: int) -> float:
-    decay = abs(PSI) ** n
-    return -math.log2(decay) if decay > 0 else math.inf
 
 
 # run_folded is imported from python_backend.exact_folded_grover
@@ -234,7 +223,7 @@ def decade_row(power: int) -> Dict[str, Any]:
 
 
 def lucas_row(n: int, base_N: int = 1 << 6) -> Dict[str, Any]:
-    """N_eff = base_N * L_n (Lucas hardware scale), Pisot-damped phases."""
+    """N_eff = base_N * L_n (Lucas hardware scale); damp is exact 1-|psi|^n in Z[phi], not a phase."""
     L_n = lucas_core.lucas(n)
     N_eff = base_N * L_n
     k = optimal_iterations(N_eff, 1)
@@ -264,7 +253,7 @@ def main() -> None:
     for c in [verify_against_matrix(n, [N - 1]) for n, N in ((2, 4), (4, 16), (6, 64))]:
         print(
             f"  n={c['n_qubits']} N={c['N']:>3} k={c['k']:>2} "
-            f"folded={c['folded']:.12f} matrix={c['matrix']:.12f} "
+            f"folded={c['folded']!s} matrix={c['matrix']!s} "
             f"|d|={c['abs_delta']:.2e} {'MATCH' if c['match'] else 'MISMATCH'}"
         )
 
@@ -272,8 +261,8 @@ def main() -> None:
     print(f"  {'N':>16}{'k_opt':>10}{'P_measured':>13}{'P_analytic':>12}")
     for p in range(1, 13):
         r = decade_row(p)
-        meas = f"{r['P_measured']:.6f}" if "P_measured" in r else "closed-form"
-        print(f"  {r['N']:>16,}{r['k']:>10,}{meas:>13}{r['P_analytic']:>12.6f}")
+        meas = str(r['P_measured']) if "P_measured" in r else "closed-form"
+        print(f"  {r['N']:>16,}{r['k']:>10,}{meas:>13}{str(r['P_analytic']):>12}")
 
     print("\n[3] LUCAS-PISOT SCALING — N_eff = 64 * L_n, phase * (1-|psi|^n)")
     print(
@@ -282,18 +271,18 @@ def main() -> None:
     )
     for n in LUCAS_LADDER:
         r = lucas_row(n)
-        p = f"{r['P_marked']:.6f}" if "P_marked" in r else "n/a(k>cap)"
+        p = str(r['P_marked']) if "P_marked" in r else "n/a(k>cap)"
         print(
             f"  {r['n']:>3}{r['L_n']:>22,}{r['N_eff']:>14,}{r['k']:>7,}"
-            f"{r['damp']:>10.6f}{r['conv_bits']:>10.2f}{p:>11}"
+            f"{r['damp']!s:>10}{r['conv_bits']:>10}{p:>11}"
             f"{str(r['cassini']):>8}"
         )
 
     print("\n[4] BINET RESIDUAL = PISOT DRIFT |phi^n - L_n| = |psi|^n")
     for n in (10, 15, 20, 76):
         print(
-            f"  n={n:>2}: |phi^{n}-L_{n}| = {binet_residual(n):.3e}   "
-            f"|psi|^{n} = {abs(PSI)**n:.3e}   "
+            f"  n={n:>2}: |psi|^{n} = {binet_residual(n)!s}   "
+            f"signed drift = {pisot_drift(n)!s}   "
             f"zeck(L_{n}) = {zeckendorf(lucas_core.lucas(n)) if n <= 20 else '(>1e15)'}"
         )
 

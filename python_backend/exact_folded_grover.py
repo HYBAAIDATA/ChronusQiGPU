@@ -148,11 +148,19 @@ def run_folded(
     ``damp`` is accepted for call-site compatibility and must be omitted,
     None, or 1; any other value is an inexact phase and is refused.
     """
-    if damp is not None and _Q(damp) != 1:
-        raise ValueError(
-            "partial or Pisot-damped phases are not exact +/-1 and are not "
-            "used by the exact fold"
-        )
+    if damp is not None:
+        if isinstance(damp, (int, Fraction)):
+            canonical = _Q(damp) == 1
+        elif isinstance(damp, float) and damp == 1.0:
+            # 1.0 is the exact real 1; accepted only as a synonym of damp=1.
+            canonical = True
+        else:
+            canonical = False
+        if not canonical:
+            raise ValueError(
+                "partial or Pisot-damped phases are not exact +/-1 and are not "
+                "used by the exact fold"
+            )
     k = optimal_iterations(N, M) if iterations is None else int(iterations)
     if k > ITERATION_CAP:
         return {
@@ -234,3 +242,69 @@ def pisot_damp_qsqrt5(n: int) -> QSqrt5:
     if n < 0:
         raise ValueError("n must be non-negative")
     return QSqrt5(1, 0) - (abs_psi() ** n)
+
+
+
+# ---------------------------------------------------------------------------
+# Exact Z[phi] Binet / Pisot helpers (no float, no cmath)
+#
+# Reuses kellogg.scales: Zphi (kellogg/scales.py:33), Zphi.sign (line 80),
+# PHI (line 115), phi_power (line 154), binet_fold (line 163),
+# pisot_drift (line 180), lucas (line 144).
+# Sibling ring: lucas.algebra.ZPhi (lucas/algebra.py:21) and PHI (line 85).
+# Identities: phi^n = F_{n-1} + F_n phi; L_n = phi^n + psi^n = trace(phi^n);
+# |phi^n - L_n| = |psi|^n = phi^{-n} = (phi-1)^n.
+# ---------------------------------------------------------------------------
+
+from kellogg.scales import (  # noqa: E402
+    PHI,
+    ZPHI_ONE,
+    Zphi,
+    lucas as binet_lucas,
+    phi_power,
+    pisot_drift,
+)
+
+PSI = PHI.conjugate()  # 1 - phi, kellogg/scales.py:72-74
+
+
+def abs_psi_power(n: int) -> Zphi:
+    """|psi|^n = phi^{-n} = (phi - 1)^n, an element of Z[phi]."""
+    if n < 0:
+        raise ValueError("n must be non-negative")
+    return (PHI - ZPHI_ONE) ** n
+
+
+def binet_residual(n: int) -> Zphi:
+    """|phi^n - L_n| = |psi|^n as the positive Z[phi] element (phi-1)^n.
+
+    The signed drift phi^n - L_n is kellogg.scales.pisot_drift (scales.py:180).
+    """
+    return abs_psi_power(n)
+
+
+def pisot_damp(n: int) -> Zphi:
+    """1 - |psi|^n = 1 - phi^{-n} in Z[phi].  Not a Grover phase."""
+    return ZPHI_ONE - abs_psi_power(n)
+
+
+def zphi_lt_rational(z: Zphi, num: int, den: int) -> bool:
+    """Exact comparison z < num/den with den > 0, via Zphi.sign."""
+    if den <= 0:
+        raise ValueError("denominator must be positive")
+    return Zphi(z.a * den - num, z.b * den).sign() < 0
+
+
+def convergence_bits(n: int) -> int:
+    """floor(log2(phi^n)) = floor(-log2(|psi|^n)), by comparing phi^n to 2^k."""
+    if n <= 0:
+        return 0
+    pn = phi_power(n)
+    lo, hi = 0, n
+    while lo < hi:
+        mid = (lo + hi + 1) // 2
+        if (pn - Zphi(1 << mid, 0)).sign() >= 0:
+            lo = mid
+        else:
+            hi = mid - 1
+    return lo
