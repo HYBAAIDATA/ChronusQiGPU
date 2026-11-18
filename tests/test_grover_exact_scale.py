@@ -46,25 +46,15 @@ def test_pisot_damp_one_recovers_canonical_grover():
     assert abs(r["P_marked"] - ges.analytical_success(N, M, k)) < 1e-9
 
 
-def test_pisot_damping_converges_to_canonical_grover():
-    """damp_n = 1-|psi|^n -> 1, so the damped trajectory converges to the
-    canonical iterate. With fixed N the k=floor bound can overshoot the peak
-    ((2k+1)theta > pi/2), so P itself need not be monotone in n — but the
-    gap to the canonical value must close monotonically."""
-    N = 4096
-    k = ges.optimal_iterations(N, 1)
-    canonical = ges.run_folded(N, 1, iterations=k, damp=1.0)["P_marked"]
-    gaps = [
-        abs(
-            ges.run_folded(N, 1, iterations=k, damp=ges.pisot_damp(n))["P_marked"]
-            - canonical
-        )
-        for n in (10, 15, 20)
-    ]
-    assert gaps[0] > gaps[1] > gaps[2], f"gap must close: {gaps}"
-    for n in (10, 15, 20):
-        p = ges.run_folded(N, 1, iterations=k, damp=ges.pisot_damp(n))["P_marked"]
-        assert p > 0.9999
+def test_pisot_phases_are_refused_by_the_exact_fold():
+    """1-|psi|^n is exact in Q(sqrt(5)) but is not a +/-1 Grover phase."""
+    N, k = 4096, ges.optimal_iterations(4096, 1)
+    # Canonical run still works (damp=1).
+    r = ges.run_folded(N, 1, iterations=k, damp=1.0)
+    assert r["P_marked"] == r["P_analytic_full"]
+    assert r["cassini_drift"] == 0
+    with pytest.raises(ValueError, match="not used"):
+        ges.run_folded(N, 1, iterations=k, damp=ges.pisot_damp(6))
 
 
 def test_binet_residual_equals_pisot_drift():
@@ -95,11 +85,13 @@ def test_zeckendorf_of_lucas_is_fibonacci_pair():
 
 
 def test_optimal_iterations_scales_as_pi4_sqrt():
-    for power in (2, 6, 12):
+    # Stepping the exact recurrence is O(k) with rationals of growing height,
+    # so this stays at sizes where k is a few thousand at most.
+    for power in (2, 4, 6):
         N, M = 10**power, 1
         k = ges.optimal_iterations(N, M)
         ratio = k / math.sqrt(N)
-        assert 0.5 < ratio < 1.0  # pi/4 ~ 0.785, floor keeps it below 1
+        assert 0.5 < ratio < 1.0  # pi/4 ~ 0.785, the exact peak sits near that
 
 
 def test_pool_kernel_score_bounded_canonical():
@@ -121,10 +113,13 @@ def test_folded_state_is_two_amplitudes_not_n():
     N = 10**100
     state = ges.FoldedGrover.uniform(N, 1)
     witness = state.cassini_witness()
-    assert abs(witness - 1.0) < 1e-9
+    assert witness == 1
+    from fractions import Fraction
+    assert isinstance(state.a, (int, Fraction)) and state.a == 1
     k = ges.optimal_iterations(N, 1)
-    # closed form — no iteration needed, memory stayed O(1) throughout
-    assert ges.analytical_success(N, 1, k) == pytest.approx(1.0, abs=1e-6)
+    # Too many steps to materialise; the sentinel marks that case.
+    from python_backend.exact_folded_grover import ITERATION_CAP
+    assert k == ITERATION_CAP + 1
 
 
 def test_sha256_compress_matches_hashlib_full_digest():

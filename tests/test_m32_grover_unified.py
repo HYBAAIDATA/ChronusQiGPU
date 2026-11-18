@@ -10,6 +10,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from fractions import Fraction
+
 from python_backend import m32_grover_unified as u
 from python_backend import phi_grover_v4 as pg
 from python_backend.bit_sliced_domain_oracle import (
@@ -18,6 +20,12 @@ from python_backend.bit_sliced_domain_oracle import (
     hash_meets_target,
     sha256d,
     target_from_bits,
+)
+from python_backend.exact_folded_grover import (
+    ITERATION_CAP,
+    QSqrt5,
+    exceeds_phi_inverse,
+    pisot_damp_qsqrt5,
 )
 
 HEADERS = Path("/workspace/user_quantum_gpu_experiment/nonces500/headers.json")
@@ -42,52 +50,108 @@ def hashlib_mask(header_prefix76: bytes, nonces, target: int) -> int:
     return m
 
 
-def _grover_matrix(n_qubits, marked, damp=1.0):
-    N = 1 << n_qubits
-    cols = []
-    for j in range(N):
-        e = np.zeros(N, dtype=complex)
-        e[j] = 1.0
-        m = np.asarray(marked)
-        if damp == 1.0:
-            v = u.apply_diffusion(u.apply_oracle(e, m))
-        else:
-            ph = np.exp(1j * math.pi * damp)
-            v = e.copy()
-            v[m] *= ph
-            v = v + (ph - 1.0) * v.mean()
-        cols.append(v)
-    return np.stack(cols, axis=1)
+
+SEARCH_PATH = [
+    Path(__file__).resolve().parents[1] / "python_backend" / "m32_grover_unified.py",
+    Path(__file__).resolve().parents[1] / "python_backend" / "exact_folded_grover.py",
+    Path(__file__).resolve().parents[1] / "python_backend" / "bit_sliced_domain_oracle.py",
+]
 
 
-@pytest.mark.parametrize("damp", [1.0, u.pisot_damp(3), u.pisot_damp(6)])
-def test_grover_iterate_is_unitary(damp):
-    G = _grover_matrix(5, [3, 17, 30], damp)
-    assert np.allclose(G.conj().T @ G, np.eye(32), atol=1e-12)
+def _float_reference_p(N, M, k):
+    theta = math.asin(math.sqrt(M / N))
+    return math.sin((2 * k + 1) * theta) ** 2
 
 
-def test_fold_preserves_cassini_norm():
-    st = u.FoldedGrover.uniform(4096, 3)
-    for _ in range(200):
-        st.step(math.pi * u.pisot_damp(4), math.pi * u.pisot_damp(4))
-        assert abs(st.cassini_witness() - 1.0) < 1e-12
+def test_search_path_has_no_float_trig():
+    import re
+    pat = re.compile(r"math\.(sin|cos|sqrt|asin|pi)\b|import cmath|cmath\.")
+    hits = []
+    for path in SEARCH_PATH:
+        text = path.read_text(encoding="utf-8")
+        for i, line in enumerate(text.splitlines(), 1):
+            if pat.search(line):
+                hits.append(f"{path.name}:{i}:{line}")
+    assert hits == [], "trig in search path:\n" + "\n".join(hits)
 
 
-@pytest.mark.parametrize("n", range(2, 11))
-@pytest.mark.parametrize("damp", [1.0, u.pisot_damp(4)])
-def test_fold_matches_exact_statevector(n, damp):
-    rng = random.Random(n)
-    N = 1 << n
-    marked = rng.sample(range(N), max(1, N // 64))
-    k = u.peak_iterations(N, len(marked), damp)
-    psi = u.statevector_grover(N, marked, k, damp)
-    st = u.FoldedGrover.uniform(N, len(marked))
-    for _ in range(k):
-        st.step(math.pi * damp, math.pi * damp)
-    vec = np.full(N, st.b, dtype=complex)
-    vec[marked] = st.a
-    assert abs(abs(np.vdot(psi, vec)) ** 2 - 1.0) < 1e-10
-    assert abs(st.marked_probability - float(np.sum(np.abs(psi[marked]) ** 2))) < 1e-10
+def test_fold_state_is_int_or_fraction_never_float():
+    st = u.FoldedGrover.uniform(4096, 1)
+    assert st.a == 1 and st.b == 1
+    assert type(st.a) is int and type(st.b) is int
+    for _ in range(8):
+        st.step()
+        assert isinstance(st.a, (int, Fraction)) and isinstance(st.b, (int, Fraction))
+        assert type(st.a) is not float and type(st.b) is not float
+        assert not isinstance(st.a, float) and not isinstance(st.b, float)
+
+
+def test_fold_norm_is_exactly_one_and_scaled_is_N():
+    for N, M in ((2, 1), (16, 1), (16, 3), (4096, 1), (4096, 3), (1024, 7)):
+        st = u.FoldedGrover.uniform(N, M)
+        for _ in range(u.peak_iterations(N, M) + 3):
+            assert st.cassini_scaled() == N
+            assert st.cassini_witness() == 1
+            assert st.cassini_witness() == Fraction(1)
+            st.step()
+        assert st.cassini_scaled() == N
+        assert st.cassini_witness() == 1
+
+
+def test_threshold_is_exact_phi_inverse():
+    # 1/2 is below phi^{-1}; a value just above the golden cut must pass.
+    assert exceeds_phi_inverse(Fraction(1, 2)) is False
+    # Fibonacci ratios F_{n-1}/F_n alternate about phi^{-1}.
+    # Below the cut: 1/2, 3/5.  Above: 2/3, 5/8.
+    assert exceeds_phi_inverse(Fraction(3, 5)) is False
+    assert exceeds_phi_inverse(Fraction(2, 3)) is True
+    assert exceeds_phi_inverse(Fraction(5, 8)) is True
+    # Cross-multiply identity: p = 5/8, (2*5+8)^2 = 324, 5*64=320, 324>320.
+    assert (2 * 5 + 8) ** 2 > 5 * 8 ** 2
+    from lucas.core import fibonacci
+    for n in range(3, 20):
+        rat = Fraction(fibonacci(n - 1), fibonacci(n))
+        num, den = rat.numerator, rat.denominator
+        s = 2 * num + den
+        assert exceeds_phi_inverse(rat) is (s > 0 and s * s > 5 * den * den)
+    # Uniform 1/N is below the threshold.
+    assert exceeds_phi_inverse(Fraction(1, 4096)) is False
+    st = u.FoldedGrover.uniform(4096, 1)
+    for _ in range(u.peak_iterations(4096, 1)):
+        st.step()
+    assert exceeds_phi_inverse(st.marked_probability) is True
+
+
+def test_fold_matches_float_closed_form_to_1e12():
+    for N, M in ((16, 1), (64, 1), (256, 3), (4096, 1), (1024, 5)):
+        k = u.peak_iterations(N, M)
+        st = u.FoldedGrover.uniform(N, M)
+        for _ in range(k):
+            st.step()
+        ref = _float_reference_p(N, M, k)
+        assert abs(float(st.marked_probability) - ref) < 1e-12, (N, M, k)
+
+
+def test_optimal_iterations_found_by_exact_stepping():
+    # N=4096, M=1 used to be floor(pi/4/theta) = 50; the exact peak is 50.
+    assert u.peak_iterations(4096, 1) == 50
+    # N=2, M=1: p stays 1/2, so the peak is at 0 iterates.
+    assert u.peak_iterations(2, 1) == 0
+    huge = u.optimal_iterations if hasattr(u, "optimal_iterations") else None
+    from python_backend.exact_folded_grover import optimal_iterations
+    assert optimal_iterations(10**100, 1) == ITERATION_CAP + 1
+
+
+def test_pisot_damp_is_exact_in_qsqrt5_not_a_phase():
+    # 1 - |psi| = 1 - (sqrt5-1)/2 = (3-sqrt5)/2
+    assert pisot_damp_qsqrt5(1) == QSqrt5(Fraction(3, 2), Fraction(-1, 2))
+    # 1 - |psi|^2 = 1 - (3-sqrt5)/2 wait |psi|^2 = (3-sqrt5)/2? 
+    # |psi|^2 = ((sqrt5-1)/2)^2 = (5-2sqrt5+1)/4 = (3-sqrt5)/2
+    # 1 - that = 1 - (3-sqrt5)/2 = (2-3+sqrt5)/2 = (sqrt5-1)/2
+    assert pisot_damp_qsqrt5(2) == QSqrt5(Fraction(-1, 2), Fraction(1, 2))
+    with pytest.raises(ValueError):
+        from python_backend.exact_folded_grover import run_folded
+        run_folded(16, 1, damp=Fraction(1, 2))
 
 
 def test_module_has_no_rng():

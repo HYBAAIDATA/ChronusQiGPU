@@ -7,9 +7,10 @@ One module that wires together existing repository components:
 * Domain order from Zeckendorf decomposition, the Pisano period of Fibonacci
   mod 32 (period 48), and Lucas numbers, seeded only from header[:76]
   (the winning nonce is not an input to the order).
-* Exact two-amplitude folded Grover iterate (partial-phase form, Pisot-damped
-  phases): ``turing_universal_quantum_computer/grover_exact_scale.py``
-  (``FoldedGrover``, ``optimal_iterations``).
+* Exact two-amplitude folded Grover iterate (integer / Fraction amplitudes,
+  canonical +/-1 phases only): ``python_backend/exact_folded_grover.py``.
+  Partial and Pisot-damped complex phases are not used: 1-|psi|^n is exact
+  in Q(sqrt(5)) but is not a +/-1 phase.
 * Bit-sliced SHA-256d domain oracle (midstate + cached chunk-2 rounds 0-2,
   128-lane bit planes, adaptive H2 early abort, hashlib confirm):
   ``python_backend/bit_sliced_domain_oracle.py``.
@@ -23,13 +24,12 @@ Pipeline for one header and a nonce window of size W:
 3. Inside a lane the bit-sliced oracle produces an exact integer phase_mask
    (one SHA-256d evaluation of every lane candidate, counted in lane-rounds/64).
    Grover amplitude amplification then runs on the lane with the exact folded
-   iterate (or the dense statevector when ``engine="statevector"``), for the
-   iteration count that maximises the exact success probability under the
-   chosen Pisot phase damping.  The collapse threshold phi^-1 gates
-   measurement; because marked basis states share one amplitude, the measured
-   nonce is chosen deterministically among the marked set (header-derived
-   Zeckendorf/Lucas index).  The measured nonce is verified with one fresh
-   SHA-256d call.
+   iterate for the iteration count that maximises the exact success
+   probability (step the recurrence until the probability stops increasing).
+   Measurement is gated by the exact comparison p > phi^{-1} in Q:
+   (2p+1)^2 > 5.  Marked basis states share one amplitude, so the measured
+   nonce is chosen deterministically among the marked set.  The measured
+   nonce is verified with one fresh SHA-256d call.
 
 Every compression is counted as lanes x rounds/64, never one per bit-sliced
 pass.  The oracle itself is classical SHA-256d evaluation: a real Grover
@@ -39,15 +39,12 @@ oracle has to mark the same set.
 from __future__ import annotations
 
 import argparse
-import cmath
 import json
-import math
 import struct
 import time
 from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Optional, Sequence
-
-import numpy as np
+from fractions import Fraction
+from typing import Dict, List, Optional, Sequence, Union
 
 from python_backend import phi_grover_v4 as pg
 from python_backend.bit_sliced_domain_oracle import (
@@ -56,23 +53,16 @@ from python_backend.bit_sliced_domain_oracle import (
     sha256d,
     target_from_bits,
 )
-from quantum_compute_substrate.quantum_2026.classics.grover import apply_diffusion, apply_oracle
-
-try:
-    from turing_universal_quantum_computer.grover_exact_scale import FoldedGrover, optimal_iterations
-except ImportError:  # pragma: no cover - repo-root import path
-    from turing_universal_quantum_computer.turing_universal_quantum_computer.grover_exact_scale import (  # type: ignore
-        FoldedGrover,
-        optimal_iterations,
-    )
+from python_backend.exact_folded_grover import (
+    FoldedGrover,
+    exceeds_phi_inverse,
+    optimal_iterations,
+)
 
 from lucas.core import lucas as lucas_exact
 
-PHI = pg.PHI
-COLLAPSE_THRESHOLD = pg.PHI_I  # phi^-1
-PSI_ABS = abs((1.0 - math.sqrt(5.0)) / 2.0)
 N_LANES = len(pg.M32)
-PISANO_32 = 48  # π(32) = 48
+PISANO_32 = 48  # period of Fibonacci modulo 32
 
 
 def _pisano_fib_mod32() -> tuple:
@@ -188,38 +178,9 @@ def window_base_excluding_winner(nonce: int, window: int) -> int:
 # ---------------------------------------------------------------------------
 
 
-def pisot_damp(pisot_n: Optional[int]) -> float:
-    return 1.0 if pisot_n is None else 1.0 - PSI_ABS ** int(pisot_n)
-
-
-def peak_iterations(N: int, M: int, damp: float = 1.0) -> int:
-    """Iteration count maximising the exact success probability for these phases."""
-    if M <= 0 or M >= N:
-        return 0
-    if damp == 1.0:
-        return optimal_iterations(N, M)
-    st = FoldedGrover.uniform(N, M)
-    best_k, best_p = 0, M / N
-    for k in range(1, 2 * optimal_iterations(N, M) + 3):
-        st.step(math.pi * damp, math.pi * damp)
-        if st.marked_probability > best_p + 1e-15:
-            best_k, best_p = k, st.marked_probability
-    return best_k
-
-
-def statevector_grover(N: int, marked: Sequence[int], k: int, damp: float = 1.0) -> np.ndarray:
-    """Dense statevector Grover. damp == 1 uses the repo's apply_oracle/apply_diffusion;
-    damp < 1 applies the same partial-phase operators as FoldedGrover.step."""
-    psi = np.full(N, 1.0 / math.sqrt(N), dtype=complex)
-    m = np.asarray(list(marked), dtype=int)
-    for _ in range(k):
-        if damp == 1.0:
-            psi = apply_diffusion(apply_oracle(psi, m))
-        else:
-            ph = cmath.exp(1j * math.pi * damp)
-            psi[m] *= ph
-            psi = psi + (ph - 1.0) * psi.mean()
-    return psi
+def peak_iterations(N: int, M: int) -> int:
+    """Iteration count maximising the exact success probability."""
+    return optimal_iterations(N, M)
 
 
 def choose_marked_index(header80: bytes, marked: Sequence[int]) -> int:
@@ -237,52 +198,39 @@ class LaneRun:
     marked: int
     iterations: int
     repetitions: int
-    p_marked: float
+    p_marked: Union[int, Fraction]
     measured_nonce: Optional[int]
     verified: bool
     phase_mask: int = 0
 
 
 def grover_lane(lane: int, cands: List[int], oracle: BitSlicedDomainOracle,
-                header80: bytes, damp: float = 1.0, engine: str = "fold") -> LaneRun:
+                header80: bytes) -> LaneRun:
     """Build the lane's phase oracle (bit-sliced SHA-256d -> exact mask), run
-    exact amplitude amplification, measure when P >= phi^-1, verify."""
+    exact amplitude amplification, measure when p exceeds phi^{-1}, verify."""
     phase_mask = oracle.phase_mask(cands)
     marked = [i for i in range(len(cands)) if (phase_mask >> i) & 1]
     N, M = len(cands), len(marked)
+    zero = Fraction(0)
     if M == 0 or N == 0:
-        return LaneRun(lane, N, 0, 0, 0, 0.0, None, False, phase_mask)
+        return LaneRun(lane, N, 0, 0, 0, zero, None, False, phase_mask)
     if M == N:
-        k, p = 0, 1.0
+        k, p = 0, Fraction(1)
     else:
-        k = peak_iterations(N, M, damp)
-        if engine == "statevector":
-            psi = statevector_grover(N, marked, k, damp)
-            p = float(np.sum(np.abs(psi[marked]) ** 2))
-        else:
-            st = FoldedGrover.uniform(N, M)
-            for _ in range(k):
-                st.step(math.pi * damp, math.pi * damp)
-            p = st.marked_probability
-    if p < COLLAPSE_THRESHOLD and M < N:
-        # Small lanes with M/N >= 1/4 (e.g. N=2, M=1) cannot cross phi^-1 with pi phases
-        # (P stays 0.5).  Use the same exactly-unitary partial-phase iterate
-        # (FoldedGrover.step) with a matched phase: best of k in 1..3 over a 0.25-degree grid.
-        best = (p, k)
-        for kk in (1, 2, 3):
-            for g in range(1, 721):
-                ph = math.pi * g / 720.0
-                st = FoldedGrover.uniform(N, M)
-                for _ in range(kk):
-                    st.step(ph, ph)
-                if st.marked_probability > best[0] + 1e-12:
-                    best = (st.marked_probability, kk)
-        p, k = best[0], best[1]
-    if p < COLLAPSE_THRESHOLD:  # collapse gate: amplification did not cross phi^-1
+        k = peak_iterations(N, M)
+        st = FoldedGrover.uniform(N, M)
+        for _ in range(k):
+            st.step()
+        p = st.marked_probability
+        if st.cassini_scaled() != N or st.cassini_witness() != 1:
+            raise RuntimeError("Cassini identity failed on the exact fold")
+    if M < N and not exceeds_phi_inverse(p):
+        # Collapse gate: exact p > phi^{-1} did not hold.  Small lanes with
+        # a peak at or below 1/2 (e.g. N=2, M=1) never cross the threshold
+        # under canonical +/-1 phases; no inexact phase is substituted.
         return LaneRun(lane, N, M, k, 0, p, None, False, phase_mask)
     idx = choose_marked_index(header80, marked)
     nonce = cands[idx]
-    # Fresh SHA-256d verification (3 compressions), counted on the oracle telemetry.
     digest = sha256d(oracle.prefix + struct.pack("<I", nonce & 0xFFFFFFFF))
     oracle.telemetry.hashlib_confirms += 1
     ok = int.from_bytes(digest, "little") <= oracle.target
@@ -328,20 +276,24 @@ def assign_lanes(base: int, window: int) -> Dict[int, List[int]]:
 def unified_search(header80: bytes, target: int, base: int, window: int, *,
                    pisot_n: Optional[int] = None, engine: str = "fold",
                    warrior_steps: int = 0, seed: int = 0) -> SearchResult:
-    """Search ``[base, base+window)``.  ``warrior_steps`` and ``seed`` are
-    accepted for call-site compatibility and ignored: the scheduler is
-    deterministic and uses no RNG.
+    """Search ``[base, base+window)``.
+
+    ``warrior_steps``, ``seed``, ``pisot_n`` and ``engine`` are accepted for
+    call-site compatibility and ignored: the scheduler is deterministic,
+    the fold uses only canonical +/-1 phases, and there is no RNG.
     """
-    del warrior_steps, seed
+    del warrior_steps, seed, pisot_n, engine
     oracle = BitSlicedDomainOracle(header80, target)
     lanes = assign_lanes(base, window)
     occupied = [f for f in range(N_LANES) if lanes[f]]
     order = domain_order(header80, occupied)
-    damp = pisot_damp(pisot_n)
     runs, iters, meas = [], 0, 0
     for i, face in enumerate(order, 1):
-        lr = grover_lane(face, lanes[face], oracle, header80, damp, engine)
-        runs.append(asdict(lr)); iters += lr.iterations * max(1, lr.repetitions); meas += lr.repetitions
+        lr = grover_lane(face, lanes[face], oracle, header80)
+        rec = asdict(lr)
+        if isinstance(rec.get("p_marked"), Fraction):
+            rec["p_marked"] = f"{rec['p_marked'].numerator}/{rec['p_marked'].denominator}"
+        runs.append(rec); iters += lr.iterations * max(1, lr.repetitions); meas += lr.repetitions
         if lr.verified:
             tel = oracle.telemetry
             return SearchResult(
@@ -450,7 +402,7 @@ def run_headers(path: str, window_bits: int, limit: Optional[int], pisot_n: Opti
     n = len(out)
     correct = sum(1 for o in out if o["correct"])
     summary = dict(
-        headers=n, window=W, sqrtW=math.sqrt(W), engine=engine, pisot_n=pisot_n,
+        headers=n, window=W, engine=engine, pisot_n=pisot_n,
         include_winner=include_winner,
         found=len(found), correct=correct,
         mean_lane_compressions=sum(o["lane_compressions"] for o in out) / n,
@@ -481,8 +433,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--seed", type=int, default=0, help="ignored; retained for CLI compatibility")
     ap.add_argument("--warrior-steps", type=int, default=0, help="ignored; scheduler is not MCMC")
-    ap.add_argument("--pisot-n", type=int, default=None, help="damp phases by 1-|psi|^n (default: canonical pi)")
-    ap.add_argument("--engine", choices=("fold", "statevector"), default="fold")
+    ap.add_argument("--pisot-n", type=int, default=None, help="ignored; Pisot complex phases are not used")
+    ap.add_argument("--engine", default="fold", help="ignored; only the exact fold is used")
     ap.add_argument("--no-winner", action="store_true", help="place the window at nonce+W, excluding the true nonce")
     ap.add_argument("--out", default=None)
     a = ap.parse_args(argv)
