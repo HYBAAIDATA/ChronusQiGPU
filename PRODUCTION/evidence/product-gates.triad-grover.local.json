@@ -1,0 +1,103 @@
+{
+  "commit": "1552f8b70468fcb9964407f2262bf2223cd39d57",
+  "deployment_profile": "software-base",
+  "facts": {
+    "custody": {
+      "authority": "THESEUS",
+      "external_customer_key_custody": false,
+      "mechanism": "sqlite-wal",
+      "multi_region": false,
+      "profile": "software-base",
+      "verified": true
+    },
+    "post_quantum_signer": {
+      "algorithm": "ML-DSA-65",
+      "fips_module_validation_claimed": false,
+      "implementation": "cryptography/OpenSSL",
+      "verified": true
+    },
+    "profile": {
+      "name": "software-base",
+      "software_base_only": true,
+      "verified": true
+    }
+  },
+  "gate_details": {
+    "CO-SIGN": {
+      "detail": "Ed25519 + ML-DSA-65 receipt chain verified",
+      "evidence": {
+        "algorithm": "ML-DSA-65",
+        "fips_module_validation_claimed": false,
+        "implementation": "cryptography/OpenSSL"
+      },
+      "status": "PASS"
+    },
+    "FN-CLAIMS": {
+      "detail": "claim register parsed under fail-closed evidence/reviewer rules",
+      "evidence": {
+        "open_blockers": [
+          "exact-current-ci",
+          "product-gate-attestation",
+          "external-custody",
+          "physical-device-evidence",
+          "deployment-profile-evidence"
+        ],
+        "reviewed_at": "2026-11-15",
+        "supported_claims": [
+          "nonce-encoding",
+          "exact-fraction-gatekeeper",
+          "geometric-collapse",
+          "opencl-pv-parity"
+        ],
+        "unverified_claims": [
+          "oracle-one-shot",
+          "ramanujan-spectral-gap",
+          "triad-durable-custody",
+          "ovid-versioned-materialisation",
+          "tensor-runtime-elevated",
+          "tensor-opencl-backend",
+          "tensor-cuda-backend",
+          "tensor-metal-backend",
+          "external-key-custody",
+          "multi-region-durability",
+          "production-admission"
+        ],
+        "withdrawn_claims": [
+          "quantum-advantage"
+        ]
+      },
+      "status": "PASS"
+    },
+    "FN-CUSTODY": {
+      "detail": "THESEUS durable local custody survived fresh reopen with journal continuity",
+      "evidence": {
+        "authority": "THESEUS",
+        "external_customer_key_custody": false,
+        "mechanism": "sqlite-wal",
+        "multi_region": false,
+        "scope": "software-base"
+      },
+      "status": "PASS"
+    },
+    "RS-RECEIPT": {
+      "detail": "payload tampering rejected by signed receipt chain",
+      "evidence": {},
+      "status": "PASS"
+    },
+    "RS-REPLAY": {
+      "detail": "receipt reordering rejected",
+      "evidence": {},
+      "status": "PASS"
+    }
+  },
+  "gates": {
+    "CO-SIGN": "PASS",
+    "FN-CLAIMS": "PASS",
+    "FN-CUSTODY": "PASS",
+    "RS-RECEIPT": "PASS",
+    "RS-REPLAY": "PASS"
+  },
+  "run_id": "UNAVAILABLE",
+  "schema": "chronus-product-gates-v1",
+  "status": "PASS"
+}

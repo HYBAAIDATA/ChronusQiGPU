@@ -1,0 +1,202 @@
+{
+  "base_sha": "b30428de3d0240c9464d37a8eaf24381d202dbf6",
+  "benchmarks": {
+    "4096": {
+      "W": 4096,
+      "correct": 500,
+      "end_to_end_triad_pipeline_ms": 160.5,
+      "headers": 500,
+      "iterations": [
+        50
+      ],
+      "journal_chains_recomputed_ok": "500/500",
+      "k": 32,
+      "linear_evals_per_header": "253789/125",
+      "linear_scan_ms": 3.282,
+      "overfit_found": 0,
+      "pure_o1_grover_ms": 1.719,
+      "receipt_bodies_crc32c_sha256_verified": "500/500",
+      "restart_restored": 500,
+      "target_verified_receipts_in_chain": "500/500",
+      "triad_compressions_per_header": "8196",
+      "triad_evals_per_header": "4096",
+      "verified": 500,
+      "verified_grover_target_receipts_sample": [
+        {
+          "digest": "00000000000000000001c06ea254f586aa8976278188c11fbc4231b19aa6a8de",
+          "height": 976064,
+          "journal_entry_hash": "cbc93e11759b4961f502306be2da0a310043037a771c3a63d4c6a6df276cdcb3",
+          "nonce": 90468167,
+          "receipt_body_crc32c": "51b4775b",
+          "receipt_body_sha256": "0cea830233894ae9ccea7e8ed879978dbbac95dea00ff96fb695048754822e14"
+        },
+        {
+          "digest": "00000000000000000000c0df8f9ae3fe15bf5c25a71ec06924e5fe778cb21040",
+          "height": 976063,
+          "journal_entry_hash": "5bde980d0dd925b1f2ab43b93f2d7dfdfc089e94c16efb8bdc019ab44106fde4",
+          "nonce": 1265527642,
+          "receipt_body_crc32c": "2a1bd943",
+          "receipt_body_sha256": "62b89992c7c21e95acf496b4fd9a6aa7e307387ccf261f8bfddd036964277f6c"
+        },
+        {
+          "digest": "00000000000000000000b7ab4614e551d2796e95fa95e06bf00a1afea4da1ef7",
+          "height": 976062,
+          "journal_entry_hash": "47b3da316e3689f92170385d7e811a32bfb9b88380add6ce1acb8b8791fcd400",
+          "nonce": 462700330,
+          "receipt_body_crc32c": "bbb62fca",
+          "receipt_body_sha256": "a0c6e5ad25b457369bdcd0434aeaa387ac42df9132ab504f771cd40720c8b7bd"
+        }
+      ],
+      "workers": 8
+    },
+    "65536": {
+      "W": 65536,
+      "correct": 500,
+      "end_to_end_triad_pipeline_ms": 498.598,
+      "headers": 500,
+      "iterations": [
+        201
+      ],
+      "journal_chains_recomputed_ok": "500/500",
+      "k": 32,
+      "linear_evals_per_header": "3942237/125",
+      "linear_scan_ms": 56.153,
+      "overfit_found": 0,
+      "pure_o1_grover_ms": 37.547,
+      "receipt_bodies_crc32c_sha256_verified": "500/500",
+      "restart_restored": 500,
+      "target_verified_receipts_in_chain": "500/500",
+      "triad_compressions_per_header": "131076",
+      "triad_evals_per_header": "65536",
+      "verified": 500,
+      "verified_grover_target_receipts_sample": [
+        {
+          "digest": "00000000000000000001c06ea254f586aa8976278188c11fbc4231b19aa6a8de",
+          "height": 976064,
+          "journal_entry_hash": "e64431b66c65f3725e99bea63fe1c1d6769d4fd8535ac50516dfb4b924e24dc2",
+          "nonce": 90468167,
+          "receipt_body_crc32c": "aa28d9c9",
+          "receipt_body_sha256": "2b03f5a0c14ad313e31015fc31804966f7a6fc6ca67bd74227811833519a9d83"
+        },
+        {
+          "digest": "00000000000000000000c0df8f9ae3fe15bf5c25a71ec06924e5fe778cb21040",
+          "height": 976063,
+          "journal_entry_hash": "6765c24eb00f2b8731db217cf8e1c32394f5063d7559188ddb9fa3d849f49940",
+          "nonce": 1265527642,
+          "receipt_body_crc32c": "a27037d3",
+          "receipt_body_sha256": "7168befbc4009e9ccdefd684b023ab517a6ff5978bf302f722189482aee8d325"
+        },
+        {
+          "digest": "00000000000000000000b7ab4614e551d2796e95fa95e06bf00a1afea4da1ef7",
+          "height": 976062,
+          "journal_entry_hash": "2f5aaeb194f77be8bc6edfa75d115dc323cc8b10a9d9d7d99831eeef5782c849",
+          "nonce": 462700330,
+          "receipt_body_crc32c": "8a6e6096",
+          "receipt_body_sha256": "85a31ae5fe80cc557e50d94285c95bbb468301d8a3b29148b417069a7483eebb"
+        }
+      ],
+      "workers": 8
+    },
+    "headers": "500 verified mainnet headers 975565-976064"
+  },
+  "branch": "feat/grok-triad-grover",
+  "code_sha": "1552f8b70468fcb9964407f2262bf2223cd39d57",
+  "evidence_status": "LOCAL_ONLY_UNATTESTED",
+  "gates": {
+    "build_product_gates": {
+      "artifact": "PRODUCTION/evidence/product-gates.triad-grover.local.json",
+      "command": "GITHUB_SHA=1552f8b7... python scripts/ci/build_product_gates.py --profile software-base",
+      "gates": {
+        "CO-SIGN": "PASS",
+        "FN-CLAIMS": "PASS",
+        "FN-CUSTODY": "PASS",
+        "RS-RECEIPT": "PASS",
+        "RS-REPLAY": "PASS"
+      },
+      "status": "PASS"
+    },
+    "require_release_qualification": {
+      "command": "python scripts/ci/require_release_qualification.py --repository HYBAAIDATA/ChronusQiGPU --commit 1552f8b70468fcb9964407f2262bf2223cd39d57",
+      "exit_code": 1,
+      "reasons": [
+        "gh CLI on the box has no GitHub authentication (gh auth login)",
+        "The verifier admits only a successful push run of chronus-evidence-qualification.yml on main. A feature-branch run is rejected by _select_run_record with 'no successful main-branch qualification run for release commit' (checked on the feat/grok-triad-grover run 44323192133)."
+      ],
+      "status": "RELEASE BLOCKED"
+    }
+  },
+  "note": "All measurements were taken on code_sha. The commit that adds this file changes only PRODUCTION/ evidence files. code_sha includes the fix that keeps pre-collapsed bits in the winner index; its regression test is test_winner_index_keeps_pre_collapsed_bits.",
+  "observed_date": "2026-11-18",
+  "packaging": {
+    "checked_symbols": [
+      "trunc_fiber",
+      "FLAG_TRUNCATED",
+      "fold_truncated"
+    ],
+    "command": "python -m build",
+    "fresh_venv_wheel_install": "PASS",
+    "imports_from_site_packages": [
+      "chronus.kernels.gl2_transform",
+      "chronus.geodesic.scheduler",
+      "chronus.ovid.folded_custody",
+      "chronus.quantum.triad_grover",
+      "chronus.execution.sha256d_oracle",
+      "chronus.triad"
+    ],
+    "iterations_from_installed_wheel": {
+      "16": 3,
+      "4096": 50,
+      "65536": 201
+    },
+    "sdist": "hyba_chronus-37.0.0.dev0.tar.gz",
+    "truncation_symbols_in_installed_package": [],
+    "truncation_symbols_in_public_surface": [],
+    "wheel": "hyba_chronus-37.0.0.dev0-py3-none-any.whl"
+  },
+  "production_claims_made": false,
+  "pytest": {
+    "branch": {
+      "errors": 0,
+      "failed": 5,
+      "passed": 2556,
+      "skipped": 43,
+      "xfailed": 1
+    },
+    "environment": "fresh venv, pip install -e '.[dev]' (as in CI), Python 3.13",
+    "failure_disposition": "Pre-existing on main b30428de and unrelated to this change. The code fails closed: DMRG raises NotImplementedError for charge-aware environments; build_network rejects chi_max=30000 against its configured bound; the search endpoint reports numpy_cosine_similarity; the qualification register lists 6 evidence files, not 8. Making them pass would mean implementing new subsystems or relaxing tests, so they were left unchanged.",
+    "failures": [
+      "tests/test_enhanced_tensor_representation_v2.py::TestProductionHRAPIv2Endpoints::test_search_endpoint",
+      "tests/test_falsifiable_tensor.py::test_build_network_enforces_hard_cap",
+      "tests/test_falsifiable_tensor.py::test_experiment_e3_honest_1000_node_claim",
+      "tests/test_falsifiable_tensor.py::test_api_run_experiments",
+      "tests/test_qualification_register_parses.py::test_production_qualification_register_is_valid_json_and_fail_closed"
+    ],
+    "failures_identical_on_main": true,
+    "main_base": {
+      "errors": 0,
+      "failed": 5,
+      "passed": 2484,
+      "skipped": 43,
+      "xfailed": 1
+    }
+  },
+  "receipt_verification": "Every tenant journal was recomputed from SQLite as sha256(ns|seq|event|object_id|prev|timestamp_ns). Each GROVER_TARGET_VERIFIED receipt was reconstructed from THESEUS, and its CRC-32C and SHA-256 attestation were checked.",
+  "release_decision": "HOLD",
+  "repository": "HYBAAIDATA/ChronusQiGPU",
+  "schema": "chronus-triad-grover-qualification-v1",
+  "static_audit": {
+    "float_calls": 0,
+    "float_literals": 0,
+    "math_attributes_other_than_gcd_isqrt": 0,
+    "mock_stub_simulated_random_heuristic_identifiers": 0,
+    "modules": [
+      "src/chronus/kernels/gl2_transform.py",
+      "src/chronus/geodesic/scheduler.py",
+      "src/chronus/ovid/folded_custody.py",
+      "src/chronus/quantum/triad_grover.py",
+      "src/chronus/execution/sha256d_oracle.py"
+    ],
+    "true_division": "triad_grover.py lines 38, 43, 75, 188 only; every operand is fractions.Fraction",
+    "word_truncat_occurrences": "gl2_transform.py lines 4, 11 (no-truncation contract docstring) and 599 (stream decoder rejects a truncated payload)"
+  }
+}
