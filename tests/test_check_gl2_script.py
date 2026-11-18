@@ -59,3 +59,17 @@ def test_attributed_or_private_native_decide_is_rejected(lean_env, tmp_path, dec
     out = _run(bad, lean_env)
     assert out.returncode != 0
     assert "axiom" in out.stderr.lower()
+
+
+@pytest.mark.parametrize("modifier", ["@[simp]", "private"])
+def test_attributed_or_private_kernel_proof_is_accepted(lean_env, tmp_path, modifier):
+    good = tmp_path / "GL2Mod256.lean"
+    good.write_text(
+        "namespace GL2Mod256\n"
+        f"{modifier} theorem checked : (2 : Nat) + 2 = 4 := by decide\n"
+        "end GL2Mod256\n"
+    )
+    out = _run(good, lean_env)
+    assert out.returncode == 0, out.stdout + out.stderr
+    assert "GL2DECL GL2Mod256.checked AXIOMS []" in out.stdout
+    assert "GL2DECLS 1" in out.stdout

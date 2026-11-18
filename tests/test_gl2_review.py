@@ -194,7 +194,8 @@ _SCALAR_FLAGS = (["-DGL2_FORCE_SCALAR", "-mno-avx2", "-mno-sse4.2"]
 
 
 @pytest.mark.parametrize("flags", [["-march=native"], _SCALAR_FLAGS])
-def test_native_kernel_bit_exact(flags: list[str]) -> None:
+def test_native_kernel_bit_exact(flags: list[str], monkeypatch) -> None:
+    monkeypatch.setattr(g, "_NATIVE_LIB", None)
     so = _build(flags)
     if so is None:
         pytest.skip("no gcc")
@@ -407,6 +408,11 @@ def test_native_crc_and_pairs_accept_strided_views() -> None:
         "from chronus.kernels import gl2_transform as g\n"
         "assert g._NATIVE_LIB is not None\n"
         "data = bytes((i * 37 + 11) & 0xFF for i in range(1001))\n"
+        "native = g._NATIVE_LIB\n"
+        "g._NATIVE_LIB = None\n"
+        "reference = g.crc32c(data)\n"
+        "g._NATIVE_LIB = native\n"
+        "assert g.crc32c(memoryview(data)) == reference\n"
         "s = memoryview(data)[::2]\n"
         "assert not s.c_contiguous\n"
         "assert g.fold(s) == g.fold(bytes(s))\n"
