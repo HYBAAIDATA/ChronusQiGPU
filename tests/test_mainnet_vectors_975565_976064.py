@@ -5,10 +5,22 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.real
+
 VECTOR = Path(__file__).parent / "vectors" / "mainnet_975565_976064.json"
 START, END = 976064, 975565
 # Bitcoin mainnet consensus powLimit (not the rounded difficulty-1 target).
 MAINNET_POW_LIMIT = (1 << 224) - 1
+# Independent anchors: both hashes confirmed against blockstream.info and
+# mempool.space /api/block-height/{h} on 2026-11-18. Together with the prevhash
+# chain they tie every fixture header to the real mainnet segment, so a
+# self-consistent substitute chain (e.g. regtest targets, relabelled heights)
+# cannot pass.
+MAINNET_ANCHORS = {
+    976064: "00000000000000000001c06ea254f586aa8976278188c11fbc4231b19aa6a8de",
+    975565: "0000000000000000000034330e82db33fb2fe6ea725e60d88830795479d20218",
+}
+RETARGET_INTERVAL = 2016
 
 
 def _sha256d(data: bytes) -> bytes:
@@ -92,3 +104,19 @@ def test_headers_chain_by_prevhash():
     blocks = _load()["blocks"]
     for newer, older in zip(blocks, blocks[1:]):
         assert newer["fields"]["prevhash"] == older["block_hash_be"]
+
+
+def test_endpoints_match_independent_mainnet_anchors():
+    blocks = _load()["blocks"]
+    by_height = {b["height"]: b for b in blocks}
+    for height, expected in MAINNET_ANCHORS.items():
+        header = bytes.fromhex(by_height[height]["header_hex"])
+        assert _sha256d(header)[::-1].hex() == expected, height
+        assert by_height[height]["block_hash_be"] == expected, height
+
+
+def test_nbits_changes_only_at_retarget_boundaries():
+    blocks = _load()["blocks"]
+    for newer, older in zip(blocks, blocks[1:]):
+        if newer["height"] % RETARGET_INTERVAL:
+            assert newer["fields"]["nbits"] == older["fields"]["nbits"], newer["height"]
