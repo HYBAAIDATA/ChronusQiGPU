@@ -80,6 +80,7 @@ def _check_row(row, path):
 
 def validate():
     errors = []
+    DIAGNOSTICS.clear()
     try:
         manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     except Exception as exc:
@@ -94,6 +95,7 @@ def validate():
             errors.append(f"rows[{i}]: row is not an object")
             continue
         _check_row(row, f"rows[{i}]")
+    errors.extend(DIAGNOSTICS)
     return errors
 
 
