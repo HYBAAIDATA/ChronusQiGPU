@@ -18,22 +18,24 @@ API mismatches with the owner's protocol names, handled by thin adapters:
     an ``OVID_SHARD_COMMITTED`` journal record mapping shard id -> object id;
     ``load_shard`` resolves the latest such record.
   - Committed versions are immutable: a second write to ``{artifact_id}:v{n}``
-    with a different frame is rejected, a byte-identical retry reuses the
-    committed record, and restore loads the shard by the selected receipt's
-    object id.  The journal is read once per adapter into an in-memory index
-    (one writer per tenant adapter is assumed; a new adapter re-reads it).
+    with a different frame or provenance is rejected, a byte-identical retry
+    reuses the committed record, and restore loads the shard by the selected
+    receipt's object id.  Versions are claimed with compare-and-swap appends on
+    the durable journal tip, so concurrent adapters cannot both commit one
+    version; each adapter's index is refreshed incrementally before lookups.
 Exact integer/byte arithmetic only.
 """
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 from dataclasses import dataclass, field
-from typing import Iterable, List, Optional, Protocol, Sequence, Tuple
+from typing import Callable, Iterable, List, Optional, Protocol, Sequence, Tuple
 
 from chronus.kernels.gl2_transform import FoldedRegisterN, crc32c, hensellift_m15, invert_gl2_mod2k
 from chronus.ovid.transform import OvidRepresentation, OvidTransformService
-from chronus.storage.durable import DurableTheseusService
+from chronus.storage.durable import CustodyConflictError, DurableTheseusService
 
 EVENT_SHARD = "OVID_SHARD_COMMITTED"
 EVENT_STAGE = "OVID_FOLDED_STAGE"
@@ -80,6 +82,11 @@ class TheseusServiceProtocol(Protocol):
     def committed_receipt(self, artifact_id: str, version: int) -> Optional[dict]: ...
     def latest_receipt(self, artifact_id: str) -> Optional[dict]: ...
     def load_shard_object(self, shard_id: str, object_id: str) -> OvidRepresentation: ...
+    def journal_receipts(self, event_types: Iterable[str]) -> List[Tuple[str, dict]]: ...
+    def receipt_entry_hash(self, event_type: str, receipt: dict) -> Optional[str]: ...
+    def commit_version(self, artifact_id: str, version: int, event_type: str, shard_id: str,
+                       representation: OvidRepresentation,
+                       build_receipt: Callable[[dict], dict]) -> Tuple[dict, dict, bool]: ...
 
 
 class OvidAdapter:
@@ -105,7 +112,17 @@ class CustodyCounters:
 
 
 class TheseusAdapter:
-    """TheseusServiceProtocol over the real ``DurableTheseusService``."""
+    """TheseusServiceProtocol over the real ``DurableTheseusService``.
+
+    The journal index is refreshed incrementally (entries after the last indexed
+    sequence) before every lookup, so a version committed through another adapter
+    or process is never hidden by a cached miss.  ``commit_version`` claims a
+    version atomically: the shard mapping and the receipt are appended with
+    compare-and-swap on the journal tip, and a moved tip forces a re-read and a
+    re-check instead of a blind write.  Cached receipts are stored and returned
+    as detached copies."""
+
+    MAX_CLAIM_ATTEMPTS = 16
 
     def __init__(self, custody: DurableTheseusService, tenant_id: str) -> None:
         if not isinstance(custody, DurableTheseusService):
@@ -115,30 +132,38 @@ class TheseusAdapter:
         self.custody = custody
         self.tenant_id = tenant_id
         self.counters = CustodyCounters()
-        self._shards: Optional[dict] = None      # (shard_id, object_id) -> ref, insertion = journal order
-        self._versions: Optional[dict] = None    # (artifact_id, version) -> list of receipts in journal order
+        self._shards: dict = {}      # (shard_id, object_id) -> ref, insertion = journal order
+        self._versions: dict = {}    # (artifact_id, version) -> list of receipts in journal order
+        self._tip = -1               # newest journal sequence folded into the index
 
-    def _index(self) -> Tuple[dict, dict]:
-        if self._shards is None or self._versions is None:
-            shards: dict = {}
-            versions: dict = {}
-            for e in self.custody.get_journal(self.tenant_id):
-                if e.event_type in (EVENT_SHARD, EVENT_STAGE, EVENT_COLLAPSE):
-                    rec = json.loads(self.custody.reconstruct(self.tenant_id, e.object_id))
-                    self._index_add(shards, versions, e.event_type, rec)
-            self._shards, self._versions = shards, versions
-        return self._shards, self._versions
+    def _refresh(self) -> int:
+        for e in self.custody.get_journal(self.tenant_id, after_sequence=self._tip):
+            if e.event_type in (EVENT_SHARD, EVENT_STAGE, EVENT_COLLAPSE):
+                rec = json.loads(self.custody.reconstruct(self.tenant_id, e.object_id))
+                self._index_add(e.event_type, rec)
+            self._tip = e.sequence
+        return self._tip
 
-    @staticmethod
-    def _index_add(shards: dict, versions: dict, event_type: str, rec: dict) -> None:
+    def _index_add(self, event_type: str, rec: dict) -> None:
+        rec = copy.deepcopy(rec)
         if event_type == EVENT_SHARD:
             key = (rec["shard_id"], rec["object_id"])
-            shards.pop(key, None)
-            shards[key] = rec
+            self._shards.pop(key, None)
+            self._shards[key] = rec
         else:
-            versions.setdefault((rec["artifact_id"], rec["version"]), []).append(rec)
+            self._versions.setdefault((rec["artifact_id"], rec["version"]), []).append(rec)
 
-    def persist_shard(self, shard_id: str, representation: OvidRepresentation) -> dict:
+    def _append(self, event_type: str, payload: dict, expected_last_sequence: Optional[int]):
+        entry = self.custody.append_journal_event(self.tenant_id, event_type, canonical_json(payload),
+                                                  expected_last_sequence=expected_last_sequence)
+        if expected_last_sequence is not None and entry.sequence == self._tip + 1:
+            # The CAS proved nothing was appended in between: index it directly.
+            if event_type in (EVENT_SHARD, EVENT_STAGE, EVENT_COLLAPSE):
+                self._index_add(event_type, payload)
+            self._tip = entry.sequence
+        return entry
+
+    def _store_shard(self, representation: OvidRepresentation) -> Tuple[str, bool]:
         object_id = hashlib.sha256(representation.payload).hexdigest()
         try:
             self.custody.get_record(self.tenant_id, object_id)
@@ -146,14 +171,45 @@ class TheseusAdapter:
         except KeyError:
             reused = False
         rec = self.custody.store(self.tenant_id, representation.payload)
-        ref = {"shard_id": shard_id, "object_id": rec.object_id, **representation.envelope()}
+        return rec.object_id, reused
+
+    def persist_shard(self, shard_id: str, representation: OvidRepresentation) -> dict:
+        object_id, reused = self._store_shard(representation)
+        ref = {"shard_id": shard_id, "object_id": object_id, **representation.envelope()}
         self.custody.append_journal_event(self.tenant_id, EVENT_SHARD, canonical_json(ref))
-        if self._shards is not None and self._versions is not None:
-            self._index_add(self._shards, self._versions, EVENT_SHARD, ref)
         self.counters.shards_persisted += 1
         self.counters.shards_reused += int(reused)
         self.counters.shard_bytes += len(representation.payload)
         return {**ref, "reused": reused}
+
+    def commit_version(self, artifact_id: str, version: int, event_type: str, shard_id: str,
+                       representation: OvidRepresentation,
+                       build_receipt: Callable[[dict], dict]) -> Tuple[dict, dict, bool]:
+        """Atomically claim (artifact_id, version).  Returns (receipt, shard_ref, claimed):
+        claimed=False means another writer already holds the version and its
+        receipt is returned unchanged for the caller to compare."""
+        for _ in range(self.MAX_CLAIM_ATTEMPTS):
+            tip = self._refresh()
+            prior = self._versions.get((artifact_id, version))
+            if prior:
+                return copy.deepcopy(prior[0]), {}, False
+            object_id, reused = self._store_shard(representation)
+            ref = {"shard_id": shard_id, "object_id": object_id, **representation.envelope()}
+            try:
+                shard_entry = self._append(EVENT_SHARD, ref, tip)
+            except CustodyConflictError:
+                continue
+            receipt = build_receipt(ref)
+            try:
+                self._append(event_type, receipt, shard_entry.sequence)
+            except CustodyConflictError:
+                continue          # the orphan shard mapping is inert: restore follows receipts
+            self.counters.shards_persisted += 1
+            self.counters.shards_reused += int(reused)
+            self.counters.shard_bytes += len(representation.payload)
+            self.counters.receipts_appended += 1
+            return copy.deepcopy(receipt), {**ref, "reused": reused}, True
+        raise CustodyConflictError(f"could not claim {artifact_id!r} v{version}: journal tip kept moving")
 
     def _records(self, event_types: Iterable[str]) -> List[Tuple[str, dict]]:
         wanted = set(event_types)
@@ -166,15 +222,15 @@ class TheseusAdapter:
     def load_shard(self, shard_id: str) -> OvidRepresentation:
         """Latest mapping for shard_id (prefer ``load_shard_object`` when the
         committing receipt is known)."""
-        shards, _ = self._index()
-        refs = [ref for (sid, _oid), ref in shards.items() if sid == shard_id]
+        self._refresh()
+        refs = [ref for (sid, _oid), ref in self._shards.items() if sid == shard_id]
         if not refs:
             raise KeyError(shard_id)
         return self._representation(refs[-1])
 
     def load_shard_object(self, shard_id: str, object_id: str) -> OvidRepresentation:
-        shards, _ = self._index()
-        ref = shards.get((shard_id, object_id))
+        self._refresh()
+        ref = self._shards.get((shard_id, object_id))
         if ref is None:
             raise KeyError(f"{shard_id} -> {object_id}")
         return self._representation(ref)
@@ -190,28 +246,34 @@ class TheseusAdapter:
 
     def append_audit_receipt(self, event_type: str, receipt: dict) -> str:
         entry = self.custody.append_journal_event(self.tenant_id, event_type, canonical_json(receipt))
-        if event_type in (EVENT_STAGE, EVENT_COLLAPSE) and self._shards is not None and self._versions is not None:
-            self._index_add(self._shards, self._versions, event_type, receipt)
         self.counters.receipts_appended += 1
         return entry.entry_hash
 
     def committed_receipt(self, artifact_id: str, version: int) -> Optional[dict]:
-        """First committed receipt for (artifact_id, version), or None."""
-        _, versions = self._index()
-        recs = versions.get((artifact_id, version))
-        return recs[0] if recs else None
+        """First committed receipt for (artifact_id, version), or None (fresh read)."""
+        self._refresh()
+        recs = self._versions.get((artifact_id, version))
+        return copy.deepcopy(recs[0]) if recs else None
 
     def latest_receipt(self, artifact_id: str) -> Optional[dict]:
-        """Committed receipt at the highest version of artifact_id."""
-        _, versions = self._index()
+        """Committed receipt at the highest version of artifact_id (fresh read)."""
+        self._refresh()
         best = None
-        for (aid, ver), recs in versions.items():
+        for (aid, ver), recs in self._versions.items():
             if aid == artifact_id and (best is None or ver > best["version"]):
                 best = recs[0]
-        return best
+        return copy.deepcopy(best) if best is not None else None
 
     def journal_receipts(self, event_types: Iterable[str]) -> List[Tuple[str, dict]]:
         return self._records(event_types)
+
+    def receipt_entry_hash(self, event_type: str, receipt: dict) -> Optional[str]:
+        """Journal entry hash of the first ``event_type`` entry carrying exactly ``receipt``."""
+        for entry in self.custody.get_journal(self.tenant_id):
+            if entry.event_type == event_type and json.loads(
+                    self.custody.reconstruct(self.tenant_id, entry.object_id)) == receipt:
+                return entry.entry_hash
+        return None
 
 
 @dataclass(frozen=True)
@@ -236,32 +298,41 @@ class OvidFoldedAdapter:
                 extra: dict) -> FoldedWorkingHandle:
         frame = folded.to_wire_bytes()
         digest = hashlib.sha256(frame).hexdigest()
+
+        def matches(body: dict) -> bool:
+            # Same frame, same event and same provenance (collapsed generator, bit,
+            # previous frame): a different collapse that happens to produce the
+            # same frame is a conflict, not a retry.
+            return (body["frame_sha256"] == digest and body["event"] == event
+                    and all(body.get(key) == value for key, value in extra.items()))
+
+        def reuse(body: dict) -> FoldedWorkingHandle:
+            if not matches(body):
+                raise ValueError(f"version {version} of {artifact_id!r} is already committed with a different frame")
+            self.theseus.load_shard_object(body["shard_id"], body["object_id"])
+            return FoldedWorkingHandle(artifact_id, version, folded, frame, digest,
+                                       {"shard_id": body["shard_id"], "object_id": body["object_id"],
+                                        "reused": True})
+
         prior = self.theseus.committed_receipt(artifact_id, version)
         if prior is not None:
-            body = verify_attested(prior)
-            if body["frame_sha256"] != digest or body["event"] != event:
-                raise ValueError(f"version {version} of {artifact_id!r} is already committed with a different frame")
-            # Byte-identical retry: reuse the committed record (shard re-persisted only if absent).
-            try:
-                self.theseus.load_shard_object(body["shard_id"], body["object_id"])
-            except KeyError:
-                pass
-            else:
-                return FoldedWorkingHandle(artifact_id, version, folded, frame, digest,
-                                           {"shard_id": body["shard_id"], "object_id": body["object_id"],
-                                            "reused": True})
+            return reuse(verify_attested(prior))
         rep = self.ovid.register_working_representation(artifact_id, version, frame)
         sid = shard_id(artifact_id, version)
-        ref = self.theseus.persist_shard(sid, rep)
-        body = {
-            "schema": RECEIPT_SCHEMA, "event": event, "artifact_id": artifact_id, "version": version,
-            "shard_id": sid, "object_id": ref["object_id"], "k": folded.k,
-            "num_generators": folded.num_generators, "resolved_mask": folded.resolved_mask,
-            "resolved_bits": folded.resolved_bits, "frame_sha256": digest,
-            "frame_crc32c": frame[-4:].hex(), "ovid_contract_id": rep.contract_id,
-            "ovid_representation_sha256": rep.representation_sha256, **extra,
-        }
-        self.theseus.append_audit_receipt(event, attest(body))
+
+        def build(ref: dict) -> dict:
+            return attest({
+                "schema": RECEIPT_SCHEMA, "event": event, "artifact_id": artifact_id, "version": version,
+                "shard_id": sid, "object_id": ref["object_id"], "k": folded.k,
+                "num_generators": folded.num_generators, "resolved_mask": folded.resolved_mask,
+                "resolved_bits": folded.resolved_bits, "frame_sha256": digest,
+                "frame_crc32c": frame[-4:].hex(), "ovid_contract_id": rep.contract_id,
+                "ovid_representation_sha256": rep.representation_sha256, **extra,
+            })
+
+        receipt, ref, claimed = self.theseus.commit_version(artifact_id, version, event, sid, rep, build)
+        if not claimed:
+            return reuse(verify_attested(receipt))
         return FoldedWorkingHandle(artifact_id, version, folded, frame, digest, ref)
 
     def stage_domain(self, artifact_id: str, register: FoldedRegisterN) -> FoldedWorkingHandle:

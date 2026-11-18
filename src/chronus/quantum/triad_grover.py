@@ -20,16 +20,21 @@ available in this workspace; names, signature and behaviour follow it).
 """
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass, field
 from fractions import Fraction
 from math import isqrt
 from typing import Callable, List, Optional, Sequence, Tuple
 
 from chronus.geodesic.scheduler import lucas_pisano_geodesic_order, schedule_parameters
-from chronus.ovid.folded_custody import FoldedWorkingHandle, OvidFoldedAdapter, attest
+from chronus.ovid.folded_custody import FoldedWorkingHandle, OvidFoldedAdapter, attest, verify_attested
 
 EVENT_VERIFIED = "GROVER_TARGET_VERIFIED"
 EVENT_EXHAUSTED = "GROVER_DOMAIN_EXHAUSTED"
+# Written before the first collapse commit: the full outcome of a search whose
+# winner passed verification, so a crash after the final collapse can be finished
+# idempotently from the restored, fully resolved handle.
+EVENT_SELECTED = "GROVER_OUTCOME_SELECTED"
 GROVER_SCHEMA = "chronus.triad-grover-receipt/2"
 FRACTION_ENCODING = "hex-fraction/1"
 
@@ -64,7 +69,13 @@ def _marked_probability_exact(alpha: Fraction, N: int, M: int) -> Fraction:
 
 
 def exact_grover_two_amplitude_trajectory(N: int, M: int) -> List[Tuple[int, Fraction, Fraction, Fraction]]:
-    """[(t, alpha_t, beta_t, P_t)] from (1,1) up to and including the peak."""
+    """[(t, alpha_t, beta_t, P_t)] from (1,1) up to the first non-increase.
+
+    Stopping rule: iterate while the marked probability strictly increases and
+    stop at the first step where it does not.  For M/N <= 1/2 that first local
+    maximum is the global maximum over t <= isqrt(N//M)+2; for M/N > 1/2 it can be
+    step 0 even when a later step is higher (N=8, M=5: 5/8, 5/32, 125/128), so the
+    result is not necessarily the highest attainable probability."""
     if isinstance(N, bool) or isinstance(M, bool) or not isinstance(N, int) or not isinstance(M, int):
         raise TypeError("N and M must be integers")
     if N < 1 or not 1 <= M <= N:
@@ -86,7 +97,8 @@ def exact_grover_two_amplitude_trajectory(N: int, M: int) -> List[Tuple[int, Fra
 
 
 def exact_lucas_pisot_iterations(N: int, M: int) -> int:
-    """Grover iteration count at the exact probability peak."""
+    """Grover iteration count at the first non-increase of the exact marked
+    probability (see ``exact_grover_two_amplitude_trajectory``)."""
     return exact_grover_two_amplitude_trajectory(N, M)[-1][0]
 
 
@@ -138,7 +150,7 @@ def run_triad_exact_grover_search(
     positions = _active_positions(handle)
     D = len(positions)
     if D == 0:
-        raise ValueError("active subspace is empty (all generators resolved)")
+        return _finish_selected_outcome(adapter, handle, oracle_predicate, winner_verifier)
     N = 1 << D
     if epoch_step is None:
         epoch_step = handle.version
@@ -150,6 +162,8 @@ def run_triad_exact_grover_search(
                     "fibonacci_phase_mod": p["fibonacci_phase_mod"]}
     else:
         order = list(geodesic_order)
+        if any(isinstance(t, bool) or not isinstance(t, int) for t in order):
+            raise ValueError("geodesic_order entries must be integers")
         if len(order) != N or sorted(order) != list(range(N)):
             raise ValueError("geodesic_order must be a permutation of range(2^active_dim)")
         schedule = {"schedule_source": "explicit", "epoch_step": epoch_step}
@@ -205,19 +219,70 @@ def run_triad_exact_grover_search(
         raise ArithmeticError("collapsed read-out disagrees with materialised winner")
     if winner_verifier is not None and not winner_verifier(value):
         raise ArithmeticError("selected winner failed independent verification")
+    outcome = {
+        "schema": GROVER_SCHEMA, "artifact_id": handle.artifact_id,
+        "handle_version": handle.version + D, "frame_sha256": hashlib.sha256(reg.to_wire_bytes()).hexdigest(),
+        "start_version": handle.version, "start_frame_sha256": handle.sha256_digest,
+        "active_dim": D, "states": N, "marked_count": M, "iterations": iters,
+        "total_marked_probability": encode_exact_fraction(total),
+        "winner_index": win_idx, "winner_value": value, "winner_schedule_position": win + 1,
+        "oracle_evaluations": N, "accounting": accounting, **schedule}
+    adapter.theseus.append_audit_receipt(EVENT_SELECTED, attest({**outcome, "event": EVENT_SELECTED}))
     h = handle
     for j in positions:
         h = adapter.commit_collapse_step(h, j, (win_idx >> j) & 1)
-    if h.register != reg:
+    if h.register != reg or h.sha256_digest != outcome["frame_sha256"]:
         raise ArithmeticError("committed register disagrees with in-memory collapse")
-    rid = adapter.theseus.append_audit_receipt(EVENT_VERIFIED, attest({
-        "schema": GROVER_SCHEMA, "event": EVENT_VERIFIED, "artifact_id": handle.artifact_id,
-        "handle_version": h.version, "frame_sha256": h.sha256_digest, "states": N,
-        "marked_count": M, "iterations": iters,
-        "total_marked_probability": encode_exact_fraction(total),
-        "winner_index": win_idx, "winner_value": value, "winner_schedule_position": win + 1,
-        "oracle_evaluations": N, "accounting": accounting, **schedule}))
+    rid = adapter.theseus.append_audit_receipt(EVENT_VERIFIED, attest({**outcome, "event": EVENT_VERIFIED}))
     return TriadGroverResult(found=True, iterations=iters, total_marked_probability=total,
                              single_target_probability=total / M, winner_index=win_idx, winner_value=value,
                              winner_schedule_position=win + 1, handle_version=h.version, receipts=[rid],
                              full_vector_checked=checked, **common)
+
+
+def _finish_selected_outcome(adapter: OvidFoldedAdapter, handle: FoldedWorkingHandle,
+                             oracle_predicate: Callable[[int], bool],
+                             winner_verifier: Optional[Callable[[int], bool]]) -> TriadGroverResult:
+    """Fully resolved handle: finish a search whose outcome was selected (and its
+    collapse committed) but whose GROVER_TARGET_VERIFIED receipt is missing, or
+    return the existing verified result.  Handles with no pending outcome are
+    rejected as before."""
+    def ours(body: dict) -> bool:
+        return (body.get("artifact_id") == handle.artifact_id and body.get("handle_version") == handle.version
+                and body.get("frame_sha256") == handle.sha256_digest)
+
+    selected = verified = None
+    for event, rec in adapter.theseus.journal_receipts([EVENT_SELECTED, EVENT_VERIFIED]):
+        body = verify_attested(rec)
+        if ours(body):
+            if event == EVENT_SELECTED and selected is None:
+                selected = body
+            elif event == EVENT_VERIFIED and verified is None:
+                verified = (body, rec)
+    if selected is None:
+        raise ValueError("active subspace is empty (all generators resolved) and no search outcome is pending")
+    bits, (hi, lo) = handle.register.unfold_mk().readout_winner()
+    value = (hi << handle.register.k) | lo
+    if bits != selected["winner_index"] or value != selected["winner_value"]:
+        raise ArithmeticError("resolved register disagrees with the selected outcome")
+    if not oracle_predicate(value):
+        raise ArithmeticError("selected winner no longer satisfies the oracle")
+    if winner_verifier is not None and not winner_verifier(value):
+        raise ArithmeticError("selected winner failed independent verification")
+    if verified is None:
+        body = {k: v for k, v in selected.items() if k != "event"}
+        rid = adapter.theseus.append_audit_receipt(EVENT_VERIFIED, attest({**body, "event": EVENT_VERIFIED}))
+    else:
+        rid = adapter.theseus.receipt_entry_hash(EVENT_VERIFIED, verified[1])
+        if rid is None:
+            raise ArithmeticError("verified receipt is not in the tenant journal")
+    total = decode_exact_fraction(selected["total_marked_probability"])
+    schedule = {k: selected[k] for k in ("schedule_source", "epoch_step", "pisano_period",
+                                         "lucas_stride_mod", "fibonacci_phase_mod") if k in selected}
+    return TriadGroverResult(
+        found=True, artifact_id=handle.artifact_id, active_dim=selected["active_dim"], states=selected["states"],
+        marked_count=selected["marked_count"], iterations=selected["iterations"], total_marked_probability=total,
+        single_target_probability=total / selected["marked_count"], winner_index=selected["winner_index"],
+        winner_value=value, winner_schedule_position=selected["winner_schedule_position"],
+        states_materialised=0, oracle_evaluations=1, handle_version=handle.version,
+        schedule=schedule, receipts=[rid])

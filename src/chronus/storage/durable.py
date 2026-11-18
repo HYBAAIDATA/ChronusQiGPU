@@ -315,10 +315,23 @@ class DurableTheseusService:
         )
 
     def append_journal_event(
-        self, tenant_id: str, event_type: str, payload: bytes
+        self, tenant_id: str, event_type: str, payload: bytes,
+        *, expected_last_sequence: int | None = None,
     ) -> TenantStateJournalEntry:
+        """Append one hash-chained journal entry.
+
+        ``expected_last_sequence`` (optional) makes the append a compare-and-swap
+        inside the same ``BEGIN IMMEDIATE`` transaction: the entry is written only
+        if the tenant's newest sequence is exactly that value (-1 = empty journal);
+        otherwise ``CustodyConflictError`` is raised and nothing is appended.
+        """
         if not event_type or not isinstance(event_type, str):
             raise ValueError("event_type must be a non-empty string")
+        if expected_last_sequence is not None and (
+            isinstance(expected_last_sequence, bool) or not isinstance(expected_last_sequence, int)
+            or expected_last_sequence < -1
+        ):
+            raise ValueError("expected_last_sequence must be an integer >= -1")
         record = self.store(tenant_id, payload)
         ovid_namespace = f"o1_{tenant_id}"
         with self._lock, self._connect(immediate=True) as db:
@@ -326,6 +339,11 @@ class DurableTheseusService:
                 "SELECT sequence,entry_hash FROM journal WHERE tenant_id=? ORDER BY sequence DESC LIMIT 1",
                 (tenant_id,),
             ).fetchone()
+            last = -1 if previous is None else int(previous["sequence"])
+            if expected_last_sequence is not None and last != expected_last_sequence:
+                raise CustodyConflictError(
+                    f"journal tip moved: expected sequence {expected_last_sequence}, found {last}"
+                )
             sequence = 0 if previous is None else int(previous["sequence"]) + 1
             prev_hash = _ZERO_HASH if previous is None else str(previous["entry_hash"])
             timestamp_ns = time.time_ns()
@@ -370,11 +388,20 @@ class DurableTheseusService:
             coordinate=record.coordinate,
         )
 
-    def get_journal(self, tenant_id: str) -> list[TenantStateJournalEntry]:
+    def get_journal(
+        self, tenant_id: str, *, after_sequence: int | None = None
+    ) -> list[TenantStateJournalEntry]:
+        """Tenant journal in sequence order; ``after_sequence`` returns only newer entries."""
         with self._connect() as db:
-            rows = db.execute(
-                "SELECT * FROM journal WHERE tenant_id=? ORDER BY sequence", (tenant_id,)
-            ).fetchall()
+            if after_sequence is None:
+                rows = db.execute(
+                    "SELECT * FROM journal WHERE tenant_id=? ORDER BY sequence", (tenant_id,)
+                ).fetchall()
+            else:
+                rows = db.execute(
+                    "SELECT * FROM journal WHERE tenant_id=? AND sequence>? ORDER BY sequence",
+                    (tenant_id, int(after_sequence)),
+                ).fetchall()
         return [
             TenantStateJournalEntry(
                 sequence=int(row["sequence"]),
