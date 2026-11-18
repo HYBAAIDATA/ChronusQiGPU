@@ -8,12 +8,12 @@ signed decision receipt. See docs/security/AL_HARAS_NOTES_RECONCILIATION.md.
 """
 
 import json
-import os
 import sys
+from pathlib import Path
 
-SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "src")
+SRC = Path(__file__).resolve().parents[3] / "src"
 if SRC not in sys.path:
-    sys.path.insert(0, SRC)
+    sys.path.insert(0, str(SRC))
 
 from chronus.security.al_haras.engine import (  # noqa: E402
     ALHarasSecurityFabric,

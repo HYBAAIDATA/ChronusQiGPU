@@ -26,6 +26,7 @@ from chronus.tensor.types import (
     LegDirection,
     Node,
     SymmetricTensor,
+    UntrustedResult,
 )
 
 
@@ -125,7 +126,11 @@ def build_network(
     """Constructs a tensor network with honest memory bounds and an attached error ledger."""
     hard_cap = HARD_CAP_THEOREM()
     if chi_max > hard_cap:
-        raise ValueError("requested bond dimension exceeds configured bound")
+        raise UntrustedResult(
+            f"requested bond dimension {chi_max} exceeds hard cap {hard_cap}",
+            requested=chi_max,
+            hard_cap=hard_cap,
+        )
 
     ledger = ErrorLedger()
     network = TensorNetwork(topology=topology, chi_max=chi_max, gauge_group=group)

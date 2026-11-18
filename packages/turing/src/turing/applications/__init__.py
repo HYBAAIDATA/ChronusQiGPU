@@ -10,15 +10,30 @@ core. The canonical stabilizer remains
   imported, because TURING never imports `chronus`.
 - `vqc_machine`: 1,000-logical-qubit NumPy stabilizer machine with affine
   Z-sampler, QASM-2.0 subset importer, fold checkpoints and the
-  12-algorithm planning catalogue. Source: HYBA_1000_QUBIT_VQC_20260724
-  (sha256 `7B4EF036…`).
+  12-algorithm planning catalogue. Promoted from the manifest-verified
+  archive file `phi_quantum_machine.py` (sha256
+  `ef48b957e129fd86fa96ffcf888cf9f04dd1d7b0c645ebd4026d756ce8ba9cfa`).
 - `vqc_grover`: 32-face variational nonce ranker with injectable M_32
   adjacency, SHA-256d verifier and bounded fallback. Application
-  heuristic — validity is SHA-256d only, never the rank.
+  heuristic — validity is SHA-256d only, never the rank. Promoted from
+  the manifest-verified archive file `vqc_phi_grover.py` (sha256
+  `3d7bc18757ff133c8275347dc16150835e48196e7846bb27e502e5fd9fb0e958`).
 
 Not production qualification: unfalsified archive claims (training-loss
 curves, 4.1775e-16 checkpoint error, 144/144 suite) are provenance, not
 current-commit evidence.
+
+VQC_PROMOTION_PROVENANCE
+------------------------
+Archive: ``recovery_merge/vqc-1000``
+Manifest: ``SHA256SUMS.txt``
+The manifest-verified original filenames were ``phi_quantum_machine.py``
+(SHA-256 ``ef48b957e129fd86fa96ffcf888cf9f04dd1d7b0c645ebd4026d756ce8ba9cfa``)
+and ``vqc_phi_grover.py``
+(SHA-256 ``3d7bc18757ff133c8275347dc16150835e48196e7846bb27e502e5fd9fb0e958``).
+They were promoted as ``vqc_machine.py`` and ``vqc_grover.py`` respectively;
+the promoted files are adapted package modules, so their working-tree hashes
+are intentionally not the archive hashes.
 """
 
 from turing.applications.vqc_fold import (

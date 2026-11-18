@@ -140,7 +140,7 @@
       "note": "Observatory page; its statements are tracked for implementation in the claims register"
     },
     {
-      "path": "qigpu_acceleration_system.py",
+      "path": "scripts/research/qigpu_acceleration_system.py",
       "token": 1,
       "count": 1,
       "basis": "refusal-or-denial",

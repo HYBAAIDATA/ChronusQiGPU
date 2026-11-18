@@ -64,6 +64,9 @@ class MiningAdminEngine:
         self.blocks_found = 0
         self.active_intervention = "OBSERVATIONAL"
         self.active_intervention = "OBSERVATIONAL"
+        self.anomaly_injected = False
+        self.consensus_status = "HARMONIC_CONSENSUS"
+        self.sheaf_cohomology_h1 = 0.0
 
         self.miner = GeometricGaloisMiner()
         self.consensus = HodgeSheafLaplacianConsensus(node_count=4)
@@ -110,6 +113,7 @@ class MiningAdminEngine:
         """Inject a reorg/stratum poisoning perturbation."""
         self.anomaly_injected = True
         self.consensus_status = "OBSTRUCTED"
+        self.sheaf_cohomology_h1 = 1.0
         return {
             "sheaf_cohomology_h1": 1.0,
             "consensus_status": "OBSTRUCTED",
@@ -119,6 +123,7 @@ class MiningAdminEngine:
         """Execute 1-cycle DSW instanton monopole cobordism heal."""
         self.anomaly_injected = False
         self.consensus_status = "HARMONIC_CONSENSUS"
+        self.sheaf_cohomology_h1 = 0.0
         return {
             "sheaf_cohomology_h1": 0.0,
             "consensus_status": "HARMONIC_CONSENSUS",
@@ -310,8 +315,8 @@ class MiningAdminEngine:
             "fan_speed_pct": round(self.config.fan_speed_pct, 1),
             "spectral_mass_gap": LiePoissonRamanujanExpander.SPECTRAL_GAP,
             "resonance_boost_pct": 0.0,
-            "sheaf_cohomology_h1": 0.0,
-            "consensus_status": "HARMONIC_CONSENSUS",
+            "sheaf_cohomology_h1": self.sheaf_cohomology_h1,
+            "consensus_status": self.consensus_status,
             "intelligence_distribution": norm_weights,
             "active_causal_intervention": self.active_intervention,
             "counterfactual_avoided_loss_gbp": counterfactual_avoided_loss_gbp,

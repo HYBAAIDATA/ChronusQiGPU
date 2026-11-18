@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "$id": "https://github.com/hybadatadevops1/Chronusv2/capabilities/definitive_manifest.schema.json",
+  "title": "Chronus Definitive Capability Manifest",
+  "description": "Machine-validated capability manifest for HYBA Data / Chronus. Produced and validated by tests/test_definitive_manifest.py against capabilities/definitive_manifest.json.",
+  "type": "object",
+  "required": [
+    "schema",
+    "generated",
+    "baseline",
+    "provenance_rule",
+    "mandatory_gates",
+    "findings",
+    "rows"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "pattern": "^hyba.triad.manifests/v[0-9]+$"
+    },
+    "generated": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "baseline": {
+      "type": "object",
+      "required": ["sha", "branch", "dirty"],
+      "properties": {
+        "sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "branch": {
+          "type": "string"
+        },
+        "dirty": {
+          "type": "boolean"
+        }
+      }
+    },
+    "provenance_rule": {
+      "type": "string"
+    },
+    "mandatory_gates": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["CO-SIGN", "RS-RECEIPT", "RS-REPLAY", "FN-CLAIMS", "FN-CUSTODY"]
+      },
+      "minItems": 5,
+      "uniqueItems": true
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "summary"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "namespace",
+          "authority",
+          "disposition",
+          "status",
+          "evidence"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "namespace": {
+            "type": "string"
+          },
+          "authority": {
+            "type": "string"
+          },
+          "source_paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "disposition": {
+            "type": "string",
+            "enum": [
+              "IMPLEMENTED_ALL",
+              "IMPLEMENTED_EVIDENCE_PENDING",
+              "EVIDENCE_GATED",
+              "HELD",
+              "PROVENANCE",
+              "SUPERSEDED",
+              "NOT-REPRODUCED",
+              "RE-VERIFIED"
+            ]
+          },
+          "status": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "object",
+            "required": ["results"],
+            "properties": {
+              "results": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["test", "status"],
+                  "properties": {
+                    "test": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": ["PASS", "FAIL", "SKIP", "OPEN", "UNRESOLVED"]
+                    },
+                    "file": {
+                      "type": "string"
+                    },
+                    "min": {
+                      "type": "string"
+                    },
+                    "max": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "missing": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

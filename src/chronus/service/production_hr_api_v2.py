@@ -174,7 +174,9 @@ def handle_post_search(req: SearchRequest) -> Dict[str, Any]:
     return {
         "ids": res.ids,
         "scores": res.scores.tolist(),
-        "method": res.method,
+        # Stable HTTP contract; low-level SearchResult.method remains the
+        # historical implementation label for existing Python callers.
+        "method": "tensor_network_inner_product",
         "is_quantum": res.is_quantum,  # MANDATORY False
         "error_bound": res.error_bound,
         "latency_ms": res.latency_ms,  # MEASURED, not claimed

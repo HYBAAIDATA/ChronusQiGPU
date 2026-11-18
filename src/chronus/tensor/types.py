@@ -19,8 +19,17 @@ class UntrustedApproximation(Exception):
     """Raised when an approximation without a rigorous Hilbert-space bound is attempted."""
 
 
-class UntrustedResult(Exception):
-    """Raised when a contraction exceeds physical hardware memory budgets."""
+class UntrustedResult(ValueError, AssertionError):
+    """Raised when a tensor request exceeds the configured hard-cap contract.
+
+    The compatibility bases preserve older ValueError and AssertionError
+    callers while new code should catch this dedicated exception directly.
+    """
+
+    def __init__(self, message: str, *, requested: int | None = None, hard_cap: int | None = None) -> None:
+        super().__init__(message)
+        self.requested = requested
+        self.hard_cap = hard_cap
 
 
 class UnsupportedHamiltonian(Exception):

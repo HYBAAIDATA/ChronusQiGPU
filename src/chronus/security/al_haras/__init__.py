@@ -142,6 +142,7 @@ from chronus.security.al_haras.autonomous_roe import (
     EngagementSimplex,
     AutonomousROEValidator,
 )
+from chronus.security.al_haras.authorizer import LocalALHarasAuthorizer
 from chronus.security.al_haras.millennium_security import (
     NetworkGraphEdge,
     RicciCurvatureDeCloaker,
@@ -258,6 +259,7 @@ __all__ = [
     "ROECriterion",
     "EngagementSimplex",
     "AutonomousROEValidator",
+    "LocalALHarasAuthorizer",
     "NetworkGraphEdge",
     "RicciCurvatureDeCloaker",
     "HodgeCovertChannelFilter",

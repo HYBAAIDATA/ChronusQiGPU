@@ -11,6 +11,7 @@ from chronus.core.workload_alias import normalize_workload_type
 from chronus.execution.authority import ExecutionAuthority, ExecutionBusyError
 from chronus.service.dependencies import get_current_tenant
 from chronus.service.models import WorkloadRequest
+from chronus.security.al_haras.authorizer import LocalALHarasAuthorizer
 
 router = APIRouter(prefix="/api/v1/execute", tags=["execution"])
 _lock = threading.Lock()
@@ -51,20 +52,34 @@ def authenticated_tenant(tenant_id=Depends(get_current_tenant)) -> str:
     return tenant_id
 
 
+def get_al_haras_authorizer(request: Request) -> LocalALHarasAuthorizer:
+    authorizer = getattr(request.app.state, "al_haras_authorizer", None)
+    if authorizer is None:
+        authorizer = LocalALHarasAuthorizer()
+        request.app.state.al_haras_authorizer = authorizer
+    return authorizer
+
+
 @router.post("")
 async def execute_epoch(body: ExecutionRequest,
                         tenant_id: str = Depends(authenticated_tenant),
-                        authority: ExecutionAuthority = Depends(get_authority)) -> dict:
+                        authority: ExecutionAuthority = Depends(get_authority),
+                        authorizer: LocalALHarasAuthorizer = Depends(get_al_haras_authorizer)) -> dict:
     workload = body.workload
     if workload.tenant_id != tenant_id:
         raise HTTPException(403, "Request tenant does not match authenticated tenant")
     if workload.backend_preference not in (None, "python-math-reference"):
         raise HTTPException(400, "Only explicit CPU reference execution is supported")
+    authorization = authorizer.authorize(workload.payload_bytes)
+    if not authorization["authorized"]:
+        raise HTTPException(403, "AL HARAS local admission denied")
     try:
-        return await run_in_threadpool(
+        result = await run_in_threadpool(
             authority.execute, tenant_id, workload.payload_bytes,
             normalize_workload_type(workload.workload_type), body.wall_seconds,
         )
+        result["al_haras_authorization"] = authorization
+        return result
     except ExecutionBusyError as exc:
         raise HTTPException(429, "Concurrent execution limit reached", headers={"Retry-After": "1"}) from exc
     except ValueError as exc:

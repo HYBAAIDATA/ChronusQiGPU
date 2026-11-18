@@ -431,7 +431,7 @@ StratumMultiPoolServer = LocalStratumTestServer
 #   - tests/test_patroclus_myrmidon_master.py  (CI: protocol correctness)
 #   - POST /v1/mining/admin/patroclus/simulate  (API: on-demand verification)
 #
-# For live production mining use chronus_live_miner.py or
+# For live production mining use deploy/runtime/chronus_live_miner.py or
 # src/chronus/execution/mining_entrypoint.py with real pool credentials
 # supplied via environment variables (MINING_VIABTC_HOST, etc.).
 # =====================================================================

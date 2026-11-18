@@ -42,11 +42,11 @@ dependencies = [
 test = [
     "pytest>=8.0",
 ]
-mining = ["hyba-turing==0.2.0.dev0"]
+mining = ["hyba-turing==0.2.0.dev1"]
 # Optional local mathematical workbench, dependent on the separately built
 # TURING distribution; install its wheel in the environment first.
 workbench = [
-    "hyba-turing==0.2.0.dev0",
+    "hyba-turing==0.2.0.dev1",
     "ipywidgets>=8,<9",
     "ipython>=8,<10",
     "matplotlib>=3.8,<4",

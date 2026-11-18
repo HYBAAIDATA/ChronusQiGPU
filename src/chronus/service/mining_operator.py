@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 import time
 
 from fastapi import Depends, HTTPException, Request, status
@@ -24,15 +25,43 @@ from chronus.storage.durable import DurableTheseusService
 _ADMISSION_EVENT = "MINING_ADMIN_OPERATOR_ADMITTED"
 _ADMISSION_SCHEMA = "chronus.mining-admin-admission/1"
 
+# One durable-custody handle per audit path. Building DurableTheseusService per
+# request re-ran bootstrap plus full store verification on every call - including
+# GETs - and appended an admission event per status poll, so read traffic grew
+# the custody journal. Reuse keeps admission fail-closed: custody availability
+# and full store integrity are enforced when the handle is built, mutations
+# verify journal continuity per request, and reads append nothing.
+_CUSTODY_HANDLES: dict[str, DurableTheseusService] = {}
+_CUSTODY_LOCK = threading.Lock()
+
+
+def _get_custody(audit_path: str) -> DurableTheseusService:
+    with _CUSTODY_LOCK:
+        custody = _CUSTODY_HANDLES.get(audit_path)
+        if custody is None:
+            custody = DurableTheseusService(audit_path)
+            _CUSTODY_HANDLES[audit_path] = custody
+        return custody
+
+
+def _reset_custody_cache() -> None:
+    """Test hook: drop cached handles so each test starts from a fresh store."""
+    with _CUSTODY_LOCK:
+        _CUSTODY_HANDLES.clear()
+
 
 def get_mining_admin_operator(
     request: Request,
     identity: AuthenticatedIdentity = Depends(get_current_identity),
 ) -> str:
-    """Resolve trusted identity and persist an admission audit before handling.
+    """Resolve trusted identity and audit admission before handling.
 
-    Fail closed for legacy static tenant tokens, dev-permissive JWTs, missing
-    operator roster, cross-tenant requests and unavailable custody.
+    Mutating requests append a durable admission event and verify journal
+    continuity per request. Reads require available, integrity-verified custody
+    - ensured at handle construction - and append nothing, so status polls do
+    not grow the custody journal. Fail closed for legacy static tenant tokens,
+    dev-permissive JWTs, missing operator roster, cross-tenant requests and
+    unavailable custody.
     """
     auth_service.check_rate_limit(identity.tenant_id)
     subjects_raw = os.getenv("CHRONUS_MINING_ADMIN_SUBJECTS", "")
@@ -78,10 +107,14 @@ def get_mining_admin_operator(
         allow_nan=False,
     ).encode("utf-8")
     try:
-        custody = DurableTheseusService(audit_path)
-        custody.append_journal_event(identity.tenant_id, _ADMISSION_EVENT, payload)
-        if not custody.verify_journal_continuity(identity.tenant_id):
-            raise RuntimeError("mining administration audit journal invalid")
+        custody = _get_custody(audit_path)
+        if request.method.upper() != "GET":
+            custody.append_journal_event(identity.tenant_id, _ADMISSION_EVENT, payload)
+            if not custody.verify_journal_continuity(identity.tenant_id):
+                raise RuntimeError("mining administration audit journal invalid")
+        # Reads: custody availability and full store integrity were enforced
+        # when the handle was built; per-request continuity is a mutation
+        # guarantee, and an empty journal on a fresh store must not fail a read.
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

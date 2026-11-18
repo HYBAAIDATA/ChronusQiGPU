@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from chronus.execution.authority import ExecutionAuthority
 from chronus.service.execution_body_limit import ExecutionBodyLimit
 from chronus.service.routers.execute import router
+from chronus.security.al_haras.authorizer import LocalALHarasAuthorizer
 
 
 @asynccontextmanager
@@ -26,6 +27,7 @@ async def lifespan(app):
         max_wall_seconds=float(os.getenv("CHRONUS_EXECUTION_WALL_SECONDS", "30")),
         memory_bytes=int(os.getenv("CHRONUS_EXECUTION_MEMORY_BYTES", str(2 * 1024**3))),
     )
+    app.state.al_haras_authorizer = LocalALHarasAuthorizer()
     yield
 
 

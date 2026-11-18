@@ -280,8 +280,13 @@ def E3_honest_1000_node_claim() -> ExperimentResult:
     H_terms = TFIM_terms(J=1.0, h=1.0, n_nodes=n_nodes)
     H_mpo = build_hamiltonian_mpo(H_terms, n_nodes=n_nodes, group="none", chi_mpo_max=4)
 
-    # 3. DMRG Variational Ground State Optimization
-    e0_1000 = DMRG(net, ledger, H_mpo, chi_max=512, sweeps=2)
+    # 3. Bounded DMRG variational ground-state optimization. E3 is an
+    # acceptance experiment, not an unbounded production soak: one measured
+    # sweep at an explicit solver tolerance keeps the local validation run
+    # finite while retaining the actual MPO eigensolves and ledger accounting.
+    solver_sweeps = 1
+    solver_tol = 1e-4
+    e0_1000 = DMRG(net, ledger, H_mpo, chi_max=512, sweeps=solver_sweeps, tol=solver_tol)
 
     # Assert ledger global bound < 1e-6
     assert ledger.global_bound < 1e-6, (
@@ -316,6 +321,8 @@ def E3_honest_1000_node_claim() -> ExperimentResult:
     telemetry = {
         "nodes": n_nodes,
         "chi_max": 512,
+        "solver_sweeps": solver_sweeps,
+        "solver_tolerance": solver_tol,
         "group": "Z2",
         "ground_state_energy_1000": e0_1000,
         "energy_density_1000": round(density_1000, 5),

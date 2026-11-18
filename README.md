@@ -1,154 +1,124 @@
-## Notion / Library recovery: exact tensor-train and archived safety guards (2026-11-16)
-
-The source archives in the connected Notion artifact shelves and ChatGPT
-Library are actively reconciled, not treated as production evidence. The
-current tensor package now exports `ExactRationalTensorTrain` for bounded,
-integrity-checked rational tensor-train decomposition with exact
-reconstruction. The legacy July PULVINI TT-SVD was *not* copied verbatim:
-a reproduced `astype(float)` path discards complex components.
-
-The existing `PhiTensorCore` also applies finite-data, bounded-output
-and nonfinite-result checks recovered from the Chronos ONE iGPU v3.10 tensor
-runtime. No second GPU/tensor scheduler is installed. This does not prove
-physical GPU acceleration or a commercial hardware performance claim.
-
-See [Notion/Library source recovery](docs/audits/2026-11-16-notion-library-source-recovery.md),
-the [archive register](evidence/migration/2026-11-16-notion-library-artifact-register.json),
-and the [executed historical tests](evidence/migration/2026-11-16-archive-focused-test-replay.md).
-The full QSDL graphics parser/compiler chain and historical Kellogg source
-remain unported/unavailable for current acceptance. Release remains
-**NOT QUALIFIED**.
-
 # Chronus
 
-Chronus is HYBA Data's computational infrastructure platform. This repository contains the maintained execution runtime, software-defined iGPU/fleet, tensor runtime, enterprise connector plane, OVID representation services, THESEUS custody services, APIs, frontend, tests, evidence tooling and release controls.
+## Decision brief
 
-## Production architecture
+Chronus is HYBA Data’s computational infrastructure platform. This repository
+contains the maintained runtime, frontend preview, evidence tooling, deployment
+assets, and release controls.
 
-The data/execution core is one triad:
+**Current decision: evidence-gated candidate — not production-admitted.**
+
+The source is runnable locally and the repository has a defined qualification
+path. Production admission still depends on exact-commit CI, verified artifact
+attestation, mandatory product gates, and environment-specific evidence. See
+the [current release decision](RELEASE_DECISION_MCKINSEY_TECH.md) and the
+[claim audit](docs/claim-audit.md).
+
+## Start here
+
+### Run the Python system
+
+Requirements: Python 3.10+.
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\python -m pip install -e ".[dev]"
+.\.venv\Scripts\python -m pytest -q
+```
+
+On macOS or Linux, use `python3` and `.venv/bin/python` equivalents.
+
+### Run the web console
+
+Requirements: Node.js 20.9+ and pnpm.
+
+```powershell
+pnpm --dir frontend install --frozen-lockfile
+pnpm --dir frontend dev
+```
+
+The console is an evidence-first preview. Set `CHRONUS_BACKEND_URL` to point
+at a Chronus API. If the service is unavailable, the UI reports that state; it
+does not replace it with simulated operational success.
+
+### Run the integrated local stack
+
+```powershell
+docker compose up --build
+```
+
+The API is exposed at `http://127.0.0.1:18000` and the web console at
+`http://127.0.0.1:13000` when the local Docker stack is healthy. Docker is an
+optional local verification path, not deployment evidence.
+
+Common shortcuts are also available through `Makefile`:
+
+```text
+make help
+make install
+make test
+make frontend-install
+make frontend-build
+make up
+```
+
+## How to read the system
+
+The maintained data and execution composition is deliberately separated into
+three authorities:
 
 | Authority | Responsibility |
 | --- | --- |
-| **CHRONUS** | execution, backend selection, scheduling, tensor operations, fleet coordination, verification and execution receipts |
-| **OVID** | versioned reversible representation transformation and materialisation |
-| **THESEUS** | durable custody, integrity, continuity, restart recovery and provenance |
+| **CHRONUS** | Execution, scheduling, tensor operations, fleet coordination, verification, and execution receipts |
+| **OVID** | Versioned reversible representation transformation and materialisation |
+| **THESEUS** | Durable custody, integrity, continuity, restart recovery, and provenance |
 
-The production composition is implemented in `src/chronus/triad.py`.
+The intended operating sequence is:
 
-The maintained runtime also contains:
-- software-defined iGPU and multi-machine fleet execution under `src/chronus/fleet/`;
-- tensor execution under `src/chronus/tensor/`, including selective resident-state materialisation and a fail-closed physical OpenCL tensor route;
-- workload execution and backend routing under `src/chronus/execution/`;
-- enterprise connector and data-movement services under `src/chronus/storage/connectors.py`;
-- service/API surfaces under `src/chronus/service/`;
-- internal treasury mining support, which is not a customer product.
+`question or workload → configuration → execution state → result → evidence and next action`
 
-## Mining web console authentication
+## Repository map
 
-The mining console uses an in-memory, short-lived system-admin JWT supplied by
-the authorised operator, forwarded through the maintained
-`/api/chronus` Next.js proxy to the AL HARAS-gated API. It does not
-save the token in local storage or a URL. Until authenticated backend status
-is obtained, control buttons are disabled; failed actions cannot be presented
-as executed. This is an operator-control API only, **not** live mining proof.
-The UI still has historical design/research diagnostic panels that must not
-be treated as measured runtime or physical-backend qualification.
+| Area | Purpose | Operating status |
+| --- | --- | --- |
+| `src/` | Maintained Python runtime and service packages | Primary implementation |
+| `frontend/` | Next.js web console | Local product preview |
+| `packages/` | Separately packaged components, including TURING | Package boundary; inspect its own evidence |
+| `tests/` | Regression, contract, and qualification tests | Required input to release review |
+| `scripts/ci/` | Auditors, manifest checks, evidence builders, and release gates | Evidence tooling; not release authority by itself |
+| `docs/` | Product, architecture, operating, and evidence documentation | Start with current directives |
+| `evidence/` | Retained records and provenance registers | Historical records are not current qualification |
+| `deploy/` | Deployment assets and runtime entrypoints | Owner-controlled deployment surface |
+| `archive/` | Historical source, prototypes, repair drafts, and captured outputs | Not part of the maintained runtime |
 
-## AL HARAS mining operator and signed evidence wiring
+The [project map](docs/PROJECT_MAP.md) explains what belongs in each area and
+the criteria for adding new root files.
 
-The shared `/v1/mining/admin` API now has an explicit **verified system-admin
-JWT + operator subject allowlist + owning-tenant + THESEUS audit** admission
-dependency across its nine mutating and two read-only routes. Tenant-only
-tokens, unsigned developer-mode tokens and missing custody cannot authorise
-global mining control. See
-[security operator and receipt contracts](docs/security/mining-operator-admission-and-receipt-custody.md)
-for mandatory environment settings, negative tests and limitations. This
-interface is **not** the live mining execution path.
+## Evidence and product boundaries
 
-The original in-memory `ReceiptLog` is retained for compatibility.
-`DurableReceiptLog` adds independently verifiable signed receipt replay
-through THESEUS custody, and local verification Gate G2 now checks
-fresh-instance restart. This is software source integration, not remote key
-custody, a signed production release or a live-share certificate.
+- Chronus is a HYBA Data product/platform; AL HARAS is HYBA Security.
+- Quantum is a capability, not a standalone company, market, or product claim.
+- Internal treasury mining is not a customer-facing product.
+- A passing local test, source constant, provider name, or historical benchmark
+  does not establish production admission.
+- Physical accelerator performance, customer-held key custody, multi-region
+  durability, external certification, and customer deployment require their
+  own current evidence.
 
-## Definitive production posture
+Read the [product style guide](docs/directives/PRODUCT_STYLE_GUIDE.md),
+[frontend rules](docs/directives/FRONTEND.md), [packaging rules](docs/directives/PACKAGING.md),
+and [release decision](RELEASE_DECISION_MCKINSEY_TECH.md) before making a
+product-facing or release-facing change.
 
-The source is being closed out under an **evidence-gated production posture**.
+## Maintainer path
 
-A source constant, successful local test run, provider name or historical benchmark cannot award production admission. The current qualification path requires the exact release commit, verified CI evidence and all mandatory product gates.
+1. Frame the user problem and decision.
+2. Change the maintained implementation under `src/`, `frontend/`, `packages/`,
+   `scripts/`, or `deploy/` as appropriate.
+3. Add or update focused tests and evidence.
+4. Run the relevant local checks.
+5. Record limits, freshness, and unresolved gates in `docs/`.
 
-The mandatory product gates are defined in `src/chronus/core/qualification.py`. The software-base product verifier is `scripts/ci/build_product_gates.py`; `scripts/ci/evaluate_attested.py` verifies the separately attested test and product-gate artifacts. A tag can publish only after `scripts/ci/require_release_qualification.py` verifies successful full CI and an attested `PASS` qualification for the exact `main` commit.
-
-## CI and deployment
-
-GitHub Actions under `.github/workflows/` are active for pushes and pull requests in this repository. They run the source tests, lint/compile/package checks, security scans, CPU-reference OpenCL checks, RTL checks, container smoke tests and evidence workflows. A passing job is evidence for that job and commit only; it is not production qualification.
-
-The repository contains Azure infrastructure definitions under `infra/azure/`, but no active Azure deployment pipeline is established by this source snapshot. Deployment remains an explicit owner-controlled operation and is out of scope for PR #71. Before deploying the API, set a stable `CHRONUS_JWT_SECRET`; otherwise token signing keys change across restarts. See [the Notion requirements map](docs/notion-production-readiness.md) for the release packet and remaining gates.
-
-`DurableTheseusService` in `src/chronus/storage/durable.py` provides the production local custody path using SQLite WAL, full synchronous commits, content verification, tenant-scoped records, restart validation and a hash-chained journal.
-
-The older `TheseusService` remains available for compatibility and in-process workflows. It must not be used as evidence of durable custody.
-
-`OvidTransformService` in `src/chronus/ovid/transform.py` owns versioned reversible working representations. OVID does not replace THESEUS as the durable system of record.
-
-## Tensor and accelerator runtime
-
-The maintained tensor runtime now includes:
-- selective row/byte reconstruction without full-state reconstruction;
-- shape-safe rectangular matrix operations and other explicit tensor operations;
-- dtype-preserving resident-state storage;
-- deterministic geodesic scheduling;
-- output-integrity checks;
-- measured-input energy comparison;
-- profile-driven routing from verified observations;
-- selective folded-state inference;
-- physical OpenCL, CUDA and Apple Metal tensor backends that require device discovery, kernel readiness and a known-answer self-test before becoming eligible; none silently fall back to CPU.
-
-Physical execution and performance remain device-specific evidence. An adapter or kernel being present is not a physical benchmark.
-
-## Evidence migration
-
-Historical Chronus tests and benchmarks were reconciled from the engineering record and the ChatGPT Library. They are retained as provenance and regression targets in `evidence/migration/chronus_historical_evidence_register.json`.
-
-Historical results are not silently promoted to the current release commit. The current CI reruns the maintained code; physical results remain bound to the named device, driver, workload and artifact.
-
-## Development
-
-Python 3.10+ is required.
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -e '.[dev]'
-python -m pytest -q
-```
-
-Focused triad close-out tests:
-
-```bash
-python -m pytest -q \
-  tests/test_triad_production.py \
-  tests/test_triad_capability_manifest.py \
-  tests/test_geodesic_tensor_migration.py \
-  tests/test_qualification.py \
-  tests/test_product_gates.py \
-  tests/test_release_gate.py
-```
-
-## CI
-
-GitHub Actions workflows in `.github/workflows/` are active for this repository. They cover the main regression suite, packaging, acceleration checks, storage evidence, mining checks, frontend builds, container restart smoke tests, release/evidence qualification and other bounded gates.
-
-Workflow existence is not a passing result; use the exact run associated with the release SHA. The release workflow requires both a successful full `CI` push run and a successful `Chronus V2 evidence qualification` push run for that exact `main` commit before building or publishing.
-
-Azure deployment assets are also present. Their presence does not establish that a deployment is running.
-
-## Product boundaries
-
-- Chronus is a HYBA Data product/platform.
-- AL HARAS is HYBA Security.
-- Customer-facing claims must come from current evidence.
-- Internal treasury mining is not a customer-facing offering.
-- Historical reports remain provenance unless re-qualified on the current source.
-
-See [AGENTS.md](AGENTS.md), the [product style guide](docs/directives/PRODUCT_STYLE_GUIDE.md) and [packaging rules](docs/directives/PACKAGING.md) for repository-wide product and evidence rules.
+Keep the root reserved for project controls, reproducible setup, and the
+current release posture. Put historical or exploratory material in
+`archive/` with a short provenance note.

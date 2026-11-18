@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hyba-turing"
-version = "0.2.0.dev0"
+version = "0.2.0.dev1"
 description = "TURING: first-principles finite-dimensional quantum mathematics for HYBA Data, with an exact cyclotomic layer (internal)"
 readme = "README.md"
 requires-python = ">=3.10"

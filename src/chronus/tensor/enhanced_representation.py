@@ -24,6 +24,7 @@ from chronus.tensor.network import (
     TensorNetwork,
     build_network,
 )
+from chronus.tensor.types import UntrustedResult
 
 
 # -----------------------------------------------------------------------------
@@ -207,7 +208,12 @@ def topology_formula(topology: str, n: int, chi: int) -> int:
 def _initialize_tensor_network(cfg: Config) -> TensorNetwork:
     """Constructs real MPS/MPO/PEPS/MERA network with audited memory and error bounds."""
     if cfg.chi_max > HARD_CAP(cfg.device):
-        raise ValueError("bond dimension exceeds configured bound")
+        hard_cap = HARD_CAP(cfg.device)
+        raise UntrustedResult(
+            f"requested bond dimension {cfg.chi_max} exceeds hard cap {hard_cap}",
+            requested=cfg.chi_max,
+            hard_cap=hard_cap,
+        )
     if cfg.target_dim < 2:
         raise ValueError("target_dim must be at least two")
 
@@ -381,7 +387,12 @@ def build_search_index(documents: List[Dict[str, Any]], cfg: Config) -> SearchIn
 
 
 def search(query: Dict[str, Any], index: SearchIndex, top_k: int = 5) -> SearchResult:
-    """Inner-product scoring on the tensor network. Classical."""
+    """Return top-k classical tensor-network inner-product matches.
+
+    Canonical contract: ``search(query: dict, index: SearchIndex,
+    top_k: int = 5) -> SearchResult``. Scores are measured normalized
+    inner-products and the result is explicitly classical.
+    """
     t0_ns = time.perf_counter_ns()
     q_vec = np.asarray(query.get("features", np.zeros(index.cfg.target_dim)), dtype=np.float64)
     q_norm = np.linalg.norm(q_vec)
@@ -404,6 +415,8 @@ def search(query: Dict[str, Any], index: SearchIndex, top_k: int = 5) -> SearchR
     return SearchResult(
         ids=[index.documents[i] for i in order],
         scores=scores[order],
+        # Preserve the low-level caller contract; the HTTP API exposes the
+        # canonical wire label ``tensor_network_inner_product`` below.
         method="numpy_cosine_similarity",
         is_quantum=False,  # MANDATORY
         error_bound=index.ledger.global_bound,

@@ -75,7 +75,7 @@ def _right_canonicalize(sites: list[np.ndarray]) -> None:
 
 def _local_ground_vector(
     left: np.ndarray, first: np.ndarray, second: np.ndarray, right: np.ndarray,
-    shape: tuple[int, int, int, int], *, tol: float
+    shape: tuple[int, int, int, int], *, tol: float, initial_vector: np.ndarray | None = None
 ) -> np.ndarray:
     """Solve the *actual* effective MPO problem, never a fixed TFIM surrogate."""
     dimension = math.prod(shape)
@@ -87,8 +87,14 @@ def _local_ground_vector(
             left, first, second, right, vector.reshape(shape), optimize=True
         ).reshape(-1)
     if dimension <= 128:
-        basis = np.eye(dimension, dtype=np.complex128)
-        h = np.stack([multiply(basis[:, k]) for k in range(dimension)], axis=1)
+        # Batch the small local operator construction. The previous column
+        # loop performed one einsum per basis vector, which dominated the
+        # 1,000-site E3 run at the many low-bond boundary updates.
+        basis = np.eye(dimension, dtype=np.complex128).reshape(shape + (dimension,))
+        h = np.einsum(
+            "awc,wspx,xtqy,byd,cpqdk->astbk",
+            left, first, second, right, basis, optimize=True,
+        ).reshape(dimension, dimension)
         if not np.all(np.isfinite(h)) or not np.allclose(h, h.conj().T, rtol=1e-10, atol=1e-10):
             raise ValueError("effective local MPO is not Hermitian")
         return np.linalg.eigh(h)[1][:, 0]
@@ -97,7 +103,20 @@ def _local_ground_vector(
     except ImportError as exc:
         raise RuntimeError("scipy required for bounded sparse local DMRG eigensolve") from exc
     operator = LinearOperator((dimension, dimension), matvec=multiply, dtype=np.complex128)
-    _, vectors = eigsh(operator, k=1, which="SA", tol=tol, maxiter=max(400, 10 * dimension))
+    v0 = None
+    if initial_vector is not None and initial_vector.size == dimension:
+        candidate = np.asarray(initial_vector, dtype=np.complex128).reshape(-1)
+        norm = np.linalg.norm(candidate)
+        if np.isfinite(norm) and norm > 1e-14:
+            v0 = candidate / norm
+    _, vectors = eigsh(
+        operator,
+        k=1,
+        which="SA",
+        tol=tol,
+        maxiter=max(400, 10 * dimension),
+        v0=v0,
+    )
     return vectors[:, 0]
 
 
@@ -117,15 +136,19 @@ def DMRG(
     Returns the *measured Rayleigh quotient* of the resulting MPS, never an
     analytical TFIM lookup or a certificate of the global energy minimum.
 
-    Only uncharged MPS/MPO with qubit physical indices are supported.
-    No unqualified symmetry reduction, hardware backend or large-local-space
-    speedup is inferred. Failed sweeps do not partially mutate the network
+    Uncharged and Z2-labelled MPS/MPO with qubit physical indices are
+    supported. Z2 is currently an explicit all-zero-sector label; it does
+    not claim block-sparse speedup. Other charge groups remain rejected until
+    charge-aware environments are implemented. No unqualified symmetry
+    reduction, hardware backend or large-local-space speedup is inferred.
+    Failed sweeps do not partially mutate the network
     or its error ledger.
     """
     if network.topology != "MPS" or H_mpo.topology != "MPO":
         raise ValueError("DMRG requires an MPS state and an MPO Hamiltonian")
-    if network.gauge_group != "none" or H_mpo.gauge_group != "none":
-        raise NotImplementedError("charge-aware DMRG environments are not implemented")
+    supported_groups = {"none", "Z2"}
+    if network.gauge_group not in supported_groups or H_mpo.gauge_group not in supported_groups:
+        raise NotImplementedError("only none and Z2-labelled DMRG environments are supported")
     if type(chi_max) is not int or chi_max < 1 or chi_max > network.chi_max:
         raise ValueError("chi_max must be a positive integer within the network bond budget")
     if type(sweeps) is not int or not 1 <= sweeps <= 100:
@@ -157,6 +180,10 @@ def DMRG(
 
     _right_canonicalize(sites)
     pending_truncations: list[tuple[int, float, int]] = []
+    # Warm starts are keyed by bond and effective shape. They are only a
+    # numerical initial guess; the eigensolver still recomputes and verifies
+    # the current local operator, so this cache cannot change semantics.
+    warm_starts: dict[int, tuple[tuple[int, int, int, int], np.ndarray]] = {}
     previous_energy: float | None = None
     for sweep in range(sweeps):
         for forward in (True, False):
@@ -181,9 +208,13 @@ def DMRG(
                 right_env = right_cache[j + 2] if forward else live_right
                 shape = (sites[j].shape[0], 2, 2, sites[j + 1].shape[-1])
                 ground = _local_ground_vector(left_env, operators[j], operators[j + 1],
-                                              right_env, shape, tol=tol)
+                                              right_env, shape, tol=tol,
+                                              initial_vector=(warm_starts[j][1]
+                                                              if j in warm_starts and warm_starts[j][0] == shape
+                                                              else None))
                 if not np.all(np.isfinite(ground)):
                     raise ValueError("local eigenvector is non-finite")
+                warm_starts[j] = (shape, ground.copy())
                 matrix = ground.reshape(shape[0] * 2, 2 * shape[3])
                 u, s, vh = np.linalg.svd(matrix, full_matrices=False)
                 keep = min(chi_max, len(s))
@@ -215,7 +246,7 @@ def DMRG(
         network.replace(Node(
             id=j, phys_legs=[phys], virt_legs=[left, right],
             tensor=SymmetricTensor(blocks={(0, 0, 0): tensor},
-                                   legs=[left, phys, right], group="none")
+                                   legs=[left, phys, right], group=network.gauge_group)
         ))
     for bond, weight, kept in pending_truncations:
         ledger.append(TruncationRecord(

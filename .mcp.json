@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "hyba-mcp": {
+      "type": "stdio",
+      "command": "C:\\Users\\leonn\\AppData\\Local\\hyba-mcp\\venv\\Scripts\\python.exe",
+      "args": [
+        "-I",
+        "-X",
+        "utf8",
+        "-m",
+        "hyba_mcp.server"
+      ],
+      "env": {
+        "HYBA_MCP_REPO_ROOT": "D:\\hyba-mcp",
+        "PYTHONUTF8": "1"
+      }
+    }
+  }
+}

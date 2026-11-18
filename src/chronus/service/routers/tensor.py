@@ -163,11 +163,20 @@ def run_or_inspect_experiment(exp_id: str) -> dict[str, Any]:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Unknown experiment '{exp_id}'. Valid experiments are E1, E2, E3.",
             )
+    except HTTPException:
+        # Preserve deliberate 4xx responses such as the unknown experiment
+        # contract; do not turn them into an unhandled 500.
+        raise
     except (UntrustedApproximation, UntrustedResult, RefusedMethod, CharterViolation) as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"Experiment honest refusal: {e!s}",
         )
+    except (ValueError, TypeError, NotImplementedError, MemoryError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f"Invalid experiment request: {e!s}",
+        ) from e
     except Exception as e:  # noqa: BLE001
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

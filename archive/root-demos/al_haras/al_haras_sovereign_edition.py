@@ -7,12 +7,12 @@ records computed decisions with Ed25519 receipts. It does not certify anything:
 see docs/security/AL_HARAS_NOTES_RECONCILIATION.md.
 """
 
-import os
 import sys
+from pathlib import Path
 
-SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "src")
+SRC = Path(__file__).resolve().parents[3] / "src"
 if SRC not in sys.path:
-    sys.path.insert(0, SRC)
+    sys.path.insert(0, str(SRC))
 
 from chronus.al_haras_sovereign import main  # noqa: E402
 from chronus.security.al_haras.sovereign import (  # noqa: E402
