@@ -10,10 +10,16 @@ from chronus.storage.protected import ProtectedTheseusService
 from chronus.triad import ProductionTriad
 
 
-@pytest.mark.parametrize("payload", [
-    b"A", b"hello!", bytes(range(255)), b"x" * 1023,
-    bytes(range(256)) * 128,
-])
+@pytest.mark.parametrize(
+    "payload",
+    [
+        pytest.param(b"A", id="single-byte"),
+        pytest.param(b"hello!", id="short-text"),
+        pytest.param(bytes(range(255)), id="binary-255"),
+        pytest.param(b"x" * 1023, id="kilobyte-text"),
+        pytest.param(bytes(range(256)) * 128, id="binary-32k"),
+    ],
+)
 def test_real_restart_and_single_shard_loss(tmp_path, payload):
     database = str(tmp_path / "actual-theseus.sqlite3")
     root = tmp_path / "shards"
@@ -61,6 +67,8 @@ def test_tenant_access_and_modified_receipt_fail_closed(tmp_path):
 
 
 def test_symlink_and_immutable_conflict_rejected(tmp_path):
+    if __import__("os").name == "nt":
+        pytest.skip("Windows symlink creation requires SeCreateSymbolicLinkPrivilege")
     service = ProtectedTheseusService(
         DurableTheseusService(str(tmp_path / "y.sqlite3")),
         tmp_path / "shards",

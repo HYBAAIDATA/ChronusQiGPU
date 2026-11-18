@@ -92,6 +92,8 @@ def block_write_observation(directory, payload, header, logical_bytes):
     directory = Path(directory).resolve(strict=True)
     if not directory.is_dir():
         raise ValueError('write directory must be a directory')
+    if sys.platform != 'linux' or not hasattr(os, 'major') or not hasattr(os, 'minor'):
+        return {'available': False, 'reason': 'Linux block statistics are unavailable on this platform'}
     device = directory.stat().st_dev
     link = Path('/sys/dev/block') / (str(os.major(device)) + ':' + str(os.minor(device)))
     if not link.exists():

@@ -34,7 +34,12 @@ def test_archived_root_files_stay_out_of_the_root():
 
 
 def test_one_turing_source_tree():
-    assert not (ROOT / "src" / "turing").exists()
+    # An editable install may leave ignored bytecode-only package directories
+    # under src/. They are not source trees and must not affect the canonical
+    # packages/turing ownership check.
+    legacy = ROOT / "src" / "turing"
+    if legacy.exists():
+        assert not any(legacy.rglob("*.py"))
     turing = importlib.import_module("turing")
     expected = (ROOT / "packages" / "turing" / "src" / "turing").resolve()
     assert Path(turing.__file__).resolve().parent == expected

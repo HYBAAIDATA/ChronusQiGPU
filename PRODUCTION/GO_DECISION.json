@@ -1,0 +1,28 @@
+{
+  "schema": "chronus-production-go-decision-v1",
+  "decision": "HOLD",
+  "release_allowed": false,
+  "scope": "Chronus, OVID and THESEUS software-base readiness",
+  "decision_date": "2026-11-18",
+  "local_software_evidence": {
+    "python_suite": "2514 passed, 117 skipped, 1 xfailed",
+    "frontend_build": "PASS",
+    "frontend_acceptance": "4/4 PASS",
+    "product_gates": "PASS locally",
+    "qualification_level": "LOCAL_ONLY_UNATTESTED"
+  },
+  "blocking_requirements": [
+    "Exact-current hosted CI result is missing",
+    "GitHub artifact attestation and invocation verification are missing",
+    "Owner approval packet is missing",
+    "Azure Managed HSM custody evidence is missing",
+    "Device certificate and physical execution evidence are missing",
+    "Benchmark evidence is missing",
+    "SBOM and exact-artifact provenance are missing",
+    "Multi-region durability and deployment-profile evidence are missing",
+    "pnpm@10.12.4 parity has not been verified"
+  ],
+  "required_action": "Complete every blocking requirement and rerun the fail-closed release verifier.",
+  "production_claims_made": false
+}
+

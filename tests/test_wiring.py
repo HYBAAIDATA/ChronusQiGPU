@@ -54,6 +54,8 @@ def test_repeat_run_updates_and_duplicate_history(tmp_path):
 
 @pytest.mark.parametrize('duplicate', [False, True])
 def test_descendant_symlink_cannot_redirect_write(tmp_path, duplicate):
+    if __import__("os").name == "nt":
+        pytest.skip("Windows symlink creation requires SeCreateSymbolicLinkPrivilege")
     repo = tmp_path / 'repo'
     repo.mkdir()
     (repo / 'nested').mkdir()

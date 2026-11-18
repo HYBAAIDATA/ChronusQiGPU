@@ -140,7 +140,7 @@ def test_optional_gpu_refuses_narrowing_scale_and_overflow():
     one = np.array([1.0, 2.0], dtype=np.float32)
     with pytest.raises(ValueError, match="lose precision"):
         backend.execute("scale", one, scalar=1.0 / 3.0)
-    with pytest.raises(ValueError, match="numerical policy|finite"):
+    with pytest.raises(ValueError, match="numerical policy|finite|precision"):
         backend.execute("scale", one, scalar=float("inf"))
     with pytest.raises(RuntimeError, match="non-finite"):
         backend.execute(

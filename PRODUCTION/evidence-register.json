@@ -1,0 +1,92 @@
+{
+  "schema": "chronus-production-evidence-register-v1",
+  "status": "INCOMPLETE",
+  "release_decision": "HOLD",
+  "evidence_policy": "Missing, unavailable, gated, or locally unattested evidence never receives PASS status.",
+  "entries": [
+    {
+      "id": "LOCAL-PYTEST",
+      "requirement": "Full Python test suite",
+      "status": "LOCAL_ONLY",
+      "observed": "2514 passed, 117 skipped, 1 xfailed",
+      "artifact": "evidence/local-verification.json",
+      "owner": "CI/release owner",
+      "close_condition": "Repeat on clean exact-commit hosted CI and retain raw result."
+    },
+    {
+      "id": "LOCAL-FRONTEND",
+      "requirement": "Frontend build and acceptance",
+      "status": "LOCAL_ONLY",
+      "observed": "npm build PASS; acceptance 4/4 PASS",
+      "artifact": "evidence/local-verification.json",
+      "owner": "CI/release owner",
+      "close_condition": "Verify under pnpm@10.12.4 and exact-commit CI."
+    },
+    {
+      "id": "LOCAL-GATES",
+      "requirement": "Mandatory software gates",
+      "status": "LOCAL_ONLY",
+      "observed": "CO-SIGN, RS-RECEIPT, RS-REPLAY, FN-CLAIMS and FN-CUSTODY PASS locally",
+      "artifact": "evidence/product-gates.local.json",
+      "owner": "CI/release owner",
+      "close_condition": "Produce and verify the attested ci-verdict.json artifact."
+    },
+    {
+      "id": "HOSTED-CI",
+      "requirement": "Exact-current hosted CI",
+      "status": "MISSING",
+      "artifact": null,
+      "owner": "CI/release owner",
+      "close_condition": "Successful main-branch qualification run for the exact release SHA."
+    },
+    {
+      "id": "ATTESTATION",
+      "requirement": "Artifact attestation",
+      "status": "MISSING",
+      "artifact": null,
+      "owner": "CI/release owner",
+      "close_condition": "gh attestation verify confirms workflow, repository, ref, SHA and run invocation."
+    },
+    {
+      "id": "OWNER-APPROVAL",
+      "requirement": "Owner approval",
+      "status": "MISSING",
+      "artifact": null,
+      "owner": "Andre Taylor-Morris or authorized delegate",
+      "close_condition": "Signed approval identifies scope, commit, profile, limitations and rollback authority."
+    },
+    {
+      "id": "KEY-CUSTODY",
+      "requirement": "Azure Managed HSM custody",
+      "status": "MISSING",
+      "artifact": null,
+      "owner": "Security/platform owner",
+      "close_condition": "Live provider identity and sign/verify evidence retained."
+    },
+    {
+      "id": "DEVICE-EVIDENCE",
+      "requirement": "Device certificate and physical execution",
+      "status": "MISSING",
+      "artifact": null,
+      "owner": "Hardware/platform owner",
+      "close_condition": "Device-bound certificate, host identity, raw execution output and reviewer recorded."
+    },
+    {
+      "id": "DEPLOYMENT-EVIDENCE",
+      "requirement": "Deployment profile, multi-region and recovery evidence",
+      "status": "MISSING",
+      "artifact": null,
+      "owner": "Operations owner",
+      "close_condition": "Profile-specific failover, recovery, RTO/RPO and rollback evidence retained."
+    },
+    {
+      "id": "PACKAGE-MANAGER",
+      "requirement": "Declared pnpm package-manager parity",
+      "status": "BLOCKED",
+      "artifact": null,
+      "owner": "Build/release owner",
+      "close_condition": "Install pnpm@10.12.4 and rerun build plus acceptance from the lockfile."
+    }
+  ]
+}
+

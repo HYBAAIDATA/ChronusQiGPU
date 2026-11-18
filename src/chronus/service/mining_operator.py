@@ -113,8 +113,7 @@ def get_mining_admin_operator(
             if not custody.verify_journal_continuity(identity.tenant_id):
                 raise RuntimeError("mining administration audit journal invalid")
         # Reads: custody availability and full store integrity were enforced
-        # when the handle was built; per-request continuity is a mutation
-        # guarantee, and an empty journal on a fresh store must not fail a read.
+        # when the handle was built; GET telemetry is intentionally read-only.
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

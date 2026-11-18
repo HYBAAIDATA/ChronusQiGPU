@@ -1,7 +1,10 @@
 """Manifest reuse never trusts stale source hashes or paths outside the bundle."""
 import hashlib
 import json
+import os
 from pathlib import Path
+
+import pytest
 
 from chronus.wiring import FileEntry, _already_wired, build_wiring_plan
 
@@ -61,6 +64,8 @@ def test_manifest_parent_escape_is_never_trusted(tmp_path):
 
 
 def test_manifest_symlink_escape_is_never_trusted(tmp_path):
+    if os.name == "nt":
+        pytest.skip("Windows symlink creation requires SeCreateSymbolicLinkPrivilege")
     source = tmp_path / "source.py"
     source.write_bytes(b"escape")
     outside = tmp_path / "outside.py"
@@ -74,6 +79,8 @@ def test_manifest_symlink_escape_is_never_trusted(tmp_path):
 
 
 def test_manifest_self_referencing_symlink_is_not_reused(tmp_path):
+    if os.name == "nt":
+        pytest.skip("Windows symlink creation requires SeCreateSymbolicLinkPrivilege")
     source = tmp_path / "source.py"
     source.write_bytes(b"self-loop")
     bundle = tmp_path / "wired"
@@ -99,6 +106,8 @@ def test_manifest_non_mapping_root_is_ignored(tmp_path):
 
 
 def test_in_bundle_symlink_alias_is_rejected(tmp_path):
+    if os.name == "nt":
+        pytest.skip("Windows symlink creation requires SeCreateSymbolicLinkPrivilege")
     source = tmp_path / "source.py"
     source.write_bytes(b"matching")
     bundle = tmp_path / "wired"
@@ -111,6 +120,8 @@ def test_in_bundle_symlink_alias_is_rejected(tmp_path):
 
 
 def test_symlinked_bundle_ancestor_is_rejected(tmp_path):
+    if os.name == "nt":
+        pytest.skip("Windows symlink creation requires SeCreateSymbolicLinkPrivilege")
     source = tmp_path / "source.py"
     source.write_bytes(b"matching")
     bundle = tmp_path / "wired"

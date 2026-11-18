@@ -324,7 +324,12 @@ def test_bootstrap_lock_is_shared_by_database_symlink_alias(tmp_path):
     target = tmp_path / "canonical.sqlite3"
     target.touch()
     alias = tmp_path / "alias.sqlite3"
-    alias.symlink_to(target)
+    try:
+        alias.symlink_to(target)
+    except OSError as exc:
+        if getattr(exc, "winerror", None) == 1314:
+            pytest.skip("creating symlinks requires an unavailable Windows privilege")
+        raise
     code = (
         "from chronus.service.api.state import _interprocess_bootstrap_lock; "
         "print('WAITING', flush=True); "
@@ -405,8 +410,12 @@ def test_sqlite_replaced_database_fails_closed_and_readiness_drops(
         assert conn.execute("SELECT count(*) FROM api_workloads").fetchone()
 
     replacement = tmp_path / "replacement.sqlite3"
-    with sqlite3.connect(replacement) as conn:
+    replacement_conn = sqlite3.connect(replacement)
+    try:
+        conn = replacement_conn
         conn.execute("CREATE TABLE unrelated (value INTEGER)")
+    finally:
+        replacement_conn.close()
     replacement.replace(db_path)
 
     with pytest.raises(RuntimeError, match="database replaced"):
@@ -478,6 +487,10 @@ def test_sqlite_schema_validation_checks_primary_key(tmp_path, monkeypatch):
     monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
 
 
+@pytest.mark.skipif(
+    os.name != "posix",
+    reason="Windows SQLite file sharing prevents replacing an open database",
+)
 def test_sqlite_detects_path_swap_during_connection_open(tmp_path, monkeypatch):
     monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "sqlite")
     db_path = tmp_path / "api.sqlite3"
@@ -485,8 +498,12 @@ def test_sqlite_detects_path_swap_during_connection_open(tmp_path, monkeypatch):
     with state.connection():
         pass
     replacement_db = tmp_path / "replacement.sqlite3"
-    with sqlite3.connect(replacement_db) as conn:
+    replacement_conn = sqlite3.connect(replacement_db)
+    try:
+        conn = replacement_conn
         conn.execute("CREATE TABLE unrelated (value INTEGER)")
+    finally:
+        replacement_conn.close()
 
     actual_connect = state.sqlite3.connect
     def connect_with_swap(*args, **kwargs):
@@ -509,8 +526,12 @@ def test_sqlite_path_alias_replacement_fails_closed(tmp_path, monkeypatch):
     with state.connection():
         pass
     replacement = tmp_path / "fresh.sqlite3"
-    with sqlite3.connect(replacement) as conn:
+    replacement_conn = sqlite3.connect(replacement)
+    try:
+        conn = replacement_conn
         conn.execute("CREATE TABLE unrelated (value INTEGER)")
+    finally:
+        replacement_conn.close()
     replacement.replace(db_path)
     monkeypatch.setenv("CHRONUS_API_DB_PATH", str(tmp_path) + "/./api.sqlite3")
     with pytest.raises(RuntimeError, match="database replaced"):
@@ -556,6 +577,10 @@ def test_sqlite_rejects_unexpected_write_trigger(tmp_path, monkeypatch):
     monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "memory")
 
 
+@pytest.mark.skipif(
+    os.name != "posix",
+    reason="SQLite symlink retarget coverage requires POSIX symlink semantics",
+)
 def test_sqlite_symlink_retarget_fails_closed(tmp_path, monkeypatch):
     monkeypatch.setenv("CHRONUS_API_STATE_BACKEND", "sqlite")
     first = tmp_path / "first.sqlite3"

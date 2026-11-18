@@ -87,7 +87,9 @@ def test_matrix_result_budget_before_allocation():
     np.array([np.longdouble("1.0000000000000000001")], dtype=np.longdouble),
 ])
 def test_window_rejects_numerical_precision_narrowing(replacement):
+    if replacement.dtype == np.longdouble and np.finfo(np.longdouble).eps >= np.finfo(np.float64).eps:
+        pytest.skip("platform longdouble has float64 precision")
     executor = FoldedTensorExecutor(depth=2)
     operand = executor.fold(np.arange(12, dtype=np.float64))
-    with pytest.raises(ValueError, match="truncate"):
+    with pytest.raises(ValueError, match="numerical precision|truncate"):
         executor.update_window(operand, replacement, start=1, stop=2)

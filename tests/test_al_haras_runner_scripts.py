@@ -48,7 +48,30 @@ PRE_JOB = RUNNER / "hooks" / "pre-job-attest.sh"
 POST_JOB = RUNNER / "hooks" / "post-job-scrub.sh"
 SCRIPTS = [BOOTSTRAP, TEARDOWN, REGISTER, PRE_JOB, POST_JOB]
 
-BASH = shutil.which("bash")
+def _functional_bash() -> str | None:
+    """Return Bash only when the discovered executable is actually runnable.
+
+    On Windows, ``shutil.which('bash')`` can resolve to the WSL launcher even
+    when WSL is not installed or started. Treat that launcher as unavailable
+    instead of allowing shell-backed tests to hang the full suite.
+    """
+    candidate = shutil.which("bash")
+    if candidate is None:
+        return None
+    try:
+        result = subprocess.run(
+            [candidate, "--version"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return candidate if result.returncode == 0 else None
+
+
+BASH = _functional_bash()
 needs_bash = pytest.mark.skipif(BASH is None, reason="bash is not installed")
 
 # The runner scripts are Linux units run by systemd as root and as
@@ -338,7 +361,9 @@ def _readme_layout() -> dict[str, str]:
 def test_readme_layout_lists_every_file_and_matches_the_unit():
     layout = _readme_layout()
     shipped = {
-        str(p.relative_to(RUNNER)) for p in RUNNER.rglob("*") if p.is_file() and p.name != "README.md"
+        str(p.relative_to(RUNNER)).replace("\\", "/")
+        for p in RUNNER.rglob("*")
+        if p.is_file() and p.name != "README.md"
     }
     assert set(layout) == shipped
     readme = README.read_text()
@@ -346,7 +371,8 @@ def test_readme_layout_lists_every_file_and_matches_the_unit():
     for source, installed in layout.items():
         install_lines = [line for line in install_block.splitlines() if source in line.split()]
         assert install_lines, f"no install command for {source}"
-        assert any(str(Path(installed).parent) in line for line in install_lines), source
+        install_parent = str(Path(installed).parent).replace("\\", "/")
+        assert any(install_parent in line for line in install_lines), source
     installed_paths = set(layout.values())
     used_by_unit = []
     for key, value in _unit_entries():

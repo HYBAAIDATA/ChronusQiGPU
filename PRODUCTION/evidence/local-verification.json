@@ -1,0 +1,46 @@
+{
+  "schema": "chronus-local-verification-v1",
+  "evidence_status": "LOCAL_ONLY_UNATTESTED",
+  "observed_date": "2026-11-18",
+  "source_commit_at_capture": "3860840e11a86342641576628f791b9070d13c84",
+  "working_tree_note": "Evidence was run against the shared working tree; it is not a hosted exact-commit attestation.",
+  "runtime": {
+    "python": "3.12.10",
+    "npm": "12.0.2",
+    "pnpm": "UNAVAILABLE",
+    "frontend_package_lock_sha256": "21E7AC98E3C0CDB2E79CF26FFA9260BD1611D6240031A11FA54F483BE8D26344"
+  },
+  "checks": [
+    {
+      "command": "python -m pytest -q --tb=no",
+      "result": "PASS_LOCAL",
+      "summary": "2514 passed, 117 skipped, 1 xfailed, 74 warnings, 121 subtests"
+    },
+    {
+      "command": "npm run build",
+      "result": "PASS_LOCAL",
+      "summary": "Next.js production build completed"
+    },
+    {
+      "command": "npm run test:acceptance",
+      "result": "PASS_LOCAL",
+      "summary": "4 passed, 0 failed"
+    },
+    {
+      "command": "python scripts/ci/build_product_gates.py --profile software-base",
+      "result": "PASS_LOCAL",
+      "summary": "All five mandatory software-base gates passed; external custody and multi-region remain false"
+    }
+  ],
+  "not_established": [
+    "Hosted CI success for the exact release commit",
+    "GitHub artifact attestation",
+    "Owner approval",
+    "Managed HSM custody",
+    "Physical device execution or performance",
+    "Multi-region durability",
+    "Customer deployment acceptance",
+    "Production qualification"
+  ]
+}
+

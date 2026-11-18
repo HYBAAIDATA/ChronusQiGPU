@@ -316,6 +316,22 @@ def _bundle_file_matches(output_dir: Path, rel_path: Path, entry: FileEntry) -> 
     """
     if rel_path.is_absolute() or not rel_path.parts or ".." in rel_path.parts:
         return False
+    # Windows does not expose the POSIX no-follow/open-directory flags.  Keep
+    # the same fail-closed alias checks for the local implementation while
+    # retaining descriptor-bound verification on platforms that support it.
+    if os.name == "nt" and not hasattr(os, "O_NOFOLLOW"):
+        candidate = output_dir
+        for part in rel_path.parts:
+            candidate = candidate / part
+            if candidate.is_symlink():
+                return False
+        try:
+            metadata = candidate.stat()
+            if not stat.S_ISREG(metadata.st_mode) or metadata.st_size != entry.size:
+                return False
+            return hashlib.sha256(candidate.read_bytes()).hexdigest() == entry.sha256
+        except (OSError, ValueError, RuntimeError):
+            return False
     flags = os.O_RDONLY | os.O_NOFOLLOW
     try:
         dir_fd = os.open(output_dir, flags | os.O_DIRECTORY)
@@ -439,6 +455,30 @@ def _destination_parent(root: Path, rel: Path) -> int:
 
 def _copy_entry(e: FileEntry, root: Path) -> None:
     import uuid
+
+    if os.name == "nt" and not hasattr(os, "O_NOFOLLOW"):
+        destination = root / e.rel_path
+        parent = root
+        for part in e.rel_path.parts[:-1]:
+            parent = parent / part
+            if parent.exists() and parent.is_symlink():
+                raise OSError(f"refusing symlinked destination ancestor: {parent}")
+            parent.mkdir(exist_ok=True)
+        if destination.is_symlink():
+            raise OSError(f"refusing symlinked destination: {destination}")
+        if destination.is_file():
+            digest = hashlib.sha256(destination.read_bytes()).hexdigest()
+            if digest == e.sha256:
+                return
+        temporary = parent / f".wiring-{uuid.uuid4().hex}"
+        try:
+            with e.abs_path.open("rb") as source, temporary.open("xb") as target:
+                shutil.copyfileobj(source, target)
+            os.replace(temporary, destination)
+        finally:
+            if temporary.exists():
+                temporary.unlink()
+        return
 
     fd = _destination_parent(root, e.rel_path)
     temporary = None

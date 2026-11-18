@@ -1,0 +1,40 @@
+{
+  "schema": "hyba.triad.manifests/v1",
+  "generated": "2026-11-18T10:30:00Z",
+  "baseline": {"sha": "3860840e11a86342641576628f791b9070d13c84", "branch": "feat/quantum-team", "dirty": true},
+  "provenance_rule": "append-only: historical rows retained with confirm/supersede/cannot-verify; current executed run is the only proof of a current claim.",
+  "mandatory_gates": ["CO-SIGN", "RS-RECEIPT", "RS-REPLAY", "FN-CLAIMS", "FN-CUSTODY"],
+  "findings": [
+    {"id": "F-001", "summary": "repo-identity divergence (not reconciled): origin hybadatadevops1/Chronusv2 @ HEAD 3860840e (branch feat/quantum-team); docs reference HYBAAIDATA/ChronusQiGPU and PR #136 on codex/production-readiness-20261116. PR #136 head 44718d94 is verified ancestor of HEAD (HEAD 110 ahead, 0 behind = clean linear, not divergent). Second remote chronusqigpu added; PR#136 head fetched.", "evidence": "git remote -v; git merge-base/rev-list (run 2026-11-18)"},
+    {"id": "F-002", "summary": "canon gap: OWNER_DECLARATIONS.md and UNIVERSAL_PRINCIPLE_MAP.md absent from workspace. hyba-mcp index total_files moved 1193->1201->1119->750->1110 across queries; canon-dependent classifications annotated CANON: UNVERIFIABLE-IN-WORKSPACE.", "evidence": "hyba-mcp advisory_only=true, theorem_proven=false"}
+  ],
+  "rows": [
+    {"id":"row-execution","namespace":"src/chronus/execution","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
+    {"id":"row-fleet","namespace":"src/chronus/fleet","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
+    {"id":"row-tensor","namespace":"src/chronus/tensor","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
+    {"id":"row-tensor-opencl","namespace":"src/chronus/tensor/opencl","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["physical OpenCL GPU device evidence: cert, ref-vs-device diff, timings"]}},
+    {"id":"row-tensor-cuda","namespace":"src/chronus/tensor/cuda","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["physical NVIDIA CUDA GPU device evidence: cert, ref-vs-device diff, timings"]}},
+    {"id":"row-tensor-metal","namespace":"src/chronus/tensor/metal","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["physical Apple GPU/Metal device evidence: cert, ref-vs-device diff, timings"]}},
+    {"id":"row-tensor-geodesic","namespace":"src/chronus/tensor/geodesic","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
+    {"id":"row-ovid","namespace":"src/chronus/ovid","authority":"OVID","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
+    {"id":"row-storage-durable","namespace":"src/chronus/storage/durable","authority":"THESEUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
+    {"id":"row-security","namespace":"src/chronus/security","authority":"AL HARAS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
+    {"id":"row-crypto","namespace":"src/chronus/crypto","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
+    {"id":"row-core","namespace":"src/chronus/core","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}}
+    {"id":"row-igpu","namespace":"src/chronus/igpu","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
+    {"id":"row-hw","namespace":"src/chronus/hw","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
+    {"id":"row-acceleration","namespace":"src/chronus/acceleration","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
+    {"id":"row-backends","namespace":"src/chronus/backends","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
+    {"id":"row-api","namespace":"src/chronus/api","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
+    {"id":"row-service","namespace":"src/chronus/service","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
+    {"id":"row-al_haras","namespace":"src/chronus/al_haras","authority":"AL HARAS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
+    {"id":"row-compute","namespace":"src/chronus/compute","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
+    {"id":"row-pulvini","namespace":"src/chronus/pulvini","authority":"CHRONUS (bounded research)","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
+    {"id":"row-qsdl","namespace":"src/chronus/qsdl","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
+    {"id":"row-stratum","namespace":"src/chronus/stratum","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
+    {"id":"row-quantum-legacy","namespace":"src/chronus/quantum","authority":"CHRONUS (legacy research)","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
+    {"id":"row-turing","namespace":"packages/turing","authority":"TURING","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
+    {"id":"row-hyba-mine","namespace":"packages/hyba_mine","authority":"CHRONUS (out-of-tree)","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
+    {"id":"row-hyba-trust","namespace":"packages/hyba_trust","authority":"HYBA SECURITY","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}}
+  ]
+}

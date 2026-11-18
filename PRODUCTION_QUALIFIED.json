@@ -12,7 +12,9 @@
       "benchmark.json",
       "sbom.json",
       "provenance.json",
-      "rollback-plan.json"
+      "rollback-plan.json",
+      "ci-verdict.json",
+      "attestation-verification-receipt.json"
     ],
     "missing": [
       "owner-approval.json",
@@ -21,6 +23,8 @@
       "sbom.json",
       "provenance.json",
       "rollback-plan.json",
+      "ci-verdict.json",
+      "attestation-verification-receipt.json",
       "CHRONUS_RELEASE_APPROVED=true"
     ]
   },

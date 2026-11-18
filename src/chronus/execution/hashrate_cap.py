@@ -165,7 +165,17 @@ def publish_limit_file(eh_s: float) -> None:
     temporary = Path(name)
     try:
         temporary.write_text(f"{eh_s}\n", encoding="ascii")
-        os.replace(temporary, path)
+        # Windows can briefly reject a concurrent replacement while another
+        # publisher is closing its handle to the same destination. Retry only
+        # that transient sharing failure; the final attempt remains fail-closed.
+        for attempt in range(8):
+            try:
+                os.replace(temporary, path)
+                break
+            except PermissionError:
+                if attempt == 7:
+                    raise
+                time.sleep(0.005)
     except Exception:
         temporary.unlink(missing_ok=True)
         raise

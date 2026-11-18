@@ -6,11 +6,15 @@ import { performance } from 'node:perf_hooks';
 
 const port = 31_000 + Math.floor(Math.random() * 5_000);
 const baseUrl = `http://127.0.0.1:${port}`;
-const nextCommand = process.platform === 'win32' ? 'node_modules/.bin/next.cmd' : './node_modules/.bin/next';
+// Invoke the JavaScript entrypoint through Node so the acceptance harness works
+// on Windows as well as POSIX hosts. Spawning a .cmd shim directly returns
+// EINVAL on Windows when shell execution is disabled.
+const nextCommand = process.execPath;
+const nextEntrypoint = 'node_modules/next/dist/bin/next';
 let server;
 
 before(async () => {
-  server = spawn(nextCommand, ['start', '--hostname', '127.0.0.1', '--port', String(port)], {
+  server = spawn(nextCommand, [nextEntrypoint, 'start', '--hostname', '127.0.0.1', '--port', String(port)], {
     cwd: process.cwd(),
     env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1' },
     stdio: 'ignore',
