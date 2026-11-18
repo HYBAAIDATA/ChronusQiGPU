@@ -20,7 +20,9 @@
 #  if defined(__SSE4_2__) && defined(__x86_64__)
 #    define GL2_USE_SSE42_CRC 1
 #  endif
-#  if defined(__ARM_FEATURE_CRC32)
+#  if defined(__ARM_FEATURE_CRC32) && defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+   /* __crc32cd consumes the low byte first: the 8-byte word path is only byte-order
+      correct on little-endian; big-endian Arm builds use the portable byte path. */
 #    define GL2_USE_ARM_CRC 1
 #  endif
 #endif
@@ -134,7 +136,7 @@ void gl2_unfold_pairs(const uint8_t * restrict src, uint8_t * restrict dst, size
 }
 
 /* [REVIEW FIX R1] gl2_fold_truncated_pairs removed from production (no-truncation contract);
-   the lossy projection is audited in Python only: tests/quotient_geometry_audit.py */
+   the lossy projection is audited in Python only: tests/test_quotient_geometry_audit.py */
 
 uint32_t gl2_crc32c(uint32_t crc, const uint8_t * restrict buf, size_t len) {
     uint32_t c = crc ^ 0xFFFFFFFFu;

@@ -6,7 +6,8 @@ int.from_bytes(SHA256d(header), "little") <= target.  The first 64-byte block
 is compressed once per ntime (midstate via ``hashlib`` ``copy``); each
 evaluation then costs exactly two SHA-256 compressions (block 2 + outer hash).
 
-Single honest counter: ``evaluations`` (distinct values hashed) and
+Counters: ``evaluations`` is the number of predicate/digest calls, repeated
+values included (the midstate cache does not deduplicate evaluations), and
 ``compressions`` (= 2 * evaluations + midstates).  Every call is a classical
 SHA-256d evaluation.
 """
@@ -24,7 +25,8 @@ def target_from_bits(bits: int) -> int:
     right shift for exponents <= 3, sign bit rejected, target must be in (0, 2^256)."""
     if isinstance(bits, bool) or not isinstance(bits, int) or not 0 <= bits < (1 << 32):
         raise ValueError("bits must be a 32-bit compact target")
-    return decode_nbits_target(bits)
+    # int subclasses (e.g. IntEnum) are normalised: the gatekeeper requires a plain int.
+    return decode_nbits_target(int(bits))
 
 
 def sha256d(data: bytes) -> bytes:

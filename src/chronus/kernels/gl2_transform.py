@@ -10,7 +10,7 @@ Algebraic Contract:
   - Cayley-Hamilton O(1) inversion: M_k^-1 === M_k - tr(M_k)*I_2 (mod 2^k).
   - No-truncation contract [REVIEW FIX R1]: every production path is the lossless
     bijection on (Z/256Z)^2. The lossy lane-0 projection and its fiber enumeration
-    live only in tests/quotient_geometry_audit.py.
+    live only in tests/test_quotient_geometry_audit.py.
   - FoldedRegister7: 7-generator affine register over (Z/2^k Z)^2 folded by M_k.
 
 Wire Framing:
@@ -207,6 +207,11 @@ def _as_view(raw: BytesLike) -> memoryview:
     if not isinstance(raw, (bytes, bytearray, memoryview)):
         raise TypeError(f"expected bytes-like object, got {type(raw).__name__}")
     view = memoryview(raw)
+    if not view.c_contiguous:
+        # Strided views (e.g. memoryview(b)[::2]) are normalised to contiguous bytes
+        # once here, so the native, NumPy and scalar paths all see the same input and
+        # stream state (carry, counters) is only touched after a valid view exists.
+        view = memoryview(view.tobytes())
     return view if view.format == "B" and view.ndim == 1 else view.cast("B")
 
 
@@ -328,13 +333,20 @@ class Folded:
         if len(view) != expected_total:
             raise ValueError(f"wire frame size {len(view)} != expected {expected_total} for length {length}")
 
-        payload_view = view[WIRE_HEADER_SIZE_V2 : WIRE_HEADER_SIZE_V2 + expected_size]
-        (expected_crc,) = WIRE_CRC_STRUCT_V2.unpack(view[WIRE_HEADER_SIZE_V2 + expected_size :])
-        actual_crc = crc32c(payload_view, crc32c(view[:WIRE_HEADER_SIZE_V2]))
+        # One stable snapshot (size already bounded above): the bytes that pass the
+        # CRC are exactly the bytes returned, even if a shared bytearray is mutated
+        # concurrently (the native CRC releases the GIL).
+        header_bytes = bytes(view[:WIRE_HEADER_SIZE_V2])
+        snap = view.tobytes()
+        if snap[:WIRE_HEADER_SIZE_V2] != header_bytes:
+            raise ValueError("wire buffer changed during decode")
+        payload = snap[WIRE_HEADER_SIZE_V2 : WIRE_HEADER_SIZE_V2 + expected_size]
+        (expected_crc,) = WIRE_CRC_STRUCT_V2.unpack(snap[WIRE_HEADER_SIZE_V2 + expected_size :])
+        actual_crc = crc32c(payload, crc32c(header_bytes))
         if actual_crc != expected_crc:
             raise ValueError(f"CRC-32C mismatch: expected 0x{expected_crc:08x}, got 0x{actual_crc:08x}")
 
-        return cls(bytes(payload_view), length)
+        return cls(payload, length)
 
     @classmethod
     def from_wire_v1(cls, blob: BytesLike, *, max_length: int | None = None) -> Folded:
@@ -552,9 +564,12 @@ class UnfoldStream:
         view = _as_view(chunk)
         if len(view) == 0:
             return b""
-        self._buf.extend(view)
-
         if not self._header_parsed:
+            # Buffer only what the header still needs; the rest is admitted below
+            # after the frame capacity is known.
+            need = WIRE_HEADER_SIZE_V2 - len(self._buf)
+            self._buf.extend(view[:need])
+            view = view[need:]
             if len(self._buf) < WIRE_HEADER_SIZE_V2:
                 return b""
             hdr = bytes(self._buf[:WIRE_HEADER_SIZE_V2])
@@ -574,13 +589,15 @@ class UnfoldStream:
             self._expected_payload_bytes = orig_len + (orig_len & 1)
             self._running_crc = crc32c(hdr, 0)
 
-        # Bound buffered input by what the frame can still contain (payload + trailer).
+        # Bound input by what the frame can still contain (payload + trailer), checked
+        # before the chunk is copied into the buffer.
         allowed = self._expected_payload_bytes - self._payload_consumed + WIRE_FOOTER_SIZE_V2
-        if len(self._buf) > allowed:
-            excess = len(self._buf) - allowed
+        if len(self._buf) + len(view) > allowed:
+            excess = len(self._buf) + len(view) - allowed
             self._buf.clear()
             self._finalized = True
             raise ValueError(f"{excess} bytes beyond the v2 frame trailer")
+        self._buf.extend(view)
 
         rem_payload = self._expected_payload_bytes - self._payload_consumed
         pairs_bytes = min(len(self._buf), rem_payload) & ~1
@@ -597,6 +614,9 @@ class UnfoldStream:
 
         if self._payload_consumed == self._expected_payload_bytes and (self._orig_length & 1):
             if dec[-1] != 0:
+                # Fail closed: a rejected frame can never be finalized as valid.
+                self._buf.clear()
+                self._finalized = True
                 raise ValueError("non-zero canonical padding byte in odd-length stream")
             return bytes(dec[:-1])
 
@@ -785,6 +805,12 @@ class FoldedRegisterN:
         for v in (self.base, *self.generators):
             if len(v) != 2 or any(isinstance(x, bool) or not isinstance(x, int) or not 0 <= x < mod for x in v):
                 raise ValueError(f"vector components must be integers in [0, 2^{self.k})")
+        for j, g in enumerate(self.generators):
+            # A resolved slot is folded into the base by collapse_generator (which zeroes
+            # it); a nonzero vector there would make evaluate_index and readout_winner
+            # disagree, so that state is rejected (also on wire decode).
+            if (self.resolved_mask >> j) & 1 and g != (0, 0):
+                raise ValueError(f"resolved generator slot {j} must hold the zero vector")
 
     @property
     def num_generators(self) -> int:
@@ -899,7 +925,9 @@ class FoldedRegisterN:
     @classmethod
     def from_wire_bytes(cls, blob: BytesLike) -> "FoldedRegisterN":
         """Verify CRC-32C, unfold, length-check and rebuild; fails closed."""
-        payload = unfold(Folded.from_wire(blob))
+        # Bound the outer frame before CRC/copy/unfold: no register payload exceeds
+        # _payload_length(MAX_RING_K, MAX_GENERATORS_N) bytes.
+        payload = unfold(Folded.from_wire(blob, max_length=cls._payload_length(MAX_RING_K, MAX_GENERATORS_N)))
         if len(payload) < _REGN_HEADER.size:
             raise ValueError("register payload shorter than header")
         k, n, rmask, rbits = _REGN_HEADER.unpack_from(payload, 0)

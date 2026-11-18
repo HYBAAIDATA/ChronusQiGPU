@@ -18,8 +18,10 @@ Hamming-step note (docstring correction): Gray coding gives unit Hamming
 distance only between Gray codes of *consecutive integers*.  Consecutive
 schedule positions here are affine images differing by ``stride``; for
 stride != 1 their Gray codes generally differ in more than one bit.  The
-measured distribution is reported by ``hamming_step_histogram``; consecutive
-steps are single-bit flips only when stride == 1 (mod 2^D).
+measured distribution is reported by ``hamming_step_histogram``.  stride == 1
+(mod 2^D) guarantees single-bit steps; it is sufficient, not necessary: e.g.
+stride == -1 (mod 2^D) walks the cyclic Gray order backwards and also gives
+single-bit steps (D=3, epoch 1: stride 7, order [2, 3, 1, 0, 4, 5, 7, 6]).
 
 ``import math`` is used only for the integer gcd check.
 """
