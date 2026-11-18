@@ -6,6 +6,7 @@
     "entanglement.py": "algebraic_model",
     "extension_search.py": "finite_field_model",
     "geometric_polychoron.py": "algebraic_model",
+    "golden_scales.py": "algebraic_model",
     "grover.py": "finite_field_model",
     "metallic_search.py": "algebraic_model",
     "ring_codec.py": "algebraic_model",

@@ -731,7 +731,21 @@ class FoldedRegister7:
 # Generalisation of the owner's FoldedRegister7 (left untouched above).  All
 # arithmetic is integer mod 2^k; no float, no RNG.
 
+# Any ring Z/2^k with 8 <= k <= 255: the Hensel lift M_k exists for every k >= 8
+# (hensellift_m15) and k is stored in one header byte.  The historical rings
+# (8, 16, 32, 64) remain the common cases.
 ALLOWED_RINGS_K: tuple[int, ...] = (8, 16, 32, 64)
+MIN_RING_K: int = 8
+MAX_RING_K: int = 255
+
+
+def _valid_ring_k(k: object) -> bool:
+    return isinstance(k, int) and not isinstance(k, bool) and MIN_RING_K <= k <= MAX_RING_K
+
+
+def _lane_bytes(k: int) -> int:
+    """Bytes per lane component: ceil(k / 8), so k not divisible by 8 never truncates."""
+    return (k + 7) // 8
 MAX_GENERATORS_N: int = 64
 _REGN_HEADER = struct.Struct(">BBQQ")  # k, n, resolved_mask, resolved_bits
 
@@ -757,8 +771,8 @@ class FoldedRegisterN:
     resolved_bits: int = 0
 
     def __post_init__(self) -> None:
-        if isinstance(self.k, bool) or self.k not in ALLOWED_RINGS_K:
-            raise ValueError(f"k must be one of {ALLOWED_RINGS_K}, got {self.k!r}")
+        if not _valid_ring_k(self.k):
+            raise ValueError(f"k must be an integer in [{MIN_RING_K}, {MAX_RING_K}], got {self.k!r}")
         n = len(self.generators)
         if not 1 <= n <= MAX_GENERATORS_N:
             raise ValueError(f"Expected 1..{MAX_GENERATORS_N} generators, got {n}")
@@ -785,8 +799,8 @@ class FoldedRegisterN:
         """2^num_generators consecutive lane-1 values starting at domain_base's low k bits."""
         if isinstance(domain_base, bool) or not isinstance(domain_base, int) or domain_base < 0:
             raise ValueError("domain_base must be a non-negative integer")
-        if k not in ALLOWED_RINGS_K:
-            raise ValueError(f"k must be one of {ALLOWED_RINGS_K}, got {k!r}")
+        if not _valid_ring_k(k):
+            raise ValueError(f"k must be an integer in [{MIN_RING_K}, {MAX_RING_K}], got {k!r}")
         if isinstance(num_generators, bool) or not isinstance(num_generators, int) or not 1 <= num_generators <= min(k, MAX_GENERATORS_N):
             # (0, 2^j mod 2^k) is the zero vector for j >= k: states would collide.
             raise ValueError(f"num_generators must be in 1..{min(k, MAX_GENERATORS_N)} for k={k}")
@@ -868,11 +882,11 @@ class FoldedRegisterN:
 
     @staticmethod
     def _payload_length(k: int, n: int) -> int:
-        return _REGN_HEADER.size + 2 * (k // 8) * (1 + n)
+        return _REGN_HEADER.size + 2 * _lane_bytes(k) * (1 + n)
 
     def to_wire_bytes(self) -> bytes:
         """Big-endian register payload, framed as a lossless GL2\\x01 v2 wire frame."""
-        bw = self.k // 8
+        bw = _lane_bytes(self.k)
         parts = [_REGN_HEADER.pack(self.k, self.num_generators, self.resolved_mask, self.resolved_bits)]
         for v in (self.base, *self.generators):
             parts.append(v[0].to_bytes(bw, "big"))
@@ -889,11 +903,11 @@ class FoldedRegisterN:
         if len(payload) < _REGN_HEADER.size:
             raise ValueError("register payload shorter than header")
         k, n, rmask, rbits = _REGN_HEADER.unpack_from(payload, 0)
-        if k not in ALLOWED_RINGS_K or not 1 <= n <= MAX_GENERATORS_N:
+        if not _valid_ring_k(k) or not 1 <= n <= MAX_GENERATORS_N:
             raise ValueError("register header out of range")
         if len(payload) != cls._payload_length(k, n):
             raise ValueError(f"register payload length {len(payload)} != {cls._payload_length(k, n)}")
-        bw = k // 8
+        bw = _lane_bytes(k)
         off = _REGN_HEADER.size
         vecs = []
         for _ in range(n + 1):

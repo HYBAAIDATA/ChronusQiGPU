@@ -166,7 +166,9 @@ def test_register_n_wrap_and_guards():
     with pytest.raises(ValueError):
         FoldedRegisterN.from_domain_offset(0, num_generators=9, k=8)
     with pytest.raises(ValueError):
-        FoldedRegisterN.from_domain_offset(0, num_generators=4, k=12)
+        FoldedRegisterN.from_domain_offset(0, num_generators=4, k=7)      # below the Hensel range
+    with pytest.raises(ValueError):
+        FoldedRegisterN.from_domain_offset(0, num_generators=4, k=256)    # k is one header byte
 
 
 def test_register7_untouched_and_no_lossy_exports():
