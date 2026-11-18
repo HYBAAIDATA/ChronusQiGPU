@@ -4,6 +4,8 @@ import numpy as np
 from chronus.pulvini.formal import PhiRecursiveOperator, ValidationError
 from chronus.tensor.pulvini_selective import unfold_partial_recursive
 
+pytestmark = pytest.mark.simulated
+
 
 @pytest.mark.parametrize("normalization", ["orthonormal", "legacy"])
 @pytest.mark.parametrize("length,depth", [(1, 0), (2, 1), (3, 2), (17, 7), (128, 4), (1000, 12)])

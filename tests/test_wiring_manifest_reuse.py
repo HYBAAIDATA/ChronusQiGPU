@@ -4,6 +4,9 @@ import json
 from pathlib import Path
 
 from chronus.wiring import FileEntry, _already_wired, build_wiring_plan
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 def _entry(path: Path, rel: str = "module.py") -> FileEntry:

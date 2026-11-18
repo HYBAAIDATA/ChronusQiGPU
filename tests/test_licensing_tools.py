@@ -20,6 +20,9 @@ sys.path.insert(0, str(ROOT / "scripts" / "licensing"))
 import issue_lease  # noqa: E402
 import issue_revocations  # noqa: E402
 from chronus.licensing import fingerprint, verify_lease, verify_revocations  # noqa: E402
+import pytest
+
+pytestmark = pytest.mark.real
 
 KID = "hyba-tooling-test"
 FP = fingerprint("test-id", b"tooling")

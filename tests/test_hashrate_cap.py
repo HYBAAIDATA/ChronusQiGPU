@@ -17,6 +17,8 @@ from chronus.execution.mining_entrypoint import ChronusRealMiningEngine
 from chronus.execution.opencl_sha256d import OpenCLSha256dMinerBackend
 from chronus.stratum.endpoint import PoolEndpoint
 
+pytestmark = pytest.mark.simulated
+
 
 GENESIS_HEADER = bytes.fromhex(
     "01000000"

@@ -12,6 +12,8 @@ from fastapi import HTTPException
 from chronus.execution import master_e2e_engine
 from chronus.service.routers import mining_admin
 
+pytestmark = pytest.mark.simulated
+
 
 def test_local_rehearsal_never_claims_pool_acceptance(monkeypatch):
     calls = []

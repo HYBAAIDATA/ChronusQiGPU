@@ -58,6 +58,27 @@ def test_json_mode_and_exit_contract(tmp_path, capsys):
     assert no_dressing.main(["--json"], root=tmp_path) == 0
 
 
+def test_baseline_ratchet_admits_recorded_debt_only(tmp_path, capsys):
+    write(tmp_path, "src/chronus/core/a.py", "approx\n")
+    write(tmp_path, "scripts/ci/dressing_policy.json", json.dumps(policy()))
+    assert no_dressing.main(["--baseline"], root=tmp_path) == 1  # missing baseline fails closed
+    assert no_dressing.main(["--write-baseline"], root=tmp_path) == 0
+    assert no_dressing.main(["--baseline"], root=tmp_path) == 0
+    # Moving the line does not change the key; a new occurrence still fails.
+    write(tmp_path, "src/chronus/core/a.py", "\n\napprox\n")
+    assert no_dressing.main(["--baseline"], root=tmp_path) == 0
+    write(tmp_path, "src/chronus/core/a.py", "approx\napprox\n")
+    capsys.readouterr()
+    assert no_dressing.main(["--json", "--baseline"], root=tmp_path) == 2
+    assert len(json.loads(capsys.readouterr().out)) == 1
+    write(tmp_path, "src/chronus/core/b.py", "simulation\n")
+    write(tmp_path, "src/chronus/core/a.py", "exact\n")
+    assert no_dressing.main(["--baseline"], root=tmp_path) == 2
+    write(tmp_path, "src/chronus/core/b.py", "exact\n")
+    assert no_dressing.main(["--baseline"], root=tmp_path) == 0
+    assert "1 baseline entries resolved" in capsys.readouterr().err
+
+
 def test_test_reality_requires_explicit_classification(tmp_path):
     write(tmp_path, "tests/test_unlabelled.py", "def test_case(): pass\n")
     report = test_reality.scan(tmp_path)

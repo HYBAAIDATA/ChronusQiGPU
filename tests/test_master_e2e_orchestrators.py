@@ -18,6 +18,9 @@ from chronus.execution.myrmidon_orchestrator import (
 from chronus.execution.stealth_orchestrator import (
     run_stealth_simulation,
 )
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 def test_patroclus_charter_invariants():

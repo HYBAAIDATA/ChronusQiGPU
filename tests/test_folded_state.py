@@ -38,6 +38,8 @@ from chronus.opencl_folded_adapter import (
     verify_step_parity,
 )
 
+pytestmark = pytest.mark.simulated
+
 #: Digest of the canonical 2,064-byte uint16 LUT payload (single source of truth).
 EXPECTED_LUT_SHA256 = (
     "d2636d5112632065c6cf059d1a49ca5c27e1135b58ff82da025c36a16d0d5a6d"

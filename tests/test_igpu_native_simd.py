@@ -11,6 +11,8 @@ from chronus.execution.native_simd import (
     unfold_pairs_vectorized,
 )
 
+pytestmark = pytest.mark.real
+
 
 def test_fold_unfold_vectorized_matches_scalar_reference():
     # 32 pairs = 64 bytes

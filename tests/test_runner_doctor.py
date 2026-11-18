@@ -12,6 +12,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts" / "ci"))
 
 import runner_doctor  # noqa: E402
+import pytest
+
+pytestmark = pytest.mark.simulated
 
 
 class RunnerDoctorTests(unittest.TestCase):

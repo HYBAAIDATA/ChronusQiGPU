@@ -10,6 +10,8 @@ from chronus.quantum import (
     oracle_flip,
 )
 
+pytestmark = pytest.mark.real
+
 INV4 = pow(4, -1, P)
 
 

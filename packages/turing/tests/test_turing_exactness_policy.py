@@ -48,7 +48,9 @@ BANNED_CALLS = {"float", "complex", "round"}
 BANNED_MODULES = {"random", "numpy", "cmath", "decimal", "statistics", "secrets", "chronus"}
 EXACT_MATH = {"isqrt", "gcd", "lcm", "comb", "perm", "factorial"}
 LEGACY_MODULES = {"state", "operator", "gates", "measurement", "tensor"}
-NEW_SUBPACKAGES = {"algebra", "algorithms"}
+# turing.exact is the integer/Fraction-only exact kernel (no float, math or numpy
+# imports), so tests may import it alongside the algebra/algorithms subpackages.
+NEW_SUBPACKAGES = {"algebra", "algorithms", "exact"}
 
 
 def _violations(path):

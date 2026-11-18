@@ -9,6 +9,9 @@ import sys
 import tempfile
 import textwrap
 from pathlib import Path
+import pytest
+
+pytestmark = pytest.mark.real
 
 ROOT = Path(__file__).resolve().parents[1]
 

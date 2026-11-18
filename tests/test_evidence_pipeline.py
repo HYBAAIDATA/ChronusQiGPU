@@ -7,6 +7,9 @@ import sys
 from types import SimpleNamespace
 
 from scripts.ci import build_evidence, evaluate_attested
+import pytest
+
+pytestmark = pytest.mark.simulated
 
 
 def test_skipped_tests_are_recorded_but_do_not_qualify(tmp_path, monkeypatch):

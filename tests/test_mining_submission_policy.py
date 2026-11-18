@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-pytestmark = pytest.mark.usefixtures("mining_custody")
+pytestmark = [pytest.mark.usefixtures("mining_custody"), pytest.mark.simulated]
 
 from chronus.security.mining_policy import MiningSubmissionPolicy
 from chronus.stratum.endpoint import PoolEndpoint

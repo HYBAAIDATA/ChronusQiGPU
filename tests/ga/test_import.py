@@ -15,6 +15,9 @@ import pathlib
 import subprocess
 import sys
 import time
+import pytest
+
+pytestmark = pytest.mark.real
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 GATE = ROOT / "scripts" / "ci" / "check_ga_import.py"

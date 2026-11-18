@@ -1,7 +1,8 @@
 """No synthetic benchmark used as performance evidence; contract tests only."""
-from copy import deepcopy
 import pytest
 from benchmarks.verify_11_5_claim import characterize
+
+pytestmark = pytest.mark.real
 
 
 def sample():

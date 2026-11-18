@@ -5,6 +5,8 @@ from fractions import Fraction
 from chronus.math.binet_lucas import QSqrt5, unfold, lucas_binet, lucas_recurrence
 from chronus.math.f257_search import f257_phases, f257_phases_multi
 
+pytestmark = pytest.mark.real
+
 
 def test_qsqrt5_exact_ring_arithmetic():
     x = QSqrt5(Fraction(2), Fraction(3))   # 2 + 3*sqrt(5)

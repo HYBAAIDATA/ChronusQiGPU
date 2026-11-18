@@ -40,6 +40,8 @@ from chronus.security.al_haras.threshold_mpc import (
     split_secret,
 )
 
+pytestmark = pytest.mark.real
+
 A, B, C = (SovereignCentralBank.CENTRAL_BANK_A, SovereignCentralBank.CENTRAL_BANK_B, SovereignCentralBank.CENTRAL_BANK_C)
 
 

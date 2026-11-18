@@ -3,6 +3,9 @@ import unittest
 from hypothesis import given, settings, strategies as st
 from chronus.quantum.geometric_polychoron import Cyclotomic5 as C
 from chronus.tensor.exact_mps import contract, MAX_SITES
+import pytest
+
+pytestmark = pytest.mark.real
 
 def v(n): return C(n,0,0,0)
 def product(a,b): return [[[v(a)], [v(b)]]]

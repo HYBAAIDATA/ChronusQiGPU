@@ -3,6 +3,9 @@ from chronus.qualify import qualify
 from chronus.verdict import Status,GateResult
 from chronus.crypto.signers import SignerUnavailable
 import chronus.qualify as module
+import pytest
+
+pytestmark = pytest.mark.simulated
 
 def empty_fixture():
     return Fixture(None,[],b"",b"",object())

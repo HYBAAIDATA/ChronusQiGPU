@@ -68,6 +68,8 @@ from chronus.security.al_haras.zk_neural import (
     verify_stark_quotient,
 )
 
+pytestmark = pytest.mark.simulated
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RTL_PATH = REPO_ROOT / "hardware" / "rtl" / "t_isa_coprocessor.sv"
 LEAN_PATH = REPO_ROOT / LEAN_SOURCE_PATH

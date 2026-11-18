@@ -8,6 +8,8 @@ import pytest
 from chronus.execution import ExecutionRouter, NativeMathReferenceBackend
 from chronus.execution.qigpu import QiGPUOrchestrator
 
+pytestmark = pytest.mark.real
+
 
 class FakeAccelerator:
     name = "fake-gpu"

@@ -12,6 +12,8 @@ from chronus.service.dependencies import auth_service
 from chronus.service.routers import billing as billing_router_module
 from chronus.service.routers import workloads
 
+pytestmark = pytest.mark.simulated
+
 
 class FakeWorkloadStore:
     def __init__(self, rows):

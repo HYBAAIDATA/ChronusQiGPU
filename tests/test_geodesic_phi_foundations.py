@@ -27,6 +27,8 @@ from chronus.geodesic.discovery import (
     is_spd, identity_metric,
 )
 
+pytestmark = pytest.mark.real
+
 
 def test_dual_120cell_f_vector_incidences_and_exact_centroids():
     dual = build_dual_120_cell()

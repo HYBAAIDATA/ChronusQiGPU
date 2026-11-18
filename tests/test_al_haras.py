@@ -18,6 +18,8 @@ from chronus.security.al_haras import ReceiptSigner, reed_solomon
 from chronus.service.app import create_app
 from chronus.service.dependencies import auth_service
 
+pytestmark = pytest.mark.real
+
 TOKEN = "al-haras-test-token"
 AUTH = {"Authorization": f"Bearer {TOKEN}"}
 

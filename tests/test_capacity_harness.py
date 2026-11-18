@@ -4,6 +4,9 @@ from pathlib import Path
 import tempfile
 import unittest
 from types import SimpleNamespace
+import pytest
+
+pytestmark = pytest.mark.real
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('capacity', ROOT / 'harness/capacity.py')

@@ -3,12 +3,25 @@
 GitHub Actions billing on hosted runners is bypassed for the **critical path**
 by routing those jobs to a machine labelled `[self-hosted, windows]`.
 
-## Accepted trade-off
+## Runner selection (hosted fallback)
 
-Four critical gates run on **one unmanaged box**. If that laptop sleeps, goes
-offline, or the runner service stops, those jobs queue and the PR is
-**unmergeable** until the machine is back — there is no hosted fallback behind
-the self-hosted label. That is the accepted trade for now.
+The critical-path jobs read their `runs-on` labels from the repository variable
+`CHRONUS_CRITICAL_RUNNER` (a JSON array):
+
+```yaml
+runs-on: ${{ fromJSON(vars.CHRONUS_CRITICAL_RUNNER || '["ubuntu-latest"]') }}
+```
+
+* Variable **unset** (default): jobs run on GitHub-hosted `ubuntu-latest`.
+* Variable set to `["self-hosted","windows"]` (Settings → Secrets and
+  variables → Actions → Variables): jobs route to the self-hosted machine
+  described below.
+
+Previously the label was hard-coded to `[self-hosted, windows]`. With no runner
+registered every push and PR queued for 24 h and then failed, so `main` could
+never go green. Only set the variable while a persistent runner is online —
+if that machine sleeps, goes offline, or the service stops, the jobs queue and
+the PR is **unmergeable** until it is back.
 
 ## Critical-path jobs only
 

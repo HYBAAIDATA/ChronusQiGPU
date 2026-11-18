@@ -17,6 +17,8 @@ from chronus.service.models import (
 )
 from chronus.service.workload_store import SQLiteWorkloadStore
 
+pytestmark = pytest.mark.simulated
+
 
 class TestServiceModels:
     """Tests for service data models."""

@@ -12,6 +12,8 @@ from chronus.fleet.capacity import (
     rate_per_second,
 )
 
+pytestmark = pytest.mark.real
+
 
 def test_cgroup_v2_max_setting_maps_to_no_quota():
     assert parse_cgroup_v2_cpu_max("max 100000\n") is None

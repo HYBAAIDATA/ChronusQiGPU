@@ -19,6 +19,8 @@ from chronus.service.api.idempotency import reset_idempotency_store
 from chronus.service.api.schemas import WorkloadState
 from chronus.service.api.security import reset_token_cache
 
+pytestmark = pytest.mark.simulated
+
 TOKENS = {
     "tok-alpha-000001": {"tenant_id": "acme", "scopes": [
         "workloads:read", "workloads:write", "fleet:read", "evidence:read"]},
