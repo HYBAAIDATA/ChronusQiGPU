@@ -8,19 +8,36 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#if defined(__AVX2__)
+/* Portable scalar build on any target: -DGL2_FORCE_SCALAR disables every
+ * SIMD datapath and hardware CRC path (used by the native parity tests). */
+#if !defined(GL2_FORCE_SCALAR)
+#  if defined(__AVX2__)
+#    define GL2_USE_AVX2 1
+#  endif
+#  if defined(__ARM_NEON) || defined(__ARM_NEON__)
+#    define GL2_USE_NEON 1
+#  endif
+#  if defined(__SSE4_2__) && defined(__x86_64__)
+#    define GL2_USE_SSE42_CRC 1
+#  endif
+#  if defined(__ARM_FEATURE_CRC32)
+#    define GL2_USE_ARM_CRC 1
+#  endif
+#endif
+
+#if defined(GL2_USE_AVX2)
 #include <immintrin.h>
 #endif
 
-#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+#if defined(GL2_USE_NEON)
 #include <arm_neon.h>
 #endif
 
-#if defined(__SSE4_2__)
+#if defined(GL2_USE_SSE42_CRC)
 #include <nmmintrin.h>
 #endif
 
-#if defined(__ARM_FEATURE_CRC32)
+#if defined(GL2_USE_ARM_CRC)
 #include <arm_acle.h>
 #endif
 
@@ -38,7 +55,7 @@ static inline void affine_step_scalar(
     }
 }
 
-#if defined(__AVX2__)
+#if defined(GL2_USE_AVX2)
 static inline void affine_step_avx2(
     const uint8_t * restrict src,
     uint8_t * restrict dst,
@@ -70,7 +87,7 @@ static inline void affine_step_avx2(
         affine_step_scalar(src + 2 * i, dst + 2 * i, num_pairs - i, m00, m01, m10, m11);
     }
 }
-#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
+#elif defined(GL2_USE_NEON)
 static inline void affine_step_neon(
     const uint8_t * restrict src,
     uint8_t * restrict dst,
@@ -97,9 +114,9 @@ static inline void affine_step_neon(
 #endif
 
 void gl2_fold_pairs(const uint8_t * restrict src, uint8_t * restrict dst, size_t num_pairs) {
-#if defined(__AVX2__)
+#if defined(GL2_USE_AVX2)
     affine_step_avx2(src, dst, num_pairs, 219, 98, 98, 121);
-#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
+#elif defined(GL2_USE_NEON)
     affine_step_neon(src, dst, num_pairs, 219, 98, 98, 121);
 #else
     affine_step_scalar(src, dst, num_pairs, 219, 98, 98, 121);
@@ -107,9 +124,9 @@ void gl2_fold_pairs(const uint8_t * restrict src, uint8_t * restrict dst, size_t
 }
 
 void gl2_unfold_pairs(const uint8_t * restrict src, uint8_t * restrict dst, size_t num_pairs) {
-#if defined(__AVX2__)
+#if defined(GL2_USE_AVX2)
     affine_step_avx2(src, dst, num_pairs, 135, 98, 98, 37);
-#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
+#elif defined(GL2_USE_NEON)
     affine_step_neon(src, dst, num_pairs, 135, 98, 98, 37);
 #else
     affine_step_scalar(src, dst, num_pairs, 135, 98, 98, 37);
@@ -122,7 +139,7 @@ void gl2_unfold_pairs(const uint8_t * restrict src, uint8_t * restrict dst, size
 uint32_t gl2_crc32c(uint32_t crc, const uint8_t * restrict buf, size_t len) {
     uint32_t c = crc ^ 0xFFFFFFFFu;
     size_t i = 0;
-#if defined(__SSE4_2__) && defined(__x86_64__)
+#if defined(GL2_USE_SSE42_CRC)
     for (; i + 8 <= len; i += 8) {
         uint64_t word;
         __builtin_memcpy(&word, buf + i, sizeof(word));
@@ -131,7 +148,7 @@ uint32_t gl2_crc32c(uint32_t crc, const uint8_t * restrict buf, size_t len) {
     for (; i < len; ++i) {
         c = _mm_crc32_u8(c, buf[i]);
     }
-#elif defined(__ARM_FEATURE_CRC32)
+#elif defined(GL2_USE_ARM_CRC)
     for (; i + 8 <= len; i += 8) {
         uint64_t word;
         __builtin_memcpy(&word, buf + i, sizeof(word));

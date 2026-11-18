@@ -109,6 +109,9 @@ def invert_gl2_mod2k(m: Matrix2x2, k: int = 8) -> Matrix2x2:
 
 M15: Matrix2x2 = hensellift_m15(8)
 M15_INV: Matrix2x2 = invert_gl2_mod2k(M15, 8)
+# Flattened coefficients used by the NumPy and pure-Python pair kernels.
+_FWD_COEFFS: tuple[int, int, int, int] = (M15[0][0], M15[0][1], M15[1][0], M15[1][1])
+_INV_COEFFS: tuple[int, int, int, int] = (M15_INV[0][0], M15_INV[0][1], M15_INV[1][0], M15_INV[1][1])
 
 
 # ---------------------------------------------------------------------------
@@ -140,7 +143,9 @@ def _load_native_lib() -> ctypes.CDLL | None:
         lib.gl2_crc32c.argtypes = [ctypes.c_uint32, ctypes.c_void_p, ctypes.c_size_t]
         lib.gl2_crc32c.restype = ctypes.c_uint32
         return lib
-    except OSError:
+    except (OSError, AttributeError):
+        # Unloadable library, or a loadable one missing a required symbol:
+        # the accelerator is unavailable and the exact Python kernels are used.
         return None
 
 
@@ -210,8 +215,9 @@ def crc32c(data: BytesLike, initial: int = 0) -> int:
     view = _as_view(data)
     if len(view) == 0:
         return initial & 0xFFFF_FFFF
-    if _NATIVE_LIB is not None:
-        # [REVIEW FIX R2] zero-copy pointer (was from_buffer_copy for read-only input)
+    if _NATIVE_LIB is not None and view.c_contiguous:
+        # [REVIEW FIX R2] zero-copy pointer (was from_buffer_copy for read-only input);
+        # strided views take the table path below, which iterates them directly.
         return int(_NATIVE_LIB.gl2_crc32c(initial & 0xFFFF_FFFF, _ro_ptr(view), len(view)))
     c = (initial ^ 0xFFFF_FFFF) & 0xFFFF_FFFF
     tbl = _CRC32C_TABLE
@@ -230,33 +236,33 @@ def _transform_pairs_into(src_pairs: memoryview, dst_pairs: memoryview, forward:
     if num_pairs == 0:
         return
 
-    if _NATIVE_LIB is not None:
+    if len(dst_pairs) < 2 * num_pairs:
+        raise ValueError("destination shorter than source")
+    src_v = src_pairs[: 2 * num_pairs]
+    dst_v = dst_pairs[: 2 * num_pairs]
+    if not src_v.c_contiguous:
+        # Strided input: one deliberate contiguous copy; contiguous input stays zero-copy.
+        src_v = memoryview(src_v.tobytes())
+    if _NATIVE_LIB is not None and dst_v.c_contiguous:
         # [REVIEW FIX R2] zero-copy: pass the exporters' own addresses (was from_buffer_copy of src)
-        src_v = src_pairs[: 2 * num_pairs]
-        dst_v = dst_pairs[: 2 * num_pairs]
-        if len(dst_v) != 2 * num_pairs:
-            raise ValueError("destination shorter than source")
         fn = _NATIVE_LIB.gl2_fold_pairs if forward else _NATIVE_LIB.gl2_unfold_pairs
         fn(_ro_ptr(src_v), _rw_ptr(dst_v), num_pairs)
         return
 
     if _HAS_NUMPY:
-        arr = np.frombuffer(src_pairs[: 2 * num_pairs], dtype=np.uint8).reshape(num_pairs, 2)
-        out = np.frombuffer(dst_pairs[: 2 * num_pairs], dtype=np.uint8).reshape(num_pairs, 2)
+        arr = np.frombuffer(src_v, dtype=np.uint8).reshape(num_pairs, 2)
+        out = np.frombuffer(dst_v, dtype=np.uint8).reshape(num_pairs, 2)
         x, y = arr[:, 0], arr[:, 1]
-        if forward:
-            out[:, 0] = np.uint8(219) * x + np.uint8(98) * y
-            out[:, 1] = np.uint8(98) * x + np.uint8(121) * y
-        else:
-            out[:, 0] = np.uint8(135) * x + np.uint8(98) * y
-            out[:, 1] = np.uint8(98) * x + np.uint8(37) * y
+        c00, c01, c10, c11 = (np.uint8(c) for c in (_FWD_COEFFS if forward else _INV_COEFFS))
+        out[:, 0] = c00 * x + c01 * y
+        out[:, 1] = c10 * x + c11 * y
         return
 
-    m00, m01, m10, m11 = (219, 98, 98, 121) if forward else (135, 98, 98, 37)
+    m00, m01, m10, m11 = _FWD_COEFFS if forward else _INV_COEFFS
     for i in range(0, 2 * num_pairs, 2):
-        x, y = src_pairs[i], src_pairs[i + 1]
-        dst_pairs[i] = (m00 * x + m01 * y) & MASK
-        dst_pairs[i + 1] = (m10 * x + m11 * y) & MASK
+        x, y = src_v[i], src_v[i + 1]
+        dst_v[i] = (m00 * x + m01 * y) & MASK
+        dst_v[i + 1] = (m10 * x + m11 * y) & MASK
 
 
 # ---------------------------------------------------------------------------
@@ -567,6 +573,14 @@ class UnfoldStream:
             self._orig_length = orig_len
             self._expected_payload_bytes = orig_len + (orig_len & 1)
             self._running_crc = crc32c(hdr, 0)
+
+        # Bound buffered input by what the frame can still contain (payload + trailer).
+        allowed = self._expected_payload_bytes - self._payload_consumed + WIRE_FOOTER_SIZE_V2
+        if len(self._buf) > allowed:
+            excess = len(self._buf) - allowed
+            self._buf.clear()
+            self._finalized = True
+            raise ValueError(f"{excess} bytes beyond the v2 frame trailer")
 
         rem_payload = self._expected_payload_bytes - self._payload_consumed
         pairs_bytes = min(len(self._buf), rem_payload) & ~1
