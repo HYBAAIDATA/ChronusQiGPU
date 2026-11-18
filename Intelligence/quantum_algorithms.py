@@ -61,7 +61,7 @@ class LucasEngine:
         """
         ladder = (10, 12, 15, 18, 20)
         # Map problem_size onto the ladder: bigger problems get higher powers.
-        idx = min(len(ladder) - 1, max(0, int(math.log2(max(problem_size, 2))) - 1))
+        idx = min(len(ladder) - 1, max(0, max(problem_size, 2).bit_length() - 2))
         if direction == "DOWN":
             idx = max(0, idx - 1)
         power = ladder[idx]
@@ -341,10 +341,15 @@ class GroverSearch:
 
     @staticmethod
     def optimal_iterations(N: int, M: int) -> int:
-        if M <= 0 or M >= N:
-            return 0
-        theta = math.asin(math.sqrt(M / N))
-        return int(math.floor(math.pi / (4.0 * theta)))
+        """Peak of the exact two-amplitude fold, by stepping the recurrence.
+
+        Delegates to python_backend.exact_folded_grover.optimal_iterations.
+        No pi / asin.  The phi^{-1} test is exceeds_phi_inverse:
+        p > (sqrt(5)-1)/2  <=>  (2p+1)^2 > 5 with 2p+1 > 0.
+        """
+        from python_backend.exact_folded_grover import optimal_iterations as _exact_opt
+
+        return _exact_opt(N, M)
 
     def lucas_attractor_indices(self) -> List[int]:
         """Lucas attractor basis indices L_0..L_9 that fit in the register.
@@ -373,36 +378,18 @@ class GroverSearch:
         return [i for i in solutions if i in attractors] + [i for i in solutions if i not in attractors]
 
     def lucas_adaptive_iterations(self, marked_count: int, lucas_index: int = 15) -> int:
-        """Iteration count that maximises the exact success probability under
-        Lucas-Pisot phase scaling (phase = pi * (1 - |psi|^n)).
+        """Peak iteration of the exact canonical fold (phases +/-1).
 
-        Previously this returned optimal_iterations / (L_15 / 1364) and
-        L_15 == 1364, so the factor was exactly 1 (a no-op).  It now runs the
-        exact two-amplitude folded iterate with the Pisot-damped oracle and
-        diffusion phases and returns the peak iteration (>= 1).  For
-        lucas_index >= 6 this equals the canonical optimum at the sizes tested;
-        small indices (3, 4) peak a few iterations later.
+        ``lucas_index`` is accepted for API compatibility.  Pisot-damped
+        complex phases e^{i pi (1-|psi|^n)} are not exact +/-1 and are not
+        used; 1-|psi|^n remains exact in Z[phi] / Q(sqrt(5)) but is not a
+        Grover phase.  The peak is therefore independent of lucas_index and
+        equals optimal_iterations(N, M), found by stepping the exact
+        recurrence.  Callers that need the phi^{-1} gate should use
+        exceeds_phi_inverse: p > (sqrt(5)-1)/2  <=>  (2p+1)^2 > 5.
         """
-        import cmath
-
-        N, M = self.N, int(marked_count)
-        if M <= 0 or M >= N:
-            return max(1, self.optimal_iterations(N, M))
-        psi = (1.0 - math.sqrt(5.0)) / 2.0
-        phase = math.pi * (1.0 - abs(psi) ** int(lucas_index))
-        rot = cmath.exp(1j * phase)
-        a = b = complex(1.0 / math.sqrt(N))
-        best_k, best_p = 1, -1.0
-        limit = 2 * max(1, self.optimal_iterations(N, M)) + 2
-        for k in range(1, limit + 1):
-            a *= rot
-            mu = (M * a + (N - M) * b) / N
-            a += (rot - 1.0) * mu
-            b += (rot - 1.0) * mu
-            p = M * abs(a) ** 2
-            if p > best_p + 1e-15:
-                best_k, best_p = k, p
-        return max(1, best_k)
+        del lucas_index
+        return self.optimal_iterations(self.N, int(marked_count))
 
     def run(self, marked_indices: List[int], iterations: Optional[int] = None) -> Dict[str, Any]:
         M = len(marked_indices)
@@ -411,19 +398,24 @@ class GroverSearch:
         G = self._grover_operator(marked_indices)
         state = QuantumState.uniform_superposition(self.N)
 
+        from python_backend.exact_folded_grover import (
+            FoldedGrover,
+            exceeds_phi_inverse,
+        )
+
         telemetry: List[Dict[str, Any]] = []
-        theta = math.asin(math.sqrt(M / self.N)) if 0 < M < self.N else 0.0
+        folded = FoldedGrover.uniform(self.N, M) if 0 < M < self.N else None
         for step in range(iterations + 1):
             probs = state.probabilities()
             marked_prob = sum(probs[i] for i in marked_indices)
-            analytical_amp = math.sin((2 * step + 1) * theta)
+            p_exact = folded.marked_probability if folded is not None else (1 if M >= self.N else 0)
             telemetry.append(
                 {
                     "iteration": step,
                     "marked_probability": marked_prob,
                     "unmarked_probability": 1.0 - marked_prob,
-                    "geometric_phase_theta": (2 * step + 1) * theta,
-                    "analytical_amplitude": analytical_amp * analytical_amp,
+                    "analytical_amplitude": p_exact,
+                    "exceeds_phi_inverse": bool(folded is not None and exceeds_phi_inverse(p_exact)),
                     "measured_state_amplitudes": [
                         {"index": idx, "prob": p, "is_marked": idx in marked_indices}
                         for idx, p in enumerate(probs[:16])
@@ -432,6 +424,8 @@ class GroverSearch:
             )
             if step < iterations:
                 state = state.apply_unitary(G)
+                if folded is not None:
+                    folded.step()
 
         peak_idx = min(self.optimal_iterations(self.N, M), len(telemetry) - 1)
         peak = telemetry[peak_idx]["marked_probability"] if telemetry else 0.0
@@ -439,7 +433,6 @@ class GroverSearch:
             "steps": telemetry,
             "optimal_k": self.optimal_iterations(self.N, M),
             "peak_success_probability": peak,
-            "rotation_angle_theta": theta,
             "final_state": state,
         }
 
