@@ -21,7 +21,7 @@ from chronus.ovid.folded_custody import (
 from chronus.ovid.transform import OvidTransformService
 from chronus.execution.sha256d_oracle import Sha256dTargetOracle, sha256d, target_from_bits
 from chronus.quantum.triad_grover import (
-    EVENT_VERIFIED, _full_vector_step, _two_amplitude_step, decode_exact_fraction, encode_exact_fraction,
+    EVENT_SELECTED, EVENT_VERIFIED, _full_vector_step, _two_amplitude_step, decode_exact_fraction, encode_exact_fraction,
     exact_grover_two_amplitude_trajectory, exact_lucas_pisot_iterations, run_triad_exact_grover_search,
 )
 from chronus.storage.durable import DurableTheseusService
@@ -318,8 +318,10 @@ def test_committed_versions_are_immutable_and_restore_follows_receipt(tmp_path):
     reg = FoldedRegisterN.from_domain_offset(0, num_generators=3, k=32)
     h0 = ad.stage_domain("imm", reg)
     h1 = ad.commit_collapse_step(h0, 0, 1)
+    hashes = [e.entry_hash for e in custody.get_journal("t")]
     again = ad.commit_collapse_step(h0, 0, 1)                 # byte-identical retry: reused, no new writes
     assert again.sha256_digest == h1.sha256_digest and again.shard_ref.get("reused") is True
+    assert [e.entry_hash for e in custody.get_journal("t")] == hashes
     with pytest.raises(ValueError, match="already committed"):
         ad.commit_collapse_step(h0, 0, 0)                     # conflicting frame for imm:v1
     with pytest.raises(ValueError, match="already committed"):
@@ -384,3 +386,94 @@ def test_target_from_bits_compact_edges(bits, target):
 def test_target_from_bits_rejects_negative_and_invalid(bits):
     with pytest.raises(ValueError):
         target_from_bits(bits)
+
+
+def test_explicit_schedule_rejects_non_integer_entries(tmp_path):
+    _, _, ad = _adapter(tmp_path)
+    h = ad.stage_domain("ord", FoldedRegisterN.from_domain_offset(0, num_generators=2, k=32))
+    for bad in ([0.0, 1, 2, 3], [False, 1, 2, 3], ["0", 1, 2, 3]):
+        with pytest.raises(ValueError, match="integers"):
+            run_triad_exact_grover_search(adapter=ad, handle=h, oracle_predicate=lambda v: False, geodesic_order=bad)
+
+
+def test_failed_verified_receipt_is_finished_idempotently_on_retry(tmp_path):
+    """A real SQLite fault (an ABORT trigger) rejects the GROVER_TARGET_VERIFIED
+    write after the final collapse committed.  The selected-outcome receipt written
+    before the collapse lets a retry on the restored, fully resolved handle finish
+    the receipt exactly once."""
+    db = tmp_path / "theseus.sqlite3"
+    custody, store, ad = _adapter(tmp_path)
+    h = ad.stage_domain("rc", FoldedRegisterN.from_domain_offset(700, num_generators=4, k=32))
+    pred = lambda v: (v & 0xFFFFFFFF) == 709                   # noqa: E731
+    con = sqlite3.connect(db)
+    con.execute("CREATE TRIGGER deny_verified BEFORE INSERT ON journal WHEN NEW.event_type = "
+                f"'{EVENT_VERIFIED}' BEGIN SELECT RAISE(ABORT, 'injected storage fault'); END")
+    con.commit()
+    with pytest.raises(sqlite3.Error):
+        run_triad_exact_grover_search(adapter=ad, handle=h, oracle_predicate=pred)
+    con.execute("DROP TRIGGER deny_verified")
+    con.commit()
+    con.close()
+    assert store.journal_receipts([EVENT_VERIFIED]) == []
+    assert len(store.journal_receipts([EVENT_SELECTED])) == 1
+
+    _, store2, ad2 = _adapter(tmp_path)
+    done = ad2.restore_from_theseus("rc")
+    assert done.register.active_dimension == 0 and done.version == 4
+    with pytest.raises(ArithmeticError):                       # the predicate still decides
+        run_triad_exact_grover_search(adapter=ad2, handle=done, oracle_predicate=lambda v: False)
+    r1 = run_triad_exact_grover_search(adapter=ad2, handle=done, oracle_predicate=pred,
+                                       winner_verifier=pred)
+    r2 = run_triad_exact_grover_search(adapter=ad2, handle=done, oracle_predicate=pred)
+    assert r1.found and r1.winner_value & 0xFFFFFFFF == 709 and r1.handle_version == 4
+    assert r1.receipts == r2.receipts and len(store2.journal_receipts([EVENT_VERIFIED])) == 1
+    (_e, rec), = store2.journal_receipts([EVENT_VERIFIED])
+    body = verify_attested(rec)
+    assert body["handle_version"] == 4 and body["frame_sha256"] == done.sha256_digest
+    assert body["winner_value"] == r1.winner_value and decode_exact_fraction(
+        body["total_marked_probability"]) == r1.total_marked_probability
+
+
+def test_register_n_rejects_nonzero_resolved_slot():
+    with pytest.raises(ValueError, match="resolved generator slot"):
+        FoldedRegisterN(base=(0, 0), generators=((0, 1), (0, 2)), k=32, resolved_mask=0b01, resolved_bits=0)
+    ok = FoldedRegisterN.from_domain_offset(0, num_generators=2, k=32).collapse_generator(0, 1)
+    assert FoldedRegisterN.from_wire_bytes(ok.fold_mk().to_wire_bytes()) == ok.fold_mk()
+
+
+def test_register_n_from_wire_bounds_outer_frame():
+    huge = gl2.fold(bytes(1 << 16)).to_wire()
+    with pytest.raises(ValueError, match="max_length"):
+        FoldedRegisterN.from_wire_bytes(huge)
+
+
+def test_unfold_stream_padding_failure_is_terminal():
+    good = gl2.fold(b"abc").to_wire()
+    hdr, tail = good[:gl2.WIRE_HEADER_SIZE_V2], good[gl2.WIRE_HEADER_SIZE_V2:-gl2.WIRE_FOOTER_SIZE_V2]
+    # second pair encodes ('c', 1): nonzero canonical padding after unfolding
+    x, y = ord("c"), 1
+    bad_tail = tail[:2] + bytes(((219 * x + 98 * y) & 0xFF, (98 * x + 121 * y) & 0xFF))
+    bad = hdr + bad_tail + struct.pack(">I", gl2.crc32c(bad_tail, gl2.crc32c(hdr)))
+    dec = gl2.UnfoldStream()
+    with pytest.raises(ValueError, match="padding"):
+        dec.update(bad)
+    with pytest.raises(RuntimeError):
+        dec.finalize()
+
+
+def test_unfold_stream_rejects_oversized_chunk_before_buffering():
+    good = gl2.fold(b"abcd").to_wire()
+    dec = gl2.UnfoldStream()
+    with pytest.raises(ValueError, match="beyond the v2 frame trailer"):
+        dec.update(good + bytes(1 << 20))
+    assert len(dec._buf) == 0
+
+
+def test_fold_stream_accepts_strided_views():
+    data = bytes((i * 29 + 3) & 0xFF for i in range(301))
+    s = memoryview(data)[::3]
+    enc = gl2.FoldStream()
+    body = enc.update(s)
+    tail, crc = enc.finalize()
+    frame = enc.header(len(bytes(s))) + body + tail + crc
+    assert frame == gl2.fold(bytes(s)).to_wire()

@@ -52,7 +52,7 @@ def test_exhaustive_bijection_and_gamma2_lsb_invariant() -> None:
     assert unfold(folded) == all_pairs
 
 
-# [REVIEW FIX R1] quotient-fiber test moved to tests/quotient_geometry_audit.py
+# [REVIEW FIX R1] quotient-fiber test moved to tests/test_quotient_geometry_audit.py
 
 
 def test_odd_padding_tampering_rejected() -> None:

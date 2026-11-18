@@ -211,11 +211,14 @@ def test_native_kernel_bit_exact(flags: list[str]) -> None:
         u = ctypes.create_string_buffer(2 * n_pairs)
         lib.gl2_fold_pairs(s, f, n_pairs)
         lib.gl2_unfold_pairs(f.raw, u, n_pairs)
+        # independent references: the M15 / M15^-1 matrices written out and a
+        # bitwise CRC-32C, not the module's own (possibly native) dispatch
+        assert f.raw == _ref_pairs(s, (219, 98, 98, 121))
         assert f.raw == fold(s).data
-        assert u.raw == s
+        assert u.raw == s == _ref_pairs(f.raw, (135, 98, 98, 37))
     for n in range(0, 200):
         d = _fib_bytes(n)
-        assert lib.gl2_crc32c(0, d, n) == crc32c(d)
+        assert lib.gl2_crc32c(0, d, n) == _crc32c_bitwise(d) == crc32c(d)
         assert lib.gl2_crc32c(0x12345678, d, n) == crc32c(d, 0x12345678)
 
 
@@ -345,11 +348,25 @@ def _run_with_native(so: str, code: str) -> str:
     no in-process patching of the module under test.
     """
     env = dict(os.environ, GL2_FAST_SO=so)
+    env.pop("PYTHONOPTIMIZE", None)          # child assertions must run
     src_dir = os.path.join(HERE, "..", "src")
     env["PYTHONPATH"] = src_dir + os.pathsep + env.get("PYTHONPATH", "")
-    out = subprocess.run([sys.executable, "-c", code], env=env, check=True,
+    out = subprocess.run([sys.executable, "-c", code], env=env, check=False,
                          capture_output=True, text=True)
+    assert out.returncode == 0, f"child exited {out.returncode}\nstdout:\n{out.stdout}\nstderr:\n{out.stderr}"
     return out.stdout.strip()
+
+
+def _ref_pairs(data: bytes, m: tuple[int, int, int, int]) -> bytes:
+    """Pure-Python pair transform (x, y) -> (a x + b y, c x + d y) mod 256; an odd
+    tail byte is paired with an implicit 0."""
+    a, b, c, d = m
+    buf = data + (b"\x00" if len(data) & 1 else b"")
+    out = bytearray()
+    for i in range(0, len(buf), 2):
+        x, y = buf[i], buf[i + 1]
+        out += bytes(((a * x + b * y) & 0xFF, (c * x + d * y) & 0xFF))
+    return bytes(out)
 
 
 def _crc32c_bitwise(data: bytes) -> int:
@@ -370,6 +387,9 @@ def test_native_loader_tolerates_missing_symbols(tmp_path) -> None:
     so = tmp_path / "partial.so"
     subprocess.run([cc, "-shared", "-fPIC", str(src), "-o", str(so)], check=True)
     out = _run_with_native(str(so), (
+        "import ctypes, os\n"
+        "lib = ctypes.CDLL(os.environ['GL2_FAST_SO'])\n"          # the library itself loads
+        "assert hasattr(lib, 'gl2_fold_pairs') and not hasattr(lib, 'gl2_crc32c')\n"
         "from chronus.kernels import gl2_transform as g\n"
         "assert g._NATIVE_LIB is None\n"
         "assert g.unfold(g.fold(b'abc')) == b'abc'\n"
@@ -395,7 +415,7 @@ def test_native_crc_and_pairs_accept_strided_views() -> None:
     crc_s, crc_full, payload_hex = out.split()
     assert int(crc_s) == _crc32c_bitwise(strided)
     assert int(crc_full) == _crc32c_bitwise(data)
-    assert bytes.fromhex(payload_hex) == fold(strided).data
+    assert bytes.fromhex(payload_hex) == _ref_pairs(strided, (219, 98, 98, 121)) == fold(strided).data
 
 
 def test_pair_kernel_coefficients_come_from_m15() -> None:
