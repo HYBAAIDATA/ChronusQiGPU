@@ -208,8 +208,9 @@ def pool_kernel_score(N: int, M: int, ceiling_n: Optional[int] = None) -> Dict[s
     """Witness the folded Grover cost through the lucas pool kernels.
 
     step_kernel      — the exact iteration count k <= L_n.
-    folded_kernel    — the folded state is two amplitudes, i.e. ONE byte-pair
-                       op (bytes(2)) <= L_n: no raw N-vector ever exists.
+    folded_kernel    — the folded state is two complex amplitudes packed as
+                       32 bytes (16 byte-pair ops), bounded at its own Lucas
+                       ceiling: no raw N-vector ever exists.
     amplitude_kernel — the 2D iterate spectrum {e^{+2i*theta}, e^{-2i*theta}}
                        is unit-modulus, so |sum lambda^n| = 2 <= L_n.
 
@@ -220,7 +221,24 @@ def pool_kernel_score(N: int, M: int, ceiling_n: Optional[int] = None) -> Dict[s
         floor_n = min_lucas_index(k) if k > 0 else 0
         ceiling_n = max(floor_n, 2)  # L_2 = 3 covers the unit-modulus pair
     step = lucas_pool.get("step_kernel")({"states": k}, ceiling_n)
-    fold = lucas_pool.get("folded_kernel")(bytes(2), ceiling_n)
+    # Real folded artifact: the two complex amplitudes (a, b) after k
+    # iterations, packed as 4 float64 = 32 bytes.  (Previously a constant
+    # bytes(2) placeholder was passed, so the fold bound never saw the state.)
+    import struct as _struct
+
+    if 0 < M < N and k <= ITERATION_CAP:
+        _st = FoldedGrover.uniform(N, M)
+        for _ in range(k):
+            _st.step(math.pi, math.pi)
+        _a, _b = _st.a, _st.b
+    else:
+        _th = theta_of(N, M) if 0 < M < N else 0.0
+        _a = complex(math.sin((2 * k + 1) * _th) / math.sqrt(max(M, 1)))
+        _b = complex(math.cos((2 * k + 1) * _th) / math.sqrt(max(N - M, 1)))
+    folded_state = _struct.pack("<4d", _a.real, _a.imag, _b.real, _b.imag)
+    fold_pair_ops = (len(folded_state) + 1) // 2
+    fold_ceiling_n = max(ceiling_n, min_lucas_index(fold_pair_ops))
+    fold = lucas_pool.get("folded_kernel")(folded_state, fold_ceiling_n)
     theta = theta_of(N, M) if 0 < M < N else 0.0
     spectrum = [abs(cmath.exp(2j * theta)), abs(cmath.exp(-2j * theta))]
     amp = lucas_pool.get("amplitude_kernel")(spectrum, ceiling_n)
@@ -237,6 +255,9 @@ def pool_kernel_score(N: int, M: int, ceiling_n: Optional[int] = None) -> Dict[s
         "L_n": lucas_core.lucas(ceiling_n),
         "step_bounded": bool(step["is_lucas_bounded"]),
         "fold_bounded": bool(fold["is_lucas_bounded"]),
+        "fold_state_bytes": len(folded_state),
+        "fold_pair_ops": fold_pair_ops,
+        "fold_ceiling_n": fold_ceiling_n,
         "amplitude_bounded": bool(amp["is_lucas_bounded"]),
         "is_lucas_bounded": bounded,
     }

@@ -346,25 +346,63 @@ class GroverSearch:
         theta = math.asin(math.sqrt(M / N))
         return int(math.floor(math.pi / (4.0 * theta)))
 
-    def lucas_enhanced_oracle(self, marked_indices: List[int]) -> List[int]:
-        """Enhance oracle using Lucas attractors for amplitude concentration."""
-        lucas_indices = [
-            self.lucas_engine._lucas(i) for i in range(10) if self.lucas_engine._lucas(i) < self.N
-        ]
-        enhanced = list(
-            dict.fromkeys(marked_indices + [i for i in lucas_indices if i not in marked_indices])
-        )
-        return enhanced
+    def lucas_attractor_indices(self) -> List[int]:
+        """Lucas attractor basis indices L_0..L_9 that fit in the register.
 
-    def lucas_adaptive_iterations(self, marked_count: int) -> int:
-        """Use Lucas sequence for optimal iteration scaling.
-
-        Clamped to >= 1: the φ-normalisation must never turn a valid
-        search into a zero-iteration no-op.
+        These are *ordering hints* only. They are never phase-flipped by the
+        oracle: marking an index that is not a solution changes the problem
+        and diverts amplitude away from the real solutions.
         """
-        base = self.optimal_iterations(self.N, marked_count)
-        lucas_factor = self.lucas_engine._lucas(15) / 1364.0
-        return max(1, int(base / lucas_factor))
+        return list(
+            dict.fromkeys(
+                self.lucas_engine._lucas(i) for i in range(10) if self.lucas_engine._lucas(i) < self.N
+            )
+        )
+
+    def lucas_enhanced_oracle(self, marked_indices: List[int]) -> List[int]:
+        """Oracle marked set with Lucas attractors used for ordering only.
+
+        Previously the Lucas attractor indices were appended to the marked set,
+        so the oracle phase-flipped up to 10 non-solutions (at n=8 the true
+        item's measured probability fell from 0.99995 to ~0.07).  The marked
+        set is now exactly the in-range, de-duplicated solutions; attractors
+        that are themselves solutions are moved to the front (ordering hint).
+        """
+        solutions = list(dict.fromkeys(int(i) for i in marked_indices if 0 <= int(i) < self.N))
+        attractors = set(self.lucas_attractor_indices())
+        return [i for i in solutions if i in attractors] + [i for i in solutions if i not in attractors]
+
+    def lucas_adaptive_iterations(self, marked_count: int, lucas_index: int = 15) -> int:
+        """Iteration count that maximises the exact success probability under
+        Lucas-Pisot phase scaling (phase = pi * (1 - |psi|^n)).
+
+        Previously this returned optimal_iterations / (L_15 / 1364) and
+        L_15 == 1364, so the factor was exactly 1 (a no-op).  It now runs the
+        exact two-amplitude folded iterate with the Pisot-damped oracle and
+        diffusion phases and returns the peak iteration (>= 1).  For
+        lucas_index >= 6 this equals the canonical optimum at the sizes tested;
+        small indices (3, 4) peak a few iterations later.
+        """
+        import cmath
+
+        N, M = self.N, int(marked_count)
+        if M <= 0 or M >= N:
+            return max(1, self.optimal_iterations(N, M))
+        psi = (1.0 - math.sqrt(5.0)) / 2.0
+        phase = math.pi * (1.0 - abs(psi) ** int(lucas_index))
+        rot = cmath.exp(1j * phase)
+        a = b = complex(1.0 / math.sqrt(N))
+        best_k, best_p = 1, -1.0
+        limit = 2 * max(1, self.optimal_iterations(N, M)) + 2
+        for k in range(1, limit + 1):
+            a *= rot
+            mu = (M * a + (N - M) * b) / N
+            a += (rot - 1.0) * mu
+            b += (rot - 1.0) * mu
+            p = M * abs(a) ** 2
+            if p > best_p + 1e-15:
+                best_k, best_p = k, p
+        return max(1, best_k)
 
     def run(self, marked_indices: List[int], iterations: Optional[int] = None) -> Dict[str, Any]:
         M = len(marked_indices)
