@@ -20,7 +20,7 @@
     {"id":"row-storage-durable","namespace":"src/chronus/storage/durable","authority":"THESEUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
     {"id":"row-security","namespace":"src/chronus/security","authority":"AL HARAS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
     {"id":"row-crypto","namespace":"src/chronus/crypto","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
-    {"id":"row-core","namespace":"src/chronus/core","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}}
+    {"id":"row-core","namespace":"src/chronus/core","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
     {"id":"row-igpu","namespace":"src/chronus/igpu","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
     {"id":"row-hw","namespace":"src/chronus/hw","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
     {"id":"row-acceleration","namespace":"src/chronus/acceleration","authority":"CHRONUS","disposition":"EVIDENCE_GATED","status":"EVIDENCE_GATED","evidence":{"results":[],"missing":["pending suite run"]}},
