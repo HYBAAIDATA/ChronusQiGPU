@@ -5,11 +5,18 @@ DurableTheseusService) per header and window, and the linear scan with the same
 SHA-256d oracle.  Integer counters only; wall times are measured, never used in
 any decision.  No network, no pool, no mining.
 
-  python scripts/benchmarks/triad_grover_k32.py --headers tests/vectors/mainnet_975565_976064.json \
-      --window-bits 12 --state /tmp/state12 --out out.json
+The pinned 500-header fixture lives on its own data branch (sha256 in
+benchmarks/triad_grover_k32/RESULTS.md); fetch it first, then run each window
+size with a fresh --state directory (fresh state => zero shard reuse):
 
---headers accepts that vector file (blocks[].header_hex, height) or a list of rows
-with header_hex/height (optional bits, which must equal the header's nBits).
+  git fetch origin data/mainnet-headers-975565-976064
+  git show FETCH_HEAD:tests/vectors/mainnet_975565_976064.json > /tmp/mainnet_975565_976064.json
+  python scripts/benchmarks/triad_grover_k32.py --headers /tmp/mainnet_975565_976064.json \
+      --window-bits 12 --state /tmp/state12 --out out12.json
+
+--headers accepts that vector file (blocks[].header_hex, height, block_hash_be) or a
+list of rows with header_hex/height; optional integer bits must equal the header's
+nBits, and an optional id must equal the header's own block hash.
 """
 from __future__ import annotations
 
@@ -38,15 +45,26 @@ def window_base(prefix: bytes, nonce: int, w: int, overfit: bool) -> int:
 
 
 def linear_scan(prefix: bytes, target: int, base: int, w: int):
+    """Linear scan with the same oracle; a hit is confirmed by the same fresh full
+    SHA-256d check the triad performs, inside the timed region, and only then are
+    its 3 compressions counted."""
     o = Sha256dTargetOracle(prefix, target)
     t0 = time.perf_counter_ns()
-    hit = None
+    hit, confirm = None, 0
     for i in range(w):
         v = (o.ntime << 32) | ((base + i) & 0xFFFFFFFF)
         if o(v):
+            ok, _digest = o.verify(v)
+            confirm = 3
+            if not ok:
+                raise ArithmeticError("linear hit failed fresh SHA-256d confirmation")
             hit = v & 0xFFFFFFFF
             break
-    return hit, o.evaluations, o.compressions + (3 if hit is not None else 0), time.perf_counter_ns() - t0
+    return hit, o.evaluations, o.compressions + confirm, time.perf_counter_ns() - t0
+
+
+def block_id(header: bytes) -> str:
+    return hashlib.sha256(hashlib.sha256(header).digest()).digest()[::-1].hex()
 
 
 def run_chunk(job):
@@ -57,12 +75,18 @@ def run_chunk(job):
     for r in rows:
         hdr = bytes.fromhex(r["header_hex"])
         header_bits = struct.unpack("<I", hdr[72:76])[0]          # nBits from the serialized header
-        if "bits" in r and int(r["bits"]) != header_bits:
-            raise ValueError(f"row bits disagree with header nBits at height {r['height']}")
+        if "bits" in r:
+            if isinstance(r["bits"], bool) or not isinstance(r["bits"], int):
+                raise ValueError(f"row bits must be an integer at height {r['height']}")
+            if r["bits"] != header_bits:
+                raise ValueError(f"row bits disagree with header nBits at height {r['height']}")
+        expected_id = block_id(hdr)                                # from the full input header
+        if "id" in r and r["id"] != expected_id:
+            raise ValueError(f"row id disagrees with the header's block hash at height {r['height']}")
         prefix, target = hdr[:76], target_from_bits(header_bits)
         nonce = struct.unpack("<I", hdr[76:80])[0]
         tenant = f"h{r['height']}"
-        rec = {"height": r["height"], "true_nonce": nonce}
+        rec = {"height": r["height"], "true_nonce": nonce, "chunk": idx}
         for overfit in (False, True):
             base = window_base(prefix, nonce, w, overfit)
             t0 = time.perf_counter_ns()
@@ -76,7 +100,7 @@ def run_chunk(job):
             c = res["custody"]
             rec["overfit" if overfit else "in"] = {
                 "base": base, "found": g.found, "nonce": res["nonce"], "verified": res["verified"],
-                "digest": res["digest"], "correct": res["nonce"] == nonce and res["digest"] == r["id"],
+                "digest": res["digest"], "correct": res["nonce"] == nonce and res["digest"] == expected_id,
                 "marked": g.marked_count, "iterations": g.iterations, "loop_iterations_recheck": loop_iters,
                 "p_marked": encode_exact_fraction(g.total_marked_probability),
                 "winner_schedule_position": g.winner_schedule_position,
@@ -91,7 +115,9 @@ def run_chunk(job):
             }
         rec["journal_continuity"] = tri.theseus.verify_journal_continuity(tenant)
         out.append(rec)
-    # restart pass: fresh service on the same SQLite file; restore every staged artifact
+    # restart pass: fresh service on the same SQLite file; restore both staged artifacts
+    # per header (in-window and overfit): a hit must restore fully collapsed, an
+    # exhausted window must restore its uncollapsed stage.
     t0 = time.perf_counter_ns()
     tri2 = open_production_triad(root, name=f"chunk{idx}")
     reopen_ns = time.perf_counter_ns() - t0
@@ -100,10 +126,14 @@ def run_chunk(job):
     for rec in out:
         st = TheseusAdapter(tri2.theseus, f"h{rec['height']}")
         ad = OvidFoldedAdapter(OvidAdapter(tri2.ovid), st)
-        h = ad.restore_from_theseus(rec["in"]["artifact_id"])
-        if h.register.active_dimension != 0 or h.register.readout_winner()[0] is None:
-            raise AssertionError("restored handle is not fully collapsed")
-        restored += 1
+        for side in ("in", "overfit"):
+            h = ad.restore_from_theseus(rec[side]["artifact_id"])
+            if rec[side]["found"]:
+                if h.register.active_dimension != 0 or h.register.readout_winner()[1][1] != rec[side]["nonce"]:
+                    raise AssertionError("restored winner handle is not the fully collapsed winner")
+            elif h.version != 0 or h.register.active_dimension != d:
+                raise AssertionError("restored exhausted handle is not the uncollapsed stage")
+            restored += 1
     return out, {"chunk": idx, "reopen_verify_ns": reopen_ns, "restore_ns": time.perf_counter_ns() - t1,
                  "restored": restored, "db": os.path.join(root, f"chunk{idx}.sqlite3")}
 

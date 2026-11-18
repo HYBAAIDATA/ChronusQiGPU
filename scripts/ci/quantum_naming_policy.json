@@ -3,6 +3,7 @@
   "legacy_root": "src/chronus/quantum",
   "legacy_modules": {
     "__init__.py": "historical_namespace",
+    "attractor_stress.py": "algebraic_model",
     "entanglement.py": "algebraic_model",
     "extension_search.py": "finite_field_model",
     "geometric_polychoron.py": "algebraic_model",
