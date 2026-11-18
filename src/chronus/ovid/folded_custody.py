@@ -56,8 +56,11 @@ def verify_attested(receipt: dict) -> dict:
     return body
 
 
-def shard_id(artifact_id: str, version: int) -> str:
-    return f"{artifact_id}:v{version}"
+def shard_id(artifact_id: str, version: int, frame_sha256: str) -> str:
+    # Content-bound: repeated runs for the same artifact/version with different frames
+    # get distinct shard ids, so load_shard cannot return a later run's frame for an
+    # earlier receipt.
+    return f"{artifact_id}:v{version}:{frame_sha256}"
 
 
 class OvidServiceProtocol(Protocol):
@@ -175,7 +178,7 @@ class OvidFoldedAdapter:
         frame = folded.to_wire_bytes()
         digest = hashlib.sha256(frame).hexdigest()
         rep = self.ovid.register_working_representation(artifact_id, version, frame)
-        sid = shard_id(artifact_id, version)
+        sid = shard_id(artifact_id, version, digest)
         ref = self.theseus.persist_shard(sid, rep)
         body = {
             "schema": RECEIPT_SCHEMA, "event": event, "artifact_id": artifact_id, "version": version,
