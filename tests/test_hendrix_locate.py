@@ -22,7 +22,9 @@ from chronus.hendrix.locate import (
     SquareRootOracle,
     discrete_log,
     factorize,
+    MR_DETERMINISTIC_LIMIT,
     is_probable_prime,
+    is_proven_prime,
     locate,
     multiplicative_order,
     polynomial_roots,
@@ -250,3 +252,29 @@ def test_unstructured_oracles_are_not_scanned_under_another_name():
 
     with pytest.raises(NotAlgebraicallyLocatable):
         locate(HashOracle())
+
+
+def test_strong_pseudoprime_at_mr_limit_is_not_accepted_as_a_field():
+    """3317044064679887385961981 passes all 13 fixed bases but is composite."""
+    n = MR_DETERMINISTIC_LIMIT
+    assert is_probable_prime(n)                       # the fixed-base test alone is fooled
+    with pytest.raises(ValueError):
+        is_proven_prime(n)
+    with pytest.raises(ValueError):
+        sqrt_mod(n, 4)
+    with pytest.raises(ValueError):
+        factorize(2 * n)
+
+
+def test_large_primes_carry_a_pocklington_certificate():
+    assert is_proven_prime(MERSENNE_127)
+    p = 2 * 68 * ((1 << 89) - 1) + 1                  # n - 1 has a 89-bit prime cofactor
+    assert is_proven_prime(p)                         # certified recursively
+    assert not is_proven_prime(MERSENNE_127 * 3)
+
+
+def test_root_and_square_root_searches_are_bounded_in_log_p():
+    p = MERSENNE_127
+    assert sqrt_mod(p, 9) == tuple(sorted({3, p - 3}))
+    coeffs = [(-6) % p, 11, (-6) % p, 1]              # (x - 1)(x - 2)(x - 3)
+    assert polynomial_roots(coeffs, p) == (1, 2, 3)

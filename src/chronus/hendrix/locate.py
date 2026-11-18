@@ -51,7 +51,7 @@ All arithmetic is exact integer arithmetic.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from math import isqrt
+from math import gcd, isqrt
 from typing import Sequence
 
 __all__ = [
@@ -64,6 +64,7 @@ __all__ = [
     "discrete_log",
     "factorize",
     "is_probable_prime",
+    "is_proven_prime",
     "locate",
     "multiplicative_order",
     "polynomial_roots",
@@ -150,8 +151,8 @@ def is_probable_prime(n: int) -> bool:
 def factorize(n: int, trial_bound: int = 1 << 20) -> dict[int, int]:
     """Prime factorisation of n >= 1 by trial division up to ``trial_bound``.
 
-    A remaining cofactor must pass ``is_probable_prime``; otherwise the
-    factorisation is refused with ValueError rather than guessed.
+    A remaining cofactor must be proven prime (``is_proven_prime``); otherwise
+    the factorisation is refused with ValueError rather than guessed.
     """
     _require_int(n, "n")
     if n < 1:
@@ -169,7 +170,7 @@ def factorize(n: int, trial_bound: int = 1 << 20) -> dict[int, int]:
                 n //= r
         q += 6
     if n > 1:
-        if not is_probable_prime(n):
+        if not is_proven_prime(n):
             raise ValueError(
                 f"cofactor {n} is composite with no factor <= {trial_bound}; "
                 "factorisation of the group order is required and is not available"
@@ -178,9 +179,71 @@ def factorize(n: int, trial_bound: int = 1 << 20) -> dict[int, int]:
     return factors
 
 
+def _trial_factor(n: int, bound: int) -> tuple[dict[int, int], int]:
+    """Prime factors of n up to ``bound`` by trial division, and the cofactor."""
+    factors: dict[int, int] = {}
+    for q in (2, 3):
+        while n % q == 0:
+            factors[q] = factors.get(q, 0) + 1
+            n //= q
+    q = 5
+    while q * q <= n and q <= bound:
+        for r in (q, q + 2):
+            while n % r == 0:
+                factors[r] = factors.get(r, 0) + 1
+                n //= r
+        q += 6
+    return factors, n
+
+
+def is_proven_prime(n: int, trial_bound: int = 1 << 20) -> bool:
+    """True only when n is proven prime; ValueError when undecided.
+
+    Below MR_DETERMINISTIC_LIMIT the fixed Miller-Rabin bases are a proof.
+    Above it, a strong probable prime must also pass a Pocklington-Lehmer
+    certificate: p - 1 = F * R with F fully factored by trial division,
+    F * F > n (a large prime cofactor of n - 1 is itself certified recursively),
+    and for every prime q | F a witness a with a**(n-1) = 1 and
+    gcd(a**((n-1)/q) - 1, n) = 1. If F is too small the call refuses with
+    ValueError rather than treating a probable prime as proven
+    (e.g. 3317044064679887385961981 passes all 13 fixed bases but is composite).
+    """
+    _require_int(n, "n")
+    if not is_probable_prime(n):
+        return False
+    if n < MR_DETERMINISTIC_LIMIT:
+        return True
+    small, cofactor = _trial_factor(n - 1, trial_bound)
+    if cofactor > 1:
+        try:
+            if is_proven_prime(cofactor, trial_bound):   # recursive certificate
+                small[cofactor] = 1
+                cofactor = 1
+        except ValueError:
+            pass
+    f = (n - 1) // cofactor
+    if f * f <= n:
+        raise ValueError(
+            f"primality of {n} is not proven: factored part of n - 1 is too small "
+            "for a Pocklington certificate"
+        )
+    for q in small:
+        for a in range(2, n):
+            if pow(a, n - 1, n) != 1:
+                return False
+            g = gcd(pow(a, (n - 1) // q, n) - 1, n)
+            if g == 1:
+                break
+            if g != n:
+                return False
+            if a > trial_bound:
+                raise ValueError(f"primality of {n} is not proven: no Pocklington witness found")
+    return True
+
+
 def _check_prime_field(p: int) -> int:
     _require_int(p, "p")
-    if not is_probable_prime(p):
+    if not is_proven_prime(p):
         raise ValueError(f"p = {p} is not prime")
     return p
 
@@ -272,9 +335,14 @@ def sqrt_mod(p: int, a: int) -> tuple[int, ...]:
     while q % 2 == 0:
         q //= 2
         s += 1
-    z = 2
+    # Least quadratic non-residue: below 2 * ln(p)**2 under GRH (Bach 1990).
+    # bit_length**2 >= 2 * ln(p)**2, so the search is O(log**2 p) exponentiations
+    # and refuses (rather than scanning the field) if that bound were exceeded.
+    z, z_bound = 2, max(3, p.bit_length() ** 2)
     while pow(z, (p - 1) // 2, p) != p - 1:
         z += 1
+        if z > z_bound:
+            raise ArithmeticError(f"no quadratic non-residue below {z_bound} (GRH bound exceeded)")
     m, c, t, r = s, pow(z, q, p), pow(a, q, p), pow(a, (q + 1) // 2, p)
     while t != 1:
         i, t2 = 0, t
@@ -378,7 +446,8 @@ def polynomial_roots(coefficients: Sequence[int], p: int) -> tuple[int, ...]:
     gcd(f, x**p - x) isolates the product of (x - r) over the roots r in F_p,
     computed with x**p reduced modulo f by repeated squaring, so the work is
     polynomial in deg f and log p. That product is split by Cantor-Zassenhaus
-    with deterministic shifts a = 0, 1, 2, ...: gcd(h, (x + a)**((p-1)/2) - 1).
+    with deterministic shifts a = 0, 1, 2, ... (at most min(p, 4*log2(p)**2 + 64);
+    beyond that the call refuses with ValueError): gcd(h, (x + a)**((p-1)/2) - 1).
     Every returned root is checked by evaluation.
     """
     _check_prime_field(p)
@@ -394,19 +463,24 @@ def polynomial_roots(coefficients: Sequence[int], p: int) -> tuple[int, ...]:
     roots: list[int] = []
     stack = [split] if len(split) > 1 else []
     half = (p - 1) // 2
+    # Bounded shifts keep the cost polynomial in log p instead of scanning F_p.
+    shift_bound = min(p, 4 * p.bit_length() ** 2 + 64)
     while stack:
         h = stack.pop()
         if len(h) == 2:
             roots.append((-h[0]) * pow(h[1], -1, p) % p)
             continue
-        for a in range(p):
+        for a in range(shift_bound):
             w = _poly_sub(_poly_powmod([a % p, 1], half, h, p), [1], p)
             d = _poly_gcd(h, w, p)
             if 1 < len(d) < len(h):
                 stack.extend([d, _poly_divexact(h, d, p)])
                 break
-        else:  # pragma: no cover - impossible for a product of distinct linear factors
-            raise ArithmeticError("Cantor-Zassenhaus failed to split")
+        else:  # pragma: no cover - each shift splits with probability about 1/2
+            raise ValueError(
+                f"undecided: Cantor-Zassenhaus did not split a degree-{len(h) - 1} factor "
+                f"within {shift_bound} shifts"
+            )
     roots = sorted(set(roots))
     if any(_poly_eval(f, r, p) != 0 for r in roots):
         raise ArithmeticError("a located root does not satisfy the polynomial")
