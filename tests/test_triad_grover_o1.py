@@ -249,6 +249,22 @@ def test_small_domain_full_vector_crosscheck(tmp_path):
     assert (r.winner_value & 0xFFFFFFFF) in (103, 117)
 
 
+def test_winner_index_keeps_pre_collapsed_bits(tmp_path):
+    """Regression: a handle with generators already resolved to 1 must report the
+    full register index (resolved bits | active winner bits), and the collapsed
+    read-out must agree with it."""
+    _, _, ad = _adapter(tmp_path)
+    h = ad.stage_domain("p", FoldedRegisterN.from_domain_offset(1000, num_generators=6, k=32))
+    for j, b in ((1, 1), (3, 1), (4, 0)):
+        h = ad.commit_collapse_step(h, j, b)
+    assert h.register.resolved_bits == 0b001010 and h.register.resolved_mask == 0b011010
+    target = 1000 + 0b101011                     # active bits 0 and 5 set, plus resolved 1 and 3
+    r = run_triad_exact_grover_search(adapter=ad, handle=h, oracle_predicate=lambda v: (v & 0xFFFFFFFF) == target)
+    assert r.found and r.active_dim == 3 and r.states == 8 and r.marked_count == 1
+    assert r.winner_index == 0b101011
+    assert r.winner_value & 0xFFFFFFFF == target
+
+
 def test_determinism_and_guards(tmp_path):
     h = bytes.fromhex(MAINNET[0][1])
     nonce = struct.unpack("<I", h[76:80])[0]

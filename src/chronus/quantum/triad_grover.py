@@ -169,7 +169,7 @@ def run_triad_exact_grover_search(
         checked = True
 
     win = marked_pos[0]                       # first marked state in geodesic order
-    win_idx = offsets[win]
+    win_idx = offsets[win] | handle.register.resolved_bits   # full register index: keep pre-collapsed bits
     h = handle
     for j in positions:
         h = adapter.commit_collapse_step(h, j, (win_idx >> j) & 1)
