@@ -43,7 +43,7 @@ def test_grover_does_not_write_to_header_nonce():
 
     state = FoldedGrover.uniform(N, M)
     for _ in range(k):
-        state.step(phase := 3.141592653589793, phase)
+        state.step()
 
     # The header must be unchanged after Grover iterations.
     assert bytes(header[76:80]) == original_nonce_bytes
