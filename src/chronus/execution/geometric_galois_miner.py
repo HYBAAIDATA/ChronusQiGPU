@@ -256,14 +256,17 @@ class HodgeSheafLaplacianConsensus:
 
 
 class DSW1CycleInstantonCobordism:
-    """Repairs 4D execution trace perturbations via 1-cycle instanton cobordism.
+    """Consensus projection of a stalk vector (legacy name; not error correction).
 
-    Executes in 1 clock cycle without rolling back context streams.
+    ``heal_trace`` replaces every value with the integer mean, which makes the
+    vector harmonic but does not recover the original values: honest nodes
+    are overwritten too. It is not a repair mechanism and claims no cycle
+    count. For real repair see ``chronus.security.al_haras.reed_solomon``.
     """
 
     @classmethod
     def heal_trace(cls, stalk_values: List[int], vortex_edge_idx: int = 0) -> List[int]:
-        """Heals context vector by projecting perturbed edge onto exact coboundary."""
+        """Return the vector with every entry set to the integer mean (no recovery)."""
         healed = list(stalk_values)
         if not healed:
             return healed
