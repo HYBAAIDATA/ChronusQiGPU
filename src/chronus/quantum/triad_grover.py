@@ -30,7 +30,27 @@ from chronus.ovid.folded_custody import FoldedWorkingHandle, OvidFoldedAdapter, 
 
 EVENT_VERIFIED = "GROVER_TARGET_VERIFIED"
 EVENT_EXHAUSTED = "GROVER_DOMAIN_EXHAUSTED"
-GROVER_SCHEMA = "chronus.triad-grover-receipt/1"
+GROVER_SCHEMA = "chronus.triad-grover-receipt/2"
+FRACTION_ENCODING = "hex-fraction/1"
+
+
+def encode_exact_fraction(value: Fraction) -> dict:
+    """Exact, size-independent encoding of a Fraction for receipts.
+
+    Hexadecimal numerator/denominator: CPython caps int->decimal str conversion
+    at 4300 digits (sys.int_info.str_digits_check_threshold), which the exact
+    peak probability exceeds from 19 active generators (denominator 2^19331)."""
+    if not isinstance(value, Fraction):
+        raise TypeError("exact Fraction required")
+    sign = "-" if value < 0 else ""
+    return {"encoding": FRACTION_ENCODING, "numerator": f"{sign}{abs(value.numerator):x}",
+            "denominator": f"{value.denominator:x}"}
+
+
+def decode_exact_fraction(obj: dict) -> Fraction:
+    if not isinstance(obj, dict) or obj.get("encoding") != FRACTION_ENCODING:
+        raise ValueError(f"expected {FRACTION_ENCODING} object")
+    return Fraction(int(obj["numerator"], 16), int(obj["denominator"], 16))
 
 
 def _two_amplitude_step(alpha: Fraction, beta: Fraction, N: int, M: int) -> Tuple[Fraction, Fraction]:
@@ -110,7 +130,11 @@ def run_triad_exact_grover_search(
     geodesic_order: Optional[Sequence[int]] = None,
     epoch_step: Optional[int] = None,
     verify_full_vector_below: int = 64,
+    winner_verifier: Optional[Callable[[int], bool]] = None,
 ) -> TriadGroverResult:
+    """``winner_verifier`` (e.g. a fresh full-header SHA-256d check) runs on the
+    selected value before any collapse commit or GROVER_TARGET_VERIFIED receipt is
+    written; a rejection raises and leaves no verified receipt behind."""
     positions = _active_positions(handle)
     D = len(positions)
     if D == 0:
@@ -150,7 +174,8 @@ def run_triad_exact_grover_search(
         rid = adapter.theseus.append_audit_receipt(EVENT_EXHAUSTED, attest({
             "schema": GROVER_SCHEMA, "event": EVENT_EXHAUSTED, "artifact_id": handle.artifact_id,
             "handle_version": handle.version, "frame_sha256": handle.sha256_digest, "states": N,
-            "marked_count": 0, "total_marked_probability": "0", "oracle_evaluations": N,
+            "marked_count": 0, "total_marked_probability": encode_exact_fraction(Fraction(0)),
+            "oracle_evaluations": N,
             "accounting": accounting, **schedule}))
         return TriadGroverResult(found=False, iterations=0, total_marked_probability=Fraction(0),
                                  single_target_probability=Fraction(0), winner_index=None, winner_value=None,
@@ -170,18 +195,26 @@ def run_triad_exact_grover_search(
 
     win = marked_pos[0]                       # first marked state in geodesic order
     win_idx = offsets[win] | handle.register.resolved_bits   # full register index: keep pre-collapsed bits
+    # Dry-run the collapse in memory and check the read-out before any custody write.
+    reg = handle.register
+    for j in positions:
+        reg = reg.collapse_generator(j, (win_idx >> j) & 1)
+    bits, (hi, lo) = reg.unfold_mk().readout_winner()
+    value = (hi << reg.k) | lo
+    if bits != win_idx or value != values[win]:
+        raise ArithmeticError("collapsed read-out disagrees with materialised winner")
+    if winner_verifier is not None and not winner_verifier(value):
+        raise ArithmeticError("selected winner failed independent verification")
     h = handle
     for j in positions:
         h = adapter.commit_collapse_step(h, j, (win_idx >> j) & 1)
-    bits, (hi, lo) = h.register.unfold_mk().readout_winner()
-    value = (hi << h.register.k) | lo
-    if bits != win_idx or value != values[win]:
-        raise ArithmeticError("collapsed read-out disagrees with materialised winner")
+    if h.register != reg:
+        raise ArithmeticError("committed register disagrees with in-memory collapse")
     rid = adapter.theseus.append_audit_receipt(EVENT_VERIFIED, attest({
         "schema": GROVER_SCHEMA, "event": EVENT_VERIFIED, "artifact_id": handle.artifact_id,
         "handle_version": h.version, "frame_sha256": h.sha256_digest, "states": N,
         "marked_count": M, "iterations": iters,
-        "total_marked_probability": f"{total.numerator}/{total.denominator}",
+        "total_marked_probability": encode_exact_fraction(total),
         "winner_index": win_idx, "winner_value": value, "winner_schedule_position": win + 1,
         "oracle_evaluations": N, "accounting": accounting, **schedule}))
     return TriadGroverResult(found=True, iterations=iters, total_marked_probability=total,

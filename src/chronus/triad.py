@@ -142,15 +142,28 @@ class ProductionTriad:
         theseus = TheseusAdapter(self.theseus, tenant_id)
         adapter = OvidFoldedAdapter(OvidAdapter(self.ovid), theseus)
         if artifact_id is None:
+            # One identity per (header, window, width, schedule epoch): runs that can
+            # select different winners never share versioned shard ids.
             artifact_id = (f"grover/{hashlib.sha256(oracle.prefix).hexdigest()[:32]}/"
-                           f"{window_base & 0xFFFFFFFF:08x}/n{num_generators}")
+                           f"{window_base & 0xFFFFFFFF:08x}/n{num_generators}/"
+                           f"e{0 if epoch_step is None else epoch_step}")
         handle = adapter.stage_domain(artifact_id, register)
+        # Fresh full-header SHA-256d check runs before any collapse commit or
+        # GROVER_TARGET_VERIFIED receipt is written.
+        checked: dict = {}
+
+        def fresh_check(value: int) -> bool:
+            ok, digest = oracle.verify(value)
+            checked[value] = (ok, digest)
+            return ok
+
         result = run_triad_exact_grover_search(
             adapter=adapter, handle=handle, oracle_predicate=oracle, epoch_step=epoch_step,
+            winner_verifier=fresh_check,
         )
         verified, digest_hex = (False, None)
         if result.found:
-            verified, digest_hex = oracle.verify(result.winner_value)
+            verified, digest_hex = checked[result.winner_value]
             if not verified:
                 raise ArithmeticError("winner failed fresh SHA-256d verification")
         return {

@@ -16,11 +16,15 @@ import hashlib
 import struct
 from typing import Dict
 
+from chronus.stratum.gatekeeper import decode_nbits_target
+
 
 def target_from_bits(bits: int) -> int:
+    """Bitcoin compact nBits -> target via the repository's gatekeeper decoder:
+    right shift for exponents <= 3, sign bit rejected, target must be in (0, 2^256)."""
     if isinstance(bits, bool) or not isinstance(bits, int) or not 0 <= bits < (1 << 32):
         raise ValueError("bits must be a 32-bit compact target")
-    return (bits & 0xFFFFFF) << (8 * ((bits >> 24) - 3))
+    return decode_nbits_target(bits)
 
 
 def sha256d(data: bytes) -> bytes:

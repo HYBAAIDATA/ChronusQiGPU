@@ -16,7 +16,12 @@ API mismatches with the owner's protocol names, handled by thin adapters:
     returns the ``OvidRepresentation``; version lives in the shard id.
   - THESEUS has no named keys: ``persist_shard`` stores the payload and appends
     an ``OVID_SHARD_COMMITTED`` journal record mapping shard id -> object id;
-    ``load_shard`` resolves the latest such record (journal scan).
+    ``load_shard`` resolves the latest such record.
+  - Committed versions are immutable: a second write to ``{artifact_id}:v{n}``
+    with a different frame is rejected, a byte-identical retry reuses the
+    committed record, and restore loads the shard by the selected receipt's
+    object id.  The journal is read once per adapter into an in-memory index
+    (one writer per tenant adapter is assumed; a new adapter re-reads it).
 Exact integer/byte arithmetic only.
 """
 from __future__ import annotations
@@ -34,6 +39,9 @@ EVENT_SHARD = "OVID_SHARD_COMMITTED"
 EVENT_STAGE = "OVID_FOLDED_STAGE"
 EVENT_COLLAPSE = "OVID_GENERATOR_COLLAPSE"
 RECEIPT_SCHEMA = "chronus.ovid-folded-register/1"
+# Reference full reconstruction materialises 2^N values; bounded like the
+# scheduler's MAX_ACTIVE_DIM so a 64-generator register cannot request 2^64.
+MAX_FULL_RECONSTRUCT_GENERATORS = 24
 
 
 def canonical_json(obj: dict) -> bytes:
@@ -69,6 +77,9 @@ class TheseusServiceProtocol(Protocol):
     def persist_shard(self, shard_id: str, representation: OvidRepresentation) -> dict: ...
     def load_shard(self, shard_id: str) -> OvidRepresentation: ...
     def append_audit_receipt(self, event_type: str, receipt: dict) -> str: ...
+    def committed_receipt(self, artifact_id: str, version: int) -> Optional[dict]: ...
+    def latest_receipt(self, artifact_id: str) -> Optional[dict]: ...
+    def load_shard_object(self, shard_id: str, object_id: str) -> OvidRepresentation: ...
 
 
 class OvidAdapter:
@@ -104,6 +115,28 @@ class TheseusAdapter:
         self.custody = custody
         self.tenant_id = tenant_id
         self.counters = CustodyCounters()
+        self._shards: Optional[dict] = None      # (shard_id, object_id) -> ref, insertion = journal order
+        self._versions: Optional[dict] = None    # (artifact_id, version) -> list of receipts in journal order
+
+    def _index(self) -> Tuple[dict, dict]:
+        if self._shards is None or self._versions is None:
+            shards: dict = {}
+            versions: dict = {}
+            for e in self.custody.get_journal(self.tenant_id):
+                if e.event_type in (EVENT_SHARD, EVENT_STAGE, EVENT_COLLAPSE):
+                    rec = json.loads(self.custody.reconstruct(self.tenant_id, e.object_id))
+                    self._index_add(shards, versions, e.event_type, rec)
+            self._shards, self._versions = shards, versions
+        return self._shards, self._versions
+
+    @staticmethod
+    def _index_add(shards: dict, versions: dict, event_type: str, rec: dict) -> None:
+        if event_type == EVENT_SHARD:
+            key = (rec["shard_id"], rec["object_id"])
+            shards.pop(key, None)
+            shards[key] = rec
+        else:
+            versions.setdefault((rec["artifact_id"], rec["version"]), []).append(rec)
 
     def persist_shard(self, shard_id: str, representation: OvidRepresentation) -> dict:
         object_id = hashlib.sha256(representation.payload).hexdigest()
@@ -115,6 +148,8 @@ class TheseusAdapter:
         rec = self.custody.store(self.tenant_id, representation.payload)
         ref = {"shard_id": shard_id, "object_id": rec.object_id, **representation.envelope()}
         self.custody.append_journal_event(self.tenant_id, EVENT_SHARD, canonical_json(ref))
+        if self._shards is not None and self._versions is not None:
+            self._index_add(self._shards, self._versions, EVENT_SHARD, ref)
         self.counters.shards_persisted += 1
         self.counters.shards_reused += int(reused)
         self.counters.shard_bytes += len(representation.payload)
@@ -129,12 +164,22 @@ class TheseusAdapter:
         return out
 
     def load_shard(self, shard_id: str) -> OvidRepresentation:
-        ref = None
-        for _e, rec in self._records((EVENT_SHARD,)):
-            if rec.get("shard_id") == shard_id:
-                ref = rec
-        if ref is None:
+        """Latest mapping for shard_id (prefer ``load_shard_object`` when the
+        committing receipt is known)."""
+        shards, _ = self._index()
+        refs = [ref for (sid, _oid), ref in shards.items() if sid == shard_id]
+        if not refs:
             raise KeyError(shard_id)
+        return self._representation(refs[-1])
+
+    def load_shard_object(self, shard_id: str, object_id: str) -> OvidRepresentation:
+        shards, _ = self._index()
+        ref = shards.get((shard_id, object_id))
+        if ref is None:
+            raise KeyError(f"{shard_id} -> {object_id}")
+        return self._representation(ref)
+
+    def _representation(self, ref: dict) -> OvidRepresentation:
         payload = self.custody.reconstruct(self.tenant_id, ref["object_id"])
         self.counters.shards_loaded += 1
         return OvidRepresentation(
@@ -145,8 +190,25 @@ class TheseusAdapter:
 
     def append_audit_receipt(self, event_type: str, receipt: dict) -> str:
         entry = self.custody.append_journal_event(self.tenant_id, event_type, canonical_json(receipt))
+        if event_type in (EVENT_STAGE, EVENT_COLLAPSE) and self._shards is not None and self._versions is not None:
+            self._index_add(self._shards, self._versions, event_type, receipt)
         self.counters.receipts_appended += 1
         return entry.entry_hash
+
+    def committed_receipt(self, artifact_id: str, version: int) -> Optional[dict]:
+        """First committed receipt for (artifact_id, version), or None."""
+        _, versions = self._index()
+        recs = versions.get((artifact_id, version))
+        return recs[0] if recs else None
+
+    def latest_receipt(self, artifact_id: str) -> Optional[dict]:
+        """Committed receipt at the highest version of artifact_id."""
+        _, versions = self._index()
+        best = None
+        for (aid, ver), recs in versions.items():
+            if aid == artifact_id and (best is None or ver > best["version"]):
+                best = recs[0]
+        return best
 
     def journal_receipts(self, event_types: Iterable[str]) -> List[Tuple[str, dict]]:
         return self._records(event_types)
@@ -174,6 +236,20 @@ class OvidFoldedAdapter:
                 extra: dict) -> FoldedWorkingHandle:
         frame = folded.to_wire_bytes()
         digest = hashlib.sha256(frame).hexdigest()
+        prior = self.theseus.committed_receipt(artifact_id, version)
+        if prior is not None:
+            body = verify_attested(prior)
+            if body["frame_sha256"] != digest or body["event"] != event:
+                raise ValueError(f"version {version} of {artifact_id!r} is already committed with a different frame")
+            # Byte-identical retry: reuse the committed record (shard re-persisted only if absent).
+            try:
+                self.theseus.load_shard_object(body["shard_id"], body["object_id"])
+            except KeyError:
+                pass
+            else:
+                return FoldedWorkingHandle(artifact_id, version, folded, frame, digest,
+                                           {"shard_id": body["shard_id"], "object_id": body["object_id"],
+                                            "reused": True})
         rep = self.ovid.register_working_representation(artifact_id, version, frame)
         sid = shard_id(artifact_id, version)
         ref = self.theseus.persist_shard(sid, rep)
@@ -214,6 +290,9 @@ class OvidFoldedAdapter:
     def full_reconstruct(self, handle: FoldedWorkingHandle) -> List[int]:
         """Reference: apply M_k^-1 to every one of the 2^N folded states separately."""
         reg = handle.register
+        if reg.num_generators > MAX_FULL_RECONSTRUCT_GENERATORS:
+            raise ValueError(f"full_reconstruct is bounded to {MAX_FULL_RECONSTRUCT_GENERATORS} generators "
+                             f"(2^{MAX_FULL_RECONSTRUCT_GENERATORS} states); use materialise_indices")
         k, mask = reg.k, (1 << reg.k) - 1
         inv = invert_gl2_mod2k(hensellift_m15(k), k)
         out = []
@@ -225,14 +304,11 @@ class OvidFoldedAdapter:
     def restore_from_theseus(self, artifact_id: str) -> FoldedWorkingHandle:
         """Latest handle for artifact_id after restart; verifies receipt CRC/SHA,
         OVID digests, frame SHA-256 and GL2 frame CRC-32C."""
-        best = None
-        for _e, rec in self.theseus.journal_receipts((EVENT_STAGE, EVENT_COLLAPSE)):
-            if rec.get("artifact_id") == artifact_id and (best is None or rec["version"] > best["version"]):
-                best = rec
+        best = self.theseus.latest_receipt(artifact_id)
         if best is None:
             raise KeyError(artifact_id)
         body = verify_attested(best)
-        frame = self.ovid.materialise(self.theseus.load_shard(body["shard_id"]))
+        frame = self.ovid.materialise(self.theseus.load_shard_object(body["shard_id"], body["object_id"]))
         if hashlib.sha256(frame).hexdigest() != body["frame_sha256"]:
             raise ValueError("restored frame SHA-256 mismatch")
         reg = FoldedRegisterN.from_wire_bytes(frame)
