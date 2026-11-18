@@ -4,7 +4,7 @@
     "4096": {
       "W": 4096,
       "correct": 500,
-      "end_to_end_triad_pipeline_ms": 160.5,
+      "end_to_end_triad_pipeline_ms": 150.465,
       "headers": 500,
       "iterations": [
         50
@@ -12,9 +12,9 @@
       "journal_chains_recomputed_ok": "500/500",
       "k": 32,
       "linear_evals_per_header": "253789/125",
-      "linear_scan_ms": 3.282,
+      "linear_scan_ms": 3.035,
       "overfit_found": 0,
-      "pure_o1_grover_ms": 1.719,
+      "pure_o1_grover_ms": 1.614,
       "receipt_bodies_crc32c_sha256_verified": "500/500",
       "restart_restored": 500,
       "target_verified_receipts_in_chain": "500/500",
@@ -25,26 +25,26 @@
         {
           "digest": "00000000000000000001c06ea254f586aa8976278188c11fbc4231b19aa6a8de",
           "height": 976064,
-          "journal_entry_hash": "cbc93e11759b4961f502306be2da0a310043037a771c3a63d4c6a6df276cdcb3",
+          "journal_entry_hash": "57aaa298608e6c33aca94e022336d830b8626734aeadff54f69f89e929369653",
           "nonce": 90468167,
-          "receipt_body_crc32c": "51b4775b",
-          "receipt_body_sha256": "0cea830233894ae9ccea7e8ed879978dbbac95dea00ff96fb695048754822e14"
+          "receipt_body_crc32c": "31cb5df0",
+          "receipt_body_sha256": "2554c8f4070ff8658ea73120d543ce7ddb8cd40c10496353dcbc8e6b9fde8102"
         },
         {
           "digest": "00000000000000000000c0df8f9ae3fe15bf5c25a71ec06924e5fe778cb21040",
           "height": 976063,
-          "journal_entry_hash": "5bde980d0dd925b1f2ab43b93f2d7dfdfc089e94c16efb8bdc019ab44106fde4",
+          "journal_entry_hash": "f401c0a7cf938b542c08b96b88d6107063e1142547bcda58d3bf5a3f74175edd",
           "nonce": 1265527642,
-          "receipt_body_crc32c": "2a1bd943",
-          "receipt_body_sha256": "62b89992c7c21e95acf496b4fd9a6aa7e307387ccf261f8bfddd036964277f6c"
+          "receipt_body_crc32c": "deef8a8e",
+          "receipt_body_sha256": "e5e5e5575b911d4c46a0bcb0fc82262da70aac061dbc497a79757b0c57b2552b"
         },
         {
           "digest": "00000000000000000000b7ab4614e551d2796e95fa95e06bf00a1afea4da1ef7",
           "height": 976062,
-          "journal_entry_hash": "47b3da316e3689f92170385d7e811a32bfb9b88380add6ce1acb8b8791fcd400",
+          "journal_entry_hash": "bf4a4d22273e93dc9dd5da6a4e72ad91072a333f2a538edf3267d02a1b57eb5c",
           "nonce": 462700330,
-          "receipt_body_crc32c": "bbb62fca",
-          "receipt_body_sha256": "a0c6e5ad25b457369bdcd0434aeaa387ac42df9132ab504f771cd40720c8b7bd"
+          "receipt_body_crc32c": "e76453a3",
+          "receipt_body_sha256": "ccf9b4bf5e972684bf1e9c6af6de0dc7dd94447780b027c3ad0aa92e2d2dae27"
         }
       ],
       "workers": 8
@@ -52,7 +52,7 @@
     "65536": {
       "W": 65536,
       "correct": 500,
-      "end_to_end_triad_pipeline_ms": 498.598,
+      "end_to_end_triad_pipeline_ms": 412.54,
       "headers": 500,
       "iterations": [
         201
@@ -60,9 +60,9 @@
       "journal_chains_recomputed_ok": "500/500",
       "k": 32,
       "linear_evals_per_header": "3942237/125",
-      "linear_scan_ms": 56.153,
+      "linear_scan_ms": 45.81,
       "overfit_found": 0,
-      "pure_o1_grover_ms": 37.547,
+      "pure_o1_grover_ms": 26.57,
       "receipt_bodies_crc32c_sha256_verified": "500/500",
       "restart_restored": 500,
       "target_verified_receipts_in_chain": "500/500",
@@ -73,39 +73,49 @@
         {
           "digest": "00000000000000000001c06ea254f586aa8976278188c11fbc4231b19aa6a8de",
           "height": 976064,
-          "journal_entry_hash": "e64431b66c65f3725e99bea63fe1c1d6769d4fd8535ac50516dfb4b924e24dc2",
+          "journal_entry_hash": "0ddbfa009b25a0170787eb39f80db2e6b16a6e75739526159bc1e08bdbabaf00",
           "nonce": 90468167,
-          "receipt_body_crc32c": "aa28d9c9",
-          "receipt_body_sha256": "2b03f5a0c14ad313e31015fc31804966f7a6fc6ca67bd74227811833519a9d83"
+          "receipt_body_crc32c": "7784cb4f",
+          "receipt_body_sha256": "1ae95f4ef0bd87a9b99b21e864053e8e252c171ecdbb0991fc8f64c0ce381746"
         },
         {
           "digest": "00000000000000000000c0df8f9ae3fe15bf5c25a71ec06924e5fe778cb21040",
           "height": 976063,
-          "journal_entry_hash": "6765c24eb00f2b8731db217cf8e1c32394f5063d7559188ddb9fa3d849f49940",
+          "journal_entry_hash": "ba6d55856fe369b51840d5b6ccaa295d195d99a48b6d131785a681dca7cc2bec",
           "nonce": 1265527642,
-          "receipt_body_crc32c": "a27037d3",
-          "receipt_body_sha256": "7168befbc4009e9ccdefd684b023ab517a6ff5978bf302f722189482aee8d325"
+          "receipt_body_crc32c": "28956d96",
+          "receipt_body_sha256": "55833e119258fe994a521595592148386f3dc07c15cc6407ecd5d6a349207bee"
         },
         {
           "digest": "00000000000000000000b7ab4614e551d2796e95fa95e06bf00a1afea4da1ef7",
           "height": 976062,
-          "journal_entry_hash": "2f5aaeb194f77be8bc6edfa75d115dc323cc8b10a9d9d7d99831eeef5782c849",
+          "journal_entry_hash": "252878e0100034dd5cf4d4ffcd82cb5e624d1ff3e47dc97437c9da8c559f011b",
           "nonce": 462700330,
-          "receipt_body_crc32c": "8a6e6096",
-          "receipt_body_sha256": "85a31ae5fe80cc557e50d94285c95bbb468301d8a3b29148b417069a7483eebb"
+          "receipt_body_crc32c": "e1620ce8",
+          "receipt_body_sha256": "786587a6179305a270e245f0c9678e936b7c7d03318c06e7ed013ad4ccf25b82"
         }
       ],
       "workers": 8
     },
-    "headers": "500 verified mainnet headers 975565-976064"
+    "headers": "500 verified mainnet headers 975565-976064",
+    "input": {
+      "branch": "data/mainnet-headers-975565-976064",
+      "commit": "0ef3443a7736fa7f2ce7aebc4560d318d765fd5c",
+      "path": "tests/vectors/mainnet_975565_976064.json",
+      "sha256": "3db2d4a97543f8ae786691a193eff8cf6b7e5922208beff05340c3f08413cc76"
+    },
+    "raw_outputs": [
+      "benchmarks/triad_grover_k32/raw_w4096.json",
+      "benchmarks/triad_grover_k32/raw_w65536.json"
+    ]
   },
   "branch": "feat/grok-triad-grover",
-  "code_sha": "1552f8b70468fcb9964407f2262bf2223cd39d57",
+  "code_sha": "3b4a8db506fd32a31c7f85f2e7cd7dca5db22144",
   "evidence_status": "LOCAL_ONLY_UNATTESTED",
   "gates": {
     "build_product_gates": {
       "artifact": "PRODUCTION/evidence/product-gates.triad-grover.local.json",
-      "command": "GITHUB_SHA=1552f8b7... python scripts/ci/build_product_gates.py --profile software-base",
+      "command": "GITHUB_SHA=3b4a8db506fd32a31c7f85f2e7cd7dca5db22144 python scripts/ci/build_product_gates.py --profile software-base",
       "gates": {
         "CO-SIGN": "PASS",
         "FN-CLAIMS": "PASS",
@@ -116,7 +126,7 @@
       "status": "PASS"
     },
     "require_release_qualification": {
-      "command": "python scripts/ci/require_release_qualification.py --repository HYBAAIDATA/ChronusQiGPU --commit 1552f8b70468fcb9964407f2262bf2223cd39d57",
+      "command": "python scripts/ci/require_release_qualification.py --repository HYBAAIDATA/ChronusQiGPU --commit 3b4a8db506fd32a31c7f85f2e7cd7dca5db22144",
       "exit_code": 1,
       "reasons": [
         "gh CLI on the box has no GitHub authentication (gh auth login)",
@@ -125,7 +135,7 @@
       "status": "RELEASE BLOCKED"
     }
   },
-  "note": "All measurements were taken on code_sha. The commit that adds this file changes only PRODUCTION/ evidence files. code_sha includes the fix that keeps pre-collapsed bits in the winner index; its regression test is test_winner_index_keeps_pre_collapsed_bits.",
+  "note": "All measurements were taken on code_sha. The commit that adds this file changes only evidence and documentation (PRODUCTION/, benchmarks/triad_grover_k32/, lean/check.sh). code_sha includes the pre-collapsed-bit winner fix and the PR #171 review remediation.",
   "observed_date": "2026-11-18",
   "packaging": {
     "checked_symbols": [
@@ -158,7 +168,7 @@
     "branch": {
       "errors": 0,
       "failed": 5,
-      "passed": 2556,
+      "passed": 2573,
       "skipped": 43,
       "xfailed": 1
     },
@@ -180,6 +190,7 @@
       "xfailed": 1
     }
   },
+  "receipt_schema": "chronus.triad-grover-receipt/2 (total_marked_probability as hex-fraction/1)",
   "receipt_verification": "Every tenant journal was recomputed from SQLite as sha256(ns|seq|event|object_id|prev|timestamp_ns). Each GROVER_TARGET_VERIFIED receipt was reconstructed from THESEUS, and its CRC-32C and SHA-256 attestation were checked.",
   "release_decision": "HOLD",
   "repository": "HYBAAIDATA/ChronusQiGPU",
