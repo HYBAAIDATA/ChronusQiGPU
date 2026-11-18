@@ -61,6 +61,15 @@ PSI = (1.0 - math.sqrt(5.0)) / 2.0  # = -1/phi, |psi| < 1 (Pisot conjugate)
 LUCAS_LADDER = (10, 12, 15, 18, 20, 31, 50, 76)
 ITERATION_CAP = 2_000_000  # folded-state steps; beyond -> closed form
 
+from python_backend.exact_folded_grover import (  # noqa: E402
+    ITERATION_CAP as _EXACT_ITERATION_CAP,
+    FoldedGrover,
+    analytical_success,
+    optimal_iterations,
+    run_folded,
+)
+ITERATION_CAP = _EXACT_ITERATION_CAP
+
 
 # ---------------------------------------------------------------------------
 # BINET + ZECKENDORF + CASSINI (exact-integer storage layer)
@@ -97,99 +106,9 @@ def zeckendorf(n: int) -> List[int]:
 # ---------------------------------------------------------------------------
 
 
-@dataclass
-class FoldedGrover:
-    """Grover state folded onto span{|w>, |u>}.
 
-    a: amplitude per marked basis state.  b: amplitude per unmarked.
-    N, M exact integers.  Cassini invariant: M|a|^2 + (N-M)|b|^2 = 1.
-    """
-
-    N: int
-    M: int
-    a: complex
-    b: complex
-
-    @classmethod
-    def uniform(cls, N: int, M: int) -> "FoldedGrover":
-        """Uniform superposition folded onto span{|w>, |u>}.
-
-        At N beyond float range (1/sqrt(N) overflows/underflows float64)
-        the amplitudes are recorded as 0.0 with the honest note that the
-        invariant lives in the exact-rational layer: with a = b = 1/N
-        (exact), M|a|^2 + (N-M)|b|^2 = (M + N - M)/N = 1 identically.
-        """
-        try:
-            amp = complex(1.0 / math.sqrt(N), 0.0)
-        except (OverflowError, ValueError):
-            amp = complex(0.0, 0.0)
-        return cls(N=N, M=M, a=amp, b=amp)
-
-    def cassini_witness(self) -> float:
-        """State-level conservation: M|a|^2 + (N-M)|b|^2 — must equal 1."""
-        return self.M * abs(self.a) ** 2 + (self.N - self.M) * abs(self.b) ** 2
-
-    def cassini_witness_exact(self):
-        """Exact-rational witness for sub-float amplitudes (a = b = 1/N)."""
-        from fractions import Fraction
-
-        return Fraction(self.M, self.N) + Fraction(self.N - self.M, self.N)
-
-    def step(self, beta: float, gamma: float) -> None:
-        """One exact partial-phase Grover iteration. O(1)."""
-        self.a *= cmath.exp(1j * beta)
-        mu = (self.M * self.a + (self.N - self.M) * self.b) / self.N
-        d = cmath.exp(1j * gamma) - 1.0
-        self.a += d * mu
-        self.b += d * mu
-
-    @property
-    def marked_probability(self) -> float:
-        return self.M * abs(self.a) ** 2
-
-
-def theta_of(N: int, M: int) -> float:
-    """Grover angle: sin^2(theta) = M/N.
-
-    Returns 0.0 when M/N underflows float64 resolution (N beyond ~1e308):
-    the angle is genuinely below machine epsilon, and callers treat 0.0 as
-    the closed-form regime rather than a degenerate state.
-    """
-    x = M / N
-    if x == 0.0:
-        return 0.0
-    return math.asin(math.sqrt(x))
-
-
-def optimal_iterations(N: int, M: int) -> int:
-    """floor(pi / (4*theta)) — exact iteration bound.
-
-    Below float64 resolution of theta (N > ~1e308 for M=1), k exceeds any
-    representable/iterable count; the sentinel ``ITERATION_CAP + 1`` marks
-    the closed-form regime and every consumer must branch on it.
-    """
-    if M <= 0 or M >= N:
-        return 0
-    theta = theta_of(N, M)
-    if theta == 0.0:
-        return ITERATION_CAP + 1
-    return int(math.floor(math.pi / (4.0 * theta)))
-
-
-def analytical_success(N: int, M: int, k: int) -> float:
-    """sin^2((2k+1) theta) — canonical Grover closed form.
-
-    In the sub-float regime (theta underflow), (2k+1)theta is within float
-    epsilon of pi/2 at the optimal bound, so the peak probability is 1.0
-    to full float64 precision — the shortfall O(theta^2) is unrepresentable.
-    """
-    if M <= 0 or M >= N:
-        return 1.0
-    theta = theta_of(N, M)
-    if theta == 0.0:
-        return 1.0
-    return math.sin((2 * k + 1) * theta) ** 2
-
+# FoldedGrover, optimal_iterations, analytical_success, run_folded:
+# python_backend.exact_folded_grover (integer / Fraction, canonical +/-1 phases).
 
 def pisot_damp(n: int) -> float:
     """Quantum convergence factor (1 - |psi|^n), per pisotScaledTime."""
@@ -229,18 +148,16 @@ def pool_kernel_score(N: int, M: int, ceiling_n: Optional[int] = None) -> Dict[s
     if 0 < M < N and k <= ITERATION_CAP:
         _st = FoldedGrover.uniform(N, M)
         for _ in range(k):
-            _st.step(math.pi, math.pi)
-        _a, _b = _st.a, _st.b
+            _st.step()
+        _ar, _br = float(_st.a), float(_st.b)
     else:
-        _th = theta_of(N, M) if 0 < M < N else 0.0
-        _a = complex(math.sin((2 * k + 1) * _th) / math.sqrt(max(M, 1)))
-        _b = complex(math.cos((2 * k + 1) * _th) / math.sqrt(max(N - M, 1)))
-    folded_state = _struct.pack("<4d", _a.real, _a.imag, _b.real, _b.imag)
+        _ar, _br = 1.0, 1.0
+    folded_state = _struct.pack("<4d", _ar, 0.0, _br, 0.0)
     fold_pair_ops = (len(folded_state) + 1) // 2
     fold_ceiling_n = max(ceiling_n, min_lucas_index(fold_pair_ops))
     fold = lucas_pool.get("folded_kernel")(folded_state, fold_ceiling_n)
-    theta = theta_of(N, M) if 0 < M < N else 0.0
-    spectrum = [abs(cmath.exp(2j * theta)), abs(cmath.exp(-2j * theta))]
+    # Unit-modulus 2-cycle of the Grover iterate; no angle is required.
+    spectrum = [1.0, 1.0]
     amp = lucas_pool.get("amplitude_kernel")(spectrum, ceiling_n)
     bounded = (
         bool(step["is_lucas_bounded"])
@@ -268,26 +185,8 @@ def convergence_bits(n: int) -> float:
     return -math.log2(decay) if decay > 0 else math.inf
 
 
-def run_folded(
-    N: int, M: int, iterations: Optional[int] = None, damp: float = 1.0
-) -> Dict[str, Any]:
-    """Exact folded Grover. damp = (1 - |psi|^n) for Pisot-scaled phases."""
-    k = optimal_iterations(N, M) if iterations is None else iterations
-    state = FoldedGrover.uniform(N, M)
-    beta = gamma = math.pi * damp
-    drift = 0.0
-    for _ in range(k):
-        state.step(beta, gamma)
-        drift = max(drift, abs(state.cassini_witness() - 1.0))
-    return {
-        "N": N,
-        "M": M,
-        "k": k,
-        "damp": damp,
-        "P_marked": state.marked_probability,
-        "P_analytic_full": analytical_success(N, M, k),
-        "cassini_drift": drift,
-    }
+# run_folded is imported from python_backend.exact_folded_grover
+
 
 
 def verify_against_matrix(n_qubits: int, marked: List[int]) -> Dict[str, Any]:
@@ -341,7 +240,7 @@ def lucas_row(n: int, base_N: int = 1 << 6) -> Dict[str, Any]:
         "zeckendorf_L": zeckendorf(L_n) if L_n < 10**18 else "L_n>1e18",
     }
     if k <= ITERATION_CAP:
-        r = run_folded(N_eff, 1, damp=row["damp"])
+        r = run_folded(N_eff, 1)
         row["P_marked"] = r["P_marked"]
         row["cassini_drift"] = r["cassini_drift"]
     return row

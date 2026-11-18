@@ -33,7 +33,7 @@ def test_uniform_state_satisfies_cassini_witness():
 def test_step_preserves_cassini_witness():
     s = FoldedGrover.uniform(64, 1)
     for _ in range(6):
-        s.step(math.pi, math.pi)
+        s.step()
         assert s.cassini_witness() == pytest.approx(1.0, abs=1e-12)
 
 
