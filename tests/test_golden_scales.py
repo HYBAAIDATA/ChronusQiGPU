@@ -36,8 +36,9 @@ def test_binet_in_zphi(n):
 def test_m15_is_q15_mod_256_and_lucas_trace():
     m15 = gs.mat_pow(gs.Q, 15, 255)
     assert m15 == ((219, 98), (98, 121)) == hensellift_m15(8)
-    assert (m15[0][0] + m15[1][1]) % 256 == FL(15)[1] % 256 == 84
-    assert FL(15)[1] == 1364 and 1364 % 256 == 84
+    L15 = FL(15)[1]
+    assert L15 == 1364                                    # Lucas L_15
+    assert (m15[0][0] + m15[1][1]) % 256 == L15 % 256 == 84
 
 
 @pytest.mark.parametrize("n", [1, 2, 3, 15, 64, 253])
@@ -119,6 +120,21 @@ def test_angle_certificate_matches_exact_stepping(N):
     assert gs.angle_certificate(N, t)
     assert not gs.angle_certificate(N, t - 1) and not gs.angle_certificate(N, t + 1)
     assert gs.exact_peak_certificate(N, t)
+
+
+
+@pytest.mark.parametrize("N", [1, 2])
+def test_certified_peak_boundary_cases_match_exact_stepping(N):
+    # N=1: theta = pi/2 (zero lower enclosure); N=2: arctan(1)/theta is exactly 1.
+    res = gs.certified_peak(N)
+    assert res["determined"] is True
+    assert res["t_star"] == 0 == exact_lucas_pisot_iterations(N, 1)
+
+
+@pytest.mark.parametrize("N", [0, -3, True, 2.0])
+def test_certified_peak_rejects_non_positive_or_non_int(N):
+    with pytest.raises(ValueError):
+        gs.certified_peak(N)
 
 
 def test_chebyshev_scaled_against_fractions():

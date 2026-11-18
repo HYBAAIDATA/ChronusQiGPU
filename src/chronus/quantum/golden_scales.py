@@ -198,7 +198,17 @@ def angle_certificate(N: int, t: int, P: Optional[int] = None) -> bool:
 
 
 def certified_peak(N: int, prec_bits: Optional[int] = None) -> Dict[str, object]:
-    """Candidate t* = ceil(arctan(1)/theta) - 1 from the enclosures, then ``angle_certificate``."""
+    """Candidate t* = ceil(arctan(1)/theta) - 1 from the enclosures, then ``angle_certificate``.
+
+    N = 1 and N = 2 are exact boundary cases decided without enclosures: theta is
+    exactly pi/2 resp. pi/4, so arctan(1)/theta is 1/2 resp. exactly 1 and t* = 0
+    (P_0 = 1 for N = 1; P_0 = P_1 = 1/2 for N = 2, first peak at t = 0).  The
+    generic path would divide by a zero lower bound (N = 1) or straddle the
+    integer 1 forever (N = 2)."""
+    if isinstance(N, bool) or not isinstance(N, int) or N < 1:
+        raise ValueError(f"N must be a positive integer, got {N!r}")
+    if N <= 2:
+        return {"t_star": 0, "determined": True, "enclosure_width_bits": None}
     P = prec_bits or (2 * N.bit_length() + 128)
     th_lo, th_hi = _theta_enclosure(N, P)
     q_lo, q_hi = quarter_turn_enclosure()
