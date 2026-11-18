@@ -70,7 +70,10 @@ async def execute_epoch(body: ExecutionRequest,
         raise HTTPException(403, "Request tenant does not match authenticated tenant")
     if workload.backend_preference not in (None, "python-math-reference"):
         raise HTTPException(400, "Only explicit CPU reference execution is supported")
-    authorization = authorizer.authorize(workload.payload_bytes)
+    try:
+        authorization = await run_in_threadpool(authorizer.authorize, workload.payload_bytes)
+    except Exception as exc:
+        raise HTTPException(503, "AL HARAS local authorization failed") from exc
     if not authorization["authorized"]:
         raise HTTPException(403, "AL HARAS local admission denied")
     try:
