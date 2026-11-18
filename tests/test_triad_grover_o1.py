@@ -21,8 +21,8 @@ from chronus.ovid.folded_custody import (
 from chronus.ovid.transform import OvidTransformService
 from chronus.execution.sha256d_oracle import Sha256dTargetOracle, sha256d, target_from_bits
 from chronus.quantum.triad_grover import (
-    _full_vector_step, _two_amplitude_step, exact_grover_two_amplitude_trajectory,
-    exact_lucas_pisot_iterations, run_triad_exact_grover_search,
+    EVENT_VERIFIED, _full_vector_step, _two_amplitude_step, decode_exact_fraction, encode_exact_fraction,
+    exact_grover_two_amplitude_trajectory, exact_lucas_pisot_iterations, run_triad_exact_grover_search,
 )
 from chronus.storage.durable import DurableTheseusService
 from chronus.storage.theseus import StorageIntegrityError
@@ -292,3 +292,93 @@ def test_oracle_counts_every_evaluation():
     o = Sha256dTargetOracle(GENESIS[:76], target_from_bits(0x1D00FFFF))
     assert o((o.ntime << 32) | GENESIS_NONCE) and not o((o.ntime << 32) | 1)
     assert (o.evaluations, o.midstates, o.compressions) == (2, 1, 5)
+
+
+# ---------------------------------------------------------------- review remediation (PR #171)
+def test_rejected_winner_leaves_no_custody_writes(tmp_path):
+    """The independent winner check runs before any collapse commit or
+    GROVER_TARGET_VERIFIED receipt: a rejection leaves only the stage record."""
+    custody, store, ad = _adapter(tmp_path)
+    h = ad.stage_domain("v", FoldedRegisterN.from_domain_offset(500, num_generators=4, k=32))
+    before = len(custody.get_journal("t"))
+    with pytest.raises(ArithmeticError):
+        run_triad_exact_grover_search(adapter=ad, handle=h, oracle_predicate=lambda v: (v & 0xFFFFFFFF) == 509,
+                                      winner_verifier=lambda v: False)
+    assert len(custody.get_journal("t")) == before
+    assert store.journal_receipts((EVENT_VERIFIED, "OVID_GENERATOR_COLLAPSE")) == []
+    r = run_triad_exact_grover_search(adapter=ad, handle=h, oracle_predicate=lambda v: (v & 0xFFFFFFFF) == 509,
+                                      winner_verifier=lambda v: (v & 0xFFFFFFFF) == 509)
+    assert r.found and r.winner_value & 0xFFFFFFFF == 509
+
+
+def test_committed_versions_are_immutable_and_restore_follows_receipt(tmp_path):
+    custody, store, ad = _adapter(tmp_path)
+    reg = FoldedRegisterN.from_domain_offset(0, num_generators=3, k=32)
+    h0 = ad.stage_domain("imm", reg)
+    h1 = ad.commit_collapse_step(h0, 0, 1)
+    again = ad.commit_collapse_step(h0, 0, 1)                 # byte-identical retry: reused, no new writes
+    assert again.sha256_digest == h1.sha256_digest and again.shard_ref.get("reused") is True
+    with pytest.raises(ValueError, match="already committed"):
+        ad.commit_collapse_step(h0, 0, 0)                     # conflicting frame for imm:v1
+    with pytest.raises(ValueError, match="already committed"):
+        ad.stage_domain("imm", FoldedRegisterN.from_domain_offset(8, num_generators=3, k=32))
+    del ad
+    _, _, ad2 = _adapter(tmp_path)
+    restored = ad2.restore_from_theseus("imm")
+    assert restored.version == 1 and restored.sha256_digest == h1.sha256_digest
+
+
+def test_repeated_triad_searches_across_epochs_restore(tmp_path):
+    """Every state marked: epoch 0 and epoch 1 select different winners.  Their
+    default artifact ids differ, so both remain restorable after reopen."""
+    tri = open_production_triad(tmp_path)
+    prefix = bytes(76)
+    outs = [tri.exact_grover_search("rep", prefix, (1 << 256) - 1, 0, num_generators=3, epoch_step=e)
+            for e in (0, 1)]
+    assert outs[0]["result"].winner_index != outs[1]["result"].winner_index
+    tri2 = open_production_triad(tmp_path)
+    ad = OvidFoldedAdapter(OvidAdapter(tri2.ovid), TheseusAdapter(tri2.theseus, "rep"))
+    for o in outs:
+        aid = o["result"].artifact_id
+        h = ad.restore_from_theseus(aid)
+        assert h.register.active_dimension == 0
+        assert h.register.readout_winner()[0] == o["result"].winner_index
+
+
+def test_full_reconstruct_is_bounded(tmp_path):
+    _, _, ad = _adapter(tmp_path)
+    h = ad.stage_domain("big", FoldedRegisterN.from_domain_offset(0, num_generators=25, k=32))
+    with pytest.raises(ValueError, match="bounded"):
+        ad.full_reconstruct(h)
+    assert ad.materialise_indices(h, [0, (1 << 25) - 1]) == [0, (1 << 25) - 1]
+
+
+def test_receipt_probability_encoding_is_exact_beyond_decimal_limit():
+    traj = exact_grover_two_amplitude_trajectory(1 << 19, 1)
+    t, _a, _b, total = traj[-1]
+    assert t == 568 and total.denominator == 1 << 19331
+    assert (1 << 19331) > 10 ** 4300            # beyond CPython's default 4300-digit str() limit
+    enc = encode_exact_fraction(total)
+    assert enc["encoding"] == "hex-fraction/1" and decode_exact_fraction(enc) == total
+    assert decode_exact_fraction(encode_exact_fraction(Fraction(-3, 7))) == Fraction(-3, 7)
+    with pytest.raises(TypeError):
+        encode_exact_fraction(1)
+
+
+@pytest.mark.parametrize("bits,target", [
+    (0x1D00FFFF, 0xFFFF << 208),
+    (0x02008000, 0x80),
+    (0x01003456, 0x00),
+])
+def test_target_from_bits_compact_edges(bits, target):
+    if target == 0:
+        with pytest.raises(ValueError):
+            target_from_bits(bits)
+    else:
+        assert target_from_bits(bits) == target
+
+
+@pytest.mark.parametrize("bits", [0x1D80FFFF, 0x04800000, -1, 1 << 32, True])
+def test_target_from_bits_rejects_negative_and_invalid(bits):
+    with pytest.raises(ValueError):
+        target_from_bits(bits)

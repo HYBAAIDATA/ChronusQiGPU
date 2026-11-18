@@ -5,6 +5,7 @@ import ctypes
 import hashlib
 import json
 import os
+import platform
 import shutil
 import struct
 import subprocess
@@ -83,7 +84,8 @@ def test_fibonacci_lift_q15_is_also_a_lift() -> None:
     """Q^15 = [[F16,F15],[F15,F14]] = [[987,610],[610,377]] has det -1 over Z (Cassini), so
     Q^15 mod 2^k is a second lift of M15 with trace L15 = 1364; same order 2^(k-1). Informational."""
     q15 = ((987, 610), (610, 377))
-    assert 987 * 377 - 610 * 610 == -1 and 987 + 377 == 1364
+    (a, b), (c, d) = q15
+    assert a * d - b * c == -1 and a + d == 1364
     for k in (8, 16, 32, 64):
         m = 1 << k
         qk = tuple(tuple(e % m for e in r) for r in q15)
@@ -152,7 +154,8 @@ def test_streaming_all_chunk_sizes() -> None:
 def test_500_mainnet_headers_roundtrip_and_hash() -> None:
     if not os.path.exists(HEADERS):
         pytest.skip("headers fixture not present")
-    rows = json.load(open(HEADERS))
+    with open(HEADERS, encoding="utf-8") as fh:
+        rows = json.load(fh)
     assert len(rows) == 500
     for r in rows:
         h = bytes.fromhex(r["header_hex"])
@@ -184,7 +187,12 @@ def _build(flags: list[str]) -> str | None:
     return so
 
 
-@pytest.mark.parametrize("flags", [["-march=native"], ["-mno-avx2", "-mno-sse4.2"]])
+_SCALAR_FLAGS = (["-DGL2_FORCE_SCALAR", "-mno-avx2", "-mno-sse4.2"]
+                 if platform.machine().lower() in ("x86_64", "amd64", "i386", "i686")
+                 else ["-DGL2_FORCE_SCALAR"])
+
+
+@pytest.mark.parametrize("flags", [["-march=native"], _SCALAR_FLAGS])
 def test_native_kernel_bit_exact(flags: list[str]) -> None:
     so = _build(flags)
     if so is None:
@@ -265,7 +273,10 @@ def test_folded_register7_fold_roundtrip_and_commutation() -> None:
 def test_folded_register7_exhaustive_128(k: int) -> None:
     mask = (1 << k) - 1
     mk = hensellift_m15(k)
-    rows = json.load(open(HEADERS)) if os.path.exists(HEADERS) else [{"nonce_api": 2083236893}]
+    rows = [{"nonce_api": 2083236893}]
+    if os.path.exists(HEADERS):
+        with open(HEADERS, encoding="utf-8") as fh:
+            rows = json.load(fh)
     for nonce in [2083236893] + [r["nonce_api"] for r in rows[:20]]:
         base = nonce & ~0x7F
         r = FoldedRegister7.from_domain_offset(base, k=k)
@@ -308,3 +319,54 @@ def test_unaligned_and_readonly_views_match_reference() -> None:
         assert f == fold(bytes(v)) == fold(bytearray(v)) == fold(memoryview(ref_ba)[off:])
         assert unfold(f) == bytes(v)
         assert crc32c(v) == crc32c(bytes(v)) == crc32c(memoryview(ref_ba)[off:])
+
+
+# ---------------------------------------------------------------- review remediation (PR #171)
+def test_unfold_stream_rejects_bytes_beyond_trailer() -> None:
+    for payload in (b"", b"abc", bytes(range(64))):
+        frame = to_wire(fold(payload))
+        dec = UnfoldStream(max_length=len(payload))
+        with pytest.raises(ValueError, match="beyond the v2 frame trailer"):
+            dec.update(frame + b"\x00" * 4096)
+        assert len(dec._buf) == 0
+        with pytest.raises(RuntimeError):
+            dec.update(b"\x00")
+        ok = UnfoldStream(max_length=len(payload))
+        out = b"".join(ok.update(frame[i:i + 3]) for i in range(0, len(frame), 3))
+        ok.finalize()
+        assert out == payload
+
+
+def test_native_loader_tolerates_missing_symbols(tmp_path, monkeypatch) -> None:
+    cc = shutil.which("gcc")
+    if cc is None:
+        pytest.skip("no gcc")
+    src = tmp_path / "partial.c"
+    src.write_text("int gl2_fold_pairs(void) { return 0; }\n")
+    so = tmp_path / "partial.so"
+    subprocess.run([cc, "-shared", "-fPIC", str(src), "-o", str(so)], check=True)
+    monkeypatch.setenv("GL2_FAST_SO", str(so))
+    assert g._load_native_lib() is None
+
+
+def test_native_crc_and_pairs_accept_strided_views(monkeypatch) -> None:
+    so = _build(["-DGL2_FORCE_SCALAR"])
+    if so is None:
+        pytest.skip("no gcc")
+    monkeypatch.setenv("GL2_FAST_SO", so)
+    lib = g._load_native_lib()
+    assert lib is not None
+    data = bytes((i * 37 + 11) & 0xFF for i in range(1001))
+    strided = memoryview(data)[::2]
+    monkeypatch.setattr(g, "_NATIVE_LIB", None)
+    expect_crc = crc32c(bytes(strided))
+    expect_fold = fold(bytes(strided))
+    monkeypatch.setattr(g, "_NATIVE_LIB", lib)
+    assert crc32c(strided) == expect_crc
+    assert crc32c(memoryview(data)) == crc32c(data)
+    assert fold(strided) == expect_fold
+
+
+def test_pair_kernel_coefficients_come_from_m15() -> None:
+    assert g._FWD_COEFFS == (219, 98, 98, 121) and g._INV_COEFFS == (135, 98, 98, 37)
+    assert _mul(g.M15, g.M15_INV, 256) == I2
