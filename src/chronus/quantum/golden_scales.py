@@ -51,6 +51,8 @@ def zphi_mul(x: Tuple[int, int], y: Tuple[int, int]) -> Tuple[int, int]:
 
 
 def zphi_pow(base: Tuple[int, int], n: int) -> Tuple[int, int]:
+    if n < 0:
+        raise ValueError("exponent must be nonnegative")
     r = (1, 0)
     while n:
         if n & 1:
@@ -69,6 +71,8 @@ def mat_mul(a, b, mask):
 
 
 def mat_pow(m, e, mask):
+    if e < 0:
+        raise ValueError("exponent must be nonnegative")
     r = I2
     while e:
         if e & 1:
@@ -85,7 +89,10 @@ def nearest_index(S: int, lucas: bool) -> Tuple[int, int]:
         n += 1
     lo = exact_fibonacci_lucas(n)[1 if lucas else 0]
     hi = exact_fibonacci_lucas(n + 1)[1 if lucas else 0]
-    return (n, lo) if S - lo <= hi - S else (n + 1, hi)
+    candidate = (n, lo) if S - lo <= hi - S else (n + 1, hi)
+    if lucas:
+        candidate = min(candidate, (0, 2), key=lambda item: (abs(S - item[1]), item[1]))
+    return candidate
 
 
 def pisot_residual(n: int) -> Dict[str, object]:
@@ -151,7 +158,12 @@ def chebyshev_scaled(m: int, N: int) -> int:
 
 
 def exact_peak_certificate(N: int, t: int) -> bool:
-    """True iff T_t(c) > 0 and T_{t+1}(c) <= 0 for c = 1 - 2/N, i.e. t is the exact peak."""
+    """Certify the first peak by its angle bracket and exact Chebyshev signs.
+
+    The sign pair alone also occurs at later crossings and is insufficient.
+    """
+    if N < 1 or t < 0 or not angle_certificate(N, t):
+        return False
     return chebyshev_scaled(t, N) > 0 and chebyshev_scaled(t + 1, N) <= 0
 
 
@@ -191,6 +203,9 @@ def pi_bounds() -> Tuple[Fraction, Fraction]:
 def angle_certificate(N: int, t: int, P: Optional[int] = None) -> bool:
     """Certifies t = t*(N, 1): t*theta < arctan(1) <= (t+1)*theta, i.e. T_t(c) > 0 >= T_{t+1}(c)
     with c = 1 - 2/N (Theorem 6.2), using only rational enclosures of arctan values."""
+    if N in (1, 2):
+        # Exact theta = pi/2 or pi/4; accept the inclusive upper bracket.
+        return t == 0
     P = P or (2 * N.bit_length() + 128)
     th_lo, th_hi = _theta_enclosure(N, P)
     q_lo, q_hi = quarter_turn_enclosure()
@@ -247,10 +262,11 @@ def production_register_roundtrip(S: int, k: int, root: Optional[str] = None) ->
         path = os.path.join(root, f"k{k}.sqlite3")
         custody = DurableTheseusService(path)
         ad = OvidFoldedAdapter(OvidAdapter(OvidTransformService()), TheseusAdapter(custody, "scale"))
-        h = ad.commit_collapse_step(ad.stage_domain(f"scale/k{k}", reg), 0, 1)
+        artifact_id = f"scale/k{k}/S{S}"
+        h = ad.commit_collapse_step(ad.stage_domain(artifact_id, reg), 0, 1)
         ad2 = OvidFoldedAdapter(OvidAdapter(OvidTransformService()),
                                 TheseusAdapter(DurableTheseusService(path), "scale"))
-        r = ad2.restore_from_theseus(f"scale/k{k}")
+        r = ad2.restore_from_theseus(artifact_id)
         out.update({"theseus_restore_exact": (r.version, r.register, r.wire_frame) == (1, h.register, h.wire_frame),
                     "theseus_chain_verified": custody.verify_journal_continuity("scale"),
                     "theseus_journal_head": custody.get_journal("scale")[-1].entry_hash})

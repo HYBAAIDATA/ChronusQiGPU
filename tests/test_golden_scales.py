@@ -221,3 +221,60 @@ def test_pvscale_field_period_516():
         S = 10 ** d
         assert PVScale(S).field_factor() == PVScale(S % 516).field_factor()
         assert PVScale(S).cassini_parity() == 1
+
+
+@pytest.mark.parametrize("exponent", [-1, -2])
+def test_power_helpers_reject_negative_exponents(exponent):
+    with pytest.raises(ValueError, match="nonnegative"):
+        gs.zphi_pow(gs.PHI, exponent)
+    with pytest.raises(ValueError, match="nonnegative"):
+        gs.mat_pow(gs.Q, exponent, 255)
+
+
+def test_power_helpers_zero_is_identity():
+    assert gs.zphi_pow(gs.PHI, 0) == (1, 0)
+    assert gs.mat_pow(gs.Q, 0, 255) == gs.I2
+
+
+@pytest.mark.parametrize("S,expected", [(1, (1, 1)), (2, (0, 2)), (3, (2, 3)), (5, (3, 4))])
+def test_nearest_lucas_includes_zero_and_ties_to_lower(S, expected):
+    assert gs.nearest_index(S, True) == expected
+
+
+def test_exact_certificate_rejects_later_crossing():
+    # For N=4, T_6(1/2)=1 and T_7(1/2)=1/2, followed by T_8(1/2)=-1/2.
+    assert gs.chebyshev_scaled(7, 4) > 0
+    assert gs.chebyshev_scaled(8, 4) < 0
+    assert not gs.exact_peak_certificate(4, 7)
+    assert gs.exact_peak_certificate(4, 1)
+
+
+def test_angle_certificate_exact_two_state_tie():
+    assert gs.angle_certificate(2, 0)
+    assert gs.exact_peak_certificate(2, 0)
+    assert not gs.angle_certificate(2, -1)
+    assert not gs.angle_certificate(2, 1)
+
+
+@pytest.mark.parametrize("d", gs.SCALES)
+def test_production_register_at_every_scale(d):
+    S = 10 ** d
+    k = (S - 1).bit_length()
+    result = gs.production_register_roundtrip(S, k)
+    assert result["wire_roundtrip"]
+    assert result["window_values_exact"]
+    assert result["unfold_restores"]
+    assert result["collapse_commutes"]
+
+
+def test_register_custody_distinguishes_windows_and_reuses_retry(tmp_path):
+    root = str(tmp_path)
+    first = gs.production_register_roundtrip(10 ** 7, 24, root)
+    second = gs.production_register_roundtrip(10 ** 7 + 1, 24, root)
+    retry = gs.production_register_roundtrip(10 ** 7, 24, root)
+    for result in (first, second, retry):
+        assert result["theseus_restore_exact"]
+        assert result["theseus_chain_verified"]
+    assert first["frame_sha256"] != second["frame_sha256"]
+    assert first["frame_sha256"] == retry["frame_sha256"]
+    assert second["theseus_journal_head"] == retry["theseus_journal_head"]
