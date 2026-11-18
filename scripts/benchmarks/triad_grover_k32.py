@@ -129,7 +129,8 @@ def run_chunk(job):
         for side in ("in", "overfit"):
             h = ad.restore_from_theseus(rec[side]["artifact_id"])
             if rec[side]["found"]:
-                if h.register.active_dimension != 0 or h.register.readout_winner()[1][1] != rec[side]["nonce"]:
+                # the custodied register is held folded by M_k: unfold before read-out
+                if h.register.active_dimension != 0 or h.register.unfold_mk().readout_winner()[1][1] != rec[side]["nonce"]:
                     raise AssertionError("restored winner handle is not the fully collapsed winner")
             elif h.version != 0 or h.register.active_dimension != d:
                 raise AssertionError("restored exhausted handle is not the uncollapsed stage")
