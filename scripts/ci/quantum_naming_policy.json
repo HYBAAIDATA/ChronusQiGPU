@@ -12,7 +12,8 @@
     "ring_mps.py": "algebraic_model",
     "ring_state.py": "algebraic_model",
     "statevector.py": "finite_field_model",
-    "subspace.py": "finite_field_model"
+    "subspace.py": "finite_field_model",
+    "triad_grover.py": "algebraic_model"
   },
   "classical_alias": {
     "path": "src/chronus/intelligence/predictive_engine.py",
