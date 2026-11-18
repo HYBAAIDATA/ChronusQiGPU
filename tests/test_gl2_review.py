@@ -9,6 +9,7 @@ import platform
 import shutil
 import struct
 import subprocess
+import sys
 import tempfile
 import tracemalloc
 
@@ -337,7 +338,30 @@ def test_unfold_stream_rejects_bytes_beyond_trailer() -> None:
         assert out == payload
 
 
-def test_native_loader_tolerates_missing_symbols(tmp_path, monkeypatch) -> None:
+def _run_with_native(so: str, code: str) -> str:
+    """Run `code` in a fresh interpreter whose module import loads `so` via GL2_FAST_SO.
+
+    A real process with the real environment variable and the real shared library;
+    no in-process patching of the module under test.
+    """
+    env = dict(os.environ, GL2_FAST_SO=so)
+    src_dir = os.path.join(HERE, "..", "src")
+    env["PYTHONPATH"] = src_dir + os.pathsep + env.get("PYTHONPATH", "")
+    out = subprocess.run([sys.executable, "-c", code], env=env, check=True,
+                         capture_output=True, text=True)
+    return out.stdout.strip()
+
+
+def _crc32c_bitwise(data: bytes) -> int:
+    crc = 0xFFFF_FFFF
+    for b in data:
+        crc ^= b
+        for _ in range(8):
+            crc = (crc >> 1) ^ (0x82F6_3B78 if crc & 1 else 0)
+    return crc ^ 0xFFFF_FFFF
+
+
+def test_native_loader_tolerates_missing_symbols(tmp_path) -> None:
     cc = shutil.which("gcc")
     if cc is None:
         pytest.skip("no gcc")
@@ -345,26 +369,33 @@ def test_native_loader_tolerates_missing_symbols(tmp_path, monkeypatch) -> None:
     src.write_text("int gl2_fold_pairs(void) { return 0; }\n")
     so = tmp_path / "partial.so"
     subprocess.run([cc, "-shared", "-fPIC", str(src), "-o", str(so)], check=True)
-    monkeypatch.setenv("GL2_FAST_SO", str(so))
-    assert g._load_native_lib() is None
+    out = _run_with_native(str(so), (
+        "from chronus.kernels import gl2_transform as g\n"
+        "assert g._NATIVE_LIB is None\n"
+        "assert g.unfold(g.fold(b'abc')) == b'abc'\n"
+        "print('ok')\n"))
+    assert out == "ok"
 
 
-def test_native_crc_and_pairs_accept_strided_views(monkeypatch) -> None:
+def test_native_crc_and_pairs_accept_strided_views() -> None:
     so = _build(["-DGL2_FORCE_SCALAR"])
     if so is None:
         pytest.skip("no gcc")
-    monkeypatch.setenv("GL2_FAST_SO", so)
-    lib = g._load_native_lib()
-    assert lib is not None
     data = bytes((i * 37 + 11) & 0xFF for i in range(1001))
-    strided = memoryview(data)[::2]
-    monkeypatch.setattr(g, "_NATIVE_LIB", None)
-    expect_crc = crc32c(bytes(strided))
-    expect_fold = fold(bytes(strided))
-    monkeypatch.setattr(g, "_NATIVE_LIB", lib)
-    assert crc32c(strided) == expect_crc
-    assert crc32c(memoryview(data)) == crc32c(data)
-    assert fold(strided) == expect_fold
+    strided = bytes(memoryview(data)[::2])
+    out = _run_with_native(so, (
+        "from chronus.kernels import gl2_transform as g\n"
+        "assert g._NATIVE_LIB is not None\n"
+        "data = bytes((i * 37 + 11) & 0xFF for i in range(1001))\n"
+        "s = memoryview(data)[::2]\n"
+        "assert not s.c_contiguous\n"
+        "assert g.fold(s) == g.fold(bytes(s))\n"
+        "assert g.unfold(g.fold(s)) == bytes(s)\n"
+        "print(g.crc32c(s), g.crc32c(memoryview(data)), g.fold(s).data.hex())\n"))
+    crc_s, crc_full, payload_hex = out.split()
+    assert int(crc_s) == _crc32c_bitwise(strided)
+    assert int(crc_full) == _crc32c_bitwise(data)
+    assert bytes.fromhex(payload_hex) == fold(strided).data
 
 
 def test_pair_kernel_coefficients_come_from_m15() -> None:
