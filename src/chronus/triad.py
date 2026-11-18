@@ -147,6 +147,7 @@ class ProductionTriad:
         handle = adapter.stage_domain(artifact_id, register)
         result = run_triad_exact_grover_search(
             adapter=adapter, handle=handle, oracle_predicate=oracle, epoch_step=epoch_step,
+            winner_verifier=lambda v: oracle.verify(v)[0],
         )
         verified, digest_hex = (False, None)
         if result.found:

@@ -177,12 +177,19 @@ def run_triad_exact_grover_search(
     value = (hi << h.register.k) | lo
     if bits != win_idx or value != values[win]:
         raise ArithmeticError("collapsed read-out disagrees with materialised winner")
+    # Independent check (e.g. fresh SHA-256d) must pass BEFORE the verified receipt is durably appended.
+    independently_verified = False
+    if winner_verifier is not None:
+        if not winner_verifier(value):
+            raise ArithmeticError("winner failed independent verification; no verified receipt written")
+        independently_verified = True
     rid = adapter.theseus.append_audit_receipt(EVENT_VERIFIED, attest({
         "schema": GROVER_SCHEMA, "event": EVENT_VERIFIED, "artifact_id": handle.artifact_id,
         "handle_version": h.version, "frame_sha256": h.sha256_digest, "states": N,
         "marked_count": M, "iterations": iters,
         "total_marked_probability": f"{total.numerator}/{total.denominator}",
         "winner_index": win_idx, "winner_value": value, "winner_schedule_position": win + 1,
+        "predicate_selected": True, "independently_verified": independently_verified,
         "oracle_evaluations": N, "accounting": accounting, **schedule}))
     return TriadGroverResult(found=True, iterations=iters, total_marked_probability=total,
                              single_target_probability=total / M, winner_index=win_idx, winner_value=value,
