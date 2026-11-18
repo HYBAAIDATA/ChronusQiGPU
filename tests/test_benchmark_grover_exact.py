@@ -71,23 +71,25 @@ def test_grover_lucas_pisot_folded_state_scaling_15_18_20():
     )
     from lucas.core import lucas
 
-    # Verify rungs are in the canonical ladder
+    from kellogg.scales import ZPHI_ONE, ZPHI_ZERO
+    from python_backend.exact_folded_grover import zphi_lt_rational
+
+    # Verify rungs are in the canonical ladder; damp and residual are exact Z[phi].
     for rung in (15, 18, 20):
         assert rung in LUCAS_LADDER
         damp = pisot_damp(rung)
-        assert 0.999 < damp < 1.0  # High-order Pisot damping
+        assert (damp - ZPHI_ZERO).sign() > 0 and (ZPHI_ONE - damp).sign() > 0
+        # 1-|psi|^n > 0.999  <=>  |psi|^n < 0.001
         residual = binet_residual(rung)
-        assert residual < 1e-3
+        assert zphi_lt_rational(residual, 1, 1000)
 
-    # Exact folded evolution on scaled search spaces
+    # Exact folded evolution on scaled search spaces (canonical +/-1 phases).
     for rung in (15, 18, 20):
         L_n = lucas(rung)
         N_eff = 64 * L_n
-        damp = pisot_damp(rung)
-        res = run_folded(N_eff, 1, iterations=10, damp=damp)
-        # Cassini witness invariant M|a|^2 + (N-M)|b|^2 must equal 1.0 within float64 precision
-        assert res["cassini_drift"] < 1e-14
-        assert 0.0 <= res["P_marked"] <= 1.0
+        res = run_folded(N_eff, 1, iterations=10)
+        assert res["cassini_drift"] == 0
+        assert 0 <= res["P_marked"] <= 1
 
 
 def test_boundaries_per_grover_scaling_research():

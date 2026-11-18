@@ -68,55 +68,44 @@ def test_analytical_success_classical():
 
 
 def test_pisot_damp_converges_to_one():
+    from kellogg.scales import ZPHI_ONE, ZPHI_ZERO
+    from python_backend.exact_folded_grover import zphi_lt_rational
+
     vals = [ges.pisot_damp(n) for n in (10, 12, 15, 18, 20, 31, 50, 76)]
-    assert all(0 < v < 1 for v in vals)
-    assert vals == sorted(vals)
-    assert ges.pisot_damp(76) > 1 - 1e-15
-
-
-def _decimal_phi(prec: int = 60):
-    """60-digit phi/psi — enough headroom to evaluate the Z[phi] drift
-    element past the cancellation that breaks float64 at n > ~22."""
-    from decimal import Decimal, getcontext
-
-    getcontext().prec = prec
-    root5 = Decimal(5).sqrt()
-    return (1 + root5) / 2, (1 - root5) / 2
+    # 0 < 1 - phi^{-n} < 1  <=>  0 < phi^{-n} < 1, n >= 1.
+    assert all((v - ZPHI_ZERO).sign() > 0 and (ZPHI_ONE - v).sign() > 0 for v in vals)
+    assert all((vals[i + 1] - vals[i]).sign() > 0 for i in range(len(vals) - 1))
+    # pisot_damp(76) > 1 - 1e-15  <=>  phi^{-76} < 1e-15.
+    assert zphi_lt_rational(ges.binet_residual(76), 1, 10**15)
 
 
 def test_binet_residual_exact_small_n():
-    """|phi^n - L_n| = |psi|^n exactly — monotone decay, and the value
-    matches 60-digit Decimal evaluation of the exact drift element."""
-    from decimal import Decimal
-    from kellogg.scales import pisot_drift
+    """|phi^n - L_n| = |psi|^n exactly in Z[phi]; monotone in the real embedding."""
+    from kellogg.scales import ZPHI_ONE, pisot_drift
 
-    phi_d, _ = _decimal_phi()
     for n in range(10, 26):
-        assert ges.binet_residual(n) == pytest.approx(abs(PSI) ** n, rel=1e-12)
-        d = pisot_drift(n)
-        exact = Decimal(d.a) + Decimal(d.b) * phi_d  # = phi^n - L_n, ~60 digits
-        assert ges.binet_residual(n) == pytest.approx(abs(float(exact)), rel=1e-9)
-        assert ges.binet_residual(n) < ges.binet_residual(n - 1)
+        residual = ges.binet_residual(n)
+        assert residual == (ges.PHI - ZPHI_ONE) ** n
+        assert residual == (-ges.PSI) ** n
+        signed = pisot_drift(n)
+        # signed = phi^n - L_n = -psi^n; N(psi) = -1, so N(signed) = (-1)^n.
+        assert signed.norm() == (-1) ** n
+        assert (ges.binet_residual(n - 1) - residual).sign() > 0
 
 
 def test_binet_residual_beyond_mantissa():
-    """Regression: phi^76 ~ 7.6e15 outgrows the float64 mantissa, so the
-    raw subtraction returned ~19.0 (garbage) — the residual must be the
-    Binet-identical |psi|^76 ~ 1.3e-16, computed without cancellation."""
-    r76 = ges.binet_residual(76)
-    assert r76 == pytest.approx(abs(PSI) ** 76, rel=1e-9)
-    assert r76 < 1e-15
-    # Independent verification: the exact Z[phi] drift element evaluated
-    # in 60-digit Decimal arithmetic recovers the same value.
-    from decimal import Decimal
-    from kellogg.scales import pisot_drift
+    """The residual is the exact Z[phi] element phi^{-76}, not a float64
+    subtraction of phi^76 - L_76 (which used to cancel to garbage ~19)."""
+    from kellogg.scales import ZPHI_ONE, pisot_drift
+    from python_backend.exact_folded_grover import zphi_lt_rational
 
-    phi_d, _ = _decimal_phi()
+    r76 = ges.binet_residual(76)
+    assert r76 == (ges.PHI - ZPHI_ONE) ** 76
+    assert r76 == (-PSI) ** 76
+    assert zphi_lt_rational(r76, 1, 10**15)
     d = pisot_drift(76)
     assert (d.a, d.b) == (-5527939700884757, 3416454622906707)
-    assert d.norm() == 1  # norm(-psi^76) = (phi*psi)^76 = (-1)^76
-    exact = Decimal(d.a) + Decimal(d.b) * phi_d
-    assert r76 == pytest.approx(abs(float(exact)), rel=1e-9)
+    assert d.norm() == 1  # norm(-psi^76) = (-1)^76
 
 
 def test_convergence_bits_monotone():

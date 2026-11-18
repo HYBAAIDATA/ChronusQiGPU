@@ -58,11 +58,13 @@ def test_pisot_phases_are_refused_by_the_exact_fold():
 
 
 def test_binet_residual_equals_pisot_drift():
-    """|phi^n - L_n| = |psi|^n exactly; float64 evaluates phi^n to ~ULP(n),
-    so the verification tolerance scales with phi^n."""
+    """|phi^n - L_n| = |psi|^n exactly in Z[phi]."""
+    from kellogg.scales import ZPHI_ONE, pisot_drift
+
     for n in range(10, 26):
-        tol = ges.PHI**n * 1e-12
-        assert abs(ges.binet_residual(n) - abs(ges.PSI) ** n) < tol
+        assert ges.binet_residual(n) == (ges.PHI - ZPHI_ONE) ** n
+        assert ges.binet_residual(n) == (-ges.PSI) ** n
+        assert pisot_drift(n).norm() == (-1) ** n
 
 
 def test_cassini_lucas_identity_exact():

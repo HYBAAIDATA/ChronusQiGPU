@@ -312,12 +312,13 @@ def test_lucas_enhanced_oracle_marks_only_solutions():
     assert g.run(g.lucas_enhanced_oracle([200]))["peak_success_probability"] > 0.999
 
 
-def test_lucas_adaptive_iterations_uses_pisot_phases():
+def test_lucas_adaptive_iterations_matches_exact_peak():
     from Intelligence.quantum_algorithms import GroverSearch
 
     g = GroverSearch(12)
     assert g.lucas_adaptive_iterations(1) == g.optimal_iterations(4096, 1) == 50
-    assert g.lucas_adaptive_iterations(1, lucas_index=3) == 53
+    # Inexact Pisot e^{i beta} phases were removed; lucas_index does not change k.
+    assert g.lucas_adaptive_iterations(1, lucas_index=3) == 50
 
 
 def test_pool_kernel_score_uses_real_folded_state():
@@ -325,3 +326,43 @@ def test_pool_kernel_score_uses_real_folded_state():
 
     s = ges.pool_kernel_score(4096, 1)
     assert s["fold_state_bytes"] == 32 and s["fold_pair_ops"] == 16 and s["fold_bounded"]
+
+
+_REPO = Path(__file__).resolve().parents[1]
+TOUCHED_EXACT_FILES = (
+    _REPO / "python_backend" / "exact_folded_grover.py",
+    _REPO / "turing_universal_quantum_computer" / "turing_universal_quantum_computer" / "grover_exact_scale.py",
+    _REPO / "Intelligence" / "grover_exact_scale.py",
+    _REPO / "millennium" / "grover_exact_scale.py",
+)
+
+
+def test_touched_surface_has_no_float_trig():
+    import re
+    pat = re.compile(r"math\.(sin|cos|sqrt|asin|pi|log|log2|exp)\b|import cmath|import math|cmath\.")
+    hits = []
+    for path in TOUCHED_EXACT_FILES:
+        text = path.read_text(encoding="utf-8")
+        for i, line in enumerate(text.splitlines(), 1):
+            if pat.search(line):
+                hits.append(f"{path.name}:{i}:{line}")
+    assert hits == [], "trig on exact surface:\n" + "\n".join(hits)
+
+
+def test_grover_search_iteration_methods_have_no_float_trig():
+    import inspect
+    import re
+    from Intelligence.quantum_algorithms import GroverSearch
+    from millennium.quantum_algorithms import GroverSearch as MillenniumGrover
+
+    pat = re.compile(r"math\.(sin|cos|sqrt|asin|pi)|import cmath|cmath\.")
+    for cls in (GroverSearch, MillenniumGrover):
+        for name in ("optimal_iterations", "lucas_adaptive_iterations"):
+            src = inspect.getsource(getattr(cls, name))
+            hits = [line for line in src.splitlines() if pat.search(line)]
+            assert hits == [], f"{cls.__module__}.{name}: {hits}"
+        # Comparable closed-form values (N,M) -> k that the old floor(pi/4/theta) agreed on.
+        assert cls.optimal_iterations(16, 1) == 3
+        assert cls.optimal_iterations(4, 1) == 1
+        assert cls.optimal_iterations(16, 4) == 1
+        assert cls.optimal_iterations(4096, 1) == 50
