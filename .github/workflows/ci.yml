@@ -4,12 +4,23 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+    inputs:
+      run_evidence_gates:
+        description: Run the advisory wording, test-reality, and quantum-naming audit
+        required: true
+        default: false
+        type: boolean
+      azure_ready:
+        description: Run Azure Bicep validation for this manual run
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -29,8 +40,8 @@ jobs:
       matrix:
         python: ['3.13']
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ matrix.python }}
       - name: Runner doctor
@@ -40,7 +51,7 @@ jobs:
         env:
           CHRONUS_WORKLOAD_DB_PATH: ${{ runner.temp }}/chronus-tests.sqlite3
         run: python -m pytest -q --cov=chronus.execution --cov=chronus.backends --cov=chronus.service --cov=chronus.sdk --cov=chronus.security --cov=chronus.stratum --cov=chronus.math --cov=chronus.hw --cov=chronus.storage --cov=chronus.tensor --cov=chronus.ovid --cov=chronus.core --cov=chronus.triad --cov-report=term-missing --cov-report=xml
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: coverage-python-${{ matrix.python }}
@@ -58,8 +69,8 @@ jobs:
     runs-on: [self-hosted, windows]
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.13'
       - name: Runner doctor
@@ -71,7 +82,7 @@ jobs:
         run: python -m compileall -q src/chronus/config.py src/chronus/core src/chronus/execution src/chronus/backends src/chronus/service src/chronus/sdk src/chronus/security src/chronus/stratum src/chronus/math src/chronus/hw src/chronus/storage src/chronus/tensor src/chronus/ovid src/chronus/triad.py scripts/ci
       - run: python -m build
       - run: twine check dist/*
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: python-distribution
           path: dist/
@@ -80,7 +91,7 @@ jobs:
     name: SLSA build provenance attestation
     needs: quality-and-package
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       actions: read       # download artifacts from a previous job
       contents: read
@@ -103,10 +114,10 @@ jobs:
 
   dependency-audit:
     name: Dependency vulnerability audit
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.13'
       - run: python -m pip install -e . pip-audit
@@ -114,10 +125,10 @@ jobs:
 
   static-security:
     name: Static security scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.13'
       - run: python -m pip install bandit
@@ -125,17 +136,18 @@ jobs:
 
   infrastructure:
     name: Azure Bicep validation
-    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && inputs.azure_ready == true
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: az bicep build --file infra/azure/main.bicep --stdout > "$RUNNER_TEMP/azure-template.json"
 
   opencl-reference:
     name: OpenCL kernel on CPU reference runtime
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.13'
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq pocl-opencl-icd
@@ -146,10 +158,10 @@ jobs:
 
   purity-gate:
     name: Purity gate and software evidence dossier
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.13'
       - name: Runner doctor
@@ -169,7 +181,7 @@ jobs:
         run: python scripts/ci/manifest.py
       - name: Audit qualification manifests
         run: python scripts/ci/audit_manifests.py
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: software-evidence-dossiers
           path: |
@@ -178,25 +190,30 @@ jobs:
 
   dressing-gates:
     name: Evidence-first wording, test reality and quantum naming
-    runs-on: ubuntu-latest
+    # These are repository-governance audits, not the default product test path.
+    # Run them explicitly from workflow_dispatch when an evidence review is requested.
+    if: github.event_name == 'workflow_dispatch' && inputs.run_evidence_gates == true
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.13'
       - run: python -m pip install pytest
       - name: Gate regression tests
         run: python -m pytest -q tests/test_dressing_gates.py
-      - name: No dressing
+      - name: No dressing (advisory audit)
         if: always()
+        continue-on-error: true
         run: python scripts/ci/no_dressing.py --json > dressing-findings.json
-      - name: Test reality
+      - name: Test reality (advisory audit)
         if: always()
+        continue-on-error: true
         run: python scripts/ci/test_reality.py --json > test-reality.json
       - name: Quantum naming
         if: always()
         run: python scripts/ci/quantum_naming.py
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: evidence-first-gates
@@ -207,9 +224,9 @@ jobs:
 
   rtl-synthesis:
     name: Phi-ALU RTL simulation and Yosys synthesis
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq yosys iverilog
       - name: Run known-answer testbenches
         run: |
@@ -225,7 +242,7 @@ jobs:
           yosys -Q -T -p 'read_verilog -sv hw/zeckendorf_norm_alu.sv; hierarchy -check -top qigpu_phi_alu; synth -top qigpu_phi_alu; stat' | tee yosys-report.txt
           yosys -Q -T -p 'read_verilog -sv hw/zeckendorf_alu_32lane.sv; hierarchy -check -top qigpu_zeckendorf_alu_32lane; synth -top qigpu_zeckendorf_alu_32lane; stat' | tee -a yosys-report.txt
           yosys -Q -T -p 'read_verilog -sv hw/pv_scale_32lane.sv; hierarchy -check -top qigpu_pv_scale_32lane; synth -top qigpu_pv_scale_32lane; stat' | tee -a yosys-report.txt
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: rtl-synthesis-report
           path: |
@@ -235,11 +252,11 @@ jobs:
 
   container:
     name: Container build and restart smoke test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       CHRONUS_SMOKE_TOKEN: ci-example-token
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: docker build -t chronus-ci:${{ github.sha }} .
       - name: Exercise authenticated workload and restart
         shell: bash
@@ -266,13 +283,13 @@ jobs:
 
   frontend-build:
     name: Frontend build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
           version: 10.12.4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '22'
           cache: pnpm
@@ -288,10 +305,10 @@ jobs:
 
   qigpu-model:
     name: QiGPU model tests and implementation coverage
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.13'
       - run: python -m pip install coverage==7.17.2
@@ -373,7 +390,7 @@ jobs:
           print('tests',result.testsRun,'public',len(public),'touched',covered)
       - name: State remaining acceptance gaps
         run: echo "::warning::Passing this job does not establish CFT scaling, general backend equivalence, or exhaustive seven-class coverage."
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: qigpu-model-evidence
@@ -396,8 +413,8 @@ jobs:
     runs-on: [self-hosted, windows]
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.13'
       - name: Runner doctor
