@@ -2246,20 +2246,6 @@
       "category": "exact_arithmetic",
       "path": "src/chronus/tensor/dmrg.py",
       "word": "float(",
-      "line_sha256_16": "90ccf980c4b2c00c",
-      "count": 1
-    },
-    {
-      "category": "exact_arithmetic",
-      "path": "src/chronus/tensor/dmrg.py",
-      "word": "float(",
-      "line_sha256_16": "942deb867d527526",
-      "count": 1
-    },
-    {
-      "category": "exact_arithmetic",
-      "path": "src/chronus/tensor/dmrg.py",
-      "word": "float(",
       "line_sha256_16": "bce44d7d081b1141",
       "count": 1
     },
@@ -2268,13 +2254,6 @@
       "path": "src/chronus/tensor/dmrg.py",
       "word": "rtol",
       "line_sha256_16": "4dc22ce3f5731d49",
-      "count": 1
-    },
-    {
-      "category": "exact_arithmetic",
-      "path": "src/chronus/tensor/dmrg.py",
-      "word": "tolerance",
-      "line_sha256_16": "139511a7c78c7e18",
       "count": 1
     },
     {

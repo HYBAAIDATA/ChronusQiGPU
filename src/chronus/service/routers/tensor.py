@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 import os
+import threading
 
 import numpy as np
 from starlette.concurrency import run_in_threadpool
@@ -142,13 +143,53 @@ def build_tensor_network(request: NetworkBuildRequest) -> dict[str, Any]:
     }
 
 
+# E3 is a deterministic ~40 s single-process 1,000-site DMRG. At most one run
+# executes at a time; concurrent requests get 503 instead of occupying a
+# threadpool worker while they wait. The outcome (certified result or honest
+# refusal) is deterministic per solver policy and is reused, so repeated GETs
+# cannot multiply the cost.
+_E3_LOCK = threading.Lock()
+# A refusal is cached as (type, args), never as the exception instance: re-raising one
+# instance would keep its traceback (solver frames and tensors) alive and grow it per request.
+_E3_OUTCOMES: dict[int, ExperimentResult | tuple[type[Exception], tuple[Any, ...]]] = {}
+
+
+class _E3Busy(Exception):
+    pass
+
+
+def _run_e3() -> ExperimentResult:
+    from chronus.config import runtime_bounds
+
+    policy = int(runtime_bounds()["max_dmrg_local_dim"])
+    outcome = _E3_OUTCOMES.get(policy)
+    if outcome is None:
+        if not _E3_LOCK.acquire(blocking=False):
+            raise _E3Busy("E3 is already running; retry when it completes")
+        try:
+            outcome = _E3_OUTCOMES.get(policy)
+            if outcome is None:
+                try:
+                    outcome = E3_honest_1000_node_claim()
+                except (UntrustedApproximation, UntrustedResult) as refusal:
+                    outcome = (type(refusal), refusal.args)
+                _E3_OUTCOMES[policy] = outcome
+        finally:
+            _E3_LOCK.release()
+    if isinstance(outcome, tuple):
+        refusal_type, refusal_args = outcome
+        raise refusal_type(*refusal_args)
+    return outcome
+
+
 @router.get("/experiments/{exp_id}", response_model=dict[str, Any])
 def run_or_inspect_experiment(exp_id: str) -> dict[str, Any]:
     """Executes or retrieves one of the three consortium acceptance experiments:
 
     - E1: Exactness Oracle (reproduces reference statevector at n <= 32)
     - E2: Symmetry Stress Test (Z2, U(1), SU(2) block-sparse memory savings match theory within 5%)
-    - E3: Honest 1,000-Node Claim (1D TFIM DMRG, global_bound < 1e-6, n=32 cross-check)
+    - E3: Honest 1,000-Node Claim (Z2 charge-aware DMRG on the critical TFIM; ledger bound and
+      relative error vs the exact Jordan-Wigner energy < 1e-6; n=32 cross-check)
     """
     exp_key = exp_id.upper()
     try:
@@ -157,12 +198,18 @@ def run_or_inspect_experiment(exp_id: str) -> dict[str, Any]:
         elif exp_key == "E2":
             result = E2_symmetry_stress_test()
         elif exp_key == "E3":
-            result = E3_honest_1000_node_claim()
+            result = _run_e3()
         else:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Unknown experiment '{exp_id}'. Valid experiments are E1, E2, E3.",
             )
+    except _E3Busy as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(e),
+            headers={"Retry-After": "60"},
+        )
     except (UntrustedApproximation, UntrustedResult, RefusedMethod, CharterViolation) as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
