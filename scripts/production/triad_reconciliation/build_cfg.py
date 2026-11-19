@@ -20,7 +20,7 @@ for r in runs:
 env = (D / "env.txt").read_text().split("\n")
 suite = [l for l in (D / "pytest.txt").read_text().splitlines() if " passed" in l][-1].strip()
 gates = (D / "gates.txt").read_text().strip().replace("\n", "; ")
-cfg = {"candidate_sha": CAND, "worktree": "/workspace/closeout-cand", "junit": str(D / "junit.xml"), "xchecks": str(D / "xchecks.json"),
+cfg = {"candidate_sha": CAND, "worktree": os.environ.get("WT", "/workspace/closeout-cand"), "junit": str(D / "junit.xml"), "xchecks": str(D / "xchecks.json"),
        "ci": ci, "local_env": f"{env[1]}, {env[2]}, SQLite {env[3].split()[-1]}, {env[4]} logical CPUs (cloud VM, no GPU)",
        "local_suite": suite, "gates_summary": gates, "out_json_rows": str(OUTDIR / "rows.json"),
        "out_md": str(OUTDIR / "TRIAD_RECONCILIATION.md"), "out_json": str(OUTDIR / "TRIAD_RECONCILIATION.json")}
