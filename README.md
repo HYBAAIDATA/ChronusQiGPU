@@ -104,7 +104,12 @@ The maintained tensor runtime now includes:
 - selective folded-state inference;
 - physical OpenCL, CUDA and Apple Metal tensor backends that require device discovery, kernel readiness and a known-answer self-test before becoming eligible; none silently fall back to CPU.
 
+- Z2 charge-aware two-site DMRG (`chronus.tensor.dmrg`): the MPO's Z2 charges are verified, the MPS is projected onto the requested parity sector, and local eigensolves and SVDs are block-diagonal. Symmetry leaks, oversized local problems (`CHRONUS_MAX_DMRG_LOCAL_DIM`) and exhausted truncation budgets are refused as `UntrustedResult`/`UntrustedApproximation`, not approximated. `GET /v1/tensor/experiments/E3` runs the 1,000-site critical transverse-field Ising claim and checks it against the exact Jordan-Wigner energy. A refusal returns 422, and a concurrent run returns 503. The result is cached per solver policy. This is CPU-reference evidence only.
+
 Physical execution and performance remain device-specific evidence. An adapter or kernel being present is not a physical benchmark.
+
+Independent verifier entry points (installed console scripts, public-key only):
+`chronus-verify-chain` checks a durable receipt chain, and `chronus-verify-bundle` checks a dual-signed evidence bundle. Both exit 0 when valid and non-zero on a failed check.
 
 ## Evidence migration
 
@@ -138,6 +143,8 @@ python -m pytest -q \
 ## CI
 
 GitHub Actions workflows in `.github/workflows/` are active for this repository. They cover the main regression suite, packaging, acceleration checks, storage evidence, mining checks, frontend builds, container restart smoke tests, release/evidence qualification and other bounded gates.
+
+Test jobs write JUnit and run `scripts/ci/test_execution_gate.py`, which fails on failures, on passed counts below the suite floor, on skips outside the hardware/platform allowlist and on xfails not listed in `tests/known-failures.txt`. The `ci-required` job fails unless every required job concluded `success`, so a skipped, cancelled or never-started job is not passing evidence. Fork pull requests run on GitHub-hosted runners.
 
 Workflow existence is not a passing result; use the exact run associated with the release SHA. The release workflow requires both a successful full `CI` push run and a successful `Chronus V2 evidence qualification` push run for that exact `main` commit before building or publishing.
 
