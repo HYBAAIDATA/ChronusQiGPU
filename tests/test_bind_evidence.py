@@ -14,6 +14,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts" / "ci"))
 
 import bind_evidence  # noqa: E402
+import pytest
+
+pytestmark = pytest.mark.simulated
 
 
 class BindEvidenceTests(unittest.TestCase):

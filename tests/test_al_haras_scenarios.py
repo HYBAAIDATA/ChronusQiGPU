@@ -18,6 +18,9 @@ from chronus.security.al_haras import (
     SovereignGovernanceEngine,
     ALHarasTopologicalKernel,
 )
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 # Scenario 1 - the legacy passphrase argument is compatibility-only

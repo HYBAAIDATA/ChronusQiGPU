@@ -4,6 +4,8 @@ from chronus.journal import Journal,encode,JournalCorrupt
 from chronus.verdict import Verdict,Status
 from chronus.claims import Claim,Publish,gate_claims
 
+pytestmark = pytest.mark.real
+
 def test_canonical():
     assert canonical_bytes({"b":1,"a":[2,"x"]})==b'{"a":[2,"x"],"b":1}'
     with pytest.raises(NonCanonical):

@@ -16,6 +16,9 @@ from chronus.service.app import create_app
 from chronus.service.auth_middleware import Role, create_jwt_token, jwt_validator
 from chronus.service.instant_provisioning import instant_provisioning_engine
 from chronus.storage.theseus import tenant_storage_registry
+import pytest
+
+pytestmark = pytest.mark.simulated
 
 
 class TestInstantProvisioningEngine(unittest.TestCase):

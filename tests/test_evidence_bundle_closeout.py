@@ -1,10 +1,11 @@
 """Contract tests for an offline, non-certifying evidence collection archive."""
-from pathlib import Path
 from hashlib import sha256
 import json
 from zipfile import ZipFile
 import pytest
 from scripts.generate_evidence_bundle import build_bundle
+
+pytestmark = pytest.mark.real
 
 SHA = "a" * 40
 

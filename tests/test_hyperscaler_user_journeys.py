@@ -34,6 +34,8 @@ from chronus.storage.connectors import (
     zero_copy_connector_manager,
 )
 
+pytestmark = pytest.mark.real
+
 
 @pytest.fixture(scope="module")
 def api_client():

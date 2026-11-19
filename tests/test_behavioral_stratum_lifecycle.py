@@ -23,6 +23,9 @@ from chronus.stratum.gateway import StratumGateway
 from chronus.stratum.gatekeeper import LocalPreSubmitGatekeeper, DropReason
 from chronus.stratum.sharding import ShareCandidate
 from chronus.stratum.rate_limiter import PriorityShareQueue
+import pytest
+
+pytestmark = pytest.mark.simulated
 
 
 class TestBehavioralStratumLifecycle(unittest.IsolatedAsyncioTestCase):

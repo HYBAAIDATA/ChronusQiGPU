@@ -9,6 +9,8 @@ from chronus.service.dependencies import auth_service, service_config
 from chronus.service.routers import workloads
 from chronus.service.workload_store import SQLiteWorkloadStore
 
+pytestmark = pytest.mark.simulated
+
 
 def _sdk_with_transport(handler):
     sdk = ChronusAPISDK(

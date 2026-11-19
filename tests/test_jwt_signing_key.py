@@ -25,6 +25,8 @@ from chronus.service.auth_middleware import (
     get_current_identity,
 )
 
+pytestmark = pytest.mark.simulated
+
 FORMER_BUILT_IN_KEY = "test-secret-key-for-hmac-32bytes-chronus!!"
 CONFIGURED_KEY = "configured-signing-key-for-tests-0123456789abcdefghijklmnop"
 

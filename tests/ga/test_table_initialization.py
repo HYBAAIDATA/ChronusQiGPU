@@ -1,6 +1,9 @@
 from concurrent.futures import ThreadPoolExecutor
 
 from ga.mathcore import GaloisField
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 def test_tables_build_once_under_concurrent_first_use():

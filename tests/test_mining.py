@@ -18,6 +18,8 @@ from chronus.service.dependencies import auth_service, service_config
 from chronus.service.routers import workloads
 from chronus.service.workload_store import SQLiteWorkloadStore
 
+pytestmark = pytest.mark.simulated
+
 
 GENESIS_HEADER = bytes.fromhex(
     "01000000"

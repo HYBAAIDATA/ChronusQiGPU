@@ -29,6 +29,8 @@ from chronus.security.al_haras.sheaf import GraphSheaf, SheafError, analyse_stat
 from chronus.security.al_haras.sovereign import SovereignGovernanceEngine
 from chronus.security.al_haras.topological_os import ALHarasTopologicalKernel, run_self_tests
 
+pytestmark = pytest.mark.real
+
 
 # --------------------------------------------------------------------------- exact helpers
 class TestExactHelpers:

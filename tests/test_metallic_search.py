@@ -17,6 +17,8 @@ from chronus.quantum.metallic_search import (
     phase_matched_sweep,
 )
 
+pytestmark = pytest.mark.simulated
+
 
 def test_qsqrt2_exact_arithmetic_and_sign():
     half = QSqrt2(0, 1, 1)  # sqrt(2)/2 = 1/sqrt(2)

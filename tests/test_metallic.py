@@ -9,6 +9,8 @@ from chronus.backends.lattice import phi_power
 from chronus.backends.metallic import MetallicElement, metallic_power, metallic_sequence
 from chronus.execution import ExecutionRouter
 
+pytestmark = pytest.mark.real
+
 
 def test_m1_reproduces_golden_ratio_engine():
     for order in (0, 1, 2, 10, 90, 92):

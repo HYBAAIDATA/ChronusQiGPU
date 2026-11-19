@@ -23,6 +23,8 @@ from chronus.tensor.opencl_backend import OpenCLTensorBackend
 from chronus.tensor.cuda_backend import CUDATensorBackend, CUDATensorUnavailable
 from chronus.tensor.metal_backend import MetalTensorBackend, MetalTensorUnavailable
 
+pytestmark = pytest.mark.simulated
+
 
 def test_selective_unfold_never_calls_full_unfold(monkeypatch):
     source = np.arange(48, dtype=np.float32).reshape(8, 6)

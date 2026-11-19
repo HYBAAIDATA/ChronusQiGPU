@@ -4,6 +4,8 @@ import pytest
 
 from ga.mathcore import GALOIS, ORDER
 
+pytestmark = pytest.mark.real
+
 _RANDOM = random.Random(20261114)
 SAMPLES = tuple(_RANDOM.randrange(0, GALOIS.q) for _ in range(48))
 

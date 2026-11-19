@@ -1,6 +1,9 @@
 from chronus.core import facade
 from chronus.security.canonical import canonical_bytes
 import pytest
+
+pytestmark = pytest.mark.simulated
+
 def test_empty_gates_fail():
     assert facade.Manifest("now").posture == "not_qualified"
 def test_failing_gate_fails(monkeypatch):

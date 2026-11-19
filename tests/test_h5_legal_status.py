@@ -1,6 +1,9 @@
 """Check the presence of status fields, not whether a review occurred."""
 from pathlib import Path
 import unittest
+import pytest
+
+pytestmark = pytest.mark.real
 
 class LegalReviewStatusTests(unittest.TestCase):
     def test_required_status(self):

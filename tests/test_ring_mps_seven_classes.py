@@ -7,6 +7,8 @@ from chronus.quantum.geometric_polychoron import Cyclotomic5 as C
 from chronus.quantum.ring_state import scale_vector
 from chronus.quantum.ring_mps import MAX_BOND, MAX_SITES, contract_mps
 
+pytestmark = pytest.mark.real
+
 
 def product_site(a,b): return [[[a],[b]]]
 

@@ -1,5 +1,8 @@
 import unittest
 from chronus.math.f257_search import f257_phases, mod_inv
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 class TestF257Search(unittest.TestCase):

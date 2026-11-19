@@ -19,6 +19,9 @@ if not (PACKAGE / "src" / "turing").is_dir():
 
 SOURCE_FILES = sorted((PACKAGE / "src" / "turing" / "algebra").glob("*.py")) + \
     sorted((PACKAGE / "src" / "turing" / "algorithms").glob("*.py"))
+# The exact kernel gets the same float/randomness/import rules (not the wording
+# rules, which were written for the algebra/algorithms modules and their docs).
+EXACT_SOURCE_FILES = sorted((PACKAGE / "src" / "turing" / "exact").rglob("*.py"))
 TEST_FILES = sorted((PACKAGE / "tests").glob("test_turing_*.py"))
 DOCUMENT = PACKAGE / "docs" / "algorithms.md"
 
@@ -48,7 +51,9 @@ BANNED_CALLS = {"float", "complex", "round"}
 BANNED_MODULES = {"random", "numpy", "cmath", "decimal", "statistics", "secrets", "chronus"}
 EXACT_MATH = {"isqrt", "gcd", "lcm", "comb", "perm", "factorial"}
 LEGACY_MODULES = {"state", "operator", "gates", "measurement", "tensor"}
-NEW_SUBPACKAGES = {"algebra", "algorithms"}
+# turing.exact is the integer/Fraction-only exact kernel; its sources are scanned
+# by the same exactness rules (EXACT_SOURCE_FILES), so tests may import it.
+NEW_SUBPACKAGES = {"algebra", "algorithms", "exact"}
 
 
 def _violations(path):
@@ -101,7 +106,7 @@ def test_new_files_are_present():
 
 def test_no_floating_point_randomness_or_legacy_imports():
     problems = []
-    for path in SOURCE_FILES + TEST_FILES:
+    for path in SOURCE_FILES + EXACT_SOURCE_FILES + TEST_FILES:
         problems.extend((path.name, line, message) for line, message in _violations(path))
     assert problems == []
 

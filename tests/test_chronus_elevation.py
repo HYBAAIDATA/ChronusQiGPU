@@ -31,6 +31,8 @@ from chronus.execution.elevation import (
     verify_golden_stride,
 )
 
+pytestmark = pytest.mark.simulated
+
 
 @pytest.fixture()
 def evidence_dir(tmp_path, monkeypatch):

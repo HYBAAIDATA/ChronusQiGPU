@@ -12,7 +12,7 @@ import json
 
 import pytest
 
-pytestmark = pytest.mark.usefixtures("mining_custody")
+pytestmark = [pytest.mark.usefixtures("mining_custody"), pytest.mark.simulated]
 
 from chronus.execution.stratum import (
     DIFF1_TARGET,

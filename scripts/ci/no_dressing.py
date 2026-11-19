@@ -1,12 +1,22 @@
 #!/usr/bin/env python3
 """Exact-path wording audit. A token match is a review trigger, not semantic proof.
 
-Usage: python scripts/ci/no_dressing.py [--json]
+Usage: python scripts/ci/no_dressing.py [--json] [--baseline] [--write-baseline]
 Exit 0: no findings, 2: findings, 1: configuration or I/O error.
 Only explicitly reviewed exceptions suppress findings; 'pending' never does.
+
+--baseline is a ratchet over recorded historical debt, not an exception: findings
+already listed in scripts/ci/dressing_baseline.json (matched on category, path,
+token and a digest of the line text, never on line number) are reported as baselined and do not
+fail; any new finding still fails. Entries that no longer occur are reported as
+resolved so the baseline can be shrunk with --write-baseline. The baseline must
+only shrink: --write-baseline refuses (exit 2) when any finding is not already
+recorded, so it can remove resolved debt but never admit new wording.
 """
 from __future__ import annotations
 
+import collections
+import hashlib
 import fnmatch
 import json
 import re
@@ -15,6 +25,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 POLICY = Path("scripts/ci/dressing_policy.json")
+BASELINE = Path("scripts/ci/dressing_baseline.json")
+BASELINE_SCHEMA = "chronus.dressing-baseline/1"
 SKIP = frozenset({".git", "node_modules", "__pycache__", ".venv", "archive", "vendor"})
 EXTENSIONS = frozenset({".py", ".md", ".ts", ".tsx"})
 
@@ -85,17 +97,87 @@ def scan(root: Path, policy: dict) -> list[dict]:
                         findings.append({
                             "category": category, "path": relative, "line": number,
                             "word": hit.group(), "text": line.strip()[:100],
+                            # Baseline identity uses the complete line, never the
+                            # truncated display preview.
+                            "line_sha256_16": hashlib.sha256(
+                                line.strip().encode("utf-8")).hexdigest()[:16],
                         })
     return sorted(findings, key=lambda f: (f["path"], f["line"], f["category"], f["word"]))
 
 
+def _key(f: dict) -> tuple[str, str, str, str]:
+    # The complete line is stored as a digest so the baseline never repeats the
+    # wording (other gates, e.g. check_forbidden_claims.py, scan every tracked file).
+    return (f["category"], f["path"], f["word"].casefold(), f["line_sha256_16"])
+
+
+def baseline_document(findings: list[dict]) -> dict:
+    counts = collections.Counter(_key(f) for f in findings)
+    return {
+        "schema": BASELINE_SCHEMA,
+        "description": "Historical no_dressing findings recorded as debt (ratchet). "
+                       "Shrink only; never add entries to admit new wording.",
+        "entries": [
+            {"category": c, "path": p, "word": w, "line_sha256_16": t, "count": n}
+            for (c, p, w, t), n in sorted(counts.items())
+        ],
+    }
+
+
+def _budget(document: dict) -> collections.Counter:
+    if document.get("schema") != BASELINE_SCHEMA or not isinstance(document.get("entries"), list):
+        raise ValueError("unsupported or missing dressing baseline schema/entries")
+    budget: collections.Counter = collections.Counter()
+    for e in document["entries"]:
+        if not isinstance(e, dict) or not isinstance(e.get("count"), int) or e["count"] < 1:
+            raise ValueError(f"invalid baseline entry: {e!r}")
+        budget[(e["category"], e["path"], str(e["word"]).casefold(), e["line_sha256_16"])] += e["count"]
+    return budget
+
+
+def apply_baseline(findings: list[dict], document: dict) -> tuple[list[dict], int, int]:
+    """Return (new findings, baselined count, resolved count)."""
+    budget = _budget(document)
+    new, baselined = [], 0
+    for f in findings:
+        k = _key(f)
+        if budget[k] > 0:
+            budget[k] -= 1
+            baselined += 1
+        else:
+            new.append(f)
+    return new, baselined, sum(n for n in budget.values() if n > 0)
+
+
 def main(argv: list[str] | None = None, root: Path = ROOT) -> int:
     args = sys.argv[1:] if argv is None else argv
-    if any(a not in {"--json"} for a in args):
-        print("usage: no_dressing.py [--json]", file=sys.stderr)
+    if any(a not in {"--json", "--baseline", "--write-baseline"} for a in args):
+        print("usage: no_dressing.py [--json] [--baseline] [--write-baseline]", file=sys.stderr)
         return 1
     try:
         findings = scan(root, json.loads((root / POLICY).read_text(encoding="utf-8")))
+        if "--write-baseline" in args:
+            # Shrink-only: an existing baseline may lose entries, never gain them.
+            # Only the very first baseline (no file yet) may be created from scratch.
+            if (root / BASELINE).exists():
+                new, _, _ = apply_baseline(
+                    findings, json.loads((root / BASELINE).read_text(encoding="utf-8")))
+                if new:
+                    for f in new:
+                        print(f"not in baseline: {f['category']}: {f['path']}:{f['line']}: "
+                              f"{f['word']!r}", file=sys.stderr)
+                    print(f"refusing to grow the baseline with {len(new)} new findings",
+                          file=sys.stderr)
+                    return 2
+            (root / BASELINE).write_text(
+                json.dumps(baseline_document(findings), indent=2) + "\n", encoding="utf-8")
+            print(f"wrote {len(findings)} findings to {BASELINE.as_posix()}", file=sys.stderr)
+            return 0
+        if "--baseline" in args:
+            findings, baselined, resolved = apply_baseline(
+                findings, json.loads((root / BASELINE).read_text(encoding="utf-8")))
+            print(f"{baselined} baselined findings; {resolved} baseline entries resolved"
+                  + (" (run --write-baseline to shrink)" if resolved else ""), file=sys.stderr)
     except (OSError, ValueError, KeyError, TypeError) as exc:
         print(f"dressing policy scan failed: {exc}", file=sys.stderr)
         return 1

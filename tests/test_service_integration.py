@@ -14,6 +14,8 @@ from starlette.testclient import TestClient
 from chronus.service.app import create_app
 from chronus.service.dependencies import RateLimiter, auth_service, service_config
 
+pytestmark = pytest.mark.simulated
+
 
 @pytest.fixture()
 def client():

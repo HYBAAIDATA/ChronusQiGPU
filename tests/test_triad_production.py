@@ -13,6 +13,8 @@ from chronus.storage.durable import DurableTheseusService
 from chronus.storage.theseus import StorageIntegrityError
 from chronus.triad import ProductionTriad
 
+pytestmark = pytest.mark.real
+
 
 def test_ovid_transform_round_trip_even_and_odd_payloads():
     ovid = OvidTransformService()

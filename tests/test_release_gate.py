@@ -7,6 +7,8 @@ from scripts.ci.require_release_qualification import (
     ReleaseBlocked, check_verdict, select_run,
 )
 
+pytestmark = pytest.mark.simulated
+
 
 def valid_verdict():
     return {
