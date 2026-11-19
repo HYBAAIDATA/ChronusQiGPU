@@ -4,6 +4,8 @@ import pytest
 
 from ga.mathcore import PhyllotaxisLattice
 
+pytestmark = pytest.mark.real
+
 
 def test_collisions_never_lose_records():
     lattice = PhyllotaxisLattice(capacity=101)

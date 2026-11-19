@@ -27,6 +27,9 @@ from chronus.config import (
     PRODUCTION_MODE,
     total_invariant_range,
 )
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 class TestChronusMasterSuite(unittest.TestCase):

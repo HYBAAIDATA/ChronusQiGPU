@@ -11,6 +11,8 @@ from chronus.quantum.extension_search import (
 from chronus.quantum.metallic_search import one_shot_phases_multi
 from chronus.quantum.statevector import P
 
+pytestmark = pytest.mark.real
+
 
 def test_phi_element_power_matches_fibonacci_pairs():
     # phi^s = F_{s-1} + F_s * phi in F_257[phi].

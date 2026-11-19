@@ -8,6 +8,8 @@ from chronus.research.frontier import (
     physical_claim_gate,
 )
 
+pytestmark = pytest.mark.real
+
 
 def test_cassini_and_logical_spiral_not_ecc():
     for n in (1, 2, 5, 64):

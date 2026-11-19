@@ -1,6 +1,9 @@
 import asyncio
 import unittest
 from chronus.stratum.gateway import StratumGateway
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 class TestStratumReplay(unittest.TestCase):

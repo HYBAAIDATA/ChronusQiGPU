@@ -9,6 +9,8 @@ from chronus.storage.durable import DurableTheseusService
 from chronus.storage.protected import ProtectedTheseusService
 from chronus.triad import ProductionTriad
 
+pytestmark = pytest.mark.real
+
 
 @pytest.mark.parametrize("payload", [
     b"A", b"hello!", bytes(range(255)), b"x" * 1023,

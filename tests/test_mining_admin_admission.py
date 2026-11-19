@@ -12,6 +12,8 @@ from chronus.service.auth_middleware import Role, create_jwt_token
 from chronus.service.dependencies import auth_service
 from chronus.storage.durable import DurableTheseusService
 
+pytestmark = pytest.mark.simulated
+
 
 @pytest.fixture
 def guarded(tmp_path, monkeypatch):

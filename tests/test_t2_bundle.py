@@ -4,6 +4,8 @@ from scripts.seal_bundle import build
 from scripts.check_bundle import check
 import json
 
+pytestmark = pytest.mark.real
+
 def test_t2_positive_negative_and_tamper(tmp_path):
     if not ml_dsa_available():
         with pytest.raises(SignerUnavailable):

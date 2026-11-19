@@ -5,6 +5,9 @@
 import unittest
 
 from chronus.fleet.crossbar import CrossbarError, H4Crossbar, geometry_report, max_h4_diameter
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 class GeometryTests(unittest.TestCase):

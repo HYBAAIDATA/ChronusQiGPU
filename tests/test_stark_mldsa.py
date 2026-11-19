@@ -21,6 +21,9 @@ from chronus.security.stark import (
     _merkle_root,
     _mod_inv,
 )
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 class TestMLDSASigner(unittest.TestCase):

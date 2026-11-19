@@ -17,6 +17,9 @@ import unittest
 from chronus.intelligence.predictive_engine import (
     TestPredictiveEngine as TestPCIPredictiveEngineSuite,
 )
+import pytest
+
+pytestmark = pytest.mark.real
 
 __all__ = ["TestPCIPredictiveEngineSuite"]
 

@@ -9,6 +9,8 @@ import pytest
 from chronus.execution.structural import fold_pair, unfold_pair
 from chronus.tensor.folded_state import ExactFoldState, _pair_luts
 
+pytestmark = pytest.mark.real
+
 
 def test_complete_65536_byte_pair_domain_is_exact():
     payload = b"".join(bytes((i >> 8, i & 255)) for i in range(65536))

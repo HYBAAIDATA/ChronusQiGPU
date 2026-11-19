@@ -21,6 +21,9 @@ from chronus.execution.hardware_dispatcher import (
     PHYSICAL_HARDWARE_EXECUTION,
     HardwareAcceleratorDispatcher,
 )
+import pytest
+
+pytestmark = pytest.mark.simulated
 
 
 class MockFailingAccelerator:

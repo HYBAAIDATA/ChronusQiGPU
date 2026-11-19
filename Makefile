@@ -1,6 +1,6 @@
 # Makefile for Chronus Quantum iGPU
 
-.PHONY: test test-cover lint format build clean install install-devmode import claims run ga-test help
+.PHONY: test test-cover lint format build clean install install-devmode import claims run ga-test help install-dev
 
 # Default target
 help:

@@ -2,6 +2,9 @@ import ast
 from pathlib import Path
 
 from ga.api import NonceRequest, QueryRequest, SearchRequest, StoreRequest, create_app
+import pytest
+
+pytestmark = pytest.mark.real
 
 ROOT = Path(__file__).resolve().parents[2]
 ORACLE = ROOT / "docs" / "research" / "golden_search.py"

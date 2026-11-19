@@ -37,6 +37,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.real
+
 REPO = Path(__file__).resolve().parents[1]
 RUNNER = REPO / "infra" / "runners" / "al-haras"
 UNIT = RUNNER / "chronus-sovereign-runner.service"

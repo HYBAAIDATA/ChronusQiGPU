@@ -16,6 +16,8 @@ from chronus.execution.hashrate_cap import process_cap
 from chronus.execution.mining_admin import MiningAdminConfig, MiningAdminEngine
 from chronus.service.app import app
 
+pytestmark = pytest.mark.simulated
+
 
 @pytest.fixture
 def admin_engine():

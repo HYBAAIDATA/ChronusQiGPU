@@ -10,6 +10,9 @@ from chronus.fleet.canonical import deterministic_bytes, sha256_hex
 from chronus.fleet.crossbar import H4Crossbar
 from chronus.fleet.scheduler import LeaseScheduler, apportion, split_groups
 from chronus.fleet.verification import ReferenceVerifier, SamplingPolicy, VerificationTask
+import pytest
+
+pytestmark = pytest.mark.real
 
 SECOND = 1_000_000_000
 

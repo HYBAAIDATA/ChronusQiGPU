@@ -1,6 +1,6 @@
 """Hendrix: exact structured-search primitives for Chronus.
 
-Hendrix (``chronus.hendrix``) provides exactly three things.
+Hendrix (``chronus.hendrix``) provides exactly four things.
 
 1. ``PrimeField`` and ``GF257`` (``chronus.hendrix.galois``): exact arithmetic
    in a prime field F_p with ``p <= MAX_FIELD_ORDER`` (2**20) through
@@ -20,10 +20,19 @@ Hendrix (``chronus.hendrix``) provides exactly three things.
    one-line description of what each one computes in ``structured.CATALOG``.
    It is imported explicitly; importing ``chronus.hendrix`` does not load the
    legacy ``chronus.quantum`` namespace.
+4. ``chronus.hendrix.locate``: the Galois locator. For oracles whose condition
+   is algebraic over F_p (discrete log, multiplicative order, polynomial
+   roots, square roots, GF(2)-linear hidden period) it computes the marked
+   inputs from the algebra, with no answer table and no scan, for any prime p,
+   and confirms each one by querying the oracle. It is imported explicitly.
 
-Hendrix uses exact integer arithmetic only. It refuses fields above 2**20 and
-does not compute discrete logarithms at cryptographic sizes. It is not part of
-TURING and does not model physical quantum systems.
+Hendrix uses exact integer arithmetic only. ``PrimeField`` refuses fields above
+2**20. The locator works table-free in larger fields; its discrete logarithm
+is Pohlig-Hellman, so it is fast only when the group order factors into small
+primes (it refuses otherwise) and is no shortcut for groups chosen to resist
+it. Oracles without algebraic structure (for example SHA-256d target
+membership) are refused, not scanned. Hendrix is not part of TURING and does
+not model physical quantum systems.
 """
 
 from chronus.hendrix.galois import GF257, MAX_FIELD_ORDER, PrimeField

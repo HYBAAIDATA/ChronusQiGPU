@@ -2,6 +2,9 @@ import sys
 import unittest
 from fractions import Fraction
 from chronus.math.binet_lucas import QSqrt5, fold, unfold, lucas_binet, lucas_recurrence
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 class TestBinetLucas(unittest.TestCase):

@@ -2,6 +2,9 @@ import random
 import unittest
 from pathlib import Path
 from chronus.hw.zeckendorf import fold_to_zeckendorf, unfold, add, FIBONACCI_TABLE
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 class TestZeckendorf(unittest.TestCase):

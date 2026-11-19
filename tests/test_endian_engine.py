@@ -15,6 +15,9 @@ from chronus.stratum.bip310 import (
     parse_and_intersect_version_mask,
     build_mining_submit_params,
 )
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 class TestEndianEngine(unittest.TestCase):

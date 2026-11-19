@@ -31,6 +31,9 @@ from chronus.service.auth_middleware import (
     JWTValidator,
     Role,
 )
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 class TestRBACAndIdentity(unittest.TestCase):

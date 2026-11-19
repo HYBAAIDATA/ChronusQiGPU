@@ -17,6 +17,8 @@ from chronus.storage import (
 )
 from chronus.storage.theseus import StorageIntegrityError
 
+pytestmark = pytest.mark.real
+
 
 def test_golden_lane_uses_golden_ratio_constant():
     # 0x9E3779B97F4A7C15 is floor(2**64 * (phi - 1)); compare at fixed-point

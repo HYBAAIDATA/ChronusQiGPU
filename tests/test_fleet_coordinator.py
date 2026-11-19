@@ -12,6 +12,9 @@ from chronus.fleet.kernels import M15FoldKernel
 from chronus.fleet.receipts import verify_receipt
 from chronus.fleet.workunit import WorkUnit
 from tests.fleet_support import state_dir
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 def join(coordinator, label, routes, host_capacity=None):

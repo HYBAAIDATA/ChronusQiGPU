@@ -10,6 +10,9 @@ from chronus.fleet import auth as A
 from chronus.fleet.errors import AuthenticationError, TransportError
 from chronus.fleet.transport import FleetClient, FleetHTTPServer
 from tests.fleet_support import filesystem_keeps_modes, state_dir
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 def echo(method, path, node_id, payload):

@@ -19,6 +19,8 @@ from chronus.security.al_haras.defense_frontiers import (
 from chronus.security.al_haras.receipts import ReceiptSigner
 from chronus.service.app import create_app
 
+pytestmark = pytest.mark.real
+
 TOKEN = "defense-frontiers-test-token"
 AUTH = {"Authorization": f"Bearer {TOKEN}"}
 

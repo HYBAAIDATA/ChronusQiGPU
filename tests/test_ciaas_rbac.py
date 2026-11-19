@@ -9,6 +9,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../s
 
 from chronus.service.app import create_app
 from chronus.service.auth_middleware import Role, jwt_validator, create_jwt_token
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 class TestCIaaSRBAC(unittest.TestCase):

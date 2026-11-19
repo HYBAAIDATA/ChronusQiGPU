@@ -54,6 +54,8 @@ from chronus.security.al_haras import (
 from chronus.service.app import create_app
 from chronus.sdk.client import ChronusAPISDK
 
+pytestmark = pytest.mark.simulated
+
 
 @pytest.fixture
 def api_client():

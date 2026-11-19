@@ -10,6 +10,8 @@ from chronus.storage.prime_product import (
 )
 from chronus.storage.theseus import StorageIntegrityError
 
+pytestmark = pytest.mark.real
+
 
 @pytest.mark.parametrize("n", [1, 2, 3, 8, 15, 64, 65, 100])
 def test_cassini_identity(n):

@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 
 from chronus.pulvini.custody import (
-    PulviniCustodyAdapter, PulviniCustodyRecord, decode_complete_fold,
+    PulviniCustodyAdapter, decode_complete_fold,
     encode_complete_fold,
 )
 from chronus.tensor.folded_compute import FoldedTensorExecutor

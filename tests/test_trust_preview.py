@@ -7,6 +7,9 @@ import threading
 import unittest
 from urllib.error import HTTPError
 from urllib.request import urlopen
+import pytest
+
+pytestmark = pytest.mark.real
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('trustserver', ROOT/'trust/server.py')

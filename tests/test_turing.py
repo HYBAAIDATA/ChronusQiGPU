@@ -52,6 +52,9 @@ from turing.exact import (
     DimensionMismatchError,
     StateNormError,
 )
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 class TestInvariant(unittest.TestCase):

@@ -63,6 +63,9 @@ from chronus.quantum.geometric_polychoron import (
     Polychoron600Cell,
     QuantumGeometricTensor,
 )
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 # ===========================================================================
