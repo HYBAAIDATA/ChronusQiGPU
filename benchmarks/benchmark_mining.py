@@ -6,7 +6,7 @@ import os
 import platform
 import time
 
-from chronus.execution.mining import MAX_CANDIDATES, search_nonce_range
+from chronus.execution.mining import _max_candidates, search_nonce_range
 from chronus.execution.structural import zeckendorf_decode, zeckendorf_encode
 
 
@@ -15,8 +15,9 @@ def main():
     parser.add_argument("--candidates", type=int, default=32768)
     parser.add_argument("--workers", type=int, default=1)
     args = parser.parse_args()
-    if not 1 <= args.candidates <= MAX_CANDIDATES:
-        parser.error(f"candidates must be between 1 and {MAX_CANDIDATES}")
+    max_candidates = _max_candidates()  # runtime bound (CHRONUS_* config), not a constant
+    if not 1 <= args.candidates <= max_candidates:
+        parser.error(f"candidates must be between 1 and {max_candidates}")
 
     start = time.perf_counter()
     result = search_nonce_range(bytes(80), 0, args.candidates, 0, args.workers)

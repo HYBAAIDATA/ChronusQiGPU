@@ -13,6 +13,8 @@ The previous dossier claimed “100% PRODUCTION QUALIFIED” from an unrelated h
 
 ## Observed blockers
 
+- 2026-11-19 wiring closeout: PR #173 (entry-point/env/migration wiring) merged as `c11af3e6`; orphan-module dispositions, root cleanup and the CI test-execution gate are recorded in [docs/audits/2026-11-18-wiring-audit.md](docs/audits/2026-11-18-wiring-audit.md#closeout-2026-11-19). `hendrix.mhtml` was removed from the tree but remains in git history. The version single source is PR #183. Closeout PR #181 merged as `1894bd41`. PR #185 merged as `ec3a43dc`: it implements Z2 charge-aware DMRG, and `/v1/tensor/experiments/E3` now runs instead of returning 501, which is CPU-reference evidence only. Making `ci-required` a required status check is an owner settings change.
+
 - The current main baseline had reproducible source-level failures in package collection, hygiene, qualification import paths and test fixtures. PR #136 carries the fixes on top of main, including the missing Geodesic evidence packet, clean-checkout TURING import path, secure tenant-capacity test credentials, rollback fixture setup, claim-token allowlisting and the HYBA Mine/TURING installation seam.
 - The frontend lockfile also carried 20 pnpm advisories through the Tailwind/PostCSS transitive graph (including one critical). PR #136 refreshes the locked graph; local `pnpm audit` now reports zero advisories, the Next production build passes, and all four Ciaas acceptance tests pass.
 - Local exact-current verification on the review checkout passed `2340 passed, 38 skipped, 1 xfailed` (Python 3.12.14), with the focused package, acceleration, storage, build, Bandit, purity and mutation checks passing. This is local evidence, not GitHub-hosted CI evidence.
