@@ -53,7 +53,7 @@
       "execution": "IN_PROGRESS",
       "technical": "PASS",
       "owner": "OVID / THESEUS",
-      "blocker": "Owner ratification of wire correction and independent QC pending; not canonical parameter 1 or physical deployment.",
+      "blocker": "Frozen wire contract and re-scoped capacity arithmetic recorded; formal owner ratification, independent non-author QC and exact-final-head CI/drill pending.",
       "evidence": "docs/storage/CHRN_RS257_PROFILE.md; src/chronus/storage/chrn_rs257.py; tests/test_chrn_rs257.py; scripts/benchmarks/chrn_recovery_drill.py",
       "technical_scope": "RS257 proposed parameter 2 software fault model only",
       "measurement": {

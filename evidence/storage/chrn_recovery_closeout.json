@@ -30,5 +30,60 @@
     "owner_ratification": "PENDING",
     "qc": "PENDING",
     "production": "NOT_QUALIFIED"
+  },
+  "addendum": {
+    "assignment_sha256": "f7f9f5885b022791c7fdd9d3bac2d55d3f2b44a990347760f9cb588f8bd7f1b3",
+    "prior_head": "e32b5c8f16ceb7be36895cca48765382cf1a0fb2",
+    "prior_workflows_passed": 7,
+    "conditional_skips": [
+      "SLSA build provenance attestation"
+    ],
+    "requirements": [
+      {
+        "id": "C1",
+        "requirement": "Final-head CI green",
+        "execution": "IN_PROGRESS",
+        "technical": "UNAVAILABLE",
+        "evidence": "prior head all seven successful, new head required"
+      },
+      {
+        "id": "C2",
+        "requirement": "Ratification record committed pinning exact wire profile",
+        "execution": "IN_PROGRESS",
+        "technical": "PASS",
+        "evidence": "docs/storage/CHRN_RS257_PROFILE_RATIFICATION.md",
+        "blocker": "owner signature pending"
+      },
+      {
+        "id": "C3",
+        "requirement": "Capacity arithmetic and verdict against canonical claim",
+        "execution": "EXECUTED",
+        "technical": "PASS",
+        "evidence": "ratification Section 2",
+        "result": "RE-SCOPED; RS-WORK held; 25/16 overhead factor"
+      },
+      {
+        "id": "C4",
+        "requirement": "Independent non-author reconstruction from spec, then compare",
+        "execution": "BLOCKED",
+        "technical": "UNAVAILABLE",
+        "evidence": "scripts/ci/reconstruct_chrn_rs257.py (author-run only)",
+        "blocker": "no named external execution or acceptance"
+      },
+      {
+        "id": "C5",
+        "requirement": "Rerun drill on frozen spec and longer mixed recoverable test",
+        "execution": "IN_PROGRESS",
+        "technical": "UNAVAILABLE",
+        "evidence": "tests/test_chrn_rs257.py; scripts/benchmarks/chrn_recovery_drill.py"
+      },
+      {
+        "id": "C6",
+        "requirement": "Close only after all gates pass; exclude parameter 1 and production claims",
+        "execution": "BLOCKED",
+        "technical": "UNAVAILABLE",
+        "blocker": "C1 C2 C4 C5 pending"
+      }
+    ]
   }
 }

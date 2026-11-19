@@ -13,7 +13,7 @@
       "requirement": "Specify CHRN recovery profile and measure real fault recovery",
       "owner": "OVID / THESEUS",
       "implementation": "src/chronus/storage/chrn_rs257.py",
-      "blocker": "Owner ratification of corrected exact nine-bit wire profile and independent QC pending; implementation and measured software drill passed.",
+      "blocker": "Frozen specification and capacity reconciliation complete for review; formal owner ratification, independent non-author QC and exact-final-head CI/drill pending.",
       "measurement": {
         "source_commit": "a83f5f0b892e1bac9e818bcc4b525b12f502d113",
         "evidence_path": "evidence/capacity/chrn_recovery_e00b29a57362e6a5812f11e9b1462808cb38e7c3eddb4e3ef2e3bd66b2c9a120.json",

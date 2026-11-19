@@ -124,3 +124,16 @@ def test_multiple_shard_recovery_composes_without_changing_algorithms():
     restored=recover_stripe(stripe,tuple(parts))
     damaged=rs.inject_faults(restored,range(60,124))
     assert ecc.decode(damaged)==source
+
+@pytest.mark.parametrize("start,count",[(200,65),(256,72)])
+def test_recoverable_beyond_contiguous_guarantee(start,count):
+    source=bytes(range(256))
+    wire=ecc.encode(source)
+    positions=tuple(range(60+start,60+start+count))
+    actual=ecc.decode_with_report(rs.inject_faults(wire,positions))
+    assert actual.status=="corrected" and actual.data==source
+    assert actual.corrected_byte_positions==positions
+    counts=[0]*8
+    for _,lane,_ in actual.corrected_symbols:
+        counts[lane]+=1
+    assert max(counts)<=8
