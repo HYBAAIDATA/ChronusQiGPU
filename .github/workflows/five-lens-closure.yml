@@ -35,7 +35,7 @@ jobs:
       - name: Install project
         run: python -m pip install -e '.[test]'
       - name: Run exact arithmetic and paired trace tests
-        run: python -m pytest -q -rs -o addopts= tests/test_ipmvp.py tests/test_fold_residency_campaign.py --junitxml=five-lens-tests.xml
+        run: python -m pytest -q -rs -o addopts= tests/test_ipmvp.py tests/test_fold_residency_campaign.py tests/test_claim_archive.py tests/test_qualification_manifest_truth.py tests/test_qualification_register_parses.py --junitxml=five-lens-tests.xml
       - name: Execute pre-registered residency campaign
         run: |
           python scripts/benchmarks/fold_residency_campaign.py --output-dir campaign-output

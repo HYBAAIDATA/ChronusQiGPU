@@ -24,7 +24,8 @@
       "id": "CLAIM-PURGE",
       "status": "OPEN",
       "owner": "Chronus",
-      "requirement": "Full claim catalogue reconciliation"
+      "requirement": "Full claim catalogue reconciliation",
+      "progress": "Six held entries archived; old publication blocking preserved; root historical decision blobs and live pointers reconciled. Independent catalogue and regression acceptance pending."
     },
     {
       "id": "TEI-CONSENT",
@@ -38,19 +39,18 @@
       "owner": "Chronus",
       "requirement": "Pre-registered executed equal-work campaign",
       "referencing_commit": "e738de05db16b760cb4ed3b3e4a83040b53964c6",
-      "evidence": [
-        {
-          "path": "evidence/residency/0f94d2d6ae917eb819943dda6cb7d58baa99a08c/campaign.json",
-          "sha256": "95da6c4d659c8795765ac14512840423bfa6559824777b5835c6e72ae2d396c9"
-        }
-      ],
+      "evidence": {
+        "path": "evidence/residency/0f94d2d6ae917eb819943dda6cb7d58baa99a08c/campaign.json",
+        "sha256": "95da6c4d659c8795765ac14512840423bfa6559824777b5835c6e72ae2d396c9"
+      },
       "closure_note": "Hosted paired synthetic campaign executed and exact artifact retained; independent QC separately OPEN."
     },
     {
       "id": "ANALYST-PACKAGE",
       "status": "OPEN",
       "owner": "Chronus",
-      "requirement": "Digest-bound showcases and metadata reconciliation"
+      "requirement": "Digest-bound showcases and metadata reconciliation",
+      "progress": "Digest-bound source and historical CPU references plus hosted campaign committed; exact-head Lean execution, metadata write and independent acceptance pending."
     },
     {
       "id": "OPERATING-ROSTER",

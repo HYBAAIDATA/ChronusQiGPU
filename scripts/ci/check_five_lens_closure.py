@@ -86,6 +86,9 @@ def item2():
         if "archive_uncited" not in p.parts:
             require(any(sha(f) in p.read_text() for f in (ROOT / "evidence").rglob("*")
                         if f.is_file()), f"uncited claim file: {p}")
+    tests("tests/test_claim_archive.py")
+    require(not list(ROOT.glob("SOVEREIGN_*")) and not list(ROOT.glob("RELEASE_*")),
+            "historical root claims remain")
     # Root sovereign and release claim review has to be independently accepted
     # against its original catalogue; presence alone is not closure.
     require(read(FINDINGS)["qualification"] == "HOLD", "qualification gate changed")
@@ -163,6 +166,7 @@ def item5():
     require((ROOT / "manifests/historical").is_dir(), "historical manifest directory missing")
     require(not (ROOT / "PRODUCTION_QUALIFIED.json").exists() and
             not list(ROOT.glob("RELEASE_DECISION_*")), "root release decisions not reconciled")
+    tests("tests/test_qualification_manifest_truth.py", "tests/test_qualification_register_parses.py")
 
 
 def item6():
