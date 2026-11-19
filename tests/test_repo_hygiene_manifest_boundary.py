@@ -56,8 +56,8 @@ def test_sensitive_content_rules_cover_json_secret_and_valuation():
 
 
 def test_capture_command_preserves_stream_bytes_and_exit_code(tmp_path):
-    out = b"stdout\\x00\\xff\\n"
-    err = b"stderr\\r\\n"
+    out = b"stdout\x00\xff\n"
+    err = b"stderr\r\n"
     command = [
         sys.executable, str(ROOT / "scripts/ci/capture_command.py"), str(tmp_path), "check", "--",
         sys.executable, "-c",

@@ -41,7 +41,7 @@ report = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
 head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
 if report["commit_sha"] != head or report["violation_count"] != len(report["violations"]):
     raise SystemExit("Report does not match the checked-out source tree")
-tracked = set(subprocess.check_output(["git", "ls-files", "-z"]).decode("utf-8").split("\\0")) - {""}
+tracked = set(subprocess.check_output(["git", "ls-files", "-z"]).decode("utf-8").split("\0")) - {""}
 candidates = set()
 for finding in report["violations"]:
     path = finding["path"]
@@ -106,7 +106,7 @@ commit-bound fleet benchmarks remain required. No production flag is changed.
 
 ## Executed first hygiene scan
 
-Run https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44443175475 checked merge candidate `84ec5a645c051dee0e1cec448bc60878787a4fcc`; exit 1, 370 violations. The itemised finding list (paths/rules, not secret values) is retained in `docs/REPO_HYGIENE_EXECUTED_FINDINGS.json`. This is not an instruction to purge all matched files. The Gitleaks action failed before scanning because GITLEAKS_LICENSE is unset.
+Run https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44443175475 checked merge candidate `84ec5a645c051dee0e1cec448bc60878787a4fcc`; exit 1, 370 violations. The current itemised finding list (paths/rules, not secret values) supersedes this first-run inventory in `docs/REPO_HYGIENE_EXECUTED_FINDINGS.json`. This is not an instruction to purge all matched files. The Gitleaks action failed before scanning because GITLEAKS_LICENSE is unset.
 
 ## Latest inspected hygiene execution
 
