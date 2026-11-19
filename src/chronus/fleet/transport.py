@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import http.client
 import ipaddress
+import os
 import threading
 import json
 import logging
@@ -23,6 +24,7 @@ from urllib.parse import urlsplit
 from chronus.fleet.auth import DEFAULT_REPLAY_CAPACITY, FleetAuth, ReplayCache, tls_client_context, H_NODE
 from chronus.fleet.canonical import canonical_json
 from chronus.fleet.errors import AuthenticationError, TransportError
+from chronus.fleet.native_transport import NATIVE_TRANSPORT_ENV, load_native_transport
 
 logger = logging.getLogger(__name__)
 DEFAULT_PORT = 8740
@@ -211,8 +213,8 @@ class FleetClient:
         parts = urlsplit(base_url if "://" in base_url else "http://" + base_url)
         if parts.scheme not in ("http", "https") or not parts.hostname:
             raise TransportError(f"coordinator URL must be http(s)://host:port, not {base_url!r}")
-        if parts.path not in ("", "/"):
-            raise TransportError("coordinator URL must not contain a path")
+        if parts.path not in ("", "/") or parts.query or parts.fragment or parts.username is not None:
+            raise TransportError("coordinator URL must not contain a path, query, fragment or userinfo")
         if parts.scheme == 'http' and not _loopback(parts.hostname):
             raise TransportError("non-loopback fleet clients require HTTPS")
         if type(max_response_bytes) is not int or max_response_bytes < 1:
@@ -221,36 +223,44 @@ class FleetClient:
         self.scheme = parts.scheme
         self.host = parts.hostname
         self.port = parts.port or DEFAULT_PORT
-        self.base_url = f"{self.scheme}://{self.host}:{self.port}"
+        authority = f"[{self.host}]" if ":" in self.host else self.host
+        self.base_url = f"{self.scheme}://{authority}:{self.port}"
         self.auth = auth
         self.node_id = node_id
         self.timeout = timeout
         self._tls = tls_client_context(tls_ca) if self.scheme == "https" else None
         if tls_ca and self.scheme != "https":
             raise TransportError("a TLS CA was given but the coordinator URL is not https://")
+        self._tls_ca = tls_ca
+        native_library = os.environ.get(NATIVE_TRANSPORT_ENV)
+        self._native = load_native_transport(native_library) if native_library else None
 
     def request(self, method: str, path: str, payload: Mapping[str, Any] | None = None) -> dict[str, Any]:
         body = canonical_json(dict(payload)) if payload is not None else b""
         headers = self.auth.sign_request(method, path, self.node_id, body)
         headers["Content-Type"] = "application/json"
-        if self._tls is not None:
-            conn: http.client.HTTPConnection = http.client.HTTPSConnection(
-                self.host, self.port, timeout=self.timeout, context=self._tls
-            )
+        if self._native is not None:
+            status, response_headers, data = self._native.request(
+                self.base_url, method, path, headers, body, self._tls_ca, self.timeout, self.max_response_bytes)
         else:
-            conn = http.client.HTTPConnection(self.host, self.port, timeout=self.timeout)
-        try:
-            conn.request(method, path, body=body, headers=headers)
-            response = conn.getresponse()
-            data = response.read(self.max_response_bytes + 1)
-            if len(data) > self.max_response_bytes:
-                raise TransportError("coordinator response exceeds configured byte limit")
-            status = response.status
-            response_headers = response.headers
-        except (OSError, http.client.HTTPException, socket.timeout) as exc:
-            raise TransportError(f"cannot reach coordinator at {self.base_url}: {exc}") from exc
-        finally:
-            conn.close()
+            if self._tls is not None:
+                conn: http.client.HTTPConnection = http.client.HTTPSConnection(
+                    self.host, self.port, timeout=self.timeout, context=self._tls
+                )
+            else:
+                conn = http.client.HTTPConnection(self.host, self.port, timeout=self.timeout)
+            try:
+                conn.request(method, path, body=body, headers=headers)
+                response = conn.getresponse()
+                data = response.read(self.max_response_bytes + 1)
+                if len(data) > self.max_response_bytes:
+                    raise TransportError("coordinator response exceeds configured byte limit")
+                status = response.status
+                response_headers = response.headers
+            except (OSError, http.client.HTTPException, socket.timeout) as exc:
+                raise TransportError(f"cannot reach coordinator at {self.base_url}: {exc}") from exc
+            finally:
+                conn.close()
         if status == 401 and "X-Chronus-Fleet-MAC" not in response_headers:
             raise AuthenticationError("the coordinator rejected this fleet token")
         self.auth.verify_response(headers["X-Chronus-Fleet-Nonce"], status, response_headers, data)

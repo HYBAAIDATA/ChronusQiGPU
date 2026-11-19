@@ -1,8 +1,8 @@
 # Copyright (c) 2026 HYBA Software Ltd. All rights reserved.
 """Collect candidate evidence from an existing fleet using an operator-supplied workload.
 
-No provisioning, simulated devices, or production qualification. The supplied
-ledger and pinned key must be independently collected from the coordinator.
+No provisioning, simulated devices, or production qualification. The pinned key must be independently collected from the coordinator.
+Collect and verify the coordinator ledger separately after the run.
 Worker labels are not physical host/GPU identity. Raw receipts are retained.
 """
 from __future__ import annotations
