@@ -46,7 +46,8 @@ Nothing on this page is production-qualified. Salamander's own
   (`test_crash_between_write_back_and_commit_rolls_back_then_heals`).
 - **Durability:** WAL with `synchronous=FULL`. A repair committed by a process
   that then exits without closing is present on reopen.
-- **Concurrency:** one decode per object per process (per-object lock);
+- **Concurrency:** one decode per object per process (per-object lock,
+  reference-counted and released after the last waiter);
   across processes the write transaction's re-check makes the second repairer
   a no-op. Eight processes opening one damaged file record exactly one
   `REPAIRED` event.
@@ -152,7 +153,7 @@ imports it when installed and raises `SalamanderUnavailable` otherwise.
 | Select remediation | Salamander | `RecoveryPlan` with a `RESTORE_CUSTODY` step and a `ROLLBACK` step; unrepairable findings are escalated to a person, never actuated |
 | Authorise | AL HARAS | `build_authorized_control_plane`: signed subscription token, guardian policy, single-use grant |
 | Execute | Chronus (THESEUS operation) | registered handler calls `repair_object()` |
-| Verify | independent | fresh read-only SQLite connection re-hashes the payload |
+| Verify | independent | fresh read-only SQLite connection (percent-encoded `file:` URI) re-hashes the payload |
 | Accept or rollback | Salamander | unverified repair triggers the rollback step, which independently confirms THESEUS left no partial write |
 | Retain evidence | THESEUS | every hash-chained ledger record is stored as a content-addressed THESEUS object (tenant `salamander-evidence`); AL HARAS keeps its own audit chain |
 | Continue monitoring | EUCLID / host | `run_cycle()` is called on the orchestrator's schedule; the per-target recovery budget bounds repeats |
