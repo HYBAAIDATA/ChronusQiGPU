@@ -1,0 +1,31 @@
+name: Settlement and reference residency
+on:
+  pull_request:
+    branches: [main, fix/chrn-v1-closure]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[test]'
+      - name: Run settlement regression tests
+        run: python -m pytest -q -rs tests/test_bookings.py tests/test_rider.py tests/test_dual_ledger.py -o addopts= --junitxml=/tmp/accounting-junit.xml
+      - name: Measure reference residency on actual committed inputs
+        run: python scripts/benchmarks/fold_residency_campaign.py --input claims/register.json --output /tmp/residency-campaign.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: settlement-reference-evidence
+          path: |
+            /tmp/accounting-junit.xml
+            /tmp/residency-campaign.json
+          if-no-files-found: error
