@@ -108,19 +108,31 @@ def check_orphans(tmp: Path) -> None:
     # (c) Protected shard files vs THESEUS manifests (both directions).
     db = tmp / "orphan_c.sqlite3"; shards = tmp / "shards"
     triad = ProductionTriad(str(db))
-    receipt = triad.protect_payload("tenant-a", os.urandom(8192), shards, shard_count=4)
+    original = os.urandom(8192)
+    receipt = triad.protect_payload("tenant-a", original, shards, shard_count=4)
     files = sorted(p for p in shards.rglob("*") if p.is_file())
     (shards / "stray.shard").write_bytes(b"no-manifest")
     recovered = triad.recover_protected_payload(receipt, shards)
-    stray_detected = False  # no API enumerates shard files without a manifest
+    # Reverse direction: is a shard file without a manifest enumerated anywhere?
+    # The maintained API surface is ProtectedTheseusService; record what it exposes.
+    from chronus.storage.protected import ProtectedTheseusService
+    surface = sorted(n for n in dir(ProtectedTheseusService) if not n.startswith("_"))
+    enumerates = any(k in n for n in surface for k in ("orphan", "scan", "reconcile", "list", "audit"))
+    record("X2c", "Orphan reconciliation: shard files without a THESEUS manifest", "PASS" if enumerates else "GAP",
+           f"{len(files)} shard files + 1 stray; recovery returned the original bytes: {recovered == original}; "
+           f"ProtectedTheseusService public API {surface} has no enumeration/reconciliation entry point"
+           if not enumerates else f"enumeration entry point present: {surface}")
+    # Forward direction: manifest whose shard files are missing must fail closed (two losses).
     for victim in files[:2]:
         victim.unlink()
-    err = _raises(lambda: triad.recover_protected_payload(receipt, shards))
-    record("X2c", "Orphan reconciliation: protected shard files <-> THESEUS manifest",
-           "GAP" if not stray_detected else "PASS",
-           f"{len(files)} shard files; recovery with a stray file present returned {len(recovered)} bytes; "
-           f"two missing shards fail closed: {bool(err)} ({err}); shard files without a manifest are not "
-           "enumerated or reported by any maintained API")
+    try:
+        again = triad.recover_protected_payload(receipt, shards)
+    except Exception as exc:
+        record("X2d", "Protected manifest with two missing shard files fails closed", "PASS",
+               f"recovery raised {type(exc).__name__}: {exc}")
+    else:
+        record("X2d", "Protected manifest with two missing shard files fails closed", "FAIL",
+               f"recovery returned {len(again)} bytes (matches original: {again == original})")
 
 
 def check_tenant_isolation_and_concurrency(tmp: Path) -> None:
@@ -178,10 +190,13 @@ def check_fail_closed(tmp: Path) -> None:
     con = sqlite3.connect(db)
     con.execute("UPDATE objects SET payload=? WHERE object_id=?", (os.urandom(2048 + 64), r.representation_object_id))
     con.commit(); con.close()
-    err_open = _raises(lambda: ProductionTriad(str(db)).theseus.verify_store())
-    err_read = _raises(lambda: ProductionTriad(str(db)).materialise(r))
-    record("X5a", "Fail-closed on unrecoverable content corruption", "PASS" if (err_open and err_read) else "FAIL",
-           f"verify_store -> {err_open}; materialise -> {err_read}")
+    # Read path on the instance that was open before the corruption (no constructor re-verification).
+    err_read = _raises(lambda: triad.materialise(r))
+    # Open path on a fresh instance.
+    err_open = _raises(lambda: ProductionTriad(str(db)))
+    record("X5a", "Fail-closed on unrecoverable content corruption (read path and open path)",
+           "PASS" if (err_open and err_read) else "FAIL",
+           f"materialise on open instance -> {err_read}; reopen -> {err_open}")
 
     db = tmp / "journal.sqlite3"
     triad = ProductionTriad(str(db))
@@ -208,18 +223,37 @@ def check_readiness_and_console(tmp: Path) -> None:
     except Exception as exc:
         record("X6", "Readiness derived from component health", "FAIL", f"service import failed: {exc}")
         return
-    client = TestClient(create_app())
-    ready = client.get("/health/ready")
+    # Behavioural probe: corrupt every custody store the service can be configured with,
+    # then ask the deployed app whether it is ready.
+    custody = tmp / "service_custody.sqlite3"
+    store = DurableTheseusService(str(custody))
+    rec = store.store("tenant-a", b"service-custody")
+    con = sqlite3.connect(custody)
+    con.execute("UPDATE objects SET payload=? WHERE object_id=?", (b"corrupted", rec.object_id))
+    con.commit(); con.close()
+    custody_env = ("CHRONUS_MINING_CUSTODY_PATH", "CHRONUS_MINING_ADMIN_CUSTODY_PATH")
+    saved = {k: os.environ.get(k) for k in custody_env}
+    try:
+        for k in custody_env:
+            os.environ[k] = str(custody)
+        client = TestClient(create_app())
+        ready = client.get("/health/ready")
+    finally:
+        for k, v in saved.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
     body = ready.json() if ready.headers.get("content-type", "").startswith("application/json") else {}
-    import inspect
-    from chronus.service.routers import health
-    src = inspect.getsource(health.readiness_probe)
-    derives = any(k in src for k in ("Durable", "theseus", "verify_store", "evidence(", "ProductionTriad"))
-    record("X6", "Readiness derived from component health (THESEUS custody, OVID, execution)",
-           "PASS" if derives else "GAP",
-           f"deployed app (Dockerfile CMD chronus.service.app:app) /health/ready -> {ready.status_code} "
-           f"{json.dumps(body)[:200]}; readiness_probe consults THESEUS/triad health: {derives} "
-           "(it checks only the optional remote execution adapter)")
+    if ready.status_code >= 500 and ready.status_code != 503:
+        status = "FAIL"
+    elif ready.status_code == 503:
+        status = "PASS"
+    else:
+        status = "GAP"
+    record("X6", "Readiness derived from component health (THESEUS custody)", status,
+           f"with every configurable custody store corrupted ({', '.join(custody_env)}), the deployed app "
+           f"(Dockerfile CMD chronus.service.app:app) answered /health/ready {ready.status_code} {json.dumps(body)[:200]}")
 
     from chronus.execution.reference import NativeMathReferenceBackend
     backing = type(NativeMathReferenceBackend._theseus).__name__
