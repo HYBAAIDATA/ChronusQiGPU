@@ -153,7 +153,7 @@ def replay(tenant: str, tranche: str, contract_digest: str, measurement_digest: 
     posts = []
     seen = set()
     prior = iso(contract.contract_epoch)
-    invoiced = recognized = paid = credits = advance = 0
+    invoiced = paid = credits = advance = 0
     invoice_seen = acceptance_seen = False
 
     def post(digest, when, dr, cr, amount):
@@ -175,7 +175,7 @@ def replay(tenant: str, tranche: str, contract_digest: str, measurement_digest: 
         prior = day
         kind, amount = e["kind"], integer(e["amount_minor"])
         if kind == "advance":
-            if paid + advance + amount > fee - credits or invoice_seen:
+            if paid + advance + amount > fee - credits or invoice_seen or acceptance_seen:
                 raise ValueError("invalid advance")
             post(digest, when, "Cash", "CustomerAdvances", amount)
             advance += amount
@@ -184,10 +184,13 @@ def replay(tenant: str, tranche: str, contract_digest: str, measurement_digest: 
                 raise ValueError("invoice must match recomputed fee exactly once")
             invoice_seen = True
             invoiced = amount
-            post(digest, when, "Receivable", "ContractAsset" if acceptance_seen else "DeferredRevenue", amount)
-            post(digest, when, "CustomerAdvances", "Receivable", advance)
-            paid += advance
-            advance = 0
+            if acceptance_seen:
+                post(digest, when, "Receivable", "ContractAsset", amount - paid)
+            else:
+                post(digest, when, "Receivable", "DeferredRevenue", amount)
+                post(digest, when, "CustomerAdvances", "Receivable", advance)
+                paid += advance
+                advance = 0
         elif kind == "acceptance":
             if acceptance_seen or amount != fee or e.get("index_vintage") != m["index_vintage"]:
                 raise ValueError("invalid recognition event")
@@ -199,9 +202,13 @@ def replay(tenant: str, tranche: str, contract_digest: str, measurement_digest: 
                     or (day - iso(accepted["date"])).days < dispute_days):
                 raise ValueError("acceptance, dispute or index constraint not satisfied")
             acceptance_seen = True
-            recognized = amount
-            post(digest, when, "DeferredRevenue" if invoice_seen else "ContractAsset",
-                 "Revenue", amount)
+            if invoice_seen:
+                post(digest, when, "DeferredRevenue", "Revenue", amount)
+            else:
+                post(digest, when, "CustomerAdvances", "Revenue", advance)
+                post(digest, when, "ContractAsset", "Revenue", amount - advance)
+                paid += advance
+                advance = 0
         elif kind == "collection":
             if not invoice_seen or amount > invoiced - paid - credits:
                 raise ValueError("collection exceeds open receivable")
