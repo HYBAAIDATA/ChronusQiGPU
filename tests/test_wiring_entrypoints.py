@@ -186,6 +186,39 @@ def test_alembic_upgrade_over_runtime_created_schema(tmp_path: Path) -> None:
         _assert_matches_metadata(_schema(conn))
         kept = conn.execute(sa.text("SELECT reason FROM ciaas_capacity_ledger")).scalar_one()
         assert kept == "keep"
+        _run_downgrade_expecting_refusal(conn, revisions[-1])
+        assert conn.execute(sa.text("SELECT count(*) FROM ciaas_capacity_ledger")).scalar_one() == 1
+
+
+def _run_downgrade_expecting_refusal(conn, rev) -> None:
+    import alembic.op as op_proxy
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+
+    op_proxy._proxy = Operations(MigrationContext.configure(conn))
+    try:
+        with pytest.raises(RuntimeError, match="contains rows"):
+            rev.module.downgrade()
+    finally:
+        op_proxy._proxy = None
+
+
+def test_alembic_downgrade_of_empty_ciaas_tables(tmp_path: Path) -> None:
+    revisions = _alembic_revisions()
+    import alembic.op as op_proxy
+    import sqlalchemy as sa
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+
+    engine = sa.create_engine(f"sqlite:///{tmp_path / 'down.sqlite3'}")
+    with engine.begin() as conn:
+        _run_upgrades(conn, revisions)
+        op_proxy._proxy = Operations(MigrationContext.configure(conn))
+        try:
+            revisions[-1].module.downgrade()
+        finally:
+            op_proxy._proxy = None
+        assert "ciaas_tenants" not in _schema(conn)
 
 
 # Pre-existing spec dump whose path is pinned by historical qualification

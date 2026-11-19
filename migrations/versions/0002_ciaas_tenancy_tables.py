@@ -79,7 +79,21 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index('ix_ciaas_capacity_ledger_tenant_id', table_name='ciaas_capacity_ledger')
-    op.drop_table('ciaas_capacity_ledger')
-    op.drop_index('ix_ciaas_tenants_contract_id', table_name='ciaas_tenants')
-    op.drop_table('ciaas_tenants')
+    # The tables may predate this revision (runtime ``create_all``), so never
+    # silently drop tenant data: refuse when rows exist. Offline ``--sql``
+    # output emits the DROPs for the operator to review.
+    if not op.get_context().as_sql:
+        bind = op.get_bind()
+        existing = set(sa.inspect(bind).get_table_names())
+        for table in (ciaas_capacity_ledger, ciaas_tenants):
+            if table.name in existing and bind.execute(
+                sa.select(sa.func.count()).select_from(table)
+            ).scalar_one():
+                raise RuntimeError(
+                    f"refusing to downgrade 0002: {table.name} contains rows; "
+                    "export or remove them explicitly first"
+                )
+    op.execute(sa.text("DROP INDEX IF EXISTS ix_ciaas_capacity_ledger_tenant_id"))
+    op.execute(sa.schema.DropTable(ciaas_capacity_ledger, if_exists=True))
+    op.execute(sa.text("DROP INDEX IF EXISTS ix_ciaas_tenants_contract_id"))
+    op.execute(sa.schema.DropTable(ciaas_tenants, if_exists=True))
