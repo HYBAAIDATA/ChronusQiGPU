@@ -247,3 +247,21 @@ def test_packaged_modules_have_no_import_time_side_effect_scripts() -> None:
         if re.search(r"^[a-z_]+ = ['\"][a-zA-Z]:[/\\]Users", text, re.M):
             offenders.append(p.relative_to(ROOT).as_posix())
     assert not offenders, f"hardcoded developer-machine paths at module level: {offenders}"
+
+
+def test_offline_downgrade_sql_keeps_populated_table_guard() -> None:
+    pytest.importorskip("alembic")
+    import io
+
+    from alembic import command
+    from alembic.config import Config
+
+    buffer = io.StringIO()
+    cfg = Config(str(ROOT / "alembic.ini"), output_buffer=buffer)
+    cfg.set_main_option("script_location", str(ROOT / "migrations"))
+    command.downgrade(cfg, "0002_ciaas_tenancy_tables:0001_initial_schema", sql=True)
+    sql = buffer.getvalue()
+    for table in ("ciaas_capacity_ledger", "ciaas_tenants"):
+        guard = sql.index(f"LOCK TABLE {table} IN ACCESS EXCLUSIVE MODE")
+        assert f"refusing to downgrade 0002: {table} contains rows" in sql
+        assert guard < sql.index(f"DROP TABLE IF EXISTS {table}")

@@ -36,9 +36,11 @@ from docs. Release posture is unchanged: **NOT QUALIFIED**.
    Rewritten from the real `os.getenv` reads (optional keys commented out so an
    empty value never overrides a code default; tenant tokens documented as
    `{"<tenant_id>": "<bearer-token>"}`, matching `AuthService`); a test fails
-   if a key is not read under `src/`. `docker-compose.yml` now passes
-   `CHRONUS_JWT_SECRET` from `.env` to the `api` container, which previously
-   always fell back to a random per-process key.
+   if a key is not read under `src/`. `docker-compose.yml` now loads `.env`
+   (optional) into the `api` container, so the JWT secret/issuer,
+   `CHRONUS_ENV`, CIaaS custody path and mining-admission settings reach it;
+   previously none did and the API always fell back to a random per-process
+   key.
 3. **Import-time side effect in the wheel.** `src/chronus/consortium/fix_refs.py`
    opened and rewrote a hard-coded `c:/Users/leonn/...` path at import time and
    was imported by nothing. Moved to `scripts/dev/consortium_fix_refs.py`; a

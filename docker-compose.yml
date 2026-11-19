@@ -8,11 +8,16 @@ services:
       target: api-runtime
     ports:
       - "127.0.0.1:18000:8000"
+    # Operator settings (JWT secret/issuer, CHRONUS_ENV, CIaaS custody, mining
+    # admission) come from .env; keys left commented there stay unset. The
+    # container storage paths below take precedence. Needs Compose >= 2.24.
+    env_file:
+      - path: .env
+        required: false
     environment:
       CHRONUS_WORKLOAD_DB_PATH: /var/lib/chronus/workloads.sqlite3
       CHRONUS_PROCUREMENT_LEDGER: /var/lib/chronus/procurement_ledger.jsonl
       CHRONUS_TENANT_TOKENS: ${CHRONUS_TENANT_TOKENS:-{}}
-      CHRONUS_JWT_SECRET: ${CHRONUS_JWT_SECRET:-}
     volumes:
       - chronus_data:/var/lib/chronus
 
