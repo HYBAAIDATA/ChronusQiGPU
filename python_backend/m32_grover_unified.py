@@ -202,12 +202,14 @@ class LaneRun:
     measured_nonce: Optional[int]
     verified: bool
     phase_mask: int = 0
+    resolution: str = "none"
 
 
 def grover_lane(lane: int, cands: List[int], oracle: BitSlicedDomainOracle,
                 header80: bytes) -> LaneRun:
     """Build the lane's phase oracle (bit-sliced SHA-256d -> exact mask), run
-    exact amplitude amplification, measure when p exceeds phi^{-1}, verify."""
+    exact amplitude amplification, measure only above phi^{-1}, otherwise
+    verify an already marked candidate without claiming a measurement."""
     phase_mask = oracle.phase_mask(cands)
     marked = [i for i in range(len(cands)) if (phase_mask >> i) & 1]
     N, M = len(cands), len(marked)
@@ -224,11 +226,10 @@ def grover_lane(lane: int, cands: List[int], oracle: BitSlicedDomainOracle,
         p = st.marked_probability
         if st.cassini_scaled() != N or st.cassini_witness() != 1:
             raise RuntimeError("Cassini identity failed on the exact fold")
-    if M < N and not exceeds_phi_inverse(p):
-        # Collapse gate: exact p > phi^{-1} did not hold.  Small lanes with
-        # a peak at or below 1/2 (e.g. N=2, M=1) never cross the threshold
-        # under canonical +/-1 phases; no inexact phase is substituted.
-        return LaneRun(lane, N, M, k, 0, p, None, False, phase_mask)
+    # Preserve complete coverage without claiming a Grover measurement
+    # when the exact collapse gate does not hold. The already evaluated
+    # mask identifies a candidate which must still pass fresh SHA-256d.
+    collapse_admitted = M == N or exceeds_phi_inverse(p)
     idx = choose_marked_index(header80, marked)
     nonce = cands[idx]
     digest = sha256d(oracle.prefix + struct.pack("<I", nonce & 0xFFFFFFFF))
@@ -236,7 +237,10 @@ def grover_lane(lane: int, cands: List[int], oracle: BitSlicedDomainOracle,
     ok = int.from_bytes(digest, "little") <= oracle.target
     if ok:
         oracle.telemetry.hashlib_hits += 1
-    return LaneRun(lane, N, M, k, 1 if ok else 0, p, nonce if ok else None, ok, phase_mask)
+    if not ok:
+        raise RuntimeError("phase-mask candidate failed independent SHA-256d verification")
+    resolution = "grover_lane" if collapse_admitted else "verified_marked_fallback"
+    return LaneRun(lane, N, M, k, int(collapse_admitted), p, nonce, True, phase_mask, resolution)
 
 
 # ---------------------------------------------------------------------------
@@ -297,7 +301,7 @@ def unified_search(header80: bytes, target: int, base: int, window: int, *,
         if lr.verified:
             tel = oracle.telemetry
             return SearchResult(
-                lr.measured_nonce, "grover_lane", base, window, i, order, iters, meas,
+                lr.measured_nonce, lr.resolution, base, window, i, order, iters, meas,
                 tel.hashlib_confirms, tel.lanes, tel.lane_rounds, tel.lane_compressions,
                 tel.bitsliced_lane_compressions, tel.hashlib_confirms,
                 0.0, runs,
@@ -353,11 +357,57 @@ def fair_linear_cost(header80: bytes, target: int, base: int, window: int, *,
     return rounds / 64.0, evaluated, hit
 
 
+def load_verified_headers(path: str) -> list:
+    """Read the canonical committed corpus or the legacy header-list format.
+
+    Derive target and nonce from serialized bytes; reject contradictory
+    metadata before making a historical correctness measurement.
+    """
+    with open(path, encoding="utf-8") as stream:
+        data = json.load(stream)
+    canonical = isinstance(data, dict)
+    rows = data["blocks"] if canonical else data
+    if not isinstance(rows, list) or not rows:
+        raise ValueError("empty or malformed header corpus")
+    if canonical and (data["network"] != "mainnet"
+                      or data["metadata"]["count"] != len(rows)
+                      or len(data["nonces"]) != len(rows)):
+        raise ValueError("corpus count or network mismatch")
+    normalized = []
+    previous = None
+    for i, row in enumerate(rows):
+        header = bytes.fromhex(row["header_hex"])
+        if len(header) != 80:
+            raise ValueError("invalid serialized header length")
+        bits, nonce = struct.unpack("<II", header[72:80])
+        target = target_from_bits(bits)
+        digest = sha256d(header)
+        if not 0 < target < (1 << 256) or int.from_bytes(digest, "little") > target:
+            raise ValueError("header fails proof of work")
+        if "bits" in row and int(row["bits"]) != bits:
+            raise ValueError("serialized nBits mismatch")
+        if "block_hash_be" in row and row["block_hash_be"] != digest[::-1].hex():
+            raise ValueError("serialized block hash mismatch")
+        if canonical:
+            if (row["fields"]["nbits"] != bits or row["fields"]["nonce"] != nonce
+                    or data["nonces"][i] != nonce
+                    or row["block_hash_be"] != digest[::-1].hex()
+                    or row["height"] != data["metadata"]["height_start"] - i):
+                raise ValueError("canonical corpus metadata mismatch")
+            if previous is not None and previous[4:36] != digest:
+                raise ValueError("canonical corpus chain mismatch")
+        previous = header
+        normalized.append(dict(row, bits=bits))
+    if canonical and normalized[-1]["height"] != data["metadata"]["height_end"]:
+        raise ValueError("canonical corpus height range mismatch")
+    return normalized
+
+
 def run_headers(path: str, window_bits: int, limit: Optional[int], pisot_n: Optional[int],
                 engine: str, include_winner: bool = True,
                 seed: int = 0, warrior_steps: int = 0) -> dict:
     del seed, warrior_steps
-    rows = json.load(open(path))
+    rows = load_verified_headers(path)
     if limit:
         rows = rows[:limit]
     W = 1 << window_bits
@@ -428,7 +478,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(
         description="M_32 lanes + Zeckendorf/Pisano/Lucas order + exact Grover (offline)"
     )
-    ap.add_argument("--headers", required=True, help="JSON list with header_hex, bits, height")
+    ap.add_argument("--headers", required=True, help="Committed mainnet corpus JSON or legacy header list")
     ap.add_argument("--window-bits", type=int, default=12)
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--seed", type=int, default=0, help="ignored; retained for CLI compatibility")

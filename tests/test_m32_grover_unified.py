@@ -28,7 +28,7 @@ from python_backend.exact_folded_grover import (
     pisot_damp_qsqrt5,
 )
 
-HEADERS = Path("/workspace/user_quantum_gpu_experiment/nonces500/headers.json")
+HEADERS = Path(__file__).resolve().parent / "vectors" / "mainnet_975565_976064.json"
 GENESIS_NONCE = 2083236893
 GENESIS_MERKLE = bytes.fromhex(
     "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"
@@ -234,9 +234,8 @@ def test_phase_mask_bit_exact_under_difficulty(bits):
         assert mask == truth  # zero false negatives and zero false positives
 
 
-@pytest.mark.skipif(not HEADERS.exists(), reason="verified mainnet headers not available")
 def test_phase_mask_bit_exact_on_all_500_headers():
-    rows = json.loads(HEADERS.read_text())
+    rows = u.load_verified_headers(str(HEADERS))
     assert len(rows) == 500
     rng = random.Random(500)
     for i, r in enumerate(rows):
@@ -278,9 +277,8 @@ def test_lanes_are_m32_voronoi_partition():
         assert all(pg.voronoi(n) == f for n in ns)
 
 
-@pytest.mark.skipif(not HEADERS.exists(), reason="verified mainnet headers not available")
 def test_recovers_true_winner_on_real_headers():
-    rows = json.loads(HEADERS.read_text())[:8]
+    rows = u.load_verified_headers(str(HEADERS))[:8]
     for i, r in enumerate(rows):
         hdr = bytes.fromhex(r["header_hex"])
         nonce = struct.unpack("<I", hdr[76:80])[0]
@@ -291,9 +289,8 @@ def test_recovers_true_winner_on_real_headers():
         assert int.from_bytes(h, "little") <= u.target_from_bits(r["bits"])
 
 
-@pytest.mark.skipif(not HEADERS.exists(), reason="verified mainnet headers not available")
 def test_window_without_winner_returns_none():
-    r = json.loads(HEADERS.read_text())[0]
+    r = u.load_verified_headers(str(HEADERS))[0]
     hdr = bytes.fromhex(r["header_hex"])
     nonce = struct.unpack("<I", hdr[76:80])[0]
     base = u.window_base_excluding_winner(nonce, 512)
@@ -366,3 +363,24 @@ def test_grover_search_iteration_methods_have_no_float_trig():
         assert cls.optimal_iterations(4, 1) == 1
         assert cls.optimal_iterations(16, 4) == 1
         assert cls.optimal_iterations(4096, 1) == 50
+
+
+def test_canonical_corpus_rejects_tampered_nonce(tmp_path):
+    data = json.loads(HEADERS.read_text())
+    data["nonces"][0] ^= 1
+    path = tmp_path / "tampered.json"
+    path.write_text(json.dumps(data))
+    with pytest.raises(ValueError, match="metadata mismatch"):
+        u.load_verified_headers(str(path))
+
+
+def test_two_candidate_lane_retains_verified_winner_below_collapse_gate():
+    hdr = genesis_header()
+    oracle = BitSlicedDomainOracle(hdr, target_from_bits(0x1d00ffff))
+    result = u.grover_lane(0, [GENESIS_NONCE - 1, GENESIS_NONCE], oracle, hdr)
+    assert result.marked == 1
+    assert result.p_marked == Fraction(1, 2)
+    assert result.repetitions == 0
+    assert result.verified
+    assert result.measured_nonce == GENESIS_NONCE
+    assert result.resolution == "verified_marked_fallback"
