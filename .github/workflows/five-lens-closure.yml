@@ -37,7 +37,10 @@ jobs:
       - name: Run exact arithmetic and paired trace tests
         run: python -m pytest -q -rs -o addopts= tests/test_ipmvp.py tests/test_fold_residency_campaign.py --junitxml=five-lens-tests.xml
       - name: Execute pre-registered residency campaign
-        run: python scripts/benchmarks/fold_residency_campaign.py --output-dir campaign-output
+        run: |
+          python scripts/benchmarks/fold_residency_campaign.py --output-dir campaign-output
+          cat campaign-output/*/campaign.json
+          sha256sum campaign-output/*/campaign.json
       - name: Enforce closure (open findings fail)
         run: python scripts/ci/check_five_lens_closure.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

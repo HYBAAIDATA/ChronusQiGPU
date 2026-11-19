@@ -12,6 +12,7 @@ from fractions import Fraction
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
 HEX = re.compile(r"[0-9a-f]{64}\Z")
 FINDINGS = "evidence/five_lens/findings.json"
 ARTIFACTS = "evidence/five_lens/artifacts.json"
@@ -234,7 +235,7 @@ def main():
             validator()
             results[name] = {"pass": True}
         except (OSError, ValueError, KeyError, TypeError, RuntimeError,
-                subprocess.CalledProcessError, ET.ParseError) as exc:
+                subprocess.CalledProcessError, ET.ParseError, ImportError) as exc:
             results[name] = {"pass": False, "reason": str(exc)}
     content = {"source_commit": git("rev-parse", "HEAD").decode().strip(),
                "results": results, "all_lenses_closed": all(r["pass"] for r in results.values()),
