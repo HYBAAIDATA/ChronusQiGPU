@@ -10,7 +10,10 @@ Verifies:
 7. FastAPI Service Endpoints for tensor charter, hardware caps, network construction, and experiments.
 """
 
+import json
 import math
+import os
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -50,6 +53,8 @@ from chronus.tensor import (
 )
 
 pytestmark = pytest.mark.real
+
+E3_REFERENCE = Path(__file__).resolve().parents[1] / "evidence" / "benchmarks" / "tensor-e3-1000-20261119.json"
 
 client = TestClient(app)
 
@@ -251,7 +256,29 @@ def test_experiment_e3_honest_1000_node_claim():
     assert telemetry["group"] == "Z2"
     assert telemetry["global_error_bound"] < 1e-6
     assert telemetry["cross_check_diff"] < 0.05
+    # Independent of the truncation ledger: the energy is variational (never
+    # below the exact Jordan-Wigner value) and within 1e-6 relative of it.
+    assert telemetry["variational_energy_error"] >= -1e-9 * abs(telemetry["exact_open_chain_energy"])
+    assert telemetry["relative_energy_error"] <= 1e-6
+    assert telemetry["max_bond_dimension_used"] <= telemetry["chi_max"]
     assert telemetry["publication_record"]["publication_status"] == "APPROVED_BY_SCIENTIFIC_INTEGRITY_LEAD"
+    # The acceptance is a numerical threshold, never a claim of exact equivalence.
+    acceptance = telemetry["acceptance"]
+    assert acceptance["kind"] == "numerical_threshold"
+    assert acceptance["exact_equivalence_claimed"] is False
+    assert acceptance["threshold"] == telemetry["claim_bound"] == 1e-6
+    assert acceptance["measured"] == telemetry["relative_energy_error"]
+    assert 0.0 <= acceptance["headroom_fraction"] <= 1.0
+    assert acceptance["headroom_fraction"] == pytest.approx(
+        1.0 - acceptance["measured"] / acceptance["threshold"])
+    assert "numerical acceptance threshold" in result.summary
+    assert "not exact" in result.summary
+    assert "verified" not in result.summary
+    # The reference energy is the recorded closed form (preserved evidence).
+    reference = json.loads(E3_REFERENCE.read_text(encoding="utf-8"))
+    assert telemetry["exact_open_chain_energy"] == pytest.approx(
+        reference["result"]["exact_open_chain_energy"], rel=1e-12)
+    assert reference["result"]["relative_energy_error"] <= reference["acceptance"]["threshold"]
 
 
 def test_publish_gate_enforcement():
@@ -336,16 +363,74 @@ def test_api_network_build():
     assert data["theoretical_saving_factor"] == 2.0
 
 
-def test_api_e3_refuses_while_charge_aware_dmrg_is_unimplemented():
-    """E3 needs charge-aware DMRG; until it exists the API refuses with 501, not 500."""
-    response = client.get("/v1/tensor/experiments/E3")
-    assert response.status_code == 501
-    assert "charge-aware DMRG" in response.json()["detail"]
+def test_api_e3_policy_refusal_is_422_not_500():
+    """A solver-policy refusal is an honest 422 with the measured reason, never a 500."""
+    previous = os.environ.get("CHRONUS_MAX_DMRG_LOCAL_DIM")
+    os.environ["CHRONUS_MAX_DMRG_LOCAL_DIM"] = "4"
+    try:
+        response = client.get("/v1/tensor/experiments/E3")
+    finally:
+        if previous is None:
+            os.environ.pop("CHRONUS_MAX_DMRG_LOCAL_DIM", None)
+        else:
+            os.environ["CHRONUS_MAX_DMRG_LOCAL_DIM"] = previous
+    assert response.status_code == 422
+    assert "honest refusal" in response.json()["detail"]
+
+
+def test_cached_e3_refusal_is_raised_fresh_without_retaining_tracebacks():
+    """A cached refusal answers 422 every time without keeping solver frames alive."""
+    from chronus.service.routers import tensor as tensor_router
+
+    previous = os.environ.get("CHRONUS_MAX_DMRG_LOCAL_DIM")
+    os.environ["CHRONUS_MAX_DMRG_LOCAL_DIM"] = "3"
+    try:
+        raised = []
+        for _ in range(3):
+            with pytest.raises((UntrustedApproximation, UntrustedResult)) as excinfo:
+                tensor_router._run_e3()
+            raised.append(excinfo.value)
+        cached = tensor_router._E3_OUTCOMES[3]
+        statuses = [client.get("/v1/tensor/experiments/E3").status_code for _ in range(2)]
+    finally:
+        if previous is None:
+            os.environ.pop("CHRONUS_MAX_DMRG_LOCAL_DIM", None)
+        else:
+            os.environ["CHRONUS_MAX_DMRG_LOCAL_DIM"] = previous
+    assert not isinstance(cached, BaseException)
+    assert len({id(e) for e in raised}) == 3
+    assert len({str(e) for e in raised}) == 1
+    depths = []
+    for e in raised:
+        depth, tb = 0, e.__traceback__
+        while tb is not None:
+            depth, tb = depth + 1, tb.tb_next
+        depths.append(depth)
+    assert depths[1] == depths[2]  # re-raising does not accumulate frames
+    assert statuses == [422, 422]
+
+
+def test_api_e3_concurrent_request_gets_503_instead_of_waiting():
+    from chronus.service.routers import tensor as tensor_router
+
+    previous = os.environ.get("CHRONUS_MAX_DMRG_LOCAL_DIM")
+    os.environ["CHRONUS_MAX_DMRG_LOCAL_DIM"] = "5"  # a policy with no cached outcome
+    assert tensor_router._E3_LOCK.acquire(blocking=False)
+    try:
+        response = client.get("/v1/tensor/experiments/E3")
+    finally:
+        tensor_router._E3_LOCK.release()
+        if previous is None:
+            os.environ.pop("CHRONUS_MAX_DMRG_LOCAL_DIM", None)
+        else:
+            os.environ["CHRONUS_MAX_DMRG_LOCAL_DIM"] = previous
+    assert response.status_code == 503
+    assert response.headers["Retry-After"] == "60"
 
 
 @pytest.mark.parametrize("exp_id", ["E1", "E2"])
 def test_api_run_experiments(exp_id):
-    """Test GET /v1/tensor/experiments/{exp_id} for E1 and E2 (E3: see the 501 test above)."""
+    """Test GET /v1/tensor/experiments/{exp_id} for E1 and E2 (E3: see the E3 tests above)."""
     response = client.get(f"/v1/tensor/experiments/{exp_id}")
     assert response.status_code == 200
     data = response.json()

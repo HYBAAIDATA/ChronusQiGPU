@@ -17,6 +17,7 @@ import time
 from uuid import uuid4
 
 from chronus.storage.durable import DurableTheseusService
+from chronus import __version__ as _CHRONUS_VERSION
 
 SUPPORTED_WORKLOADS = frozenset({
     "EXACT_Q5_ALGEBRAIC", "LUCAS_PV_SCALING", "METALLIC_SCALE",
@@ -172,7 +173,7 @@ class ExecutionAuthority:
             raise ValueError("wall budget exceeds configured bounds")
         with self._slot():
             manifest = {
-                "schema_version": 1, "producer": "CHRONUS", "producer_version": "37.0.0.dev0",
+                "schema_version": 1, "producer": "CHRONUS", "producer_version": _CHRONUS_VERSION,
                 "run_id": str(uuid4()), "tenant_id": tenant_id, "workload_type": workload_type,
                 "input_sha256": hashlib.sha256(payload).hexdigest(),
                 "backend": "python-math-reference", "execution_mode": "NATIVE_CPU_REFERENCE",

@@ -20,12 +20,13 @@ from pydantic import BaseModel, Field
 from chronus.tensor.enhanced_representation import EnhancedTensorRepresentation
 from chronus.tensor.adaptive_contraction import AdaptiveTensorContractionPathway
 from chronus.tensor.causal_intelligence import CausalInterferenceEngine
+from chronus import __version__ as _CHRONUS_VERSION
 
 logger = logging.getLogger("ProductionHRAPI")
 
 app = FastAPI(
     title="Chronus HYBA Production HR API & Quantum Tensor Engine",
-    version="36.0.0",
+    version=_CHRONUS_VERSION,
     description="Hardware-agnostic first-principles quantum mathematics and causal HR intelligence API.",
 )
 
@@ -225,15 +226,23 @@ def predict_attrition_risk(req: AttritionPredictionRequest) -> Dict[str, Any]:
     }
 
 
-# Standalone entrypoint
-if __name__ == "__main__":
+def main(argv: list[str] | None = None) -> int:
+    """Production start-up path: ``chronus-hr-api`` (console script) serves this app.
+
+    Loopback by default; a deployment sets CHRONUS_HR_API_HOST explicitly.
+    """
+    import argparse
     import os
 
     import uvicorn
 
-    # Loopback by default; a deployment sets CHRONUS_HR_API_HOST explicitly.
-    uvicorn.run(
-        app,
-        host=os.environ.get("CHRONUS_HR_API_HOST", "127.0.0.1"),
-        port=int(os.environ.get("CHRONUS_HR_API_PORT", "8000")),
-    )
+    parser = argparse.ArgumentParser(prog="chronus-hr-api", description="Serve the HR intelligence API.")
+    parser.add_argument("--host", default=os.environ.get("CHRONUS_HR_API_HOST", "127.0.0.1"))
+    parser.add_argument("--port", type=int, default=int(os.environ.get("CHRONUS_HR_API_PORT", "8000")))
+    args = parser.parse_args(argv)
+    uvicorn.run(app, host=args.host, port=args.port)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

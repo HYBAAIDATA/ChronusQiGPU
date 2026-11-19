@@ -37,8 +37,3 @@ tests/test_al_haras_scenarios.py::TestWrongPassphraseRejected::test_wrong_passph
 # --- tests/test_repository_layout.py ---
 #
 # --- tests/test_falsifiable_tensor.py ---
-# E3 needs charge-aware (Z2) DMRG environments, which src/chronus/tensor/dmrg.py
-# deliberately refuses with NotImplementedError (fail-closed since 6959aac).
-# The 1,000-node claim stays recorded as debt until that is implemented; the API
-# refusal (501) for E3 is covered by test_api_e3_refuses_while_charge_aware_dmrg_is_unimplemented.
-tests/test_falsifiable_tensor.py::test_experiment_e3_honest_1000_node_claim

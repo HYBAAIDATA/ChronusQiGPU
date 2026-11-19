@@ -41,8 +41,18 @@ jobs:
           --verified-verdict-output qualification-evidence/ci-verdict.json
           --provenance-output qualification-evidence/attestation-verification-receipt.json
 
+      - name: Tag carries the single-source version (chronus.__version__)
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python scripts/ci/check_release_version.py --tag "$RELEASE_TAG"
+
       - name: Build distribution
         run: python -m build
+
+      - name: Built artifacts carry the single-source version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python scripts/ci/check_release_version.py --tag "$RELEASE_TAG" --dist dist
 
       - name: Verify distribution metadata
         run: twine check dist/*

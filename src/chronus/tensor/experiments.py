@@ -25,7 +25,7 @@ from chronus.tensor.types import (
 from chronus.tensor.network import TensorNetwork, build_network
 from chronus.tensor.gate import apply_gate
 from chronus.tensor.hamiltonian import TFIM_terms, build_hamiltonian_mpo
-from chronus.tensor.dmrg import DMRG, truncate_to_first_32, qsim_ground_energy_32
+from chronus.tensor.dmrg import DMRG, qsim_ground_energy_32
 
 
 @dataclass
@@ -263,49 +263,82 @@ def PUBLISH(network: TensorNetwork, ledger: ErrorLedger, certificate: Contractio
     }
 
 
-def E3_honest_1000_node_claim() -> ExperimentResult:
+def E3_honest_1000_node_claim(
+    n_nodes: int = 1000, chi_max: int = 512, sweeps: int = 2
+) -> ExperimentResult:
     """Experiment E3 — The First Honest 1,000-Node Claim.
 
-    1D TFIM ground state via DMRG at 1,000 nodes under Z2 parity symmetry.
-    Computes complete ErrorLedger, asserts global_bound < 1e-6, and cross-checks
-    first 32 sites against qsim exact ground state energy.
+    1D critical TFIM (J = h = 1) ground state via charge-aware Z2 DMRG at
+    1,000 nodes in the P = prod X = +1 sector, with a complete ErrorLedger.
+    The claim is a numerical acceptance test, not a proof of exact equivalence.
+    It is published only if the ledger bound is < claim_bound (1e-6),
+    the n=1000 energy density agrees with the n=32 exact (Jordan-Wigner)
+    reference within 0.05, and the energy is within claim_bound (relative) of
+    the exact n=1000 open-chain energy without undercutting it. Otherwise the experiment *refuses* with the
+    measured numbers (UntrustedApproximation / UntrustedResult) — it never
+    reports a PASS it did not compute.
+
+    Per-step SVD cutoff: the worst case over all 2*sweeps*(n-1) bond updates
+    must use at most half the claim budget, so each step may discard weight
+    <= (claim_bound / (4 * steps))**2; larger truncations forced by chi_max
+    are ledgered and stop the run as soon as the budget is exhausted.
     """
+    from chronus.tensor.types import UntrustedApproximation, UntrustedResult
+
+    if n_nodes != 1000:
+        # E3 is defined as the 1,000-node claim; its summary, certificate and
+        # telemetry labels certify exactly that size and nothing else.
+        raise ValueError("E3 is the 1,000-node claim; n_nodes must be 1000")
     program_entry_check()
 
-    # 1. Build 1000-node MPS with chi_max=512 under Z2 symmetry
-    n_nodes = 1000
-    net, ledger = build_network(n_nodes, "MPS", chi_max=512, group="Z2")
-
-    # 2. Build 1D Transverse-Field Ising Model MPO (J=1, h=1, chi_mpo_max=4)
+    net, ledger = build_network(n_nodes, "MPS", chi_max=chi_max, group="Z2")
     H_terms = TFIM_terms(J=1.0, h=1.0, n_nodes=n_nodes)
     H_mpo = build_hamiltonian_mpo(H_terms, n_nodes=n_nodes, group="none", chi_mpo_max=4)
 
-    # 3. DMRG Variational Ground State Optimization
-    e0_1000 = DMRG(net, ledger, H_mpo, chi_max=512, sweeps=2)
+    steps = 2 * sweeps * (n_nodes - 1)
+    cutoff = (ledger.claim_bound / (4.0 * steps)) ** 2
+    e0_1000 = DMRG(net, ledger, H_mpo, chi_max=chi_max, sweeps=sweeps, cutoff=cutoff,
+                   claim_bound=ledger.claim_bound, target_parity=0)
 
-    # Assert ledger global bound < 1e-6
-    assert ledger.global_bound < 1e-6, (
-        f"E3 Ledger Bound Failure: global_bound={ledger.global_bound} >= 1e-6"
-    )
+    if not ledger.is_certified():
+        raise UntrustedApproximation(
+            f"E3 ledger bound {ledger.global_bound:.3e} >= claim bound {ledger.claim_bound:.0e}")
 
-    # 4. Cross-check at n=32 against exact qsim ground energy
-    _net32 = truncate_to_first_32(net)
+    # Cross-check against the exact open-chain n=32 reference (energy density).
     energy_32_reference = qsim_ground_energy_32(H_terms)
-
-    # 32-site ground energy density cross check:
-    # Energy density e_0 = E_32 / 32 ~= -1.254, consistent within global bound
     density_1000 = e0_1000 / n_nodes
     density_32 = energy_32_reference / 32.0
     density_diff = abs(density_1000 - density_32)
-
-    assert density_diff < 0.05, (
-        f"E3 Cross-Check Failure: n=1000 density {density_1000:.4f} vs n=32 reference {density_32:.4f} (diff {density_diff} >= 0.05)"
-    )
+    if not density_diff < 0.05:
+        raise UntrustedApproximation(
+            f"E3 cross-check failure: n={n_nodes} density {density_1000:.4f} vs n=32 "
+            f"reference {density_32:.4f} (diff {density_diff:.4f} >= 0.05)")
+    # Independent check at the same n: exact open-chain ground energy of the
+    # critical TFIM (Jordan-Wigner free fermions; Pfeuty 1970). The ledger only
+    # bounds truncation, so convergence of the sweeps is checked separately:
+    # the variational energy may not undercut the exact value and its relative
+    # error must be within the same claim budget.
+    exact_n = -math.fsum(2.0 * math.sin((2 * k - 1) * math.pi / (4 * n_nodes + 2))
+                         for k in range(1, n_nodes + 1))
+    variational_error = e0_1000 - exact_n
+    relative_error = abs(variational_error) / abs(exact_n)
+    # Allow only accumulated IEEE-754 round-off (a few ulps per site) below E_exact.
+    roundoff = 4 * n_nodes * math.ulp(exact_n)
+    if variational_error < -roundoff:
+        raise UntrustedResult(
+            f"E3 variational energy {e0_1000:.12f} is below the exact ground energy "
+            f"{exact_n:.12f}; the result violates the variational principle")
+    if not relative_error <= ledger.claim_bound:
+        raise UntrustedApproximation(
+            f"E3 sweeps not converged: relative energy error {relative_error:.3e} vs exact "
+            f"open-chain energy exceeds the claim bound {ledger.claim_bound:.0e} "
+            f"(sweeps={sweeps}, chi_max={chi_max})")
+    max_bond = max(net.node_for(i).tensor.to_dense().shape[2] for i in range(n_nodes))
 
     cert = ContractionCertificate(
         tree="E3Honest1000NodeDMRGTree",
         peak_memory_bytes=net.memory(),
-        flop_count=n_nodes * (512 ** 3),
+        flop_count=0,  # not measured; no invented FLOP count
         planner_bound=ledger.global_bound,
         planner_theorem="Vidal2003 + White1992 Honest 1000-Node Bounds",
     )
@@ -315,14 +348,34 @@ def E3_honest_1000_node_claim() -> ExperimentResult:
 
     telemetry = {
         "nodes": n_nodes,
-        "chi_max": 512,
+        "chi_max": chi_max,
+        "max_bond_dimension_used": max_bond,
+        "sweeps": sweeps,
+        "svd_cutoff_weight_per_step": cutoff,
         "group": "Z2",
+        "parity_sector": "+1",
         "ground_state_energy_1000": e0_1000,
+        "exact_open_chain_energy": exact_n,
+        "variational_energy_error": variational_error,
+        "relative_energy_error": relative_error,
         "energy_density_1000": round(density_1000, 5),
         "energy_density_32_ref": round(density_32, 5),
         "cross_check_diff": round(density_diff, 5),
         "global_error_bound": ledger.global_bound,
         "claim_bound": ledger.claim_bound,
+        # The acceptance test is numerical: a relative energy error at or below
+        # the threshold, compared with the closed-form Jordan-Wigner energy
+        # evaluated in IEEE-754 double precision. It is not a proof of exact
+        # mathematical equivalence with the ground state.
+        "acceptance": {
+            "kind": "numerical_threshold",
+            "metric": "relative_energy_error",
+            "threshold": ledger.claim_bound,
+            "measured": relative_error,
+            "headroom_fraction": 1.0 - relative_error / ledger.claim_bound,
+            "exact_equivalence_claimed": False,
+            "reference": "closed-form open-chain Jordan-Wigner energy (Pfeuty 1970), float64",
+        },
         "publication_record": pub_record,
         "status": "PASS",
     }
@@ -331,7 +384,12 @@ def E3_honest_1000_node_claim() -> ExperimentResult:
         experiment_id="E3",
         status="PASS",
         passed=True,
-        summary="First honest 1,000-node claim verified: 1D TFIM DMRG, global bound < 1e-6, qsim cross-check verified at n=32.",
+        summary=(
+            "1,000-node claim meets the numerical acceptance threshold: Z2 charge-aware DMRG on "
+            f"the critical TFIM, relative energy error {relative_error:.2e} <= {ledger.claim_bound:.0e} "
+            "against the closed-form Jordan-Wigner energy (a numerical threshold, not exact "
+            "equivalence), truncation ledger bound < 1e-6, n=32 density cross-check."
+        ),
         telemetry=telemetry,
         certificate=cert,
     )

@@ -15,6 +15,7 @@ from chronus.service.models import (
     HealthResponse,
     HealthStatus,
 )
+from chronus import __version__ as _CHRONUS_VERSION
 
 router = APIRouter(prefix="/health", tags=["health"])
 
@@ -58,7 +59,7 @@ async def get_health(
         ComponentHealth(
             name="api_process",
             status=HealthStatus.HEALTHY,
-            details={"version": "36.0.0"},
+            details={"version": _CHRONUS_VERSION},
         ),
         ComponentHealth(
             name="execution_backend",
@@ -107,7 +108,7 @@ async def readiness_probe() -> dict:
     return {
         "status": "ready",
         "service": "chronus-quantum-igpu",
-        "version": "36.0.0",
+        "version": _CHRONUS_VERSION,
         "execution_mode": (
             "remote-adapter" if config.execution_backend_url else "native-reference"
         ),
