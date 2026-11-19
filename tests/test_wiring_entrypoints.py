@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import importlib
 import importlib.util
+import os
 import re
 from pathlib import Path
 
@@ -27,9 +28,12 @@ def _src_text() -> str:
     )
 
 
-def _env_example_keys() -> list[str]:
+ENV_TEMPLATES = (".env.example", ".env.miner.example")
+
+
+def _env_example_keys(name: str = ".env.example") -> list[str]:
     keys = []
-    for line in (ROOT / ".env.example").read_text(encoding="utf-8-sig").splitlines():
+    for line in (ROOT / name).read_text(encoding="utf-8-sig").splitlines():
         line = line.strip()
         if not line:
             continue
@@ -40,10 +44,11 @@ def _env_example_keys() -> list[str]:
     return keys
 
 
-def test_env_example_keys_are_read_by_code() -> None:
+@pytest.mark.parametrize("template", ENV_TEMPLATES)
+def test_env_example_keys_are_read_by_code(template: str) -> None:
     text = _src_text()
-    keys = _env_example_keys()
-    assert keys, ".env.example declares no keys"
+    keys = _env_example_keys(template)
+    assert keys, f"{template} declares no keys"
     pool_vars = re.compile(r"^MINING_(BRAIINS|VIABTC)_(HOST|PORT|USER|PASSWORD|PASS)$")
     unread = []
     for key in keys:
@@ -53,7 +58,20 @@ def test_env_example_keys_are_read_by_code() -> None:
             continue
         if f'"{key}"' not in text and f"'{key}'" not in text:
             unread.append(key)
-    assert not unread, f".env.example keys never read under src/: {unread}"
+    assert not unread, f"{template} keys never read under src/: {unread}"
+
+
+def test_miner_credentials_stay_out_of_the_api_environment() -> None:
+    api_keys = set(_env_example_keys(".env.example"))
+    miner_keys = set(_env_example_keys(".env.miner.example"))
+    assert not api_keys & miner_keys
+    assert not any(k.startswith("MINING_") for k in api_keys)
+    compose = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+    api_block = compose.split("\n  web:")[0]
+    miner_block = compose.split("\n  miner:")[1]
+    assert "path: .env\n" in api_block.replace("\r\n", "\n")
+    assert ".env.miner" not in api_block.replace("pool credentials live in .env.miner", "")
+    assert "path: .env.miner" in miner_block
 
 
 def _console_scripts() -> dict[str, str]:
@@ -259,7 +277,17 @@ def test_offline_downgrade_sql_keeps_populated_table_guard() -> None:
     buffer = io.StringIO()
     cfg = Config(str(ROOT / "alembic.ini"), output_buffer=buffer)
     cfg.set_main_option("script_location", str(ROOT / "migrations"))
-    command.downgrade(cfg, "0002_ciaas_tenancy_tables:0001_initial_schema", sql=True)
+    # Pin the dialect: an ambient CHRONUS_DATABASE_URL (e.g. SQLite) would
+    # otherwise select a dialect for which offline downgrade is refused.
+    previous = os.environ.get("CHRONUS_DATABASE_URL")
+    os.environ["CHRONUS_DATABASE_URL"] = "postgresql+asyncpg://u:p@localhost:5432/chronus"
+    try:
+        command.downgrade(cfg, "0002_ciaas_tenancy_tables:0001_initial_schema", sql=True)
+    finally:
+        if previous is None:
+            os.environ.pop("CHRONUS_DATABASE_URL", None)
+        else:
+            os.environ["CHRONUS_DATABASE_URL"] = previous
     sql = buffer.getvalue()
     for table in ("ciaas_capacity_ledger", "ciaas_tenants"):
         guard = sql.index(f"LOCK TABLE {table} IN ACCESS EXCLUSIVE MODE")

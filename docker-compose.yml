@@ -9,7 +9,8 @@ services:
     ports:
       - "127.0.0.1:18000:8000"
     # Operator settings (JWT secret/issuer, CHRONUS_ENV, CIaaS custody, mining
-    # admission) come from .env; keys left commented there stay unset. The
+    # admission) come from .env; keys left commented there stay unset. Miner
+    # pool credentials live in .env.miner and are never loaded here. The
     # container storage paths below take precedence. Needs Compose >= 2.24.
     env_file:
       - path: .env
@@ -72,8 +73,10 @@ services:
       context: .
       dockerfile: Dockerfile
       target: miner-runtime
+    # Miner-only settings (pool credentials, mining custody); see .env.miner.example.
     env_file:
-      - .env
+      - path: .env.miner
+        required: true
     environment:
       MINING_MAX_SECONDS: ${MINING_MAX_SECONDS:-}
     restart: "no"

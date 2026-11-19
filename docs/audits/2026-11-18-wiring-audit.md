@@ -40,7 +40,9 @@ from docs. Release posture is unchanged: **NOT QUALIFIED**.
    (optional) into the `api` container, so the JWT secret/issuer,
    `CHRONUS_ENV`, CIaaS custody path and mining-admission settings reach it;
    previously none did and the API always fell back to a random per-process
-   key.
+   key. Miner settings (pool credentials, pool allowlist, miner custody
+   identity) moved to `.env.miner.example`, which compose loads into the
+   `miner` container only, so pool passwords never reach the API container.
 3. **Import-time side effect in the wheel.** `src/chronus/consortium/fix_refs.py`
    opened and rewrote a hard-coded `c:/Users/leonn/...` path at import time and
    was imported by nothing. Moved to `scripts/dev/consortium_fix_refs.py`; a
