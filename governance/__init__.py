@@ -1,0 +1,1 @@
+"""Golden Ontology governance checks."""

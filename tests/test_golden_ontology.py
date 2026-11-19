@@ -63,8 +63,7 @@ class TestExactSubstrate(unittest.TestCase):
         self.assertEqual(unfold_words(y,p-137,b),x)
         elapsed=time.perf_counter()-t
         print("4096-bit roundtrip seconds:",elapsed)
-        # Structural complexity, not a machine-independent timing theorem.
-        # Retain supplied subsecond requirement separately in benchmark report.
+        self.assertLess(elapsed,1.0,"supplied 4096-bit measured threshold failed")
     def test_fold_period_minimal_small(self):
         for b in range(1,11):
             m=1<<b
@@ -125,6 +124,18 @@ class TestResonanceFilter(unittest.TestCase):
             self.assertEqual(ZeckendorfMap.encode_ranks(x),ZeckendorfMap.encode_ranks(y))
         with self.assertRaises(NonMonotoneWarpError):
             ZeckendorfMap.encode_ranks([1,math.nan])
+
+class TestGovernance(unittest.TestCase):
+    def test_refuses_missing_duplicate_unknown_and_open(self):
+        from governance.gate import validate
+        good={"package":"golden_ontology","version":"2.0.0",
+              "findings":[{"id":"QC-001","title":"QC","status":"OPEN","owner":"reviewer"}]}
+        self.assertIn("QC-001",validate(good))
+        for bad in ({},{**good,"findings":[]},{**good,"findings":[good["findings"][0]]*2},
+                    {**good,"findings":[{**good["findings"][0],"id":"OTHER"}]},
+                    {**good,"findings":[{**good["findings"][0],"status":"CLOSED"}]}):
+            with self.assertRaises(ValueError):
+                validate(bad)
 
 if __name__=="__main__":
     unittest.main(verbosity=2)
