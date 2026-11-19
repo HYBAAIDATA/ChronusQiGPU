@@ -7,7 +7,7 @@ from chronus.chain import ChainBroken, verify_chain
 from chronus.crypto.signers import SignerUnavailable
 
 def main(argv: list[str] | None = None) -> int:
-    p=argparse.ArgumentParser()
+    p=argparse.ArgumentParser(prog="chronus-verify-chain")
     p.add_argument("bundle",type=Path)
     p.add_argument("--inner-pk",required=True,type=Path)
     p.add_argument("--outer-pk",required=True,type=Path)

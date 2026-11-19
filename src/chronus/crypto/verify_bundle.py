@@ -14,11 +14,11 @@ def check(bundle: dict, public_keys: dict) -> None:
     envelope = hashlib.sha256(b"CHRONUS-V2-OUTER-v1\0" + message + inner).digest()
     verify("ML-DSA-65", bytes.fromhex(public_keys["ML-DSA-65"]), envelope, outer)
 
-def main() -> int:
-    parser=argparse.ArgumentParser()
+def main(argv: list[str] | None = None) -> int:
+    parser=argparse.ArgumentParser(prog="chronus-verify-bundle")
     parser.add_argument("--bundle", required=True)
     parser.add_argument("--public-keys", required=True)
-    args=parser.parse_args()
+    args=parser.parse_args(argv)
     try:
         check(json.loads(Path(args.bundle).read_text()), json.loads(Path(args.public_keys).read_text()))
     except Exception as exc:
