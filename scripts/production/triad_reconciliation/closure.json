@@ -1,58 +1,65 @@
 [
  {
   "n": 173,
-  "title": "Wiring audit (other stream)",
+  "title": "wire: end-to-end wiring audit, missing CIaaS migration, real .env.example (other stream)",
   "mc": "c11af3e62bc7a121b47cfa5d3a764cd9c72ca027",
   "merged": "2026-11-19 01:20:32",
-  "checks": "53 success, 3 skipped (head ba6c36f0)"
+  "checks": "3 skipped, 53 success (head ba6c36f0)"
  },
  {
   "n": 180,
-  "title": "Security sweep: CodeQL #49/#59/#60, next 16.4.6",
+  "title": "security: fix CodeQL XSS/log-injection findings and bump Next.js (Dependabot)",
   "mc": "b89a5315f0b3a5b54a7a3f1ee3831989a87622cf",
   "merged": "2026-11-19 01:29:10",
-  "checks": "55 success, 2 skipped (head dde24fee)"
+  "checks": "2 skipped, 55 success (head dde24fee)"
  },
  {
   "n": 176,
-  "title": "THESEUS storage self-healing (other stream)",
+  "title": "Activate bounded Reed-Solomon self-healing for THESEUS custody; label non-repairing heal paths honestly (other stream)",
   "mc": "ad7b9bba4ccd9607147d5edf2bea0ec630f6ffd8",
   "merged": "2026-11-19 01:39:40",
-  "checks": "57 success, 4 skipped (head 2e3176ca)"
+  "checks": "4 skipped, 57 success (head 2e3176ca)"
  },
  {
   "n": 182,
-  "title": "Qualification workflow evaluates attested product gates",
+  "title": "ci(qualification): pass attested product gates to the evaluator",
   "mc": "38fc63733356833241225322dabb9f105322ce65",
   "merged": "2026-11-19 01:47:11",
-  "checks": "54 success, 3 skipped (head 3af34606)"
+  "checks": "3 skipped, 54 success (head 3af34606)"
  },
  {
   "n": 181,
   "title": "Wiring closeout: orphan-module audit, root cleanup, CI test-execution gate (other stream)",
   "mc": "1894bd411536b20c24fe70c842c113f53fd2ee36",
   "merged": "2026-11-19 02:11:43",
-  "checks": "59 success, 4 skipped (head 02a85e5d)"
+  "checks": "4 skipped, 59 success (head 02a85e5d)"
  },
  {
   "n": 185,
-  "title": "Tensor: Z2 charge-aware DMRG (other stream)",
+  "title": "Tensor: Z2 charge-aware DMRG; E3 1,000-node claim executes and is independently verified (other stream)",
   "mc": "ec3a43dcb42170ff0c5d926a80ebf21185c1e0c3",
   "merged": "2026-11-19 02:29:25",
-  "checks": "58 success, 2 skipped (head e055f441)"
+  "checks": "2 skipped, 58 success (head e055f441)"
  },
  {
   "n": 189,
-  "title": "docs: README/STATUS for wiring closeout (other stream)",
+  "title": "docs: README/STATUS for wiring closeout (E3/Z2 DMRG, verifier CLIs, CI execution gate) (other stream)",
   "mc": "5f620b10ff7c23e0c9d6ede1777470a283f8cda9",
   "merged": "2026-11-19 02:40:13",
-  "checks": "54 success, 2 skipped (head 2c469703)"
+  "checks": "2 skipped, 54 success (head 2c469703)"
  },
  {
   "n": 191,
-  "title": "chore: retire BLOCKER_MILLENIEIEUM patches and docs_readme.txt; record ci-required ruleset (other stream)",
+  "title": "chore: retire legacy MILLENIEIEUM patches and docs_readme.txt after uniqueness audit (other stream)",
   "mc": "1f8d1a26b890ca4fd29d064333533b2c41effea3",
   "merged": "2026-11-19 02:58:36",
-  "checks": "54 success, 2 skipped (head 21db52ef)"
+  "checks": "2 skipped, 54 success (head 21db52ef)"
+ },
+ {
+  "n": 193,
+  "title": "E3: describe 8.05e-7 as meeting the 1e-6 numerical acceptance threshold, not exact equivalence (other stream)",
+  "mc": "8871da35e7cadae425eb6cdf56f7bda6ce806370",
+  "merged": "2026-11-19 03:12:49",
+  "checks": "2 skipped, 58 success (head 522b4507)"
  }
 ]
