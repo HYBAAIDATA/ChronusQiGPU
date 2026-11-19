@@ -132,7 +132,7 @@ async def inject_anomaly(
     return _engine.inject_anomaly()
 
 
-@router.post("/anomaly/heal", summary="Execute 1-cycle DSW instanton monopole cobordism heal")
+@router.post("/anomaly/heal", summary="Reset the anomaly flags set by /anomaly/inject (no repair is performed; repair_performed=false)")
 async def execute_dsw_heal(
     tenant_id: str = Depends(get_mining_admin_operator),
 ) -> Dict[str, Any]:

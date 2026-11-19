@@ -66,8 +66,10 @@ def test_theseus_fails_closed_on_durable_payload_corruption(tmp_path):
             (b"tampered", record.object_id),
         )
         db.commit()
+    # With self-healing off, any digest failure fails closed. (With it on,
+    # small corruptions are repaired; see tests/test_self_healing.py.)
     with pytest.raises(StorageIntegrityError):
-        DurableTheseusService(str(path))
+        DurableTheseusService(str(path), self_healing=False)
 
 
 def test_theseus_concurrent_writers_preserve_integrity(tmp_path):
