@@ -1,6 +1,44 @@
 # Agent instructions for Chronusv2
 
-These are repository-wide instructions for coding and documentation agents. Apply them to product design, frontend implementation, prototypes, demos, and product or client-facing writing.
+These are mandatory repository-wide instructions for all agents and subagents. They apply to research, engineering, audits, testing, remediation, release, product design, frontend implementation, prototypes, demos and documentation.
+
+## Mandatory execution assurance — all agents, all assignments
+
+**Normative status: REQUIRED.** These rules apply to every agent and subagent working on this repository: engineering, research, audit, QA, remediation, review, documentation, release and delegated work. Read this file before substantive work, apply it throughout the assignment and pass these obligations to every delegate. More specific local safeguards remain binding; they may strengthen but never weaken this protocol. Follow higher-priority platform constraints and authorised owner scope. Do not change architecture, contracts, acceptance criteria or protected research without explicit authority.
+
+### 1. Assignment and baseline gate
+
+- Preserve the original assignment and every explicit requirement, constraint, prohibition, deliverable and acceptance criterion. Break compound requirements into independently checkable obligations without reducing scope. Record a stable assignment ID, original text or immutable reference and digest, and obligation IDs with exact source wording. Record dependencies, required evidence, responsible agent and acceptance test for each obligation.
+- For repository work establish the repository, current authoritative ref and full commit SHA from Git, not recollection. Record the working ref, relevant PRs (merged and outstanding), applicable contracts, tooling and accessible authoritative sources. Inspect the repository and actual implementation before proposing changes or conclusions. Historical memory is a discovery lead, never proof about current code.
+- Match the discovery scope to the actual assignment. For exhaustive work, enumerate the full relevant tracked tree, entry points, implementations and variants, datasets, configurations, dependencies, callers and consumers, tests, benchmarks, contracts, open/merged relevant PRs, and referenced authoritative external records. Include legacy or alternate implementations when relevant; record reasons for exclusions. Use independent inventory methods (tree listing, code search, import/call tracing, test collection and PR diffs) rather than searching only for names in the brief. Follow pagination and references to exhaustion, or record the precise unexamined scope.
+- Reconcile in both directions: requirement -> implementation/evidence and discovered implementation/data -> requirement/contract/evidence. Investigate orphaned components, missing requirements, wiring, version drift and conflicts. Do not form definitive conclusions before the applicable discovery obligations are satisfied.
+
+### 2. Execution and evidence gate
+
+- Perform the assigned work, not merely a plan, checklist, matrix, document review or recommendations. Execute every applicable inspection, acceptance test, paired benchmark, integration check and authorised remediation required by the assignment. Verify changes and rerun affected gates. Do not request repeated approval for work already authorised; do not silently expand scope.
+- Retain attributable, reproducible evidence: source commit and exact paths/line ranges or immutable references; command, working directory, inputs, environment, timestamp, exit status, raw output or durable artifact reference and digest for executed checks; actual measured results and units; and before/after evidence for remediation. Record individual test outcomes and skips, not merely a green aggregate. Distinguish inspection from execution and local from remote observation.
+- Never invent, backfill, embellish or silently reuse measurements as current evidence. Test presence is not test execution. Documentation is not implementation. Implementation is not integration. A merged change or green CI is not deployment or production qualification. Device discovery is not hardware execution. Controlled test fixtures cannot establish live outcomes. Follow exactness, evidence, naming, security and claim gates already in force.
+- Preserve the architecture authority boundaries and existing contracts; keep evidence in the designated custody path where available. Never alter expected results, tests, baseline, evidence, security controls or acceptance conditions merely to obtain a pass.
+- If a check cannot be performed, record the exact obligation, attempted action and observed blocker, missing evidence, impact, outstanding work and owner/dependency. Use UNAVAILABLE or BLOCKED as appropriate. Continue all other authorised work. Resource, time, context and access limits do not authorise silent omission, fabricated evidence or premature completion.
+
+### 3. Machine-readable execution record
+
+Maintain an obligation ledger throughout substantive multi-step work, in the assignment's authorised evidence store or handover artifact. For small tasks an equivalent compact record is sufficient; never impose unrelated production checks or omit applicable ones. The record MUST include:
+
+- assignment ID, immutable original brief/digest, authoritative baseline SHA, working SHA/ref, scope and discovery inventory with explicit exclusions;
+- each original obligation ID, exact requirement, applicability, source/contract links, owner, evidence required, execution status, observed result, evidence references/digests, blocker and QC decision;
+- reverse inventory cross-reference, unresolved items, changed paths, test/benchmark receipts, relevant PR and CI references, and distinct final verdicts for execution, evidence, technical compliance, QC and qualification.
+
+Execution states: NOT_STARTED, IN_PROGRESS, EXECUTED, BLOCKED or NOT_APPLICABLE. NOT_APPLICABLE requires a reason grounded in the original assignment and independent review for formal qualification. Technical result states: PASS, FAIL, UNAVAILABLE or NOT_APPLICABLE. EXECUTED with a technical FAIL can complete an audit obligation but cannot pass a failed technical or remediation acceptance criterion. Missing evidence is never PASS.
+
+### 4. Independent acceptance and fail-closed handover
+
+- For formal audits, release/production qualification, multi-agent delivery and other assignments requiring independent acceptance, a separate reviewer must compare the original brief (not the executor's summary), obligation ledger, inventory and raw evidence against the exact reviewed commit. Verify bidirectional coverage, actual execution, remediation and authority boundaries; independently replay or sample where justified by the acceptance criteria. Record reviewer identity, reviewed SHA, evidence references, uncovered obligations and ACCEPTED/REJECTED/PENDING. The executing agent may not be its own independent reviewer. Delegation does not discharge the lead agent's responsibility.
+- For routine changes, perform the applicable self-checks and use the repository's existing review and CI controls; never claim independent review where it did not occur. Do not bypass required checks, change protected settings, merge without required approval or treat a review request as approval.
+- Completion is a derived state, not an agent assertion. Before asserting COMPLETE, verify every applicable obligation is executed with the required evidence and any required independent acceptance is recorded against the same revision; no unaccounted inventory item, missing required receipt or unresolved required obligation may remain. If an obligation requires remediation or passing a test, a documented failure does not satisfy it. An audit that fully executes its required checks may legitimately conclude NOT QUALIFIED.
+- Where an external deterministic completion validator is available, use it and retain its result; where it is unavailable, state that explicitly and do not claim mechanical enforcement. A failed validator or missing mandatory independent acceptance prevents COMPLETE. Preserve separate assignment, evidence, contract, QC and production verdicts.
+- On interruption or exhaustion, provide a truthful INCOMPLETE or BLOCKED handover with the baseline, verified findings, precise outstanding obligation ledger and evidence references. Resume from this record rather than starting from assumptions. Do not substitute a polished report for work, report partial results as exhaustive, or declare completion while knowing mandatory work remains.
+- Include the execution/acceptance verdict and outstanding obligations in the final handover and applicable PR description. Any reviewer finding omitted work must return it for execution, not approve it with a narrative excuse. Only an explicit authorised owner change to the original assignment may amend its scope; retain the change and its provenance.
 
 ## Read first
 
