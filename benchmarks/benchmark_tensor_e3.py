@@ -15,6 +15,7 @@ only, not a GPU or hardware performance claim.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import platform
 import subprocess
@@ -27,12 +28,28 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 
-def _commit() -> str:
+def _git(*args: str) -> str:
+    # Fixed argv, no shell and no external input.
+    return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True,
+                          check=True).stdout
+
+
+def _source_provenance() -> dict:
+    """Commit, dirty flag and a digest of the measured source, taken before the run.
+
+    A run on modified source is still recorded, but marked ``dirty`` with the
+    SHA-256 of ``src/chronus`` as it was measured, so it is never attributed
+    to the clean commit alone.
+    """
+    digest = hashlib.sha256()
+    for path in sorted((ROOT / "src" / "chronus").rglob("*.py")):
+        digest.update(path.relative_to(ROOT).as_posix().encode() + b"\0" + path.read_bytes() + b"\0")
     try:
-        return subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True,
-                              text=True, check=True).stdout.strip()
+        commit = _git("rev-parse", "HEAD").strip()
+        dirty = bool(_git("status", "--porcelain", "--", "src").strip())
     except (OSError, subprocess.CalledProcessError):
-        return "unknown"
+        commit, dirty = "unknown", True
+    return {"commit": commit, "dirty": dirty, "src_chronus_sha256": digest.hexdigest()}
 
 
 def run() -> dict:
@@ -40,6 +57,7 @@ def run() -> dict:
 
     from chronus.tensor.experiments import E3_honest_1000_node_claim
 
+    provenance = _source_provenance()
     started = time.perf_counter()
     result = E3_honest_1000_node_claim()
     wall = time.perf_counter() - started
@@ -55,7 +73,7 @@ def run() -> dict:
         "result": {k: t[k] for k in keys},
         "wall_seconds": round(wall, 2),
         "environment": {
-            "commit": _commit(),
+            **provenance,
             "python": platform.python_version(),
             "numpy": np.__version__,
             "machine": platform.machine(),

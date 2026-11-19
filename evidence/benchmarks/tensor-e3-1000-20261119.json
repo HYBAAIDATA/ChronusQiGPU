@@ -1,19 +1,21 @@
 {
   "acceptance": {
     "exact_equivalence_claimed": false,
-    "headroom_fraction": 0.19539823047953186,
+    "headroom_fraction": 0.19543607195847457,
     "kind": "numerical_threshold",
-    "measured": 8.046017695204681e-07,
+    "measured": 8.045639280415254e-07,
     "metric": "relative_energy_error",
     "reference": "closed-form open-chain Jordan-Wigner energy (Pfeuty 1970), float64",
     "threshold": 1e-06
   },
   "environment": {
-    "commit": "9226dddf632f743174711652587ff327596ef10c",
+    "commit": "b5d8f4ddbab46256ae7595eddfb3f3740062993b",
+    "dirty": false,
     "machine": "x86_64",
     "numpy": "2.5.5",
     "processor": "unknown",
     "python": "3.13.5",
+    "src_chronus_sha256": "590b5924e2d3b69ec8b7b4f9bdf324c2b81ab053cf6c48fea2fcce1f8d0ed30f",
     "system": "Linux"
   },
   "experiment": "E3",
@@ -24,16 +26,16 @@
     "cross_check_diff": 0.01087,
     "exact_open_chain_energy": -1272.8762953418163,
     "global_error_bound": 0.0,
-    "ground_state_energy_1000": -1272.8752711832967,
+    "ground_state_energy_1000": -1272.8752712314642,
     "group": "Z2",
     "max_bond_dimension_used": 32,
     "nodes": 1000,
     "parity_sector": "+1",
-    "relative_energy_error": 8.046017695204681e-07,
+    "relative_energy_error": 8.045639280415254e-07,
     "sweeps": 2,
-    "variational_energy_error": 0.0010241585196126834
+    "variational_energy_error": 0.0010241103520911565
   },
   "scope": "CPU reference evidence for this machine only; not a GPU or hardware claim",
   "status": "PASS",
-  "wall_seconds": 27.35
+  "wall_seconds": 27.18
 }

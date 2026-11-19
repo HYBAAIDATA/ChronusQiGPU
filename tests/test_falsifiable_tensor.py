@@ -268,7 +268,9 @@ def test_experiment_e3_honest_1000_node_claim():
     assert acceptance["exact_equivalence_claimed"] is False
     assert acceptance["threshold"] == telemetry["claim_bound"] == 1e-6
     assert acceptance["measured"] == telemetry["relative_energy_error"]
-    assert 0.0 <= acceptance["headroom_fraction"] < 1.0
+    assert 0.0 <= acceptance["headroom_fraction"] <= 1.0
+    assert acceptance["headroom_fraction"] == pytest.approx(
+        1.0 - acceptance["measured"] / acceptance["threshold"])
     assert "numerical acceptance threshold" in result.summary
     assert "not exact" in result.summary
     assert "verified" not in result.summary
