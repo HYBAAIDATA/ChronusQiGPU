@@ -35,7 +35,7 @@ def clean_env() -> dict[str, str]:
 def installed_venv(tmp_path_factory) -> Path:
     configured = os.environ.get("CHRONUS_INSTALLED_VENV")
     if configured:
-        venv = Path(configured)
+        venv = Path(configured).resolve()
         if not _bin(venv, "python").exists():
             raise RuntimeError(f"CHRONUS_INSTALLED_VENV={configured} has no python")
         return venv

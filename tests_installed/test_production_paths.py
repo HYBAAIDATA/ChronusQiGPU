@@ -27,9 +27,13 @@ from tests_installed.conftest import clean_env
 pytestmark = pytest.mark.real
 
 
+def _run(venv_bin, code: str, cwd: Path) -> subprocess.CompletedProcess:
+    return subprocess.run([str(venv_bin("python")), "-c", textwrap.dedent(code)], cwd=cwd, env=clean_env(),
+                          capture_output=True, text=True, timeout=300)
+
+
 def _py(venv_bin, code: str, cwd: Path) -> str:
-    out = subprocess.run([str(venv_bin("python")), "-c", textwrap.dedent(code)], cwd=cwd, env=clean_env(),
-                         capture_output=True, text=True, timeout=300)
+    out = _run(venv_bin, code, cwd)
     assert out.returncode == 0, out.stderr
     return out.stdout
 
@@ -51,9 +55,10 @@ if not ml_dsa_available():
 """
 
 
-def _evaluator_run(venv_bin, work: Path, payloads: list[int], resume: bool) -> None:
+def _evaluator_run(venv_bin, work: Path, payloads: list[int], resume: bool,
+                   journal_name: str = "journal") -> subprocess.CompletedProcess:
     """One evaluator process: (resume and) append receipts durably, export the bundle."""
-    _py(venv_bin, _SIGNER + f"""
+    return _run(venv_bin, _SIGNER + f"""
 from chronus.chain import Chain
 from chronus.durable import DurableChain
 from chronus.journal import Journal
@@ -75,7 +80,7 @@ else:
     (work / "outer.pk").write_text(signer.outer.public_bytes().hex())
 bundle = work / "bundle"
 bundle.mkdir(exist_ok=True)
-with Journal(work / "journal") as journal:
+with Journal(work / {journal_name!r}) as journal:
     durable = DurableChain(journal, Chain(signer))
     if {resume!r}:
         durable.resume(signer.inner.public_bytes(), signer.outer.public_bytes())
@@ -92,11 +97,40 @@ def _verify_chain(venv_bin, work: Path) -> subprocess.CompletedProcess:
 
 
 def test_durable_chain_survives_restart_and_is_verified_by_the_installed_cli(venv_bin, tmp_path):
-    _evaluator_run(venv_bin, tmp_path, [1, 2], resume=False)
-    _evaluator_run(venv_bin, tmp_path, [3], resume=True)  # a new process: signed replay, then append
+    first = _evaluator_run(venv_bin, tmp_path, [1, 2], resume=False)
+    assert first.returncode == 0, first.stderr
+    # A new process: signed replay, then append.
+    second = _evaluator_run(venv_bin, tmp_path, [3], resume=True)
+    assert second.returncode == 0, second.stderr
     ok = _verify_chain(venv_bin, tmp_path)
     assert ok.returncode == 0, ok.stdout + ok.stderr
     assert json.loads(ok.stdout) == {"status": "PASS", "receipts": 3}
+
+    # A journal whose receipt body was altered inside a valid (length + CRC) frame
+    # must be refused by resume before anything is appended.
+    counts = _py(venv_bin, f"""
+import json
+from pathlib import Path
+from chronus.journal import Journal, encode
+work = Path({str(tmp_path)!r})
+with Journal(work / "journal") as journal:
+    records = list(journal.records)
+receipt = json.loads(records[1])
+receipt["payload"]["job"] = 99
+records[1] = json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode()
+(work / "journal-tampered").write_bytes(b"".join(encode(r) for r in records))
+print(len(records))
+""", tmp_path)
+    tampered_run = _evaluator_run(venv_bin, tmp_path, [4], resume=True, journal_name="journal-tampered")
+    assert tampered_run.returncode != 0
+    assert "ChainBroken" in tampered_run.stderr
+    after = _py(venv_bin, f"""
+from pathlib import Path
+from chronus.journal import Journal
+with Journal(Path({str(tmp_path)!r}) / "journal-tampered") as journal:
+    print(len(journal.records))
+""", tmp_path)
+    assert after.strip() == counts.strip() == "3"
 
     receipt = json.loads((tmp_path / "bundle" / "0001.json").read_text())
     receipt["payload"]["job"] = 99
