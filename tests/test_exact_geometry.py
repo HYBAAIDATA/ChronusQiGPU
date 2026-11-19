@@ -205,3 +205,43 @@ def test_payload_indices_require_exact_integers(field, replacement):
     values[index] = replacement(values[index])
     with pytest.raises(ValueError, match="exact integer"):
         validate_payload(json.dumps(payload))
+
+
+@pytest.mark.parametrize("value", [True, 0.25, "1", None])
+def test_field_coefficients_reject_inexact_or_non_numeric_values(value):
+    with pytest.raises(ValueError, match="exact integer"):
+        Q(value)
+
+
+@pytest.mark.parametrize("value", [[1, 0, 0, 1], [1, -1, 0, 1], [2, 2, 0, 1], [0, 1, True, 1], [1, 1, 0]])
+def test_transport_rejects_invalid_or_noncanonical_limbs(value):
+    with pytest.raises(ValueError):
+        decode(value)
+
+
+def test_dot_checks_dimensions_and_applies_exact_weights():
+    assert dot((Q(2), Q(3)), (Q(5), Q(7)), (Q(11), Q(13))) == Q(383)
+    with pytest.raises(ValueError, match="equal dimensions"):
+        dot((ONE,), (ONE, ZERO))
+    with pytest.raises(ValueError, match="weight dimension"):
+        dot((ONE,), (ONE,), ())
+
+
+def test_fold_certificate_rejects_changed_coordinate_and_denominator():
+    from dataclasses import replace
+
+    ray = ExactRay.unit((ONE, Q(2), Q(3)))
+    folded = ray.fold11()
+    changed = replace(folded, numerator=folded.numerator[:-1] + (folded.numerator[-1] + ONE,))
+    with pytest.raises(ValueError, match="fold relation"):
+        changed.unfold(3)
+    with pytest.raises(ValueError, match="unit-normal"):
+        replace(folded, denominator_squared=folded.denominator_squared + ONE).unfold(3)
+
+
+@pytest.mark.parametrize("denominator", [ZERO, Q(-1)])
+def test_positive_radical_is_required_for_rays_and_scores(denominator):
+    with pytest.raises(ValueError, match="positive radical"):
+        ExactRay((ONE,), denominator)
+    with pytest.raises(ValueError, match="positive score radical"):
+        RadicalScore(ONE, denominator)

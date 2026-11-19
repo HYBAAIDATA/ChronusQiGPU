@@ -37,3 +37,27 @@ def test_reserved_lease_can_invalidate_but_cannot_skip_execution():
     assert lease.transition(LeaseState.INVALIDATED).state is LeaseState.INVALIDATED
     with pytest.raises(ValueError):
         lease.transition(LeaseState.COMPLETE)
+
+
+@pytest.mark.parametrize("initial", list(LeaseState))
+@pytest.mark.parametrize("target", list(LeaseState))
+def test_lease_transition_matrix_preserves_ownership_and_original(initial, target):
+    lease = NonceLease("unit-lease", 3, "unit-plan", 2**32 - 7, 7, initial)
+    allowed = {
+        (LeaseState.RESERVED, LeaseState.EXECUTING),
+        (LeaseState.RESERVED, LeaseState.INVALIDATED),
+        (LeaseState.EXECUTING, LeaseState.COMPLETE),
+        (LeaseState.EXECUTING, LeaseState.INVALIDATED),
+    }
+    if (initial, target) not in allowed:
+        with pytest.raises(ValueError, match="invalid lease transition"):
+            lease.transition(target)
+    else:
+        result = lease.transition(target.value)
+        assert result.state is target
+        assert (result.lease_id, result.generation, result.plan_id, result.start, result.count) == (
+            "unit-lease", 3, "unit-plan", 2**32 - 7, 7,
+        )
+        assert result.end == 2**32
+        assert result is not lease
+    assert lease.state is initial
