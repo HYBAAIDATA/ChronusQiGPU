@@ -96,7 +96,7 @@ for r in ROWS:
     if r["id"] in ("C-16","C-17","I-02"): owner.append("Approve wiring ProductionTriad custody into the deployed service (custody path, volume, readiness contract)")
     if r["id"] == "T-07": owner.append("Approve reconciliation policy for unreferenced objects/shards (report vs GC)")
     if r["id"] == "O-05": owner.append("Decide PR #171 (see decision brief)")
-    if r["id"] in ("E-01",): owner.append("Decide PR #178 / Salamander source of record")
+    if r["id"] in ("E-01",): owner.append("Salamander authority contract: out of scope here; #178 on hold pending billing/IP decision")
     if r["phys"] and r["id"] != "I-03": owner.append("Provide access to the identified physical device for an evidence run")
     if r["id"] in ("T-10","T-11","C-18"): owner.append("Select deployment profile and environment for evidence")
     # ---- t22u section 2: 35 mandatory fields, exact names

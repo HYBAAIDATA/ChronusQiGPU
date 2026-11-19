@@ -134,7 +134,7 @@ if sys.argv[1] == "post":
      ["Fresh-process replay and deterministic reconstruction", xs("X1"), "SOFTWARE_VERIFIED"],
      ["Transactional consistency, tenant isolation and concurrent access", xs("X3", "X4"), "SOFTWARE_VERIFIED"],
      ["Failure propagation, degraded operation and fail-closed semantics", xs("X2a", "X2d", "X5a", "X5b", "X8b") + ". Degraded operation under partial failure is not defined for the deployed service.", "SOFTWARE_VERIFIED (storage); deployed service: GAP"],
-     ["Storage repair versus Salamander system-level self-healing", "THESEUS repairs bounded storage only: RS(48,32) over GF(257), t=8 bytes per 32-byte block, with an audit trail in self_heal_events (" + xs("X8", "X8b") + "). Salamander's system self-healing authority is not implemented on main and is not claimed (E-01). #178 (Salamander-governed remediation) is open in another stream.", "STORAGE REPAIR SOFTWARE_VERIFIED; SALAMANDER GATED"],
+     ["Storage repair versus Salamander system-level self-healing", "THESEUS repairs bounded storage only: RS(48,32) over GF(257), t=8 bytes per 32-byte block, with an audit trail in self_heal_events (" + xs("X8", "X8b") + "). Salamander's system self-healing authority is not implemented on main and is not claimed (E-01). #178 (Salamander-governed remediation) is on hold pending a billing/IP decision and is out of scope.", "STORAGE REPAIR SOFTWARE_VERIFIED; SALAMANDER GATED"],
      ["Readiness derived from actual required component health", xs("X6") + ". /health/ready checks only the execution adapter.", "GAP: HOLD"],
      ["End-to-end visibility in the Chronus Studio Web Console", xs("X7"), "GAP: HOLD"],
     ]

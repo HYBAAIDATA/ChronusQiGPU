@@ -136,7 +136,7 @@ ROWS = [
  dict(id="T-09", authority="THESEUS", sub="Storage self-healing", req="Bounded automatic RS(48,32) repair verified against the content address; fail closed beyond bound",
       src="src/chronus/storage/self_heal.py", cat="recovery", paths=["src/chronus/storage/self_heal.py","src/chronus/storage/durable.py"], entry="CHRONUS_SELF_HEALING / DurableTheseusService",
       integ="DurableTheseusService open/read; self_heal_events audit table (merged in PR #176)", auto=True, tests=["tests/test_self_healing.py","tests/test_triad_cross_checks.py"], xc=["X8","X8b"], phys=False, dep=False, state="sw", deps=["https://github.com/HYBAAIDATA/ChronusQiGPU/pull/176"],
-      defects=["Storage repair only: Salamander system-level self-healing authority is not implemented here (E-01); PR #178 hardening open"],
+      defects=["Storage repair only: Salamander system-level self-healing authority is not implemented here (E-01); PR #178 is on hold (billing/IP decision) and out of scope"],
       fail="Beyond 8 bad bytes/block -> fail closed (per PR #176)"),
  dict(id="T-10", authority="THESEUS", sub="Replication", req="Multi-region replication, failover, RTO/RPO",
       src="docs/production/TRIAD_CAPABILITY_MATRIX.md", cat="deployment", paths=[], entry="(none)",
