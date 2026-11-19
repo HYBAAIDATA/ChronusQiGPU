@@ -53,7 +53,9 @@ def replay_capacity_for_workers(workers: int, heartbeat_ms: int, idle_poll_ms: i
     if any(type(n) is not int or n < 1 for n in (workers, heartbeat_ms, idle_poll_ms)):
         raise ValueError("worker count and request intervals must be positive integers")
     window_ms = 2 * MAX_CLOCK_SKEW_NS // 1_000_000
-    per_worker = -(-window_ms // heartbeat_ms) + -(-window_ms // idle_poll_ms) + 2
+    # Waiting/quarantined workers receive a fixed 1 s retry hint.
+    poll_ms = min(idle_poll_ms, 1000)
+    per_worker = -(-window_ms // heartbeat_ms) + -(-window_ms // poll_ms) + 2
     return max(DEFAULT_REPLAY_CAPACITY, 2 * workers * per_worker)
 H_NODE = "X-Chronus-Fleet-Node"
 H_TIME = "X-Chronus-Fleet-Timestamp"

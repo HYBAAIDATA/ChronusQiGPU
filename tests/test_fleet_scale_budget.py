@@ -17,6 +17,7 @@ def test_scale_replay_budget_preserves_full_window():
     assert replay_capacity_for_workers(1, 1000, 150) == 200_000
     assert replay_capacity_for_workers(125, 1000, 150) == 1_150_500
     assert replay_capacity_for_workers(1000, 1000, 150) == 9_204_000
+    assert replay_capacity_for_workers(125, 1000, 2000) == 300_500
     with pytest.raises(ValueError):
         replay_capacity_for_workers(0, 1000, 150)
 

@@ -52,7 +52,12 @@ except ImportError:
 
 
 def _file_stamp(stat: os.stat_result) -> tuple[int, int, int, int, int]:
-    return stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns
+    # Windows may delay timestamp updates until the final write handle closes.
+    # Its cross-process byte-range lock plus identity and length is the stale
+    # append fence. On POSIX also detect same-length modifications.
+    return (stat.st_dev, stat.st_ino, stat.st_size,
+            0 if os.name == "nt" else stat.st_mtime_ns,
+            0 if os.name == "nt" else stat.st_ctime_ns)
 
 
 def _path_stamp(path: Path) -> tuple[int, int, int, int, int] | None:
