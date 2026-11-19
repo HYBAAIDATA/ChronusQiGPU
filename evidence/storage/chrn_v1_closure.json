@@ -20,7 +20,12 @@
     "PR 18",
     "PR 121",
     "PR 134",
-    "PR 178"
+    "PR 178",
+    "src/chronus/security/al_haras/reed_solomon.py",
+    "src/chronus/storage/chrn_rs257.py",
+    "tests/test_chrn_rs257.py",
+    "tests/vectors/chrn_rs257_v11.json",
+    "scripts/benchmarks/chrn_recovery_drill.py"
   ],
   "obligations": [
     {
@@ -44,10 +49,11 @@
     {
       "id": "A3",
       "requirement": "Recovery module (corrupt-block recovery, tested)",
-      "execution": "BLOCKED",
+      "execution": "IN_PROGRESS",
       "technical": "UNAVAILABLE",
       "owner": "OVID / THESEUS",
-      "blocker": "CHRN recovery class and parity semantics missing; existing custody ECC is separate."
+      "blocker": "Proposed corrected 400-byte wire profile implemented; exact-head execution artifact, owner ratification and independent QC pending.",
+      "evidence": "docs/storage/CHRN_RS257_PROFILE.md; src/chronus/storage/chrn_rs257.py; tests/test_chrn_rs257.py; scripts/benchmarks/chrn_recovery_drill.py"
     },
     {
       "id": "A4",
