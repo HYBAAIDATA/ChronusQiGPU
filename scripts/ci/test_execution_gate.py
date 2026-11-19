@@ -108,8 +108,7 @@ def _node_ids(name: str) -> set[str]:
     ids = set()
     for i in range(len(parts), 0, -1):
         node = "/".join(parts[:i]) + ".py::" + "::".join(parts[i:] + [test])
-        ids.add(node)
-        ids.add(re.sub(r"\[.*\]$", "", node))
+        ids.add(node)  # exact node id, as tests/conftest.py matches item.nodeid
     return ids
 
 

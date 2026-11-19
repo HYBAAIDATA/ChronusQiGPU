@@ -69,7 +69,8 @@ def test_xfail_must_be_listed_by_node_id_in_known_failures(tmp_path):
     base = [PASS.format(1), PASS.format(2), xfail]
     # A reason string mentioning the registry is not enough; the node id must be listed.
     assert _run(tmp_path, base) == 1
-    assert _run(tmp_path, base, registry=["tests/test_mod.py::TestCls::test_x"]) == 0
+    # The base id does not record a parametrized instance (conftest matches exact node ids).
+    assert _run(tmp_path, base, registry=["tests/test_mod.py::TestCls::test_x"]) == 1
     assert _run(tmp_path, base, registry=["tests/test_mod.py::TestCls::test_x[1]"]) == 0
 
 
