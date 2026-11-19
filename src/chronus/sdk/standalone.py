@@ -1,5 +1,5 @@
 """
-Chronus CIaaS & AL HARAS OS — Production Python Client SDK (v36.0)
+Chronus CIaaS & AL HARAS OS — Production Python Client SDK (version: chronus.__version__)
 
 Provides typed, zero-copy, post-quantum verified interfaces for:
 - Tenant Onboarding & OAuth2/JWT Authentication
@@ -15,6 +15,8 @@ import time
 import urllib.request
 import urllib.error
 from typing import Dict, Any, List, Optional
+
+from chronus import __version__ as _CHRONUS_VERSION
 
 class ChronusSDKError(Exception):
     """Base exception for Chronus CIaaS SDK errors."""
@@ -33,7 +35,7 @@ class ChronusClient:
         self.api_token = api_token or ""
         self._headers = {
             "Content-Type": "application/json",
-            "User-Agent": "Chronus-Python-SDK/36.0"
+            "User-Agent": f"Chronus-Python-SDK/{_CHRONUS_VERSION}"
         }
         if self.api_token:
             self._headers["Authorization"] = f"Bearer {self.api_token}"

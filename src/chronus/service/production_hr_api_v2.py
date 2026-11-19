@@ -34,12 +34,13 @@ from chronus.tensor.enhanced_representation import (
     _initialize_tensor_network,
     HARD_CAP,
 )
+from chronus import __version__ as _CHRONUS_VERSION
 
 logger = logging.getLogger("ProductionHRAPIv2")
 
 app = FastAPI(
     title="Chronus Production HR API v2 (Classical Tensor Network Backend)",
-    version="36.0.2",
+    version=_CHRONUS_VERSION,
     description="Honest classical block-sparse tensor network engine with audited bounds and multi-GPU sharding.",
 )
 

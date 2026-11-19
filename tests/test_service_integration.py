@@ -5,6 +5,7 @@ envelope consistency, observability headers, rate limiting, workload
 counters, and receipt verification flows.
 """
 
+import chronus
 import base64
 import json
 
@@ -49,11 +50,11 @@ def _submit(client, tenant, workload_type="LUCAS_PV_SCALING", payload=None):
 
 def test_response_headers_present_on_success_and_error(client, tenant):
     ok = client.get("/health")
-    assert ok.headers["X-Service-Version"] == "36.0.1"
+    assert ok.headers["X-Service-Version"] == chronus.__version__
     assert "X-Process-Time" in ok.headers
 
     err = client.get("/workloads/not-a-uuid", headers=tenant["headers"])
-    assert err.headers["X-Service-Version"] == "36.0.1"
+    assert err.headers["X-Service-Version"] == chronus.__version__
     assert "X-Process-Time" in err.headers
 
 

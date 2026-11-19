@@ -1,6 +1,6 @@
 """Chronus Quantum iGPU Test Suite — Enterprise Grade."""
 
-__version__ = "36.0.0"
+from chronus import __version__ as __version__
 __all__ = [
     "test_core",
     "test_service",

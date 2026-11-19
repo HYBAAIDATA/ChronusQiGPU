@@ -21,6 +21,7 @@ from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from chronus import __version__ as _CHRONUS_VERSION
 
 # -----------------------------------------------------------------------------
 # Context Variables for Distributed Tracing & Logging
@@ -70,7 +71,7 @@ _span_exporter = InMemorySpanExporter()
 _tracer_provider = TracerProvider()
 _tracer_provider.add_span_processor(SimpleSpanProcessor(_span_exporter))
 trace.set_tracer_provider(_tracer_provider)
-tracer = trace.get_tracer("chronus.execution.fabric", "36.0.1")
+tracer = trace.get_tracer("chronus.execution.fabric", _CHRONUS_VERSION)
 
 
 @contextmanager
