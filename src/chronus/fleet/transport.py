@@ -181,9 +181,10 @@ class _RequestHandler(BaseHTTPRequestHandler):
             status, response = server.fleet_handler(method, self.path, node_id, payload)
         except (ValueError, KeyError, TypeError) as exc:
             status, response = 400, {"error": f"{type(exc).__name__}: {exc}"}
-        except Exception as exc:
-            logger.exception("handler failed for %s %s", method, self.path)
-            status, response = 500, {"error": f"{type(exc).__name__}: {exc}"}
+        except Exception:
+            # Keep internals (exception text, paths) in the server log only.
+            logger.exception("handler failed for %s %r", method, self.path.replace("\r", "").replace("\n", ""))
+            status, response = 500, {"error": "internal error"}
         out = canonical_json(response)
         self.send_response(status)
         for name, value in request_auth.sign_response(nonce, status, out).items():
