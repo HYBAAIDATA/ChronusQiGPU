@@ -188,8 +188,10 @@ def run_or_inspect_experiment(exp_id: str) -> dict[str, Any]:
 
     - E1: Exactness Oracle (reproduces reference statevector at n <= 32)
     - E2: Symmetry Stress Test (Z2, U(1), SU(2) block-sparse memory savings match theory within 5%)
-    - E3: Honest 1,000-Node Claim (Z2 charge-aware DMRG on the critical TFIM; ledger bound and
-      relative error vs the exact Jordan-Wigner energy < 1e-6; n=32 cross-check)
+    - E3: Honest 1,000-Node Claim (Z2 charge-aware DMRG on the critical TFIM; the ledger bound and
+      the relative error against the closed-form Jordan-Wigner energy must meet the 1e-6
+      numerical acceptance threshold, which is a tolerance and not exact equivalence; n=32
+      cross-check). Runs are serialised and cached per worker process only.
     """
     exp_key = exp_id.upper()
     try:

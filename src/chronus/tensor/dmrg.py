@@ -12,8 +12,10 @@ MPO charges, exact projection onto the target sector, sector-restricted
 eigensolves and block-diagonal SVDs). Symmetry leaks, exhausted claim budgets
 and local problems beyond ``CHRONUS_MAX_DMRG_LOCAL_DIM`` are refused with
 UntrustedResult / UntrustedApproximation; failed runs never mutate the
-network or ledger. Global optimality is not certified by the solver itself;
-experiment E3 checks it against the exact Jordan-Wigner energy.
+network or ledger. The solver itself does not certify global optimality.
+Experiment E3 compares the result with the closed-form Jordan-Wigner energy
+against a 1e-6 relative numerical acceptance threshold. Meeting that threshold
+does not establish exact equivalence.
 """
 
 from __future__ import annotations
