@@ -83,9 +83,11 @@ for r in ROWS:
     reasons = []
     if state == "gated": reasons.append("gated on open PR / owner decision")
     if state == "unavail": reasons.append("capability or environment unavailable")
+    sim_only = bool(tests) and all(reality.get(t) == "simulated" for t in tests)
     if not tests: reasons.append("no executable test on main")
     elif agg["failed"]: reasons.append(f"{agg['failed']} local test(s) failing")
     elif not agg["passed"]: reasons.append("tests not executed in the local run")
+    if sim_only: reasons.append("only simulated tests (contract coverage, not runtime verification)")
     if tests and not ci_ok: reasons.append("CI evidence on candidate SHA missing")
     if r["phys"]: reasons.append("physical device evidence not observed")
     if r["dep"]: reasons.append("deployment-profile evidence missing")
@@ -170,7 +172,7 @@ for r in ROWS:
       "Evidence reference": ([f"{GH}/actions/runs/{CI_RUN.get('run_id')}"] if ci_ev else []) + [f"{GH}/blob/{CAND}/{t}" for t in tests] +
                             ([f"{GH}/blob/{CAND}/scripts/ci/triad_cross_checks.py"] if r["xc"] else []),
       "Qualification verdict": verdict,
-      "Evidence class": EVC.get(state, state),
+      "Evidence class": "CONTRACT COVERAGE (simulated tests only)" if sim_only else EVC.get(state, state),
     }
     out_rows.append(row)
 assert all(len(x) == 36 for x in out_rows), [len(x) for x in out_rows]  # 35 t22u fields + evidence class
