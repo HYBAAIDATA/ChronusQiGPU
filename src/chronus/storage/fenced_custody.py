@@ -98,7 +98,9 @@ def _lp(data: bytes) -> bytes:
 
 
 def _u64(value: int, name: str) -> bytes:
-    if isinstance(value, bool) or not isinstance(value, int) or value < 0 or value > 0xFFFFFFFFFFFFFFFF:
+    if type(value) is not int:
+        raise TypeError(f"{name} must be an exact integer, got {type(value).__name__}")
+    if value < 0 or value > 0xFFFFFFFFFFFFFFFF:
         raise ValueError(f"{name} must be an unsigned 64-bit integer, got {value!r}")
     return struct.pack(">Q", value)
 
@@ -539,7 +541,10 @@ class EtcdLeaseFencer:
                         return
                     if self._clock_ns() >= self._lease_deadline_ns - self._safety_margin_ns:
                         raise LeaseLostError("Keepalive crossed existing safety cutoff")
-                    self._lease_deadline_ns = before_ns + (granted_ttl * 1_000_000_000)
+                    renewed_deadline_ns = before_ns + (granted_ttl * 1_000_000_000)
+                    if self._clock_ns() >= renewed_deadline_ns - self._safety_margin_ns:
+                        raise LeaseLostError("Renewed lease has insufficient safety margin")
+                    self._lease_deadline_ns = renewed_deadline_ns
             except Exception as exc:
                 self._fail_lease(f"etcd keepalive failed for {self._slot_key}: {exc}")
                 return
@@ -629,11 +634,14 @@ class MerkleInclusionProof:
             expected_sides = _expected_proof_sides(self.leaf_index, self.leaf_count)
         except ValueError:
             return False
-        if len(self.steps) != len(expected_sides):
+        if type(leaf_bytes) is not bytes or type(self.steps) is not tuple or len(self.steps) != len(expected_sides):
             return False
 
         acc = merkle_leaf_hash(leaf_bytes)
-        for (sibling_hash, side), expected_side in zip(self.steps, expected_sides):
+        for step, expected_side in zip(self.steps, expected_sides):
+            if type(step) is not tuple or len(step) != 2:
+                return False
+            sibling_hash, side = step
             if side != expected_side or not isinstance(sibling_hash, bytes) or len(sibling_hash) != DIGEST_LEN:
                 return False
             if side == "R":
@@ -1008,13 +1016,19 @@ class FencedTheseusEdgeStore:
         ).fetchone()
         if row is None:
             return 0, GENESIS_HASH, 0
-        return int(row[0]), bytes(row[1]), int(row[2])
+        if (type(row[0]) is not int or type(row[1]) is not bytes
+                or len(row[1]) != DIGEST_LEN or type(row[2]) is not int
+                or row[0] < 1 or row[2] < 1):
+            raise ChainIntegrityError("Invalid stored custody head")
+        return row[0], row[1], row[2]
 
     def _last_local_anchored_seq_locked(self) -> int:
         row = self._conn.execute(
             "SELECT COALESCE(MAX(seq_end), 0) FROM theseus_epoch_anchors;"
         ).fetchone()
-        return int(row[0])
+        if type(row[0]) is not int or row[0] < 0:
+            raise ChainIntegrityError("Invalid local anchor watermark")
+        return row[0]
 
     def health_status(self) -> CustodyHealth:
         with self._write_lock:
@@ -1355,19 +1369,29 @@ class FencedTheseusEdgeStore:
 
     @staticmethod
     def _row_to_envelope(row: Tuple[Any, ...]) -> FencedReceiptEnvelope:
-        envelope = FencedReceiptEnvelope(
-            seq=int(row[0]),
-            node_id=str(row[1]),
-            slot_id=str(row[2]),
-            tenant_id=str(row[3]),
-            fencing_epoch=int(row[4]),
-            ts_ns=int(row[5]),
-            event_type=str(row[6]),
-            payload_digest=bytes(row[7]),
-            prev_hash=bytes(row[8]),
-            record_hash=bytes(row[9]),
-        )
-        payload = bytes(row[10])
+        # SQLite uses dynamic typing. Coercing REAL to int or TEXT to str
+        # can hide on-disk tampering while recreating the original hash.
+        expected_types = (int, str, str, str, int, int, str, bytes, bytes, bytes, bytes)
+        if len(row) != len(expected_types) or any(
+            type(value) is not expected for value, expected in zip(row, expected_types)
+        ):
+            raise ChainIntegrityError("Invalid stored custody field type")
+        try:
+            envelope = FencedReceiptEnvelope(
+                seq=row[0],
+                node_id=row[1],
+                slot_id=row[2],
+                tenant_id=row[3],
+                fencing_epoch=row[4],
+                ts_ns=row[5],
+                event_type=row[6],
+                payload_digest=row[7],
+                prev_hash=row[8],
+                record_hash=row[9],
+            )
+        except (TypeError, ValueError) as exc:
+            raise ChainIntegrityError("Invalid stored custody envelope") from exc
+        payload = row[10]
         try:
             canonical = canonical_payload_bytes(json.loads(payload))
         except (ValueError, TypeError, UnicodeError) as exc:
