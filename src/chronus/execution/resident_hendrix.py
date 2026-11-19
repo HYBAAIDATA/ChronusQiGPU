@@ -234,6 +234,9 @@ class ResidentHendrix:
 
     def require_context(self, plan, header, target_be):
         self.validate()
+        issued = plan.evidence_refs.get("resident_hendrix")
+        if issued is None or canonical(issued) != self.encoded:
+            raise ValueError("resident artifact differs from issued SearchPlan evidence")
         v = self.as_dict()
         if plan.expires_at is not None and time.monotonic() >= plan.expires_at:
             raise ValueError("expired SearchPlan")
