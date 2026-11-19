@@ -12,6 +12,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from chronus import __version__ as _CHRONUS_VERSION
+
 
 @dataclass(frozen=True)
 class GateResult:
@@ -192,7 +194,7 @@ class ChronusVerificationOrchestrator:
         observed = run()
         record = observed.to_dict()
         record.update({
-            "version": "chronus_gpiu-v36.0",
+            "version": _CHRONUS_VERSION,
             "qualification_status": "NOT_QUALIFIED",
             "execution_mode": "LOCAL_DIAGNOSTIC_ONLY",
             "total_release_gates_evaluated": len(observed.gates),

@@ -1,6 +1,6 @@
 # Chronus CIaaS & AL HARAS OS: Hyperscaler Data Connector & Architectural User Journeys
 
-**Substrate Version:** 36.0.0  
+**Substrate Version:** 37.0.0.dev0 (single source: `chronus.__version__`)  
 **Security Standard:** NIST FIPS 204 ML-DSA-65 & FRI zk-STARK Verifier  
 **Integration Paradigm:** In-Place Zero-Copy Native Pointers (`ptr_ovid_...`)  
 **Core Mandate:** *"Mathematics first. Representation second. Execution third. Evidence throughout."*

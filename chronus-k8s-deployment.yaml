@@ -36,7 +36,7 @@ metadata:
   namespace: chronus
   labels:
     app: chronus-patroclus-gateway
-    version: "36.0.0"
+    version: "37.0.0.dev0"
     tier: master-execution
 spec:
   replicas: 4
@@ -52,7 +52,7 @@ spec:
     metadata:
       labels:
         app: chronus-patroclus-gateway
-        version: "36.0.0"
+        version: "37.0.0.dev0"
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8000"
@@ -69,7 +69,7 @@ spec:
                 topologyKey: kubernetes.io/hostname
       containers:
         - name: patroclus-gateway
-          image: registry.chronus.dev/chronus/patroclus-gateway:v36.0.0
+          image: registry.chronus.dev/chronus/patroclus-gateway:v37.0.0.dev0
           imagePullPolicy: IfNotPresent
           command: ["python", "-m", "uvicorn", "chronus.service.app:app", "--host", "0.0.0.0", "--port", "8000"]
           ports:
