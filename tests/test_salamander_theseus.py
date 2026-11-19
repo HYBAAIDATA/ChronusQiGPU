@@ -213,3 +213,29 @@ def test_quarantined_journal_object_does_not_block_open_and_heals(tmp_path):
     assert loop.run_cycle().repaired == [entry.object_id]
     assert store.reconstruct(TENANT, entry.object_id) == PAYLOAD
     assert store.verify_journal_continuity(TENANT)
+
+
+def test_failed_construction_does_not_bind_the_store(tmp_path):
+    path = tmp_path / "t.sqlite3"
+    store = _deferred_store(path)
+    guardian, token = _guardian()
+    with pytest.raises(Exception):
+        SalamanderTheseusRemediation(store, guardian=guardian, token_provider=lambda _: token,
+                                     tenant_id=TENANT, actor_id=ACTOR, max_recoveries_per_target=0)
+    # A later, valid instance can still take repair authority over the same store.
+    SalamanderTheseusRemediation(store, guardian=guardian, token_provider=lambda _: token,
+                                 tenant_id=TENANT, actor_id=ACTOR)
+
+
+def test_independent_verifier_handles_uri_special_characters_in_path(tmp_path):
+    folder = tmp_path / "odd ?#%41 dir"
+    folder.mkdir()
+    path = folder / "t.sqlite3"
+    record = _deferred_store(path).store(TENANT, PAYLOAD)
+    _corrupt(path, record.object_id, [5, 900])
+    store = _deferred_store(path)
+    guardian, token = _guardian()
+    loop = SalamanderTheseusRemediation(store, guardian=guardian, token_provider=lambda _: token,
+                                        tenant_id=TENANT, actor_id=ACTOR)
+    assert loop.run_cycle().repaired == [record.object_id]
+    assert store.reconstruct(TENANT, record.object_id) == PAYLOAD

@@ -41,6 +41,9 @@ from chronus.security.al_haras import reed_solomon as rs  # noqa: E402
 from chronus.storage import self_heal  # noqa: E402
 from chronus.storage.durable import DurableTheseusService  # noqa: E402
 
+# Pin inline THESEUS repair so measurements do not depend on CHRONUS_SELF_HEALING_REPAIR.
+_INLINE = {"self_healing": True, "repair_authority": "theseus"}
+
 KIB = 1024
 
 
@@ -134,7 +137,7 @@ def bench_store(workdir: Path, sizes, repeat: int) -> dict:
     for size in sizes:
         data = payload_of(size, f"store-{size}")
         path = workdir / f"store-{size}.sqlite3"
-        store = DurableTheseusService(str(path))
+        store = DurableTheseusService(str(path), **_INLINE)
         rec = store.store("tenant-a", data)
         healthy = timed(lambda: store.reconstruct("tenant-a", rec.object_id), repeat)
         strict = DurableTheseusService(str(path), self_healing=False)
@@ -163,15 +166,15 @@ def bench_store(workdir: Path, sizes, repeat: int) -> dict:
 
 def bench_startup(workdir: Path, objects: int, size: int, damaged: int) -> dict:
     path = workdir / "startup.sqlite3"
-    store = DurableTheseusService(str(path))
+    store = DurableTheseusService(str(path), **_INLINE)
     recs = [store.store("tenant-a", payload_of(size, f"obj-{i}")) for i in range(objects)]
     t = time.perf_counter()
-    DurableTheseusService(str(path))
+    DurableTheseusService(str(path), **_INLINE)
     clean = time.perf_counter() - t
     for rec in recs[:damaged]:
         corrupt(path, rec.object_id, worst_case_positions(size))
     t = time.perf_counter()
-    reopened = DurableTheseusService(str(path))
+    reopened = DurableTheseusService(str(path), **_INLINE)
     recovery = time.perf_counter() - t
     for i, rec in enumerate(recs[:damaged]):
         assert reopened.reconstruct("tenant-a", rec.object_id) == payload_of(size, f"obj-{i}")
@@ -189,7 +192,7 @@ def bench_startup(workdir: Path, objects: int, size: int, damaged: int) -> dict:
 def _proc_read(args):
     path, oid = args
     t = time.perf_counter()
-    DurableTheseusService(path).reconstruct("tenant-a", oid)
+    DurableTheseusService(path, **_INLINE).reconstruct("tenant-a", oid)
     return time.perf_counter() - t
 
 
@@ -198,7 +201,7 @@ def bench_concurrent(workdir: Path, size: int, workers: int) -> dict:
     out = {}
     # Threads: one store object, many readers of one damaged object.
     path = workdir / "concurrent-threads.sqlite3"
-    store = DurableTheseusService(str(path))
+    store = DurableTheseusService(str(path), **_INLINE)
     rec = store.store("tenant-a", data)
     corrupt(path, rec.object_id, worst_case_positions(size))
     t = time.perf_counter()
@@ -209,7 +212,7 @@ def bench_concurrent(workdir: Path, size: int, workers: int) -> dict:
                       "repairs_recorded": store.self_healing_status()["repairs"]}
     # Processes: separate interpreters opening the same damaged file.
     path = workdir / "concurrent-procs.sqlite3"
-    store = DurableTheseusService(str(path))
+    store = DurableTheseusService(str(path), **_INLINE)
     rec = store.store("tenant-a", data)
     corrupt(path, rec.object_id, worst_case_positions(size))
     t = time.perf_counter()
@@ -217,7 +220,7 @@ def bench_concurrent(workdir: Path, size: int, workers: int) -> dict:
         per = list(pool.map(_proc_read, [(str(path), rec.object_id)] * workers))
     out["processes"] = {"workers": workers, "wall_s": round(time.perf_counter() - t, 3),
                         "per_process_open_and_read": stats(per),
-                        "repairs_recorded": DurableTheseusService(str(path)).self_healing_status()["repairs"]}
+                        "repairs_recorded": DurableTheseusService(str(path), **_INLINE).self_healing_status()["repairs"]}
     return out
 
 
@@ -229,7 +232,7 @@ def hardware() -> dict:
                 cpu = line.split(":", 1)[1].strip()
                 break
     except OSError:
-        pass
+        pass  # /proc/cpuinfo is Linux-only; fall back to platform.processor()
     try:
         commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
     except OSError:

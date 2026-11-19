@@ -37,6 +37,7 @@ import sqlite3
 import time
 from contextlib import closing
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Callable, Mapping
 
 from chronus.storage.durable import DurableTheseusService
@@ -79,7 +80,7 @@ def _salamander():
 
 def _payload_sha(path: str, object_id: str) -> str | None:
     """Independent read: a fresh read-only SQLite connection, not the service."""
-    with closing(sqlite3.connect(f"file:{path}?mode=ro", uri=True)) as db:
+    with closing(sqlite3.connect(Path(path).resolve().as_uri() + "?mode=ro", uri=True)) as db:
         row = db.execute("SELECT payload FROM objects WHERE object_id=?", (object_id,)).fetchone()
     return None if row is None else hashlib.sha256(bytes(row[0])).hexdigest()
 
@@ -120,8 +121,7 @@ class SalamanderTheseusRemediation:
         self.clock_ns = clock_ns
         self._snapshots: dict[str, str | None] = {}
         self._in_flight: set[tuple[str, str]] = set()
-        if store.repair_authority == "salamander":
-            store.bind_repair_authority(self._authorised_now)
+        self.retained_evidence: list[str] = []
         sink = self._retain_in_theseus if retain_evidence_in_theseus else None
         self.ledger = self._s["EvidenceLedger"](sink=sink)
         registry = self._s["ActionRegistry"]()
@@ -135,7 +135,9 @@ class SalamanderTheseusRemediation:
             ledger=self.ledger, clock_ns=clock_ns,
             max_recoveries_per_target=max_recoveries_per_target,
         )
-        self.retained_evidence: list[str] = []
+        # Bind last: a failed construction must not leave the store bound to a dead instance.
+        if store.repair_authority == "salamander":
+            store.bind_repair_authority(self._authorised_now)
 
     # Retain evidence --------------------------------------------------
     def _retain_in_theseus(self, record: Mapping[str, Any]) -> None:
