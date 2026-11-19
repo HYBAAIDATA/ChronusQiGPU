@@ -213,13 +213,35 @@ class TestMiningReadiness(unittest.IsolatedAsyncioTestCase):
         assert not miner.running
         assert miner.gateway.writer is None
 
+    async def test_runner_bist_executes_outside_active_loop(self):
+        deploy = Path(__file__).parents[1] / "deploy/hyba-mine"
+        bist_spec = importlib.util.spec_from_file_location("runner_real_bist", deploy / "bist.py")
+        bist = importlib.util.module_from_spec(bist_spec)
+        bist_spec.loader.exec_module(bist)
+        spec = importlib.util.spec_from_file_location("runner_async_bist", deploy / "runner.py")
+        runner = importlib.util.module_from_spec(spec)
+        with patch.dict(sys.modules, {"bist": bist}):
+            spec.loader.exec_module(runner)
+
+        class ReachedPostBist(Exception):
+            pass
+
+        # Execute the actual BIST, including its nested asyncio.run checks.
+        # Stop at lane discovery before any campaign or socket is started.
+        with patch.object(bist, "run", wraps=bist.run) as run, \
+             patch("chronus.fleet.capacity.discover_host", side_effect=ReachedPostBist):
+            with pytest.raises(ReachedPostBist):
+                await runner.main()
+        run.assert_called_once()
+
     async def test_self_test_failure_prevents_connect(self):
         runner_path = Path(__file__).parents[1] / "deploy/hyba-mine/runner.py"
         spec = importlib.util.spec_from_file_location("mining_runner_test", runner_path)
         runner = importlib.util.module_from_spec(spec)
         with patch.dict(sys.modules, {"bist": SimpleNamespace(run=lambda: {"bist": "FAIL"})}):
             spec.loader.exec_module(runner)
-        with patch.object(runner.engine_module, "load_env_config", side_effect=AssertionError("must not configure or connect")):
+        with patch("hyba_mine.campaign.run_campaign", side_effect=AssertionError("must not run campaign")), \
+             patch("hyba_mine.lanes.open_lanes", side_effect=AssertionError("must not open lanes")):
             assert await runner.main() == 1
 
 
