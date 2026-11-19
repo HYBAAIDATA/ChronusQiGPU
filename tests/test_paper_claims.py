@@ -125,41 +125,10 @@ def zphi_mul_check(p, q):
     return zphi_mul(p, q) == (1, 0)                              # phi^{2k} * psi^{2k} = 1
 
 
-# ---------------------------------------------------------------------------
-# Cross-check against the authors' unified_quantum_engine.py GoldenArithmetic (exact integers).
-# The file is the user's, outside this repo; it imports numpy/pandas/sklearn at top level, so the
-# pure-integer classes are extracted with ast and executed alone.  Skipped if the file is absent.
-# ---------------------------------------------------------------------------
-UQE_PATH = os.environ.get("UNIFIED_QUANTUM_ENGINE", "/workspace/user_files/unified_quantum_engine.py")
+# NOTE: the former cross-check against the external unified_quantum_engine.py (fold_matrix /
+# unfold_matrix / pisano_pow2) was removed: that file is owner IP held outside this repository,
+# so the test could only ever skip in CI, which the test-execution gate correctly rejects.
+# The in-repo src/chronus/math/unified_quantum_engine.py is a different module without that API.
+# Re-run the cross-check privately against the owner's copy if required.
 
 
-def _load_golden_arithmetic():
-    import ast
-    import typing
-    src = open(UQE_PATH, encoding="utf-8").read()
-    tree = ast.parse(src)
-    keep = [n for n in tree.body if isinstance(n, ast.ClassDef) and n.name in ("GoldenIntegrityError", "GoldenArithmetic")]
-    ns = {"Optional": typing.Optional, "Sequence": typing.Sequence, "List": typing.List, "Dict": typing.Dict,
-          "Any": typing.Any, "__name__": "uqe_golden"}
-    exec(compile(ast.Module(body=keep, type_ignores=[]), UQE_PATH, "exec"), ns)
-    return ns["GoldenArithmetic"]
-
-
-@pytest.mark.skipif(not os.path.exists(UQE_PATH), reason="unified_quantum_engine.py not available")
-def test_engine_golden_arithmetic_matches_chronus_exactly():
-    from chronus.geodesic.scheduler import pisano_period_pow2
-    from chronus.kernels.gl2_transform import hensellift_m15
-    from chronus.quantum.golden_scales import mat_pow
-    GA = _load_golden_arithmetic()
-    Q = ((1, 1), (1, 0))
-    assert GA.fold_matrix(15, 8)[0] == hensellift_m15(8)                   # the engine's Q^15 mod 256 is M15
-    for bits in (8, 16, 64, 256):
-        mask = (1 << bits) - 1
-        assert GA.pisano_pow2(bits) == pisano_period_pow2(bits) == 3 << (bits - 1)
-        for steps in (1, 15, 10 ** 9 + 7, 10 ** 76):
-            M, n = GA.fold_matrix(steps, bits)
-            assert n == steps % (3 << (bits - 1))
-            assert M == mat_pow(Q, n, mask) == mat_pow(Q, steps, mask)       # Pisano reduction is exact
-            Minv = GA.unfold_matrix(steps, bits)
-            prod = tuple(tuple(sum(M[i][t] * Minv[t][j] for t in range(2)) & mask for j in range(2)) for i in range(2))
-            assert prod == ((1, 0), (0, 1))
