@@ -44,7 +44,7 @@
         "requirement": "Final-head CI green",
         "execution": "IN_PROGRESS",
         "technical": "UNAVAILABLE",
-        "evidence": "prior head all seven successful, new head required"
+        "evidence": "Recovery and storage-fold workflow both passed at 6f8b8c3c67483b7548c4c3e4e12a6ca1655fcd09; full final-head CI pending."
       },
       {
         "id": "C2",
@@ -67,23 +67,76 @@
         "requirement": "Independent non-author reconstruction from spec, then compare",
         "execution": "BLOCKED",
         "technical": "UNAVAILABLE",
-        "evidence": "scripts/ci/reconstruct_chrn_rs257.py (author-run only)",
-        "blocker": "no named external execution or acceptance"
+        "evidence": "evidence/storage/chrn_rs257_spec_reconstruction.json",
+        "blocker": "Author-run alternate implementation matched 460 bytes, actual independent reconstruction required on issue 205."
       },
       {
         "id": "C5",
         "requirement": "Rerun drill on frozen spec and longer mixed recoverable test",
-        "execution": "IN_PROGRESS",
-        "technical": "UNAVAILABLE",
-        "evidence": "tests/test_chrn_rs257.py; scripts/benchmarks/chrn_recovery_drill.py"
+        "execution": "EXECUTED",
+        "technical": "PASS",
+        "evidence": {
+          "source_commit": "6f8b8c3c67483b7548c4c3e4e12a6ca1655fcd09",
+          "workflow_run": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44598372731",
+          "job": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44598372731/job/135822732165",
+          "evidence_path": "evidence/capacity/chrn_recovery_f4ceb66cf6d7108fbe4f369b4802358f1b8851bdedb39580b84bf7af5b478832.json",
+          "evidence_sha256": "f4ceb66cf6d7108fbe4f369b4802358f1b8851bdedb39580b84bf7af5b478832",
+          "focused_tests_passed": 51,
+          "measured_trials": 133,
+          "successful_verified_recoveries": 69,
+          "expected_rejections": 64,
+          "latency_ns": {
+            "p50": 57172464,
+            "p95": 60083739,
+            "p99": 60971960
+          },
+          "environment": {
+            "machine": "x86_64",
+            "platform": "Linux-7.0.0-1019-azure-x86_64-with-glibc2.43",
+            "processor": "",
+            "python": "3.13.18"
+          },
+          "scope": "software fault injection on GitHub-hosted Linux x86-64, Python 3.13.18; not physical media",
+          "spec_sha256": "31e847888a4118cd3952b018eeb7af08cf3076006f1cc7a5ee04d3694b88e32b",
+          "reconstruction_path": "evidence/storage/chrn_rs257_spec_reconstruction.json",
+          "independent_qc": "PENDING"
+        }
       },
       {
         "id": "C6",
         "requirement": "Close only after all gates pass; exclude parameter 1 and production claims",
         "execution": "BLOCKED",
         "technical": "UNAVAILABLE",
-        "blocker": "C1 C2 C4 C5 pending"
+        "blocker": "C1, C2, C4 pending; C5 executed successfully."
       }
-    ]
+    ],
+    "rerun": {
+      "source_commit": "6f8b8c3c67483b7548c4c3e4e12a6ca1655fcd09",
+      "workflow_run": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44598372731",
+      "job": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44598372731/job/135822732165",
+      "evidence_path": "evidence/capacity/chrn_recovery_f4ceb66cf6d7108fbe4f369b4802358f1b8851bdedb39580b84bf7af5b478832.json",
+      "evidence_sha256": "f4ceb66cf6d7108fbe4f369b4802358f1b8851bdedb39580b84bf7af5b478832",
+      "focused_tests_passed": 51,
+      "measured_trials": 133,
+      "successful_verified_recoveries": 69,
+      "expected_rejections": 64,
+      "latency_ns": {
+        "p50": 57172464,
+        "p95": 60083739,
+        "p99": 60971960
+      },
+      "environment": {
+        "machine": "x86_64",
+        "platform": "Linux-7.0.0-1019-azure-x86_64-with-glibc2.43",
+        "processor": "",
+        "python": "3.13.18"
+      },
+      "scope": "software fault injection on GitHub-hosted Linux x86-64, Python 3.13.18; not physical media",
+      "spec_sha256": "31e847888a4118cd3952b018eeb7af08cf3076006f1cc7a5ee04d3694b88e32b",
+      "reconstruction_path": "evidence/storage/chrn_rs257_spec_reconstruction.json",
+      "independent_qc": "PENDING"
+    },
+    "independent_qc_issue": "https://github.com/HYBAAIDATA/ChronusQiGPU/issues/205",
+    "reviewer_access": "Notion workspace QC agent lookup FORBIDDEN restricted_resource; no Devin connector found; issue created, no reviewer assigned or acceptance received."
   }
 }
