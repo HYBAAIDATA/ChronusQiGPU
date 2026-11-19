@@ -79,6 +79,17 @@ def test_baseline_ratchet_admits_recorded_debt_only(tmp_path, capsys):
     assert "1 baseline entries resolved" in capsys.readouterr().err
 
 
+def test_baseline_digest_covers_text_beyond_display_truncation(tmp_path):
+    long_prefix = "x" * 120
+    write(tmp_path, "src/chronus/core/a.py", f"{long_prefix} approx one\n")
+    write(tmp_path, "scripts/ci/dressing_policy.json", json.dumps(policy()))
+    assert no_dressing.main(["--write-baseline"], root=tmp_path) == 0
+    assert no_dressing.main(["--baseline"], root=tmp_path) == 0
+    # Changing only text past character 100 must not consume the baseline entry.
+    write(tmp_path, "src/chronus/core/a.py", f"{long_prefix} approx two\n")
+    assert no_dressing.main(["--baseline"], root=tmp_path) == 2
+
+
 def test_test_reality_requires_explicit_classification(tmp_path):
     write(tmp_path, "tests/test_unlabelled.py", "def test_case(): pass\n")
     report = test_reality.scan(tmp_path)

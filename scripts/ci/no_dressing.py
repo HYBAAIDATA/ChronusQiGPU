@@ -93,9 +93,11 @@ def scan(root: Path, policy: dict) -> list[dict]:
                     for hit in pattern.finditer(line):
                         if allowed(relative, hit.group(), allow):
                             continue
+                        full = line.strip()
                         findings.append({
                             "category": category, "path": relative, "line": number,
-                            "word": hit.group(), "text": line.strip()[:100],
+                            "word": hit.group(), "text": full[:100],
+                            "digest": hashlib.sha256(full.encode("utf-8")).hexdigest()[:16],
                         })
     return sorted(findings, key=lambda f: (f["path"], f["line"], f["category"], f["word"]))
 
@@ -103,8 +105,8 @@ def scan(root: Path, policy: dict) -> list[dict]:
 def _key(f: dict) -> tuple[str, str, str, str]:
     # Line text is stored as a digest so the baseline never repeats the wording
     # (other gates, e.g. check_forbidden_claims.py, scan every tracked file).
-    digest = hashlib.sha256(f["text"].encode("utf-8")).hexdigest()[:16]
-    return (f["category"], f["path"], f["word"].casefold(), digest)
+    # The digest covers the complete line, not the 100-char display text.
+    return (f["category"], f["path"], f["word"].casefold(), f["digest"])
 
 
 def baseline_document(findings: list[dict]) -> dict:
