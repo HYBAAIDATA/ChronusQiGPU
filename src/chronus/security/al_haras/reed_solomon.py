@@ -8,14 +8,30 @@ instanton vocabulary; that vocabulary is a naming metaphor, and the mechanism
 is the classical code below.
 
 Code: systematic RS(n, k) with evaluation points 1..n in GF(257). It corrects up
-to t = floor((n - k) / 2) symbol errors per block (Berlekamp-Welch decoding)
-and detects heavier corruption as uncorrectable. All arithmetic is exact
-integer arithmetic modulo 257.
+to t = floor((n - k) / 2) symbol errors per block and detects heavier
+corruption as uncorrectable. All arithmetic is exact integer arithmetic modulo
+257.
+
+Two decoders implement the same code:
+
+* ``decode_block``: Berlekamp-Welch on one block in pure Python. It is the
+  reference and is kept for cross-checking.
+* ``heal`` / ``heal_blocks``: a batched syndrome decoder in numpy (int64,
+  exact). Syndromes ``S = R @ H`` over the parity-check matrix of the
+  generalised RS code are computed for every block at once; blocks with zero
+  syndromes are accepted without decoding. Damaged blocks are decoded together
+  with a vectorised Berlekamp-Massey, a Chien search over the 48 evaluation
+  points and Forney's formula, and every corrected word is re-checked to have
+  zero syndromes. Within the bound both decoders return the same unique
+  codeword (the test suite cross-checks them on random faults, including
+  faults beyond the bound).
 """
 
 import hashlib
 from functools import lru_cache
 from typing import Any, Dict, List, Optional, Sequence, Tuple
+
+import numpy as np
 
 P = 257
 DEFAULT_N = 48
@@ -150,16 +166,132 @@ def decode_block(codeword: Sequence[int], n: int, k: int) -> Dict[str, Any]:
     return {"status": "corrected", "data": corrected[:k], "error_positions": errors}
 
 
-def protect(trace: bytes, n: int = DEFAULT_N, k: int = DEFAULT_K) -> Dict[str, Any]:
-    """Build a protection envelope (parity per block plus the SHA-256 of the trace)."""
+@lru_cache(maxsize=8)
+def _tables(n: int, k: int) -> Dict[str, np.ndarray]:
+    """Exact int64 tables for the batched encoder and syndrome decoder."""
+    xs = list(range(1, n + 1))
+    # Column multipliers of the dual (parity-check) GRS code.
+    v = []
+    for i, xi in enumerate(xs):
+        den = 1
+        for m, xm in enumerate(xs):
+            if m != i:
+                den = den * (xi - xm) % P
+        v.append(_inv(den))
+    r = n - k
+    inv_table = np.zeros(P, dtype=np.int64)
+    inv_table[1:] = [pow(a, P - 2, P) for a in range(1, P)]
+    x_arr = np.array(xs, dtype=np.int64)
+    x_inv = inv_table[x_arr]
+    h = np.array([[v[i] * pow(xs[i], j, P) % P for j in range(r)] for i in range(n)], dtype=np.int64)
+    # z_pows[d, i] = x_i^{-d}, d = 0..r, for evaluating polynomials at 1/x_i.
+    z_pows = np.array([[pow(int(x_inv[i]), d, P) for i in range(n)] for d in range(r + 1)], dtype=np.int64)
+    return {
+        "weights": np.array(_parity_weights(n, k), dtype=np.int64),  # (r, k)
+        "h": h,  # (n, r)
+        "z_pows": z_pows,  # (r + 1, n)
+        "x": x_arr,
+        "v_inv": inv_table[np.array(v, dtype=np.int64)],
+        "inv": inv_table,
+    }
+
+
+def _data_blocks(trace: bytes, k: int) -> np.ndarray:
+    """``trace`` as a (blocks, k) int64 array, zero-padded in the last block."""
+    blocks = (len(trace) + k - 1) // k
+    buf = np.zeros(blocks * k, dtype=np.int64)
+    if trace:
+        buf[: len(trace)] = np.frombuffer(trace, dtype=np.uint8)
+    return buf.reshape(blocks, k)
+
+
+def encode_blocks(trace: bytes, n: int = DEFAULT_N, k: int = DEFAULT_K) -> np.ndarray:
+    """Parity for every block of ``trace`` as a (blocks, n - k) array; same values as ``encode_block``."""
     _check_params(n, k)
     if len(trace) > MAX_TRACE_BYTES:
         raise ReedSolomonError("trace exceeds the supported size")
-    parity: List[List[int]] = []
-    for start in range(0, len(trace), k):
-        block = list(trace[start:start + k])
-        block += [0] * (k - len(block))
-        parity.append(encode_block(block, n, k))
+    data = _data_blocks(trace, k)
+    if not len(data):
+        return np.zeros((0, n - k), dtype=np.int64)
+    return (data @ _tables(n, k)["weights"].T) % P
+
+
+def decode_blocks(words: np.ndarray, n: int, k: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Batched syndrome decoding of received words (blocks, n) with values 0..256.
+
+    Returns ``(corrected, ok, damaged)``: corrected words, a per-block flag that
+    the word is a codeword (as received or after correcting at most t symbols),
+    and a per-block flag that the received word was not a codeword.
+    """
+    _check_params(n, k)
+    tab = _tables(n, k)
+    r = n - k
+    t = r // 2
+    words = np.asarray(words, dtype=np.int64)
+    if words.ndim != 2 or words.shape[1] != n:
+        raise ReedSolomonError("words must have shape (blocks, n)")
+    if words.size and (words.min() < 0 or words.max() >= P):
+        raise ReedSolomonError("symbol outside GF(257)")
+    syn = (words @ tab["h"]) % P
+    damaged = syn.any(axis=1)
+    corrected = words.copy()
+    ok = ~damaged
+    idx = np.nonzero(damaged)[0]
+    if not len(idx):
+        return corrected, ok, damaged
+    s = syn[idx]
+    inv = tab["inv"]
+    d_count = len(idx)
+    width = r + 1
+    # Vectorised Berlekamp-Massey: C is the error locator, B the previous one.
+    c = np.zeros((d_count, width), dtype=np.int64)
+    b = np.zeros((d_count, width), dtype=np.int64)
+    c[:, 0] = 1
+    b[:, 0] = 1
+    length = np.zeros(d_count, dtype=np.int64)
+    shift = np.ones(d_count, dtype=np.int64)
+    last_d = np.ones(d_count, dtype=np.int64)
+    cols = np.arange(width)
+    for step in range(r):
+        disc = (c[:, : step + 1] * s[:, step::-1]).sum(axis=1) % P
+        nz = disc != 0
+        src = cols[None, :] - shift[:, None]
+        valid = src >= 0
+        shifted_b = np.where(valid, np.take_along_axis(b, np.clip(src, 0, width - 1), axis=1), 0)
+        coef = disc * inv[last_d] % P
+        new_c = (c - coef[:, None] * shifted_b) % P
+        grow = nz & (2 * length <= step)
+        b = np.where(grow[:, None], c, b)
+        last_d = np.where(grow, disc, last_d)
+        length = np.where(grow, step + 1 - length, length)
+        shift = np.where(grow, 1, shift + 1)
+        c = np.where(nz[:, None], new_c, c)
+    within = length <= t
+    # Chien search: roots of the locator at 1/x_i mark the error positions.
+    lam_at = (c @ tab["z_pows"]) % P  # (d, n)
+    roots = lam_at == 0
+    within &= roots.sum(axis=1) == length
+    # Forney: y_i = -x_i * Omega(1/x_i) / Lambda'(1/x_i);  e_i = y_i / v_i.
+    omega = np.zeros((d_count, r), dtype=np.int64)
+    for j in range(r):
+        omega[:, j] = (c[:, : j + 1] * s[:, j::-1]).sum(axis=1) % P
+    omega_at = (omega @ tab["z_pows"][:r]) % P
+    deriv = (c[:, 1:] * np.arange(1, width)[None, :]) % P  # coefficients of Lambda'
+    deriv_at = (deriv @ tab["z_pows"][:r]) % P
+    within &= ~(roots & (deriv_at == 0)).any(axis=1)
+    y = (-tab["x"][None, :] * omega_at % P) * inv[deriv_at] % P
+    err = np.where(roots, y * tab["v_inv"][None, :] % P, 0)
+    fixed = (words[idx] - err) % P
+    within &= ~((fixed @ tab["h"]) % P).any(axis=1)  # exactness guard: must be a codeword
+    good = idx[within]
+    corrected[good] = fixed[within]
+    ok[good] = True
+    return corrected, ok, damaged
+
+
+def protect(trace: bytes, n: int = DEFAULT_N, k: int = DEFAULT_K) -> Dict[str, Any]:
+    """Build a protection envelope (parity per block plus the SHA-256 of the trace)."""
+    parity = encode_blocks(trace, n, k)
     return {
         "scheme": "reed-solomon-gf257-systematic",
         "n": n,
@@ -167,8 +299,43 @@ def protect(trace: bytes, n: int = DEFAULT_N, k: int = DEFAULT_K) -> Dict[str, A
         "correctable_symbols_per_block": (n - k) // 2,
         "length": len(trace),
         "blocks": len(parity),
-        "parity": parity,
+        "parity": parity.tolist(),
         "sha256": hashlib.sha256(trace).hexdigest(),
+    }
+
+
+def heal_blocks(received: bytes, parity: np.ndarray, n: int, k: int, expected_sha256: str) -> Dict[str, Any]:
+    """Batched repair of ``received`` from a (blocks, n - k) parity array."""
+    _check_params(n, k)
+    parity = np.asarray(parity, dtype=np.int64)
+    length = len(received)
+    blocks = (length + k - 1) // k
+    if parity.shape != (blocks, n - k):
+        raise ReedSolomonError("parity block count does not match the envelope")
+    data = _data_blocks(received, k)
+    words = np.concatenate([data, parity], axis=1) if blocks else np.zeros((0, n), dtype=np.int64)
+    corrected, ok, damaged = decode_blocks(words, n, k)
+    out_data = corrected[:, :k]
+    # Padding must stay zero and data symbols must be bytes, else the block is rejected.
+    pad = blocks * k - length
+    bad_values = (out_data > 255).any(axis=1)
+    if pad and blocks:
+        bad_values[-1] |= bool(out_data[-1, k - pad:].any())
+    accepted = ok & ~bad_values
+    final = np.where(accepted[:, None], out_data, data)
+    flat = final.reshape(-1)[:length].astype(np.uint8)
+    repaired = flat.tobytes()
+    changed = (final != data).reshape(-1)[:length]
+    corrected_positions = np.nonzero(changed)[0].tolist()
+    uncorrectable_blocks = np.nonzero(~accepted)[0].tolist()
+    digest = hashlib.sha256(repaired).hexdigest()
+    return {
+        "repaired": repaired,
+        "corrected_data_positions": corrected_positions,
+        "corrected_blocks": int((accepted & damaged).sum()),
+        "uncorrectable_blocks": uncorrectable_blocks,
+        "sha256_after_repair": digest,
+        "integrity_verified": digest == expected_sha256 and not uncorrectable_blocks,
     }
 
 
@@ -182,38 +349,8 @@ def heal(received: bytes, envelope: Dict[str, Any], received_parity: Optional[Li
         raise ReedSolomonError("received trace length differs from the protected length")
     if len(parity) != int(envelope["blocks"]):
         raise ReedSolomonError("parity block count does not match the envelope")
-    out = bytearray()
-    corrected_positions: List[int] = []
-    corrected_blocks = 0
-    uncorrectable_blocks: List[int] = []
-    for b, start in enumerate(range(0, length, k)):
-        chunk = list(received[start:start + k])
-        pad = k - len(chunk)
-        word = chunk + [0] * pad + [int(v) for v in parity[b]]
-        res = decode_block(word, n, k)
-        if res["status"] == "uncorrectable":
-            uncorrectable_blocks.append(b)
-            out.extend(bytes(chunk))
-            continue
-        data = res["data"]
-        if any(v > 255 for v in data[: k - pad]) or any(data[k - pad:]):
-            uncorrectable_blocks.append(b)
-            out.extend(bytes(chunk))
-            continue
-        if res["status"] == "corrected":
-            corrected_blocks += 1
-            corrected_positions.extend(start + i for i in res["error_positions"] if i < k - pad)
-        out.extend(bytes(data[: k - pad]))
-    repaired = bytes(out)
-    digest = hashlib.sha256(repaired).hexdigest()
-    return {
-        "repaired": repaired,
-        "corrected_data_positions": corrected_positions,
-        "corrected_blocks": corrected_blocks,
-        "uncorrectable_blocks": uncorrectable_blocks,
-        "sha256_after_repair": digest,
-        "integrity_verified": digest == envelope["sha256"] and not uncorrectable_blocks,
-    }
+    parity_arr = np.asarray(parity, dtype=np.int64).reshape(len(parity), n - k) if len(parity) else np.zeros((0, n - k), dtype=np.int64)
+    return heal_blocks(received, parity_arr, n, k, envelope["sha256"])
 
 
 def deterministic_fault_positions(trace: bytes, count: int) -> List[int]:
