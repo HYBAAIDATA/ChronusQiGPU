@@ -61,6 +61,8 @@ class DurableTheseusService:
         self.self_healing_max_bytes = self_heal.self_healing_max_bytes()
         Path(self.path).parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.RLock()
+        self._heal_locks: dict[str, threading.Lock] = {}
+        self._heal_locks_guard = threading.Lock()
         self._bootstrap()
         self.verify_store()
 
@@ -370,6 +372,14 @@ class DurableTheseusService:
         """
         if not self.self_healing:
             return None
+        # One decode per object per process: concurrent callers wait, then see
+        # the repaired row (or the recorded failure) instead of re-decoding.
+        with self._heal_locks_guard:
+            object_lock = self._heal_locks.setdefault(object_id, threading.Lock())
+        with object_lock:  # entries are kept; one small lock per damaged object seen
+            return self._try_heal_locked(object_id)
+
+    def _try_heal_locked(self, object_id: str) -> bytes | None:
         # 1. Snapshot the damaged payload and its sidecar (read transaction).
         with self._connect() as db:
             current = db.execute(

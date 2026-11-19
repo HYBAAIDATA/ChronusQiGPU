@@ -225,3 +225,16 @@ def test_limit_is_capped_at_encoder_maximum_and_large_writes_succeed(tmp_path, m
     assert store.reconstruct("tenant-a", record.object_id) == big
     status = store.self_healing_status()
     assert status["protected_objects"] == 0 and status["max_protected_bytes"] == 1 << 20
+
+
+def test_concurrent_readers_share_one_repair(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+
+    path = tmp_path / "t.sqlite3"
+    store = DurableTheseusService(str(path))
+    record = store.store("tenant-a", PAYLOAD)
+    _corrupt(path, record.object_id, [0, 40, 80, 120, 160])
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        results = list(pool.map(lambda _: store.reconstruct("tenant-a", record.object_id), range(6)))
+    assert results == [PAYLOAD] * 6
+    assert _events(path) == ["REPAIRED"]
