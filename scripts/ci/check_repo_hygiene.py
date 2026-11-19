@@ -44,8 +44,38 @@ def matches_glob(rel_path: str, pattern: str) -> bool:
     return fnmatchcase(rel_path, pattern) if "/" in pattern else "/" not in rel_path and fnmatchcase(rel_path, pattern)
 
 
+def validate_policy(policy: object) -> None:
+    """Validate the policy as a policy, not as qualification evidence."""
+    if not isinstance(policy, dict):
+        raise ValueError("hygiene policy is not a JSON object")
+    if policy.get("schema_version") != "1.0.0" or policy.get("policy") != "fail_closed_public_surface":
+        raise ValueError("unknown hygiene policy or schema version")
+    for name in ("allowed_root_dirs", "allowed_root_files", "forbidden_path_globs", "content_scan_exclude_paths"):
+        items = policy.get(name, [] if name == "content_scan_exclude_paths" else None)
+        if not isinstance(items, list) or (not items and name != "content_scan_exclude_paths") or any(
+            not isinstance(item, str) or not item.strip() for item in items
+        ):
+            raise ValueError(f"invalid hygiene policy list: {name}")
+        if len(items) != len(set(items)):
+            raise ValueError(f"duplicate hygiene policy entry: {name}")
+    rules = policy.get("forbidden_content_regexes")
+    if not isinstance(rules, list) or not rules:
+        raise ValueError("forbidden_content_regexes must be a non-empty list")
+    ids = set()
+    for rule in rules:
+        if not isinstance(rule, dict) or any(
+            not isinstance(rule.get(key), str) or not rule[key].strip() for key in ("id", "pattern")
+        ):
+            raise ValueError("invalid content regex rule")
+        if rule["id"] in ids:
+            raise ValueError("duplicate content regex rule ID")
+        ids.add(rule["id"])
+        re.compile(rule["pattern"])
+
+
 def evaluate_hygiene(repo_root: Path, allowlist_path: Path) -> List[Violation]:
     policy = json.loads(allowlist_path.read_text(encoding="utf-8"))
+    validate_policy(policy)
     allowed_dirs: Set[str] = set(policy["allowed_root_dirs"])
     allowed_files: Set[str] = set(policy["allowed_root_files"])
     banned_globs: List[str] = list(policy["forbidden_path_globs"])

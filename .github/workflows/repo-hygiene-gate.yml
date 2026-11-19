@@ -43,7 +43,7 @@ jobs:
         run: python -m pytest -v --strict-markers tests/test_theseus_gate_g2_fenced_custody.py
       - name: Lifecycle and schema regressions
         if: always()
-        run: python -m pytest -v --strict-markers tests/test_theseus_lifecycle.py tests/test_wiring_entrypoints.py
+        run: python -m pytest -v --strict-markers tests/test_theseus_lifecycle.py tests/test_wiring_entrypoints.py tests/test_repo_hygiene_manifest_boundary.py
       - name: Regression qualification
         if: always()
         run: |
