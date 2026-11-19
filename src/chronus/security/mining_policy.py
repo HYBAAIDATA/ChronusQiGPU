@@ -4,7 +4,6 @@ This policy is an operator configuration boundary, not remote attestation.
 """
 from __future__ import annotations
 
-import base64
 import json
 import hashlib
 from decimal import Decimal
@@ -14,7 +13,12 @@ from pathlib import Path
 import time
 from uuid import uuid4
 
+from chronus.config import runtime_bounds
 from chronus.stratum.endpoint import PoolEndpoint, parse_endpoint
+
+# AES-256-GCM binary blob overhead (nonce + tag). The sealed frame object must
+# fit the durable custody payload limit, so the accepted frame is bounded by it.
+_AEAD_OVERHEAD_BYTES = 12 + 16
 
 
 class MiningSubmissionPolicy:
@@ -75,6 +79,16 @@ class MiningSubmissionPolicy:
         sealed = _seal(record, self._key, self._tenant)
         self._custody.append_journal_event(self._tenant, event, sealed)
 
+    def _seal_frame_blob(self, wire_frame: bytes) -> bytes:
+        """Seal the literal frame as raw AES-GCM bytes (no base64 expansion)."""
+        if self._key is None:
+            return wire_frame
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+        nonce = os.urandom(12)
+        aad = json.dumps({"tenant_id": self._tenant, "schema": "chronus-mining-wire-frame-v1"},
+                         sort_keys=True, separators=(",", ":")).encode()
+        return nonce + AESGCM(self._key).encrypt(nonce, wire_frame, aad)
+
     def authorize(self, rpc_id: int, evidence: dict | None = None) -> None:
         if not self.armed:
             raise PermissionError("Share submission is not armed")
@@ -107,17 +121,25 @@ class MiningSubmissionPolicy:
             "response_evidence_class": "DECODED_RESPONSE_ONLY",
         }
         if wire_frame is not None:
+            frame_limit = runtime_bounds()["max_payload_bytes"] - _AEAD_OVERHEAD_BYTES
             if (not isinstance(wire_frame, bytes) or not wire_frame.endswith(b"\n")
-                    or len(wire_frame) > 1024 * 1024):
+                    or len(wire_frame) > frame_limit):
                 raise ValueError("Invalid bounded pool response frame")
             literal = json.loads(wire_frame.decode("utf-8"), parse_float=Decimal)
             if not isinstance(literal, dict) or json.dumps(
                     literal, sort_keys=True, default=str, allow_nan=False) != decoded:
                 raise ValueError("Pool response frame does not match decoded response")
+            # The literal frame is stored as its own sealed custody object and
+            # linked by object id; the decoded JSON is derivable from it, so it is
+            # not duplicated into the record (keeps the record within custody limits).
+            frame_object = self._seal_frame_blob(wire_frame)
+            stored = self._custody.store(self._tenant, frame_object)
+            record.pop("decoded_response_json")
             record.update({
                 "response_evidence_class": "RECEIVED_STRATUM_FRAME",
-                "wire_frame_b64": base64.b64encode(wire_frame).decode("ascii"),
+                "wire_frame_object_id": stored.object_id,
                 "wire_frame_sha256": hashlib.sha256(wire_frame).hexdigest(),
+                "wire_frame_bytes": len(wire_frame),
             })
         self._record("MINING_POOL_ACKNOWLEDGEMENT", record)
         self.pending.remove(rpc_id)
@@ -143,6 +165,12 @@ class MiningSubmissionPolicy:
             self.pending.clear()
 
     def status(self) -> dict:
+        return {"share_submit_armed": self.armed,
+                "accepted_share_target": self.accepted_share_target,
+                "shares_accepted": self.accepted,
+                "pending_submissions": len(self.pending),
+                "approval_reference": self.approval_reference}
+tatus(self) -> dict:
         return {"share_submit_armed": self.armed,
                 "accepted_share_target": self.accepted_share_target,
                 "shares_accepted": self.accepted,
