@@ -1,0 +1,53 @@
+{
+  "claims": [
+    {
+      "code": "CO-FIPS204",
+      "text": "FIPS 204 ML-DSA signature on every AL HARAS decision",
+      "gates": [
+        "CO-SIGN",
+        "RS-RECEIPT"
+      ],
+      "state": "held"
+    },
+    {
+      "code": "CO-REPLAY",
+      "text": "Japan attack-chain replay held",
+      "gates": [
+        "RS-REPLAY"
+      ],
+      "state": "held"
+    },
+    {
+      "code": "CO-HSM",
+      "text": "HSM-backed keys",
+      "gates": [
+        "FN-CUSTODY"
+      ],
+      "state": "held"
+    },
+    {
+      "code": "RS-SPEED",
+      "text": "2.7-4.6x faster searches",
+      "gates": [
+        "bench.search"
+      ],
+      "state": "held"
+    },
+    {
+      "code": "RS-WORK",
+      "text": "11.5x verified work",
+      "gates": [
+        "bench.verified_work"
+      ],
+      "state": "held"
+    },
+    {
+      "code": "RS-FN",
+      "text": "27% fewer false negatives",
+      "gates": [
+        "bench.false_negatives"
+      ],
+      "state": "held"
+    }
+  ]
+}
