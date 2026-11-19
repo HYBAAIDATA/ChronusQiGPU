@@ -5,11 +5,11 @@ No universal finite-sample, optimisation or predictive superiority is asserted.
 """
 from __future__ import annotations
 
-import math
+from types import MappingProxyType
 from dataclasses import dataclass
 from fractions import Fraction
 
-from chronus.geodesic.embedding_11d import Q5, PHI, PHI_INV
+from chronus.geodesic.embedding_11d import Q5, PHI_INV
 from chronus.execution.structural import zeckendorf_encode
 from chronus.storage.phyllotaxis import GOLDEN_RATIO_CONJUGATE_64
 
@@ -33,8 +33,9 @@ def _rational(x):
 def _floor(x):
     # sqrt(5) in (2,3) supplies a rigorous integer bracket.
     a, b = x.a, x.b
-    lo = math.floor(a + min(2*b, 3*b))
-    hi = math.ceil(a + max(2*b, 3*b)) + 1
+    low, high = a+min(2*b,3*b), a+max(2*b,3*b)
+    lo = low.numerator//low.denominator
+    hi = -((-high.numerator)//high.denominator)+1
     while hi-lo > 1:
         mid = (lo+hi)//2
         if (x-mid).sign() >= 0:
@@ -60,22 +61,14 @@ def phyllotaxis_exact(n):
     return [(Fraction(2*k+1, 2*n), _frac(PHI_INV*PHI_INV*k)) for k in range(n)]
 
 
-def _float(x):
-    return float(x.a) + float(x.b)*math.sqrt(5)
-
-
 def kronecker_golden_1d(n, seed=0.5):
-    """Numerical projection for plotting; not an exact witness."""
-    return [_float(x) for x in kronecker_golden_exact(n, Fraction(str(seed)))]
+    from chronus.research.golden_nature_reference import kronecker_golden_1d as project
+    return project(n,seed)
 
 
 def phyllotaxis_disk(n):
-    """Numerical Cartesian projection of exact polar coordinates."""
-    result = []
-    for r2, turns in phyllotaxis_exact(n):
-        radius, theta = math.sqrt(float(r2)), math.tau*_float(turns)
-        result.append((radius*math.cos(theta), radius*math.sin(theta)))
-    return result
+    from chronus.research.golden_nature_reference import phyllotaxis_disk as project
+    return project(n)
 
 
 def fibonacci_scatter(x):
@@ -135,47 +128,20 @@ def golden_section_exact(f, a, b, tol=Fraction(1, 10**12), max_iter=200):
     return MinimumBracket(a, b, count, (b-a-tolerance).sign() <= 0)
 
 
-def golden_section_minimize(f, a, b, tol=1e-12, max_iter=200):
-    """Numerical reference for a strictly unimodal floating objective."""
-    if not all(math.isfinite(x) for x in (a, b, tol)) or not a < b or tol <= 0:
-        raise ValueError("invalid bracket")
-    ratio = (math.sqrt(5)-1)/2
-
-    def evaluate(x):
-        value = f(x)
-        if not math.isfinite(value):
-            raise ValueError("nonfinite objective")
-        return value
-
-    c, d = b-ratio*(b-a), a+ratio*(b-a)
-    fc, fd, count = evaluate(c), evaluate(d), 2
-    for _ in range(_count(max_iter)):
-        if b-a <= tol:
-            break
-        if fc <= fd:
-            b, d, fd = d, c, fc
-            c = b-ratio*(b-a)
-            fc = evaluate(c)
-        else:
-            a, c, fc = c, d, fd
-            d = a+ratio*(b-a)
-            fd = evaluate(d)
-        count += 1
-    if b-a > tol:
-        raise ArithmeticError("requested bracket tolerance not reached")
-    x = a+(b-a)/2
-    return x, evaluate(x), count+1
+def golden_section_minimize(f,a,b,tol=1e-12,max_iter=200):
+    from chronus.research.golden_nature_reference import golden_section_minimize as project
+    return project(f,a,b,tol,max_iter)
 
 
 # Polynomial coefficients in descending order; root is the unique real
 # root > 1 for the three cubic families, larger real root for the quadratics.
-FAMILY_POLYNOMIALS = {
+FAMILY_POLYNOMIALS = MappingProxyType({
     "golden": (1, -1, -1),
     "silver": (1, -2, -1),
     "plastic": (1, 0, -1, -1),
     "supergolden": (1, -1, 0, -1),
     "tribonacci": (1, -1, -1, -1),
-}
+})
 
 
 @dataclass(frozen=True)
@@ -189,18 +155,8 @@ class AlgebraicFrequency:
         return FAMILY_POLYNOMIALS[self.family]
 
     def numeric(self):
-        # Root isolation on [1,3], numerical reference only.
-        lo, hi = 1.0, 3.0
-        for _ in range(54):
-            mid = (lo+hi)/2
-            value = 0.0
-            for c in self.polynomial:
-                value = value*mid+c
-            if value > 0:
-                hi = mid
-            else:
-                lo = mid
-        return float(self.base)*(1+self.coefficient*((lo+hi)/2))
+        from chronus.research.golden_nature_reference import numeric_frequency
+        return numeric_frequency(self)
 
 
 def anti_resonant_frequencies_exact(n_blocks, base_omega=Fraction(3,20)):
@@ -221,30 +177,20 @@ def anti_resonant_frequencies_exact(n_blocks, base_omega=Fraction(3,20)):
             for k in range(_count(n_blocks))]
 
 
-def anti_resonant_frequencies(n_blocks, base_omega=0.15):
-    return [x.numeric() for x in anti_resonant_frequencies_exact(
-        n_blocks, Fraction(str(base_omega)))]
+def anti_resonant_frequencies(n_blocks,base_omega=0.15):
+    from chronus.research.golden_nature_reference import anti_resonant_frequencies as project
+    return project(n_blocks,base_omega)
 
 
-def evolve_anti_resonant(state, time_step=0.5, base_omega=0.15):
-    """Evaluate exact symbolic block exp(-i omega t X) in numerical reference."""
-    if not state or len(state)%2 or not math.isfinite(time_step):
-        raise ValueError("nonempty even state and finite time required")
-    if any(not math.isfinite(complex(x).real) or not math.isfinite(complex(x).imag)
-           for x in state):
-        raise ValueError("nonfinite state")
-    out, residual = [], 0.0
-    for i, omega in enumerate(anti_resonant_frequencies(len(state)//2, base_omega)):
-        c, s = math.cos(omega*time_step), math.sin(omega*time_step)
-        a, b = state[2*i:2*i+2]
-        out.extend((c*a-1j*s*b, c*b-1j*s*a))
-        residual = max(residual, abs(c*c+s*s-1))
-    return out, residual
+def evolve_anti_resonant(state,time_step=0.5,base_omega=0.15):
+    from chronus.research.golden_nature_reference import evolve_anti_resonant as project
+    return project(state,time_step,base_omega)
 
 
 def ranked_zeckendorf_bits(rows):
     """Exact dense ordinal encoding; no magnitude, float coercion or truncation.
 
+    Comparisons require the same ordinal rank basis (columns and distinct counts).
     Invariant under strictly increasing per-column transformations. Decreasing
     transformations reverse ranks; do not claim invariance to all monotone maps.
     """
@@ -255,11 +201,23 @@ def ranked_zeckendorf_bits(rows):
     codes = [[set(zeckendorf_encode(maps[j][v])) for j,v in enumerate(row)]
              for row in rows]
     top = max(max(z) for row in codes for z in row)
-    return [tuple(int(i in z) for z in row for i in range(2,top+1)) for row in codes]
+    basis=tuple(len(m) for m in maps)
+    return [RankedBits((int(i in z) for z in row for i in range(2,top+1)),basis) for row in codes]
+
+
+class RankedBits(tuple):
+    """Ordinal vector with explicit basis metadata."""
+    def __new__(cls, values, basis):
+        instance=super().__new__(cls,values)
+        instance.basis=tuple(basis)
+        return instance
 
 
 def ranked_fidelity(left, right):
     """Exact fidelity for normalized, uncentered binary-amplitude states."""
+    if isinstance(left,RankedBits) or isinstance(right,RankedBits):
+        if not isinstance(left,RankedBits) or not isinstance(right,RankedBits) or left.basis!=right.basis:
+            raise ValueError("ordinal rank basis mismatch")
     if (not left or len(left)!=len(right) or
             any(type(x) is not int or x not in (0,1) for x in (*left,*right))):
         raise ValueError("matching binary vectors required")

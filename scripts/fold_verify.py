@@ -128,6 +128,8 @@ def main(argv=None):
         if args.certificate:
             with open(args.certificate, encoding="utf-8") as handle:
                 witness = json.load(handle)
+            if type(witness) is not dict:
+                raise ValueError("certificate file must contain an object")
         result = verify(parse(args.folded), args.steps, args.bits,
                         parse(args.originals) if args.originals is not None else None,
                         digest=args.digest, witness=witness)
