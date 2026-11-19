@@ -32,6 +32,11 @@
       "min_passed": 31,
       "max_skipped": 0,
       "allowed_skip_reasons": []
+    },
+    "installed": {
+      "min_passed": 5,
+      "max_skipped": 0,
+      "allowed_skip_reasons": []
     }
   }
 }

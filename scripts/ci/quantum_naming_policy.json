@@ -3,16 +3,19 @@
   "legacy_root": "src/chronus/quantum",
   "legacy_modules": {
     "__init__.py": "historical_namespace",
+    "attractor_stress.py": "algebraic_model",
     "entanglement.py": "algebraic_model",
     "extension_search.py": "finite_field_model",
     "geometric_polychoron.py": "algebraic_model",
+    "golden_scales.py": "algebraic_model",
     "grover.py": "finite_field_model",
     "metallic_search.py": "algebraic_model",
     "ring_codec.py": "algebraic_model",
     "ring_mps.py": "algebraic_model",
     "ring_state.py": "algebraic_model",
     "statevector.py": "finite_field_model",
-    "subspace.py": "finite_field_model"
+    "subspace.py": "finite_field_model",
+    "triad_grover.py": "algebraic_model"
   },
   "classical_alias": {
     "path": "src/chronus/intelligence/predictive_engine.py",

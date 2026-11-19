@@ -1,5 +1,6 @@
 """Tests for the Chronus service API and mathematical reference execution."""
 
+import chronus
 import pytest
 from fastapi.testclient import TestClient
 
@@ -68,7 +69,7 @@ class TestServiceModels:
             active_workloads=0,
         )
         assert health.status == HealthStatus.HEALTHY
-        assert health.version == "36.0.1"
+        assert health.version == chronus.__version__
 
     def test_base64_wire_payload_preserves_binary_bytes(self):
         request = WorkloadRequest(
