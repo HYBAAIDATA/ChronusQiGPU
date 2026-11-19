@@ -264,6 +264,45 @@ def check_readiness_and_console(tmp: Path) -> None:
            "frontend/app has no triad/THESEUS custody view")
 
 
+def check_storage_self_healing(tmp: Path) -> None:
+    """Bounded THESEUS repair through the triad: small corruption repaired, address unchanged."""
+    db = tmp / "selfheal.sqlite3"
+    triad = ProductionTriad(str(db))
+    if not getattr(triad.theseus, "self_healing", False):
+        record("X8", "Bounded storage self-healing through the triad", "GAP",
+               "DurableTheseusService.self_healing is not enabled/available on this revision")
+        return
+    payload = os.urandom(4096)
+    r = triad.put("tenant-a", payload)
+    con = sqlite3.connect(db)
+    stored = bytearray(con.execute("SELECT payload FROM objects WHERE object_id=?",
+                                   (r.representation_object_id,)).fetchone()[0])
+    for i in (7, 1500, 3000):
+        stored[i] ^= 0xFF
+    con.execute("UPDATE objects SET payload=? WHERE object_id=?", (bytes(stored), r.representation_object_id))
+    con.commit(); con.close()
+    started = time.perf_counter()
+    try:
+        reopened = ProductionTriad(str(db))
+        out = reopened.materialise(r)
+    except Exception as exc:
+        record("X8", "Bounded storage self-healing through the triad", "FAIL",
+               f"3 corrupted bytes were not repaired: {type(exc).__name__}: {exc}")
+        return
+    elapsed = time.perf_counter() - started
+    con = sqlite3.connect(db)
+    events = con.execute("SELECT kind, corrected_bytes FROM self_heal_events WHERE object_id=?",
+                         (r.representation_object_id,)).fetchall()
+    healed = con.execute("SELECT payload FROM objects WHERE object_id=?", (r.representation_object_id,)).fetchone()[0]
+    con.close()
+    ok = (out == payload and hashlib.sha256(healed).hexdigest() == r.representation_object_id and bool(events))
+    record("X8", "Bounded storage self-healing through the triad (3 corrupted bytes, reopen + materialise)",
+           "PASS" if ok else "FAIL",
+           f"materialised bytes equal original: {out == payload}; stored payload re-hashes to the unchanged "
+           f"content address: {hashlib.sha256(healed).hexdigest() == r.representation_object_id}; "
+           f"self_heal_events: {events}; reopen+materialise {elapsed * 1000:.1f} ms (single local run, box CPU)")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="-")
@@ -272,7 +311,7 @@ def main() -> int:
     with tempfile.TemporaryDirectory() as d:
         tmp = Path(d)
         for fn in (check_fresh_process_replay, check_orphans, check_tenant_isolation_and_concurrency,
-                   check_fail_closed, check_readiness_and_console):
+                   check_fail_closed, check_storage_self_healing, check_readiness_and_console):
             try:
                 fn(tmp)
             except Exception as exc:
