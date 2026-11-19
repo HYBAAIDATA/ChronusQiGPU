@@ -270,7 +270,8 @@ def E3_honest_1000_node_claim(
 
     1D critical TFIM (J = h = 1) ground state via charge-aware Z2 DMRG at
     1,000 nodes in the P = prod X = +1 sector, with a complete ErrorLedger.
-    The claim is published only if the ledger bound is < claim_bound (1e-6),
+    The claim is a numerical acceptance test, not a proof of exact equivalence.
+    It is published only if the ledger bound is < claim_bound (1e-6),
     the n=1000 energy density agrees with the n=32 exact (Jordan-Wigner)
     reference within 0.05, and the energy is within claim_bound (relative) of
     the exact n=1000 open-chain energy without undercutting it. Otherwise the experiment *refuses* with the
@@ -362,6 +363,19 @@ def E3_honest_1000_node_claim(
         "cross_check_diff": round(density_diff, 5),
         "global_error_bound": ledger.global_bound,
         "claim_bound": ledger.claim_bound,
+        # The acceptance test is numerical: a relative energy error at or below
+        # the threshold, compared with the closed-form Jordan-Wigner energy
+        # evaluated in IEEE-754 double precision. It is not a proof of exact
+        # mathematical equivalence with the ground state.
+        "acceptance": {
+            "kind": "numerical_threshold",
+            "metric": "relative_energy_error",
+            "threshold": ledger.claim_bound,
+            "measured": relative_error,
+            "headroom_fraction": 1.0 - relative_error / ledger.claim_bound,
+            "exact_equivalence_claimed": False,
+            "reference": "closed-form open-chain Jordan-Wigner energy (Pfeuty 1970), float64",
+        },
         "publication_record": pub_record,
         "status": "PASS",
     }
@@ -370,7 +384,12 @@ def E3_honest_1000_node_claim(
         experiment_id="E3",
         status="PASS",
         passed=True,
-        summary="1,000-node claim verified: Z2 charge-aware DMRG on the critical TFIM, truncation ledger bound < 1e-6, relative energy error vs exact Jordan-Wigner < 1e-6, n=32 density cross-check.",
+        summary=(
+            "1,000-node claim meets the numerical acceptance threshold: Z2 charge-aware DMRG on "
+            f"the critical TFIM, relative energy error {relative_error:.2e} <= {ledger.claim_bound:.0e} "
+            "against the closed-form Jordan-Wigner energy (a numerical tolerance, not exact "
+            "equivalence), truncation ledger bound < 1e-6, n=32 density cross-check."
+        ),
         telemetry=telemetry,
         certificate=cert,
     )

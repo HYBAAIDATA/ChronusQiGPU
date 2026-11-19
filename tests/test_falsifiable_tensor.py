@@ -10,11 +10,12 @@ Verifies:
 7. FastAPI Service Endpoints for tensor charter, hardware caps, network construction, and experiments.
 """
 
+import json
 import math
+import os
+from pathlib import Path
 
 import numpy as np
-import os
-
 import pytest
 from fastapi.testclient import TestClient
 
@@ -52,6 +53,8 @@ from chronus.tensor import (
 )
 
 pytestmark = pytest.mark.real
+
+E3_REFERENCE = Path(__file__).resolve().parents[1] / "evidence" / "benchmarks" / "tensor-e3-1000-20261119.json"
 
 client = TestClient(app)
 
@@ -259,6 +262,21 @@ def test_experiment_e3_honest_1000_node_claim():
     assert telemetry["relative_energy_error"] <= 1e-6
     assert telemetry["max_bond_dimension_used"] <= telemetry["chi_max"]
     assert telemetry["publication_record"]["publication_status"] == "APPROVED_BY_SCIENTIFIC_INTEGRITY_LEAD"
+    # The acceptance is a numerical threshold, never a claim of exact equivalence.
+    acceptance = telemetry["acceptance"]
+    assert acceptance["kind"] == "numerical_threshold"
+    assert acceptance["exact_equivalence_claimed"] is False
+    assert acceptance["threshold"] == telemetry["claim_bound"] == 1e-6
+    assert acceptance["measured"] == telemetry["relative_energy_error"]
+    assert 0.0 <= acceptance["headroom_fraction"] < 1.0
+    assert "numerical acceptance threshold" in result.summary
+    assert "not exact" in result.summary
+    assert "verified" not in result.summary
+    # The reference energy is the recorded closed form (preserved evidence).
+    reference = json.loads(E3_REFERENCE.read_text(encoding="utf-8"))
+    assert telemetry["exact_open_chain_energy"] == pytest.approx(
+        reference["result"]["exact_open_chain_energy"], rel=1e-12)
+    assert reference["result"]["relative_energy_error"] <= reference["acceptance"]["threshold"]
 
 
 def test_publish_gate_enforcement():
