@@ -85,6 +85,12 @@ def downgrade() -> None:
     if not op.get_context().as_sql:
         bind = op.get_bind()
         existing = set(sa.inspect(bind).get_table_names())
+        if bind.dialect.name == "postgresql":
+            # Hold writers off between the emptiness check and the DROP
+            # (released at the end of the migration transaction).
+            for table in (ciaas_capacity_ledger, ciaas_tenants):
+                if table.name in existing:
+                    op.execute(sa.text(f'LOCK TABLE "{table.name}" IN ACCESS EXCLUSIVE MODE'))
         for table in (ciaas_capacity_ledger, ciaas_tenants):
             if table.name in existing and bind.execute(
                 sa.select(sa.func.count()).select_from(table)
