@@ -8,6 +8,9 @@ from chronus.stratum.bip310 import format_extranonce2
 from chronus.stratum.endian_engine import compute_merkle_root_stratum
 from chronus.stratum.gatekeeper import compute_share_target_exact
 from chronus.stratum.gateway import StratumGateway
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 def test_search_nonce_batch_returns_target_valid_nonce_and_gatekeeper_accepts():

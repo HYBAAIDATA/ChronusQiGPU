@@ -11,6 +11,8 @@ from chronus.storage.prime_codec import (
     encode,
 )
 
+pytestmark = pytest.mark.real
+
 
 def test_all_octets_round_trip():
     source = bytes(range(256))

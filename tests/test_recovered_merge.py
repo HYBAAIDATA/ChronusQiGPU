@@ -11,6 +11,9 @@ import re
 from pathlib import Path
 
 from chronus.qsdl.qsdl_compiler import QSDLCompiler
+import pytest
+
+pytestmark = pytest.mark.real
 
 RECOVERED = Path(__file__).resolve().parents[1] / "benchmarks" / "recovered"
 

@@ -37,6 +37,9 @@ from stratum_smoke import (  # noqa: E402
     target_from_nbits,
     validate_job_params,
 )
+import pytest
+
+pytestmark = pytest.mark.simulated
 
 
 class EndianSmokeTests(unittest.TestCase):

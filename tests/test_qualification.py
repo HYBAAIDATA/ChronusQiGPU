@@ -1,6 +1,9 @@
 from chronus.core.qualification import qualify, MANDATORY
 from chronus.core.claims import dispositions, required_claims_for_profile
 from chronus.crypto import signers
+import pytest
+
+pytestmark = pytest.mark.simulated
 
 
 def test_pq_gate_unqualified_without_provider(monkeypatch):

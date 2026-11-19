@@ -16,6 +16,9 @@ from chronus.service.api.routers.procurement import (
     capacity_openapi_fragment,
     openapi_fragment,
 )
+import pytest
+
+pytestmark = pytest.mark.simulated
 
 TENANT = "tenant-a"
 OTHER = "tenant-b"

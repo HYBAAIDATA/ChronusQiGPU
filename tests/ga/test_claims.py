@@ -1,3 +1,7 @@
+import pytest
+
+pytestmark = pytest.mark.real
+
 def test_all_registered_claims_pass():
     from ga import claim_checks  # noqa: F401  populates the registry
     from ga.claims import run

@@ -1,6 +1,9 @@
 import unittest
 from collections import deque
 from chronus.stratum.rate_limiter import IntegerNanosecondTokenBucket, PriorityShareQueue, ShareCandidate
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 class TestRateLimiter(unittest.TestCase):

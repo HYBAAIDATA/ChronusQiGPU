@@ -14,6 +14,9 @@ from chronus.fleet.recovery import (
     commitment_of,
 )
 from chronus.fleet.scheduler import LeaseGroup
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 def reference(job, tile):

@@ -7,6 +7,8 @@ import sys
 import pytest
 from hypothesis import given, settings, strategies as st
 
+pytestmark = pytest.mark.real
+
 source = Path(__file__).resolve().parents[1] / 'src/chronus/quantum/geometric_polychoron.py'
 spec = importlib.util.spec_from_file_location('ring_under_test', source)
 m = importlib.util.module_from_spec(spec)

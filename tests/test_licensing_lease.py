@@ -45,6 +45,9 @@ from chronus.licensing import (
     verify_lease,
     verify_revocations,
 )
+import pytest
+
+pytestmark = pytest.mark.real
 
 NOW = datetime(2026, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
 KID = "hyba-test-2026"

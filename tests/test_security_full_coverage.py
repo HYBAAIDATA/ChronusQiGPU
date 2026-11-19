@@ -62,6 +62,8 @@ from chronus.security.norm_proof import (
 )
 from chronus.service.app import create_app
 
+pytestmark = pytest.mark.real
+
 # ==============================================================================
 # SECTION 1: PROPERTY-BASED ALGEBRAIC & TOPOLOGICAL INVARIANTS (HYPOTHESIS)
 # ==============================================================================

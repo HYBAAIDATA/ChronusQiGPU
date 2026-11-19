@@ -1,6 +1,9 @@
 """Hendrix PrimeField: exact EXP/LOG tables, round trips, Zech logarithms, size guard."""
 
 from chronus.hendrix import GF257, MAX_FIELD_ORDER, PrimeField
+import pytest
+
+pytestmark = pytest.mark.real
 
 SMALL_PRIMES = (2, 3, 5, 7, 11, 13, 17, 97, 257)
 

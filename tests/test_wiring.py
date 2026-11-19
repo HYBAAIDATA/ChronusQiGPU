@@ -7,6 +7,8 @@ from chronus.wiring import (
     build_dependency_graph, discover_files, parse_imports, run_wiring, toposort_wired,
 )
 
+pytestmark = pytest.mark.real
+
 
 def test_comments_and_dotted_modules(tmp_path):
     package = tmp_path / 'src' / 'chronus'

@@ -15,6 +15,8 @@ from chronus.storage.theseus import (
     TheseusService,
 )
 
+pytestmark = pytest.mark.simulated
+
 
 # ---------------------------------------------------------------------------
 # OVID content-addressed store abuse

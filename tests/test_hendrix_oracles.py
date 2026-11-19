@@ -11,6 +11,9 @@ from chronus.hendrix import (
     XorPeriodOracle,
     is_oracle,
 )
+import pytest
+
+pytestmark = pytest.mark.real
 
 ODD_PRIMES = (3, 5, 7, 11, 13, 17, 97, 257)
 

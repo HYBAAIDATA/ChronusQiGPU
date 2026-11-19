@@ -17,6 +17,8 @@ from turing.exact.geometry.hilbert import (
     ExactComplex, SignedInvolution, SparseState, TensorHilbert,
 )
 
+pytestmark = pytest.mark.real
+
 
 def test_exact_19200_dual_laplacian_conservation_and_graph_response():
     dispatcher = iGPUDispatcher()

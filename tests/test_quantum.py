@@ -4,6 +4,8 @@ import pytest
 
 from chronus.quantum import I_UNIT, INV_SQRT2, OMEGA_8, P, SQRT2, StateVector
 
+pytestmark = pytest.mark.real
+
 
 def test_field_constants_are_exact():
     assert SQRT2 * SQRT2 % P == 2

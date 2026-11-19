@@ -7,6 +7,8 @@ from hypothesis import given, settings, strategies as st
 from chronus.quantum.geometric_polychoron import Cyclotomic5 as C
 from chronus.quantum.ring_state import MAX_COORDINATES, scale_element, scale_vector
 
+pytestmark = pytest.mark.real
+
 ring = st.tuples(*[st.integers(-10000, 10000)]*4).map(lambda v: C(*v))
 
 

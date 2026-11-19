@@ -49,6 +49,8 @@ from chronus.security.al_haras.orbital_mesh import (
     verify_mac_lane_coherence,
 )
 
+pytestmark = pytest.mark.simulated
+
 PIPE = ["Planner", "Coder", "Executor", "Tool"]
 CLEAN = [1, 0, 0, 1]
 HIJACK = [99, -88, 77, 66]

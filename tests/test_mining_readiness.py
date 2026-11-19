@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 import pytest
 
-pytestmark = pytest.mark.usefixtures("mining_custody")
+pytestmark = [pytest.mark.usefixtures("mining_custody"), pytest.mark.simulated]
 
 from chronus.execution.mining_entrypoint import ChronusRealMiningEngine
 from chronus.stratum.gateway import StratumGateway

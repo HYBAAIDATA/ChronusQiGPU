@@ -26,6 +26,8 @@ from chronus.security.al_haras.receipts import (
     signed_receipt,
 )
 
+pytestmark = pytest.mark.real
+
 # FIPS 204, Table 2: ML-DSA-87 public key and signature sizes in bytes.
 FIPS_204_ML_DSA_87_PUBLIC_KEY_BYTES = 2592
 FIPS_204_ML_DSA_87_SIGNATURE_BYTES = 4627

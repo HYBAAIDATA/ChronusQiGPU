@@ -8,6 +8,8 @@ from chronus.config import runtime_bounds
 from chronus.execution import ExecutionRouter
 from chronus.execution.mining import partition_nonce_range
 
+pytestmark = pytest.mark.simulated
+
 
 def test_defaults_match_documented_architecture():
     bounds = runtime_bounds()

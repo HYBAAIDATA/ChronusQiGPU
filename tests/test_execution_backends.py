@@ -22,6 +22,8 @@ from chronus.execution.systemverilog_backend import (
     SystemVerilogHardwareSimulatorBackend,
 )
 
+pytestmark = pytest.mark.simulated
+
 
 # ---------------------------------------------------------------------------
 # asic_sha256 — FIPS 180-4 exactness

@@ -4,6 +4,8 @@ import json
 import pytest
 from scripts.reconcile_benchmarks import reconcile
 
+pytestmark = pytest.mark.real
+
 SHA = "a" * 40
 
 

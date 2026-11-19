@@ -19,6 +19,8 @@ from chronus.security.al_haras.holographic_qec import HappyTensorNetwork, Hologr
 from chronus.security.al_haras.receipts import ReceiptSigner
 from chronus.security.al_haras.tempest_scrambler import Matrix2x2, TempestEmissionScrambler
 
+pytestmark = pytest.mark.simulated
+
 
 # ==============================================================================
 # [[5,1,3]] code
