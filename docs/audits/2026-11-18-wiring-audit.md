@@ -23,7 +23,8 @@ from docs. Release posture is unchanged: **NOT QUALIFIED**.
    `alembic upgrade head` database lacked tables the CIaaS paths use. Added
    `0002_ciaas_tenancy_tables`; a test replays all revisions on SQLite and
    asserts table/column parity with the metadata (fails on `main`). The
-   revision skips tables/indexes that already exist, because
+   revision uses `CREATE TABLE/INDEX IF NOT EXISTS` (online and in offline
+   `--sql` output), because
    `PostgresWorkloadStore.init_db()` runs `metadata.create_all` and may have
    created them on databases stamped at 0001; a second test covers that path
    and checks existing rows survive.

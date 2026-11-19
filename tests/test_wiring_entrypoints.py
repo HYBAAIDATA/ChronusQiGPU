@@ -56,13 +56,19 @@ def test_env_example_keys_are_read_by_code() -> None:
     assert not unread, f".env.example keys never read under src/: {unread}"
 
 
-def test_console_scripts_resolve() -> None:
+def _console_scripts() -> dict[str, str]:
+    text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     try:
         import tomllib
-    except ModuleNotFoundError:  # pragma: no cover - Python 3.10
-        tomllib = pytest.importorskip("tomli")
-    data = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
-    scripts = data["project"]["scripts"]
+    except ModuleNotFoundError:  # Python 3.10: parse the one flat table directly.
+        section = re.search(r"^\[project\.scripts\]\s*$(.*?)(?=^\[)", text, re.M | re.S)
+        assert section, "pyproject.toml has no [project.scripts] table"
+        return dict(re.findall(r'^([\w.-]+)\s*=\s*"([^"]+)"', section.group(1), re.M))
+    return tomllib.loads(text)["project"]["scripts"]
+
+
+def test_console_scripts_resolve() -> None:
+    scripts = _console_scripts()
     assert scripts
     for name, target in scripts.items():
         module_name, _, attr = target.partition(":")
