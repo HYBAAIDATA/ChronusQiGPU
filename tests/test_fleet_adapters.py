@@ -24,7 +24,7 @@ from chronus.fleet.metal import MetalAdapter, MLXEngine
 from chronus.fleet.opencl import OpenCLAdapter
 import pytest
 
-pytestmark = pytest.mark.real
+pytestmark = pytest.mark.simulated
 
 
 def builtin():

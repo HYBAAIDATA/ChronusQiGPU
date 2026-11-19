@@ -17,7 +17,7 @@ from chronus.quantum.metallic_search import (
     phase_matched_sweep,
 )
 
-pytestmark = pytest.mark.real
+pytestmark = pytest.mark.simulated
 
 
 def test_qsqrt2_exact_arithmetic_and_sign():

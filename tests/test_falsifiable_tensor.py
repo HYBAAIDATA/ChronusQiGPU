@@ -343,13 +343,13 @@ def test_api_e3_refuses_while_charge_aware_dmrg_is_unimplemented():
     assert "charge-aware DMRG" in response.json()["detail"]
 
 
-def test_api_run_experiments():
-    """Test GET /v1/tensor/experiments/{exp_id} for E1, E2, and E3."""
-    for exp_id in ("E1", "E2", "E3"):
-        response = client.get(f"/v1/tensor/experiments/{exp_id}")
-        assert response.status_code == 200
-        data = response.json()
-        assert data["experiment_id"] == exp_id
-        assert data["passed"] is True
-        assert data["status"] == "PASS"
-        assert "certificate" in data
+@pytest.mark.parametrize("exp_id", ["E1", "E2"])
+def test_api_run_experiments(exp_id):
+    """Test GET /v1/tensor/experiments/{exp_id} for E1 and E2 (E3: see the 501 test above)."""
+    response = client.get(f"/v1/tensor/experiments/{exp_id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["experiment_id"] == exp_id
+    assert data["passed"] is True
+    assert data["status"] == "PASS"
+    assert "certificate" in data

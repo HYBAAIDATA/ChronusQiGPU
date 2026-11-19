@@ -79,6 +79,24 @@ def test_baseline_ratchet_admits_recorded_debt_only(tmp_path, capsys):
     assert "1 baseline entries resolved" in capsys.readouterr().err
 
 
+def test_baseline_hashes_full_line_and_only_shrinks(tmp_path):
+    long_line = "approx " + "x" * 120 + " tail\n"
+    write(tmp_path, "src/chronus/core/a.py", long_line + "simulation\n")
+    write(tmp_path, "scripts/ci/dressing_policy.json", json.dumps(policy()))
+    assert no_dressing.main(["--write-baseline"], root=tmp_path) == 0
+    # A change past the 100-character display preview is a different line.
+    write(tmp_path, "src/chronus/core/a.py", long_line.replace("tail", "edit") + "simulation\n")
+    assert no_dressing.main(["--baseline"], root=tmp_path) == 2
+    # Swapping resolved debt for new wording cannot be written into the baseline.
+    assert no_dressing.main(["--write-baseline"], root=tmp_path) == 2
+    # Pure shrinking is allowed.
+    write(tmp_path, "src/chronus/core/a.py", long_line)
+    assert no_dressing.main(["--write-baseline"], root=tmp_path) == 0
+    assert no_dressing.main(["--baseline"], root=tmp_path) == 0
+    write(tmp_path, "src/chronus/core/a.py", long_line + "simulation\n")
+    assert no_dressing.main(["--baseline"], root=tmp_path) == 2
+
+
 def test_test_reality_requires_explicit_classification(tmp_path):
     write(tmp_path, "tests/test_unlabelled.py", "def test_case(): pass\n")
     report = test_reality.scan(tmp_path)
