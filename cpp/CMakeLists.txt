@@ -1,5 +1,18 @@
 cmake_minimum_required(VERSION 3.16)
-project(chronus_igpu_native VERSION 36.0.1 LANGUAGES C CXX)
+
+# Single source of truth: the version comes from src/chronus/__init__.py (chronus.__version__).
+# Registered as a configure dependency so a version-only edit re-runs configuration.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../src/chronus/__init__.py")
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/../src/chronus/__init__.py" _chronus_version_line
+     REGEX "^__version__ = \"[^\"]+\"")
+string(REGEX REPLACE "^__version__ = \"([^\"]+)\".*" "\\1" CHRONUS_VERSION "${_chronus_version_line}")
+string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" CHRONUS_VERSION_NUMERIC "${CHRONUS_VERSION}")
+if(NOT CHRONUS_VERSION_NUMERIC)
+    message(FATAL_ERROR "Could not read chronus.__version__ from src/chronus/__init__.py")
+endif()
+
+project(chronus_igpu_native VERSION ${CHRONUS_VERSION_NUMERIC} LANGUAGES C CXX)
+add_compile_definitions(CHRONUS_VERSION_STRING="${CHRONUS_VERSION}")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
