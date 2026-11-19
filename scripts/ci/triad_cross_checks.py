@@ -117,11 +117,23 @@ def check_orphans(tmp: Path) -> None:
     # The maintained API surface is ProtectedTheseusService; record what it exposes.
     from chronus.storage.protected import ProtectedTheseusService
     surface = sorted(n for n in dir(ProtectedTheseusService) if not n.startswith("_"))
-    enumerates = any(k in n for n in surface for k in ("orphan", "scan", "reconcile", "list", "audit"))
-    record("X2c", "Orphan reconciliation: shard files without a THESEUS manifest", "PASS" if enumerates else "GAP",
-           f"{len(files)} shard files + 1 stray; recovery returned the original bytes: {recovered == original}; "
-           f"ProtectedTheseusService public API {surface} has no enumeration/reconciliation entry point"
-           if not enumerates else f"enumeration entry point present: {surface}")
+    # Status is decided only by behaviour: a reconciliation entry point must exist AND report
+    # the planted stray shard. Method names alone never produce PASS.
+    entry = next((n for n in ("reconcile", "reconcile_orphans", "find_orphans", "scan_orphans") if n in surface), None)
+    if entry is None:
+        status, detail = "GAP", (f"{len(files)} shard files + 1 stray; recovery returned the original bytes: "
+                                 f"{recovered == original}; ProtectedTheseusService public API {surface} has no "
+                                 "reconciliation entry point, so the stray shard is not reported")
+    else:
+        try:
+            report = getattr(ProtectedTheseusService(), entry)(shards)
+        except Exception as exc:
+            status, detail = "FAIL", f"{entry}({shards}) raised {type(exc).__name__}: {exc}"
+        else:
+            found = "stray.shard" in repr(report)
+            status = "PASS" if found else "FAIL"
+            detail = f"{entry}() reported the planted stray shard: {found}; report: {repr(report)[:200]}"
+    record("X2c", "Orphan reconciliation: shard files without a THESEUS manifest", status, detail)
     # Forward direction: manifest whose shard files are missing must fail closed (two losses).
     for victim in files[:2]:
         victim.unlink()
