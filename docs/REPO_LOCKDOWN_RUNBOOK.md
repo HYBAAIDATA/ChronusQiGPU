@@ -111,3 +111,13 @@ Run https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44443175475 checked 
 ## Latest inspected hygiene execution
 
 Run [44452240397](https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44452240397) checked merge candidate `bdc9c03ff55cdf1ef1b92309a8a49b899a4c86d2` (branch head `49152749d1e45a2bae7455fe6a0426dcd3fe4920`), including the merged #181 cleanup. The actual gate exit was 1 with 366 findings: 330 forbidden-path findings, 20 unallowlisted root directories, 12 unallowlisted root files and 4 restricted-content markers. The complete itemised list is in `docs/REPO_HYGIENE_EXECUTED_FINDINGS.json`. The authoritative [raw JSON report](https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44452240397/artifacts/14496052185) is retained by Actions. No purge, deletion, history rewrite, visibility change or force-push was executed. Gitleaks v2 is pinned to an immutable commit but remains fail-closed before scanning without the organisation licence.
+
+## Secret scan invocation correction
+The historical action invocation failed before scanning because the organisation
+GITLEAKS_LICENSE secret was absent. The workflow now downloads upstream open-source
+Gitleaks CLI v8.30.1, verifies the Linux x64 archive against the upstream release
+asset SHA-256, and scans all fetched refs plus the working tree. A nonzero scan
+fails the job. No baseline/allowlist change or raw finding artifact is introduced;
+logs are fully redacted. This supersedes the action-specific licensing dependency,
+not the historical failure record. The new CI scan must execute before any security
+closure claim. [Pinned release](https://github.com/gitleaks/gitleaks/releases/tag/v8.30.1).
