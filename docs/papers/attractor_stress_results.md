@@ -139,7 +139,7 @@ sha256(header[:76]) of a real mainnet header.
 
 ## Honest boundary statement
 
-1. **Where the oracle is 2-adically continuous, collapse_generator gives a real, exact, exponential pruning.**
+1. **Where the oracle is 2-adically continuous, collapse_generator gives a real, exact pruning by successive binary generator collapse.**
    This covers all of Test 1 and Tests 2a–2c, with continuity agreeing on every pair and receipts verified
    through THESEUS. At k = 32 the structure-exploiting triad needs 32 / 40 evaluations for the orbit hidden shift
    and 32 / 40 for order finding, against 4096 / 65536 for the triad as built and 3790 / 57038 and 1024 / 16384

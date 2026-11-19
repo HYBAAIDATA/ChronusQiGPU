@@ -176,7 +176,7 @@ A thesis about mathematics should be stated with mathematical precision about wh
 4. **Prior work.** The two-dimensional reduction is classical knowledge [1, 2, 3]. Our contribution is the exact,
    π-free and attested realisation inside a production pipeline, and the measured boundary below.
 5. **Structure is classical.** Where an oracle has 2-adic structure (Corollary 3.5), generator collapse prunes
-   exponentially. Classical algorithms (Hensel lifting, Pohlig–Hellman) achieve the same pruning, so it is not
+   by successive binary reductions of the admitted search domain. Classical algorithms (Hensel lifting, Pohlig–Hellman) achieve the same pruning, so it is not
    evidence that quantum hardware would do better (§7.2, §8).
 
 Separating the substrate-agnostic amplitude algebra from the substrate- and structure-dependent oracle cost is

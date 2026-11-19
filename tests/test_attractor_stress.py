@@ -20,7 +20,7 @@ from chronus.storage.durable import DurableTheseusService
 pytestmark = pytest.mark.real
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-HEADERS = pathlib.Path("/workspace/user_quantum_gpu_experiment/nonces500/headers.json")
+HEADERS = ROOT / "tests" / "vectors" / "mainnet_975565_976064.json"
 GENESIS = bytes.fromhex(
     "0100000000000000000000000000000000000000000000000000000000000000000000003ba3edfd7a7b12b27a"
     "c72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4a29ab5f49ffff001d1dac2b7c")
@@ -149,9 +149,8 @@ def test_triad_structured_cannot_use_collapse_on_sha256d(tmp_path):
     assert p.planted_index not in s["found"]          # graded lift is not admissible: target lost
 
 
-@pytest.mark.skipif(not HEADERS.exists(), reason="offline header fixture not present")
 def test_sha256d_ensemble_hit_rate_is_chance_level():
-    H = json.loads(HEADERS.read_text())[:100]
+    H = json.loads(HEADERS.read_text(encoding="utf-8"))["blocks"][:100]
     hits = sum(A.hensel_residual_counts(A.sha256d_point(bytes.fromhex(h["header_hex"]), 12))["hit"] for h in H)
     assert hits <= 2
 

@@ -24,7 +24,7 @@ from chronus.kernels.gl2_transform import (  # noqa: E402
 
 pytestmark = pytest.mark.real
 
-HEADERS = "/workspace/user_quantum_gpu_experiment/nonces500/headers.json"
+HEADERS = os.path.join(HERE, "vectors", "mainnet_975565_976064.json")
 I2 = ((1, 0), (0, 1))
 
 
@@ -153,17 +153,15 @@ def test_streaming_all_chunk_sizes() -> None:
 
 
 def test_500_mainnet_headers_roundtrip_and_hash() -> None:
-    if not os.path.exists(HEADERS):
-        pytest.skip("headers fixture not present")
     with open(HEADERS, encoding="utf-8") as fh:
-        rows = json.load(fh)
+        rows = json.load(fh)["blocks"]
     assert len(rows) == 500
     for r in rows:
         h = bytes.fromhex(r["header_hex"])
         assert len(h) == 80
         assert unfold(from_wire(to_wire(fold(h)))) == h
-        assert hashlib.sha256(hashlib.sha256(unfold(fold(h))).digest()).digest()[::-1].hex() == r["id"]
-        assert struct.unpack("<I", h[76:80])[0] == r["nonce_api"]
+        assert hashlib.sha256(hashlib.sha256(unfold(fold(h))).digest()).digest()[::-1].hex() == r["block_hash_be"]
+        assert struct.unpack("<I", h[76:80])[0] == r["fields"]["nonce"]
 
 
 def test_genesis_header() -> None:
@@ -194,8 +192,8 @@ _SCALAR_FLAGS = (["-DGL2_FORCE_SCALAR", "-mno-avx2", "-mno-sse4.2"]
 
 
 @pytest.mark.parametrize("flags", [["-march=native"], _SCALAR_FLAGS])
-def test_native_kernel_bit_exact(flags: list[str], monkeypatch) -> None:
-    monkeypatch.setattr(g, "_NATIVE_LIB", None)
+def test_native_kernel_bit_exact(flags: list[str], monkeypatch) -> None:  # mock-ok: select reference dispatch; native C tested directly
+    monkeypatch.setattr(g, "_NATIVE_LIB", None)  # mock-ok: reset dispatch cache; no fake arithmetic
     so = _build(flags)
     if so is None:
         pytest.skip("no gcc")
