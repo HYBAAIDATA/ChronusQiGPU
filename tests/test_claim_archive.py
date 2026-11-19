@@ -25,3 +25,11 @@ def test_archive_missing_fails_closed(tmp_path):
     (site / "index.html").write_text("placeholder")
     with raises(OSError):
         check(site, register)
+
+
+def test_held_claims_have_specific_reasons():
+    root = Path(__file__).resolve().parents[1]
+    claims = json.loads((root / "claims/archive_uncited/register.json").read_text())["claims"]
+    assert len(claims) == 6
+    assert all(c["state"] == "held" and c["why_held"].strip() for c in claims)
+    assert len({c["why_held"] for c in claims}) == len(claims)

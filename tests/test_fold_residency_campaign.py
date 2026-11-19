@@ -24,3 +24,30 @@ def test_equal_work_and_egress(name):
 def test_unknown_op_rejected():
     with pytest.raises(ValueError):
         run_trace({"words": [1, 2], "other": [3, 4], "ops": ["unclassified"]}, 7)
+
+
+@pytest.mark.parametrize("stage", [0, 7])
+@pytest.mark.parametrize("nonempty", [False, True])
+def test_analytics_boundary_accounting_and_plain_reference(stage, nonempty):
+    """Post-campaign diagnostic; historical trace unchanged."""
+    spec = json.loads(DATA.read_text())["classes"]["analytics"]
+    if nonempty:
+        spec = {**spec, "words": [11, 128, 200, 250], "other": [200, 250, 7, 8]}
+    assert spec["ops"] == ["sort", "threshold", "topk", "magnitude_join", "sort", "equals"]
+    thresholded = [x if x >= 128 else 0 for x in sorted(spec["words"])]
+    top = sorted(thresholded, reverse=True)[:2]
+    expected = sorted(v for x in top for y in spec["other"] if abs(x) == abs(y) for v in (x, y))
+    if nonempty:
+        assert thresholded == [0, 128, 200, 250]
+        assert expected == [200, 200, 250, 250]
+    else:
+        assert thresholded == [0, 0, 0, 0]
+        assert expected == []
+    actual = run_trace(spec, stage)
+    assert actual["output"] == expected
+    assert actual["observations"] == [expected == [0] * len(expected)]
+    assert actual["op_multiset"] == {"sort": 2, "threshold": 1, "topk": 1,
+                                     "magnitude_join": 1, "equals": 1}
+    assert actual["ingress_materializations"] == 12
+    assert actual["egress_materializations"] == [1] * 6
+    assert actual["materializations"] == 18

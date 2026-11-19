@@ -12,26 +12,52 @@
       "id": "MV-INPUTS",
       "status": "OPEN",
       "owner": "customer finance",
-      "requirement": "Customer source invoices, tenant monetary telemetry, adjustments and approved M&V plan"
+      "requirement": "Customer source invoices, tenant monetary telemetry, adjustments and approved M&V plan",
+      "gate_consequence": "REFUSES_CLOSURE"
     },
     {
       "id": "MV-OPTION-D",
       "status": "OPEN",
       "owner": "customer finance / OVID",
-      "requirement": "Committed calibrated simulation model and calibration evidence"
+      "requirement": "Committed calibrated simulation model and calibration evidence",
+      "gate_consequence": "REFUSES_CLOSURE"
     },
     {
       "id": "CLAIM-PURGE",
       "status": "OPEN",
       "owner": "Chronus",
       "requirement": "Full claim catalogue reconciliation",
-      "progress": "Six held entries archived; old publication blocking preserved; root historical decision blobs and live pointers reconciled. Independent catalogue and regression acceptance pending."
+      "progress": "Six held entries archived; old publication blocking preserved; root historical decision blobs and live pointers reconciled. Independent catalogue and regression acceptance pending.",
+      "gate_consequence": "REFUSES_CLOSURE"
     },
     {
       "id": "TEI-CONSENT",
       "status": "OPEN",
       "owner": "CEO",
-      "requirement": "Budget and written customer consents"
+      "requirement": "Budget and written customer consents",
+      "gate_consequence": "REFUSES_CLOSURE"
+    },
+    {
+      "id": "ANALYST-PACKAGE",
+      "status": "OPEN",
+      "owner": "Chronus",
+      "requirement": "Digest-bound showcases and metadata reconciliation",
+      "progress": "Digest-bound source and historical CPU references plus hosted campaign committed; exact-head Lean execution, metadata write and independent acceptance pending.",
+      "gate_consequence": "REFUSES_CLOSURE"
+    },
+    {
+      "id": "OPERATING-ROSTER",
+      "status": "OPEN",
+      "owner": "CEO",
+      "requirement": "Named consenting humans and validated reference architectures",
+      "gate_consequence": "REFUSES_CLOSURE"
+    },
+    {
+      "id": "PARADIGM-QC",
+      "status": "OPEN",
+      "owner": "independent QC",
+      "requirement": "Replay and acceptance at exact reviewed revision",
+      "gate_consequence": "REFUSES_CLOSURE"
     },
     {
       "id": "FOLDED-RESIDENCY",
@@ -43,27 +69,19 @@
         "path": "evidence/residency/0f94d2d6ae917eb819943dda6cb7d58baa99a08c/campaign.json",
         "sha256": "95da6c4d659c8795765ac14512840423bfa6559824777b5835c6e72ae2d396c9"
       },
-      "closure_note": "Hosted paired synthetic campaign executed and exact artifact retained; independent QC separately OPEN."
-    },
-    {
-      "id": "ANALYST-PACKAGE",
-      "status": "OPEN",
-      "owner": "Chronus",
-      "requirement": "Digest-bound showcases and metadata reconciliation",
-      "progress": "Digest-bound source and historical CPU references plus hosted campaign committed; exact-head Lean execution, metadata write and independent acceptance pending."
-    },
-    {
-      "id": "OPERATING-ROSTER",
-      "status": "OPEN",
-      "owner": "CEO",
-      "requirement": "Named consenting humans and validated reference architectures"
-    },
-    {
-      "id": "PARADIGM-QC",
-      "status": "OPEN",
-      "owner": "independent QC",
-      "requirement": "Replay and acceptance at exact reviewed revision"
+      "closure_note": "Hosted paired synthetic campaign executed and exact artifact retained; independent QC separately OPEN.",
+      "gate_consequence": "EVIDENCE_CHECK_REQUIRED; INDEPENDENT_QC_PENDING"
     }
   ],
-  "dependency_pr_201_head": "a83f5f0b892e1bac9e818bcc4b525b12f502d113"
+  "dependency_pr_201_head": "a83f5f0b892e1bac9e818bcc4b525b12f502d113",
+  "last_observed_gate": {
+    "source_commit": "9d16926c64f7df222e18937e2c30d4767c2799de",
+    "run_id": 44597165030,
+    "job_id": 135818469797,
+    "exit_code": 1,
+    "all_lenses_closed": false,
+    "verdict_path": "evidence/five_lens/runs/9d16926c64f7df222e18937e2c30d4767c2799de/closure.json",
+    "verdict_sha256": "06f70ba9f3b2dac76f6d7362c9e1fe670f7433153dfb4ba8c2003d0c5bd45f80",
+    "qualification": "NOT_ASSESSED_BY_THIS_GATE"
+  }
 }

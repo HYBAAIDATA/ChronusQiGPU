@@ -1,6 +1,6 @@
 {
   "schema": "chronus.five-lens.artifacts/1",
-  "source_commit": "a08593daf4c9d64fbb23d401407586c22b9befa6",
+  "source_commit": "9d16926c64f7df222e18937e2c30d4767c2799de",
   "artifacts": [
     {
       "path": "docs/settlement/IPMVP_CONFORMITY.md",
@@ -12,7 +12,7 @@
     },
     {
       "path": "docs/executive/CEO_STAKE_MEMO.md",
-      "sha256": "9f70e79eb0540bcdb1dce2655e8b6b6e90bb6479c941b45500f23001df472bb1"
+      "sha256": "16df7c2ec1737dd211aaae2e7313cf90ed5575f2567607495fa04ee8f171c6b8"
     },
     {
       "path": "docs/analysts/TEI_INITIATION.md",
@@ -24,7 +24,7 @@
     },
     {
       "path": "docs/analysts/ANALYST_PACKAGE.md",
-      "sha256": "8db609b7c5c992bf63b10212d7577a3e0edcec1cd1c72153e5cc76d006834e0c"
+      "sha256": "9b126eb208c28e9864df7b26a48e533f8c8794f2664dc5cde5b1f3ed156f2803"
     },
     {
       "path": "go_to_market/NAMED_ROSTER.md",
@@ -56,11 +56,44 @@
     },
     {
       "path": "evidence/five_lens/findings.json",
-      "sha256": "91fa9af684990aa4452edc116bfdec958775703a2bff5c728caa3f8b2442b59e"
+      "sha256": "b55264f56dcb9a1068eecbba44f0682b428753cf67cee813699fc75d85173a78"
     },
     {
       "path": "STATUS.md",
-      "sha256": "784bbd6feea2505dd437499276256db7a3545c9120a910df395e6638126e36cc"
+      "sha256": "572366c0d8a405320ee0be2b4ed8898c0e354910dc7df37415e57a7ea8c95f3f"
+    },
+    {
+      "path": "docs/analysts/FIVE_LENS_QC_HANDOVER.md",
+      "sha256": "174ed9306c996dbc1d6414301dc282457ca0c3067605bea8f4d3929ec87342b5"
+    },
+    {
+      "path": "evidence/five_lens/runs/9d16926c64f7df222e18937e2c30d4767c2799de/closure.json",
+      "sha256": "06f70ba9f3b2dac76f6d7362c9e1fe670f7433153dfb4ba8c2003d0c5bd45f80"
+    },
+    {
+      "path": "evidence/five_lens/reviewer_scope.json",
+      "sha256": "4656ea277256b670e2f3cb610de6d85bea2b21f39c983e731d3a9f714700bc81"
+    },
+    {
+      "path": "tests/test_fold_residency_campaign.py",
+      "sha256": "b5d7b4fc26f5eca07dd8b75981c8c5751873e456c3cea0ddc2ea4203c09cd0a7"
+    },
+    {
+      "path": "claims/archive_uncited/register.json",
+      "sha256": "d5825646a472a56e5b74b4b2242a36fb95663088170be6e64a0a146ecfcf336d"
+    },
+    {
+      "path": "tests/test_claim_archive.py",
+      "sha256": "caebc5158a6ab46abc5efd85bb5cbd146ae1e3daafb4a9c4893cc20d89cd2592"
+    },
+    {
+      "path": "evidence/residency/inputs/traces.json",
+      "sha256": "ae47d1649bd2b087f4057efcd68b16b5aa3d1e2357c229f7ebde2f8e61cf9060"
+    },
+    {
+      "path": "claims/register.json",
+      "sha256": "0091b692ce587801f09e8676e4680821b23de038686836f419cb51ad3a5bf858"
     }
-  ]
+  ],
+  "note": "Reviewed baseline plus correction content digests; current-head CI verifies the resulting bytes."
 }

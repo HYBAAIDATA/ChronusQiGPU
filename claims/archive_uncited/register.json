@@ -7,7 +7,8 @@
         "CO-SIGN",
         "RS-RECEIPT"
       ],
-      "state": "held"
+      "state": "held",
+      "why_held": "No admitted evidence establishes FIPS 204 ML-DSA on every AL HARAS decision; CO-SIGN and RS-RECEIPT acceptance required."
     },
     {
       "code": "CO-REPLAY",
@@ -15,7 +16,8 @@
       "gates": [
         "RS-REPLAY"
       ],
-      "state": "held"
+      "state": "held",
+      "why_held": "No admitted end-to-end Japan attack-chain replay receipt; RS-REPLAY acceptance required."
     },
     {
       "code": "CO-HSM",
@@ -23,7 +25,8 @@
       "gates": [
         "FN-CUSTODY"
       ],
-      "state": "held"
+      "state": "held",
+      "why_held": "No admitted customer-held HSM key-custody evidence; FN-CUSTODY acceptance required."
     },
     {
       "code": "RS-SPEED",
@@ -31,7 +34,8 @@
       "gates": [
         "bench.search"
       ],
-      "state": "held"
+      "state": "held",
+      "why_held": "No admitted equal-work search benchmark establishing the stated 2.7–4.6x range; bench.search required."
     },
     {
       "code": "RS-WORK",
@@ -39,7 +43,8 @@
       "gates": [
         "bench.verified_work"
       ],
-      "state": "held"
+      "state": "held",
+      "why_held": "No admitted paired verified-work measurement establishing 11.5x; bench.verified_work required."
     },
     {
       "code": "RS-FN",
@@ -47,7 +52,8 @@
       "gates": [
         "bench.false_negatives"
       ],
-      "state": "held"
+      "state": "held",
+      "why_held": "No admitted matched labelled evaluation establishing 27% fewer false negatives; bench.false_negatives required."
     }
   ]
 }

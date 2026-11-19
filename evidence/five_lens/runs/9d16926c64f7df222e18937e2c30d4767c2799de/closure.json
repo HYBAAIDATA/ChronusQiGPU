@@ -1,0 +1,37 @@
+{
+  "content": {
+    "all_lenses_closed": false,
+    "production_qualification": "NOT_ASSESSED_BY_THIS_GATE",
+    "results": {
+      "artifact_integrity": {
+        "pass": true
+      },
+      "findings_and_qc": {
+        "pass": false,
+        "reason": "open findings: MV-INPUTS, MV-OPTION-D, CLAIM-PURGE, TEI-CONSENT, ANALYST-PACKAGE, OPERATING-ROSTER, PARADIGM-QC"
+      },
+      "lens_accenture_model": {
+        "pass": false,
+        "reason": "named roles missing"
+      },
+      "lens_forrester_tei": {
+        "pass": true
+      },
+      "lens_gartner_package": {
+        "pass": true
+      },
+      "lens_gartner_residency": {
+        "pass": true
+      },
+      "lens_mckinsey_purge": {
+        "pass": true
+      },
+      "lens_wharton_ipmvp": {
+        "pass": true
+      }
+    },
+    "source_commit": "9d16926c64f7df222e18937e2c30d4767c2799de"
+  },
+  "digest": "af5e12c3f55aaf981bf340fa97744b879dff23c1bab4441281d78b396fb2d374",
+  "schema": "chronus.five-lens/1"
+}

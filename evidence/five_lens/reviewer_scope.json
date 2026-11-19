@@ -1,0 +1,325 @@
+{
+  "schema": "chronus.five-lens.review-scope/1",
+  "reviewed_head": "9d16926c64f7df222e18937e2c30d4767c2799de",
+  "dependency_ancestor": "a83f5f0b892e1bac9e818bcc4b525b12f502d113",
+  "original_diff_entries": 57,
+  "original_commits": 10,
+  "groups": {
+    "Claim archive/status consumers": [
+      {
+        "path": ".github/workflows/ci.yml",
+        "status": "modified",
+        "previous": null
+      },
+      {
+        "path": "AGENTS.md",
+        "status": "modified",
+        "previous": null
+      },
+      {
+        "path": "STATUS.md",
+        "status": "modified",
+        "previous": null
+      },
+      {
+        "path": "claims/archive_uncited/ROOT_CATALOGUE.md",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "claims/archive_uncited/register.json",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "claims/register.json",
+        "status": "modified",
+        "previous": null
+      },
+      {
+        "path": "docs/AUDIT_AND_PROOF_DOSSIER.md",
+        "status": "modified",
+        "previous": null
+      },
+      {
+        "path": "docs/CHRONUS_ELEVATION_ROADMAP.md",
+        "status": "modified",
+        "previous": null
+      },
+      {
+        "path": "docs/directives/FRONTEND.md",
+        "status": "modified",
+        "previous": null
+      },
+      {
+        "path": "docs/directives/PACKAGING.md",
+        "status": "modified",
+        "previous": null
+      },
+      {
+        "path": "docs/directives/PRODUCT_STYLE_GUIDE.md",
+        "status": "modified",
+        "previous": null
+      },
+      {
+        "path": "docs/directives/README.md",
+        "status": "modified",
+        "previous": null
+      },
+      {
+        "path": "docs/executive/executive-architecture-and-project-summary.md",
+        "status": "modified",
+        "previous": null
+      },
+      {
+        "path": "docs/notion-production-readiness.md",
+        "status": "modified",
+        "previous": null
+      },
+      {
+        "path": "docs/reports/chronus_release_decision.md",
+        "status": "modified",
+        "previous": null
+      },
+      {
+        "path": "funding/FUNDING_PITCH.md",
+        "status": "modified",
+        "previous": null
+      },
+      {
+        "path": "manifests/historical.txt",
+        "status": "modified",
+        "previous": null
+      },
+      {
+        "path": "manifests/historical/PRODUCTION_QUALIFIED.json",
+        "status": "renamed",
+        "previous": "PRODUCTION_QUALIFIED.json"
+      },
+      {
+        "path": "manifests/historical/RELEASE_DECISION_MCKINSEY_TECH.md",
+        "status": "renamed",
+        "previous": "RELEASE_DECISION_MCKINSEY_TECH.md"
+      },
+      {
+        "path": "manifests/historical/SOVEREIGN_CAPABILITY_ATTESTATION.json",
+        "status": "renamed",
+        "previous": "SOVEREIGN_CAPABILITY_ATTESTATION.json"
+      },
+      {
+        "path": "manifests/historical/STATUS.md",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "scripts/ci/audit_manifests.py",
+        "status": "modified",
+        "previous": null
+      },
+      {
+        "path": "scripts/ci/manifest.py",
+        "status": "modified",
+        "previous": null
+      },
+      {
+        "path": "scripts/ci/sovereign_attestation.py",
+        "status": "modified",
+        "previous": null
+      },
+      {
+        "path": "scripts/ci/verify_chronus.py",
+        "status": "modified",
+        "previous": null
+      },
+      {
+        "path": "scripts/claim_gate.py",
+        "status": "modified",
+        "previous": null
+      },
+      {
+        "path": "src/chronus/security/al_haras/sovereign.py",
+        "status": "modified",
+        "previous": null
+      },
+      {
+        "path": "src/chronus/security/al_haras/topological_os.py",
+        "status": "modified",
+        "previous": null
+      },
+      {
+        "path": "tests/test_claim_archive.py",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "tests/test_qualification_manifest_truth.py",
+        "status": "modified",
+        "previous": null
+      },
+      {
+        "path": "tests/test_qualification_register_parses.py",
+        "status": "modified",
+        "previous": null
+      }
+    ],
+    "Closure and CI": [
+      {
+        "path": ".github/workflows/five-lens-closure.yml",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "evidence/five_lens/artifacts.json",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "evidence/five_lens/findings.json",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "evidence/five_lens/runs/0f94d2d6ae917eb819943dda6cb7d58baa99a08c/receipt.json",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "scripts/ci/check_five_lens_closure.py",
+        "status": "added",
+        "previous": null
+      }
+    ],
+    "Analyst/memo/metadata": [
+      {
+        "path": "CONTRIBUTING.md",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "docs/analysts/ANALYST_PACKAGE.md",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "docs/executive/CEO_STAKE_MEMO.md",
+        "status": "added",
+        "previous": null
+      }
+    ],
+    "Operating model": [
+      {
+        "path": "deploy/reference_architectures/financial_records_archive.md",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "deploy/reference_architectures/medical_imaging_pacs.md",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "deploy/reference_architectures/regulated_ai_checkpointing.md",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "go_to_market/NAMED_ROSTER.md",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "go_to_market/PARTNER_READINESS.md",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "go_to_market/roster.json",
+        "status": "added",
+        "previous": null
+      }
+    ],
+    "TEI": [
+      {
+        "path": "docs/analysts/TEI_INITIATION.md",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "evidence/tei/inputs/consents.json",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "evidence/tei/inputs/counterfactual_disclosure.md",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "evidence/tei/inputs/interview_guide.md",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "evidence/tei/inputs/worksheet.json",
+        "status": "added",
+        "previous": null
+      }
+    ],
+    "M&V": [
+      {
+        "path": "docs/settlement/IPMVP_CONFORMITY.md",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "src/chronus/service/ipmvp.py",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "tests/test_ipmvp.py",
+        "status": "added",
+        "previous": null
+      }
+    ],
+    "Residency": [
+      {
+        "path": "evidence/residency/0f94d2d6ae917eb819943dda6cb7d58baa99a08c/campaign.json",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "evidence/residency/inputs/traces.json",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "scripts/benchmarks/fold_residency_campaign.py",
+        "status": "added",
+        "previous": null
+      },
+      {
+        "path": "tests/test_fold_residency_campaign.py",
+        "status": "added",
+        "previous": null
+      }
+    ]
+  },
+  "recovery_paths": [
+    ".github/workflows/storage-closeout-evidence.yml",
+    "docs/storage/CHRN_RS257_PROFILE.md",
+    "docs/storage/CHRN_V1_CLOSURE.md",
+    "evidence/storage/chrn_v1_closure.json",
+    "evidence/storage/paradigm_findings.json",
+    "scripts/benchmarks/chrn_recovery_drill.py",
+    "scripts/ci/check_paradigm_closure.py",
+    "src/chronus/storage/chrn_frame.py",
+    "src/chronus/storage/chrn_rs257.py",
+    "tests/test_chrn_rs257.py",
+    "tests/vectors/chrn_rs257_v11.json"
+  ],
+  "recovery_blob_comparison": "11/11 identical at reviewed head; no overlap in PR delta",
+  "independent_qc": "PENDING",
+  "latest_dependency_observed": "a3f78151581c8434e752c95d211eecf74884216e",
+  "dependency_reconciliation": "OPEN"
+}
