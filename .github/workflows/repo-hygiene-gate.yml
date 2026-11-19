@@ -49,9 +49,13 @@ jobs:
       - name: Scan fetched history and working tree (no raw public report)
         shell: bash
         run: |
-          set -euo pipefail
-          "$RUNNER_TEMP/gitleaks/gitleaks" git --log-opts="--all" --redact=100 --exit-code 1 --no-banner .
-          "$RUNNER_TEMP/gitleaks/gitleaks" dir --redact=100 --exit-code 1 --no-banner .
+          set -uo pipefail
+          history_rc=0
+          tree_rc=0
+          "$RUNNER_TEMP/gitleaks/gitleaks" git --log-opts="--all" --redact=100 --exit-code 1 --no-banner . || history_rc=$?
+          "$RUNNER_TEMP/gitleaks/gitleaks" dir --redact=100 --exit-code 1 --no-banner . || tree_rc=$?
+          printf 'history_exit=%s working_tree_exit=%s\n' "$history_rc" "$tree_rc"
+          test "$history_rc" -eq 0 && test "$tree_rc" -eq 0
 
   theseus-gate-g2-custody:
     runs-on: ubuntu-latest
