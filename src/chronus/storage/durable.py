@@ -658,7 +658,11 @@ class DurableTheseusService:
             for row in rows
         ]
 
-    def verify_journal_continuity(self, tenant_id: str) -> bool:
+    def verify_journal_continuity(
+        self, tenant_id: str, *, quarantined: frozenset[str] = frozenset()
+    ) -> bool:
+        # ``quarantined`` objects are detected-but-unrepaired (Salamander mode);
+        # their content is not reconstructed here, but chain checks still run.
         entries = self.get_journal(tenant_id)
         if not entries:
             return False
@@ -677,7 +681,8 @@ class DurableTheseusService:
                 return False
             if entry.coordinate != coordinate:
                 return False
-            self.reconstruct(tenant_id, entry.object_id)
+            if entry.object_id not in quarantined:
+                self.reconstruct(tenant_id, entry.object_id)
             material = (
                 f"{entry.ovid_namespace}|{entry.sequence}|{entry.event_type}|"
                 f"{entry.object_id}|{entry.prev_entry_hash}|{entry.timestamp_ns}"
@@ -705,6 +710,7 @@ class DurableTheseusService:
             ]
         # Repair outside the read transaction; fail closed on the first object
         # that cannot be repaired within bounds.
+        quarantined: set[str] = set()
         for object_id, payload in damaged:
             if self._try_heal(object_id, payload) is not None:
                 continue
@@ -712,6 +718,7 @@ class DurableTheseusService:
                 # Detected and diagnosed; repairable objects stay quarantined
                 # (reads fail closed) until the authorised repair runs.
                 if self.diagnose_object(object_id)["status"] == "REPAIRABLE":
+                    quarantined.add(object_id)
                     continue
             raise StorageIntegrityError(
                 f"durable content {object_id} failed digest verification"
@@ -734,8 +741,9 @@ class DurableTheseusService:
                 str(row["tenant_id"])
                 for row in db.execute("SELECT DISTINCT tenant_id FROM journal").fetchall()
             ]
+        frozen_quarantine = frozenset(quarantined)
         for tenant_id in tenants:
-            if not self.verify_journal_continuity(tenant_id):
+            if not self.verify_journal_continuity(tenant_id, quarantined=frozen_quarantine):
                 raise StorageIntegrityError(
                     f"THESEUS journal continuity failed for tenant {tenant_id}"
                 )
