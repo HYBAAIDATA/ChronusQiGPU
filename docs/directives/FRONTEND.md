@@ -30,4 +30,4 @@ These are design directions, not claims that every workflow or capability is cur
 
 ## Implementation and review
 
-Before shipping a screen, verify its data source and API contract, keyboard and screen-reader behavior, responsive layout, color contrast, error handling, and action permissions. Do not use decorative architecture views as live topology or present demo values as operational telemetry. Claims about performance, hardware, security, and qualification must remain within the evidence documented in the [claim audit](../claim-audit.md) and [release decision](../../RELEASE_DECISION_MCKINSEY_TECH.md).
+Before shipping a screen, verify its data source and API contract, keyboard and screen-reader behavior, responsive layout, color contrast, error handling, and action permissions. Do not use decorative architecture views as live topology or present demo values as operational telemetry. Claims about performance, hardware, security, and qualification must remain within the evidence documented in the [claim audit](../claim-audit.md) and [release decision](../../STATUS.md).

@@ -124,5 +124,5 @@ class ALHarasSovereignOSProduct:
             "tenant": sovereign_id,
             "self_test": kernel.boot_kernel(),
             "governance": SovereignGovernanceEngine.audit_sovereign_compliance(sovereign_id),
-            "release_status": "NOT QUALIFIED: see RELEASE_DECISION_MCKINSEY_TECH.md and docs/claim-audit.md",
+            "release_status": "NOT QUALIFIED: see STATUS.md and docs/claim-audit.md",
         }

@@ -148,4 +148,4 @@ qualification.
 
 ## Promotion rule
 
-Do not change this file or `PRODUCTION_QUALIFIED.json` to “qualified” because a README, test count, dispatch, device presence, or single benchmark is green. Promotion requires the exact Workflow 01–04 sequence, the evidence packet above, and owner approval. Failed attempts remain traceable.
+Do not change this file or `manifests/historical/PRODUCTION_QUALIFIED.json` to “qualified” because a README, test count, dispatch, device presence, or single benchmark is green. Promotion requires the exact Workflow 01–04 sequence, the evidence packet above, and owner approval. Failed attempts remain traceable.

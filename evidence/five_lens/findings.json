@@ -34,9 +34,17 @@
     },
     {
       "id": "FOLDED-RESIDENCY",
-      "status": "OPEN",
+      "status": "CLOSED",
       "owner": "Chronus",
-      "requirement": "Pre-registered executed equal-work campaign"
+      "requirement": "Pre-registered executed equal-work campaign",
+      "referencing_commit": "e738de05db16b760cb4ed3b3e4a83040b53964c6",
+      "evidence": [
+        {
+          "path": "evidence/residency/0f94d2d6ae917eb819943dda6cb7d58baa99a08c/campaign.json",
+          "sha256": "95da6c4d659c8795765ac14512840423bfa6559824777b5835c6e72ae2d396c9"
+        }
+      ],
+      "closure_note": "Hosted paired synthetic campaign executed and exact artifact retained; independent QC separately OPEN."
     },
     {
       "id": "ANALYST-PACKAGE",
@@ -56,5 +64,6 @@
       "owner": "independent QC",
       "requirement": "Replay and acceptance at exact reviewed revision"
     }
-  ]
+  ],
+  "dependency_pr_201_head": "a83f5f0b892e1bac9e818bcc4b525b12f502d113"
 }

@@ -15,7 +15,7 @@ The definitive current documents are:
 - `docs/production/TRIAD_PRODUCTION_CLOSEOUT.md`
 - `docs/production/TRIAD_CAPABILITY_MATRIX.md`
 - `docs/QUALIFICATION_AND_CLAIMS.md`
-- `RELEASE_DECISION_MCKINSEY_TECH.md`
+- `manifests/historical/RELEASE_DECISION_MCKINSEY_TECH.md`
 
 ## Current rule
 

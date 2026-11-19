@@ -17,4 +17,4 @@ The repository does not establish production qualification, a verified release g
 
 Do not use old “qualified,” certification, test-count, benchmark, tenant-volume, savings, or valuation assertions in customer or investor materials. The immediate work is to define and run a commit-specific acceptance suite; resolve cryptographic and key-management gaps or remove those claims; verify frontend build/API integration; and collect deployment, security, hardware, and customer evidence before making broader claims.
 
-See the [claim audit](../claim-audit.md), [current implementation assessment](../system-update/current-state-assessment.md), and [release decision](../../RELEASE_DECISION_MCKINSEY_TECH.md). Chronus has no asserted affiliation, endorsement, or joint venture with McKinsey or Accenture.
+See the [claim audit](../claim-audit.md), [current implementation assessment](../system-update/current-state-assessment.md), and [release decision](../../STATUS.md). Chronus has no asserted affiliation, endorsement, or joint venture with McKinsey or Accenture.

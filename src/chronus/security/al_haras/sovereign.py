@@ -6,7 +6,7 @@ mechanisms present in this repository. It reports facts the code can establish
 (for example, which key provider is configured) and records that no principle
 has been independently assessed. HYBA holds no certification, accreditation or
 authorisation for AL HARAS, and nothing here claims one (see
-docs/claim-audit.md and RELEASE_DECISION_MCKINSEY_TECH.md).
+docs/claim-audit.md and STATUS.md).
 """
 
 import hashlib
@@ -135,7 +135,7 @@ NCSC_PRINCIPLES: List[Dict[str, Any]] = [
     {"id": 1, "name": "Data in transit protection", "evidence": ["TLS termination is a deployment responsibility; not configured in this repository"]},
     {"id": 2, "name": "Asset protection and resilience", "evidence": ["src/chronus/security/al_haras/reed_solomon.py (trace repair)", "src/chronus/security/ovid.py (content addressing)"]},
     {"id": 3, "name": "Separation between customers", "evidence": ["src/chronus/service/auth_middleware.py (tenant-scoped tokens)"]},
-    {"id": 4, "name": "Governance framework", "evidence": ["docs/claim-audit.md", "RELEASE_DECISION_MCKINSEY_TECH.md"]},
+    {"id": 4, "name": "Governance framework", "evidence": ["docs/claim-audit.md", "STATUS.md"]},
     {"id": 5, "name": "Operational security", "evidence": [".github/workflows/ci.yml (tests, static analysis, dependency audit)"]},
     {"id": 6, "name": "Personnel security", "evidence": []},
     {"id": 7, "name": "Secure development", "evidence": [".github/workflows/ci.yml", "AGENTS.md"]},
