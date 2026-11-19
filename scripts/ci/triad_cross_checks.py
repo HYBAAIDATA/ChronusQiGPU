@@ -166,12 +166,21 @@ def check_tenant_isolation_and_concurrency(tmp: Path) -> None:
         "import sys;sys.path.insert(0,sys.argv[2]);from chronus.triad import ProductionTriad;"
         "t=ProductionTriad(sys.argv[1]);[t.put('tenant-proc',b'p%d'%i) for i in range(20)]"
     )
-    procs = [subprocess.Popen([sys.executable, "-c", child, str(db), str(ROOT / "src")],
-                              stderr=subprocess.PIPE, text=True) for _ in range(3)]
-    for p in procs:
-        _, stderr = p.communicate(timeout=300)
-        if p.returncode:
-            errors.append(stderr.strip()[-300:])
+    procs: list[subprocess.Popen] = []
+    try:
+        for _ in range(3):
+            procs.append(subprocess.Popen([sys.executable, "-c", child, str(db), str(ROOT / "src")],
+                                          stderr=subprocess.PIPE, text=True))
+        for p in procs:
+            _, stderr = p.communicate(timeout=300)
+            if p.returncode:
+                errors.append(stderr.strip()[-300:])
+    finally:
+        # Never leave writers running against the temporary database (e.g. after a timeout).
+        for p in procs:
+            if p.poll() is None:
+                p.kill()
+                p.communicate()
     final = ProductionTriad(str(db))
     bad = [r for r in receipts if not final.verify(r)]
     integ = _raises(final.theseus.verify_store)
@@ -220,6 +229,7 @@ def check_readiness_and_console(tmp: Path) -> None:
     try:
         from fastapi.testclient import TestClient
         from chronus.service.app import create_app
+        from chronus.service.dependencies import service_config
     except Exception as exc:
         record("X6", "Readiness derived from component health", "FAIL", f"service import failed: {exc}")
         return
@@ -236,7 +246,10 @@ def check_readiness_and_console(tmp: Path) -> None:
     # also yields 503 and must not be mistaken for custody-derived readiness.
     isolated_env = ("CHRONUS_EXECUTION_BASE_URL",)
     saved = {k: os.environ.get(k) for k in custody_env + isolated_env}
+    # service_config is built at import time, so clearing the env var alone is not enough.
+    saved_adapter = service_config.execution_backend_url
     try:
+        service_config.execution_backend_url = None
         for k in isolated_env:
             os.environ.pop(k, None)
         for k in custody_env:
@@ -244,6 +257,7 @@ def check_readiness_and_console(tmp: Path) -> None:
         client = TestClient(create_app())
         ready = client.get("/health/ready")
     finally:
+        service_config.execution_backend_url = saved_adapter
         for k, v in saved.items():
             if v is None:
                 os.environ.pop(k, None)
