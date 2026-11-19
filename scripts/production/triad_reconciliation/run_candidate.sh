@@ -10,7 +10,8 @@ export PYTHONPATH=$WT/src:$WT
 { echo "sha=$(git rev-parse HEAD)"; $PY --version; uname -srm; $PY -c "import sqlite3;print('sqlite',sqlite3.sqlite_version)"; nproc; } > $D/env.txt 2>&1
 ( time $PY -m pytest -q -p no:cacheprovider --junitxml=$D/junit.xml -o junit_family=xunit2 > $D/pytest.txt 2>&1 ) 2> $D/pytest_time.txt; echo "pytest exit $?" >> $D/pytest.txt
 $PY scripts/ci/triad_cross_checks.py --out $D/xchecks.json 2> $D/xchecks.err
-for g in "scripts/ci/no_dressing.py --baseline" scripts/ci/test_reality.py scripts/ci/quantum_naming.py scripts/ci/check_forbidden_claims.py; do $PY $g > /dev/null 2>&1; echo "$g exit=$?"; done > $D/gates.txt
+$PY scripts/ci/test_execution_gate.py --suite main --junit $D/junit.xml > $D/test_execution_gate.txt 2>&1; echo "test_execution_gate exit=$?" > $D/gates_pre.txt
+for g in "scripts/ci/no_dressing.py --baseline" scripts/ci/test_reality.py scripts/ci/quantum_naming.py scripts/ci/check_forbidden_claims.py; do $PY $g > /dev/null 2>&1; echo "$g exit=$?"; done > $D/gates.txt; cat $D/gates_pre.txt >> $D/gates.txt
 # benchmarks on SHA-pinned public data (prepared with scikit-learn 1.8.0)
 U=/workspace/closeout-data/uci/data
 mkdir -p $D/bench/target
