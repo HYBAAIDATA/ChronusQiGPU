@@ -92,6 +92,8 @@ fleet-opencl = [
 
 [project.scripts]
 chronus-fleet = "chronus.fleet.cli:main"
+chronus-verify-chain = "chronus.verify_cli:main"
+chronus-verify-bundle = "chronus.crypto.verify_bundle:main"
 ga-api = "ga.cli:main"
 
 [tool.setuptools]

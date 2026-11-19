@@ -176,7 +176,16 @@ def predict_attrition_risk(req: AttritionPredictionRequest) -> Dict[str, Any]:
             "2": comp_idx,
         }
     }
-    contraction_res = _default_pathway.optimize_contraction(query_payload)
+    try:
+        contraction_res = _default_pathway.optimize_contraction(query_payload)
+    except NotImplementedError as exc:
+        # The contraction layer refuses index-targeted objectives; without it
+        # there is no measured input for a risk score, so refuse explicitly
+        # instead of crashing with an unhandled 500 or inventing a value.
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail=f"attrition risk requires an index-targeted contraction objective: {exc}",
+        ) from exc
 
     # Base risk calculation from employee metrics and tensor cost factor
     flops = contraction_res.get("flops_estimated", 1000)
