@@ -1,0 +1,28 @@
+{
+  "schema": "chronus.test-execution-policy/1",
+  "note": "min_passed is a floor, not a target: raise it when tests are added; lowering it needs a reviewed reason. Allowed skips are hardware/platform/pinned-optional-dependency only; OpenCL tests execute in the opencl-reference job.",
+  "suites": {
+    "main": {
+      "min_passed": 2500,
+      "max_skipped": 50,
+      "allowed_skip_reasons": [
+        "pyopencl or numpy not available",
+        "could not import 'pyopencl'",
+        "No physical OpenCL runtime",
+        "Windows-specific",
+        "pinned scikit-learn 1\\.8\\.0 unavailable",
+        "requires scikit-learn==1\\.8\\.0"
+      ]
+    },
+    "opencl": {
+      "min_passed": 35,
+      "max_skipped": 0,
+      "allowed_skip_reasons": []
+    },
+    "pinned_datasets": {
+      "min_passed": 31,
+      "max_skipped": 0,
+      "allowed_skip_reasons": []
+    }
+  }
+}
