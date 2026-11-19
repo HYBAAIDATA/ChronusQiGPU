@@ -35,9 +35,8 @@ def test_fleet_500_does_not_echo_internal_exception_text(caplog):
     thread.start()
     try:
         client = FleetClient(f"http://127.0.0.1:{server.server_address[1]}", A.FleetAuth(token), "node-1")
-        with caplog.at_level(logging.ERROR, logger="chronus.fleet.transport"):
-            with pytest.raises(TransportError) as caught:
-                client.post("/v1/echo", {})
+        with caplog.at_level(logging.ERROR, logger="chronus.fleet.transport"), pytest.raises(TransportError) as caught:
+            client.post("/v1/echo", {})
         assert caught.value.status == 500
         assert "secret internal detail" not in str(caught.value)
         assert str(caught.value) == "internal error"
