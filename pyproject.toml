@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hyba-chronus"
-version = "37.0.0.dev0"
+dynamic = ["version"]
 description = "Chronus: the HYBA Data exact-computation platform (internal distribution; TURING ships separately as hyba-turing)"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -96,6 +96,9 @@ ga-api = "ga.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+
+[tool.setuptools.dynamic]
+version = {attr = "chronus.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src"]

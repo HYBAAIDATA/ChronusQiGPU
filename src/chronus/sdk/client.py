@@ -16,6 +16,7 @@ from chronus.sdk.models import (
     ServiceUnavailableError,
     WorkloadResult,
 )
+from chronus import __version__ as _CHRONUS_VERSION
 
 
 def _reject_above_hashrate_cap(eh_s: Optional[float]) -> None:
@@ -29,7 +30,7 @@ def _reject_above_hashrate_cap(eh_s: Optional[float]) -> None:
 class ChronusAPISDK:
     """Synchronous client for a separately deployed Chronus API."""
 
-    SDK_VERSION = "36.0.0"
+    SDK_VERSION = _CHRONUS_VERSION
 
     def __init__(
         self,

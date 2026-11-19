@@ -34,6 +34,7 @@ from chronus.service.routers.workloads import (
     workload_counts,
 )
 from chronus.service.routers.verify import verify_hash
+from chronus import __version__ as _CHRONUS_VERSION
 
 router = APIRouter(prefix="/v1", tags=["v1"])
 
@@ -57,7 +58,7 @@ async def get_capabilities() -> Dict[str, Any]:
         "backend_inventory": backends,
         "execution_surfaces": inventory.get("surfaces", []),
         "default_surface": inventory.get("default_surface"),
-        "version": "36.0.1",
+        "version": _CHRONUS_VERSION,
     }
 
 

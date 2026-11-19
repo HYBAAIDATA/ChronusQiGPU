@@ -4,7 +4,7 @@ Configuration structures only; the active workload store is the SQLite
 backend in chronus.service.workload_store. No ORM or pooling executes here.
 """
 
-__version__ = "36.0.1"
+from chronus import __version__ as __version__  # single source: chronus.__version__
 __all__ = [
     "ThesusDatabase",
     "DatabaseConfig",

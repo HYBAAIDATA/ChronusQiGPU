@@ -19,6 +19,7 @@ from chronus.core.workload_alias import (
     normalize_representation_mode,
     normalize_workload_type,
 )
+from chronus import __version__ as _CHRONUS_VERSION
 
 
 class WorkloadType(str, Enum):
@@ -263,7 +264,7 @@ class HealthResponse(BaseModel):
     """Overall service health response."""
 
     status: HealthStatus
-    version: str = "36.0.1"
+    version: str = _CHRONUS_VERSION
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     components: List[ComponentHealth]
     uptime_seconds: float
