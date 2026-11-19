@@ -534,6 +534,7 @@ jobs:
         run: |
           export CHRONUS_FLEET_NATIVE_TRANSPORT="$RUNNER_TEMP/fleet-native/libchronus_fleet_transport.so"
           test -s "$CHRONUS_FLEET_NATIVE_TRANSPORT"
+          python -c 'from chronus.fleet.auth import FleetAuth, new_token; from chronus.fleet.transport import FleetClient; assert FleetClient("http://127.0.0.1:8740", FleetAuth(new_token()), "ci")._native is not None'
           python -m pytest -q -rs tests/test_fleet_auth_transport.py tests/test_fleet_scale_budget.py tests/test_fleet_native_transport_contract.py --junitxml=junit-native-fleet.xml
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
