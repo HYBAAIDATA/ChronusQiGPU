@@ -7,7 +7,6 @@ VirtualClock and an atomic in-memory etcd v3 CAS/lease simulator.
 from __future__ import annotations
 
 import dataclasses
-from dataclasses import dataclass
 from pathlib import Path
 import sqlite3
 import threading
@@ -89,18 +88,18 @@ class DeterministicTestSigner:
 # ---------------------------------------------------------------------------
 # Faithful In-Memory etcd v3 CAS + Lease Simulator
 # ---------------------------------------------------------------------------
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class _FakeHeader:
     revision: int
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class _FakeResponse:
     header: _FakeHeader
     value: Optional[bytes] = None
 
 
-@dataclass
+@dataclasses.dataclass
 class _FakeKVEntry:
     value: bytes
     create_revision: int
@@ -108,7 +107,7 @@ class _FakeKVEntry:
     lease_id: Optional[int]
 
 
-@dataclass
+@dataclasses.dataclass
 class _FakeLeaseRecord:
     lease_id: int
     ttl_s: int
@@ -679,7 +678,7 @@ def test_exact_receipt_envelope() -> None:
         seq=1, ts_ns=0, event_type="test", payload={"n": 1},
         prev_hash=GENESIS_HASH)
     env.verify_link(GENESIS_HASH, 1)
-    with pytest.raises((TypeError, ValueError)):
+    with pytest.raises(TypeError):
         dataclasses.replace(env, seq=1.0)
 
 
@@ -731,3 +730,54 @@ def test_remote_ack_recovery_and_exact_250_receipt_tail(tmp_path: Path) -> None:
         assert proof.verify(env.canonical_leaf_bytes(), anchor.merkle_root)
     store.close()
     fencer.release()
+
+
+@pytest.mark.parametrize("column,value", [
+    ("ts_ns", 0.5),
+    ("fencing_epoch", 1.5),
+    ("payload_digest", "not-a-blob"),
+])
+def test_recovery_rejects_sqlite_storage_type_tampering(tmp_path: Path, column, value) -> None:
+    clock = VirtualClock(0)
+    etcd = FakeEtcdCluster(clock)
+    signer = DeterministicTestSigner()
+    quorum = EtcdAnchorQuorumClient(etcd, verify_anchor=lambda a: signer.verify(a.signing_preimage(), a.signature))
+    fencer = EtcdLeaseFencer(etcd_client=etcd, node_id="n", slot_id="s", clock_ns=clock.now_ns)
+    db = tmp_path / "tampered.db"
+    fencer.acquire()
+    try:
+        store = FencedTheseusEdgeStore(db_path=db, node_id="n", slot_id="s",
+            fencer=fencer, signer=signer, quorum=quorum,
+            clock_ns=clock.now_ns, monotonic_ns=clock.now_ns)
+        try:
+            store.reconcile_recovery_tail()
+            store.append_receipt(tenant_id="t", event_type="receipt", payload={"i": 0})
+        finally:
+            store.close()
+        with sqlite3.connect(db) as conn:
+            # Column comes exclusively from the parametrized literal test cases.
+            if column == "ts_ns":
+                conn.execute("UPDATE theseus_fenced_receipts SET ts_ns = ?", (value,))
+            elif column == "fencing_epoch":
+                conn.execute("UPDATE theseus_fenced_receipts SET fencing_epoch = ?", (value,))
+            else:
+                conn.execute("UPDATE theseus_fenced_receipts SET payload_digest = ?", (value,))
+        store = FencedTheseusEdgeStore(db_path=db, node_id="n", slot_id="s",
+            fencer=fencer, signer=signer, quorum=quorum,
+            clock_ns=clock.now_ns, monotonic_ns=clock.now_ns)
+        try:
+            with pytest.raises(ChainIntegrityError, match="field type"):
+                store.reconcile_recovery_tail()
+            with pytest.raises(CustodyError, match="reconcile_recovery_tail"):
+                store.append_receipt(tenant_id="t", event_type="receipt", payload={"i": 1})
+        finally:
+            store.close()
+    finally:
+        fencer.release()
+
+
+def test_merkle_rejects_malformed_step_without_throwing() -> None:
+    tree = Blake3MerkleTree([b"A", b"B"])
+    proof = tree.proof_for(0)
+    for steps in (((),), ((tree.root,),), ((tree.root, "R", "extra"),)):
+        assert not dataclasses.replace(proof, steps=steps).verify(b"A", tree.root)
