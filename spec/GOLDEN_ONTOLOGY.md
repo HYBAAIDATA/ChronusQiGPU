@@ -90,3 +90,14 @@ EMA separately and all five PV families; same input, edge policy and metrics.
 Report unrounded RMSE, impulse asymmetry and actual execution environment.
 No superiority is inferred from ordinal invariance or from a single fixture.
 Real-telemetry and maintained TOE consumer acceptance remain separate obligations.
+
+## Integration boundary
+
+The standalone package is included in the internal Chronus wheel for the
+research adapter, but its core is standard-library-only and can be replayed
+from the checkout without installing Chronus. Numerical functions are exposed
+through golden_ontology.numeric_reference and chronus.research.golden_nature_reference,
+not the exact chronus.math namespace. The draft numerical imports have moved;
+exact descriptors and integer operations remain in chronus.math.golden_nature.
+The namespace move is an actual execution boundary, not an exemption from an
+existing gate. No production dispatch or customer API uses it.

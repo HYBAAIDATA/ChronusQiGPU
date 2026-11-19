@@ -7,6 +7,9 @@ from pathlib import Path
 import pytest
 
 from chronus.math import golden_nature as gn
+from chronus.research import golden_nature_reference as reference
+
+pytestmark = pytest.mark.real
 
 _spec = importlib.util.spec_from_file_location(
     "fold_verify", Path(__file__).resolve().parents[1] / "scripts" / "fold_verify.py")
@@ -74,7 +77,7 @@ def test_sequence_exact_turns_and_polar_radii():
     assert len({t for r,t in points}) == 100
     assert gn.phyllotaxis_exact(0) == []
     assert all(abs(x*x+y*y-float(r)) < 1e-12
-               for (x,y),(r,t) in zip(gn.phyllotaxis_disk(100),points))
+               for (x,y),(r,t) in zip(reference.phyllotaxis_disk(100),points))
 
 
 def test_golden_section_exact_bracket_and_evaluation_reuse():
@@ -88,7 +91,7 @@ def test_golden_section_exact_bracket_and_evaluation_reuse():
     assert (result.upper-result.lower-Fraction(1,10**8)).sign() <= 0
     assert len(visits) == result.evaluations == len(set(visits))
     assert not gn.golden_section_exact(objective,-3,7,max_iter=0).converged
-    x,y,count = gn.golden_section_minimize(lambda t:(t-2)**2,-3,7)
+    x,y,count = reference.golden_section_minimize(lambda t:(t-2)**2,-3,7)
     assert abs(x-2)<1e-10 and y<1e-20 and count>2
 
 
@@ -98,13 +101,13 @@ def test_antiresonance_symbolic_and_numerical_reference():
     assert set(f.family for f in freqs) == set(gn.FAMILY_POLYNOMIALS)
     assert all(f.base == Fraction(3,20) and f.coefficient>0 for f in freqs)
     state = [complex(k,-k/2) for k in range(32)]
-    out, residual = gn.evolve_anti_resonant(state)
-    back, _ = gn.evolve_anti_resonant(out,time_step=-0.5)
+    out, residual = reference.evolve_anti_resonant(state)
+    back, _ = reference.evolve_anti_resonant(out,time_step=-0.5)
     assert residual < 1e-15
     assert max(abs(x-y) for x,y in zip(state,back)) < 1e-12
     assert abs(sum(abs(x)**2 for x in state)-sum(abs(x)**2 for x in out)) < 1e-10
     with pytest.raises(ValueError):
-        gn.evolve_anti_resonant([1])
+        reference.evolve_anti_resonant([1])
 
 
 def test_rank_fidelity_exact_ordinal_invariance_and_limits():
@@ -117,3 +120,22 @@ def test_rank_fidelity_exact_ordinal_invariance_and_limits():
     assert gn.ranked_fidelity(original[0],original[1])<1
     with pytest.raises(TypeError):
         gn.ranked_zeckendorf_bits([[1.0]])
+
+def test_reference_edge_cases_and_exact_basis(tmp_path):
+    certificate_file=tmp_path/"invalid-certificate.json"
+    certificate_file.write_text("null")
+    assert fv.main(["--folded","47,29","--steps","7","--bits","64",
+                    "--originals","1,2","--certificate",str(certificate_file)])==1
+    x,y,count=reference.golden_section_minimize(abs,-1e308,1e308,tol=1e308)
+    assert math.isfinite(x) and math.isfinite(y) and count>0
+    a=float(2**53)
+    x,y,_=reference.golden_section_minimize(lambda v:abs(v-a-4),a,a+4,tol=2)
+    assert x==a+4 and y==0
+    out,residual=reference.evolve_anti_resonant([1,0],time_step=1e-308,base_omega=1e308)
+    assert all(math.isfinite(complex(v).real) for v in out) and residual<1e-15
+    with pytest.raises(TypeError):
+        gn.FAMILY_POLYNOMIALS["golden"]=(1,-2,-1)
+    left=gn.ranked_zeckendorf_bits([[1],[2]])[0]
+    right=gn.ranked_zeckendorf_bits([[1],[2],[3]])[0]
+    with pytest.raises(ValueError,match="basis"):
+        gn.ranked_fidelity(left,right)

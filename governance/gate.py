@@ -19,7 +19,7 @@ SCOPE=("golden_ontology","spec/GOLDEN_ONTOLOGY.md","spec/test_vectors.json",
        "formal/check_golden_fold.sh","verify","governance/gate.py",
        "scripts/fold_verify.py","src/chronus/math/golden_nature.py",
        "src/chronus/research/golden_nature_reference.py",
-       "tests/test_golden_nature_exact.py",".github/workflows/golden-ontology.yml")
+       "tests/test_golden_nature_exact.py",".github/workflows/golden-ontology.yml","pyproject.toml")
 
 def _sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()

@@ -9,6 +9,7 @@ from types import MappingProxyType
 from dataclasses import dataclass
 from fractions import Fraction
 
+from golden_ontology.substrate import PV_REGISTRY
 from chronus.geodesic.embedding_11d import Q5, PHI_INV
 from chronus.execution.structural import zeckendorf_encode
 from chronus.storage.phyllotaxis import GOLDEN_RATIO_CONJUGATE_64
@@ -61,16 +62,6 @@ def phyllotaxis_exact(n):
     return [(Fraction(2*k+1, 2*n), _frac(PHI_INV*PHI_INV*k)) for k in range(n)]
 
 
-def kronecker_golden_1d(n, seed=0.5):
-    from chronus.research.golden_nature_reference import kronecker_golden_1d as project
-    return project(n,seed)
-
-
-def phyllotaxis_disk(n):
-    from chronus.research.golden_nature_reference import phyllotaxis_disk as project
-    return project(n)
-
-
 def fibonacci_scatter(x):
     """Permutation of canonical unsigned 64-bit words."""
     if type(x) is not int or not 0 <= x <= MASK_64:
@@ -100,21 +91,22 @@ def golden_section_exact(f, a, b, tol=Fraction(1, 10**12), max_iter=200):
     the strict case; using one side preserves the fixed-ratio reuse.
     """
     a, b = Q5(_rational(a)), Q5(_rational(b))
-    tolerance = _rational(tol)
-    if (b-a).sign() <= 0 or tolerance <= 0:
-        raise ValueError("ordered nonempty bracket and positive tolerance required")
+    # This is an exact rational limiting width, not an arithmetic error budget.
+    width_limit = _rational(tol)
+    if (b-a).sign() <= 0 or width_limit <= 0:
+        raise ValueError("ordered nonempty bracket and positive limiting width required")
     _count(max_iter)
 
     def evaluate(x):
         y = f(x)
         return y if isinstance(y, Q5) else Q5(_rational(y))
 
-    if (b-a-tolerance).sign() <= 0:
+    if (b-a-width_limit).sign() <= 0:
         return MinimumBracket(a, b, 0, True)
     c, d = b-PHI_INV*(b-a), a+PHI_INV*(b-a)
     fc, fd, count = evaluate(c), evaluate(d), 2
     for _ in range(max_iter):
-        if (b-a-tolerance).sign() <= 0:
+        if (b-a-width_limit).sign() <= 0:
             break
         if (fc-fd).sign() <= 0:
             b, d, fd = d, c, fc
@@ -125,23 +117,12 @@ def golden_section_exact(f, a, b, tol=Fraction(1, 10**12), max_iter=200):
             d = a+PHI_INV*(b-a)
             fd = evaluate(d)
         count += 1
-    return MinimumBracket(a, b, count, (b-a-tolerance).sign() <= 0)
-
-
-def golden_section_minimize(f,a,b,tol=1e-12,max_iter=200):
-    from chronus.research.golden_nature_reference import golden_section_minimize as project
-    return project(f,a,b,tol,max_iter)
+    return MinimumBracket(a, b, count, (b-a-width_limit).sign() <= 0)
 
 
 # Polynomial coefficients in descending order; root is the unique real
 # root > 1 for the three cubic families, larger real root for the quadratics.
-FAMILY_POLYNOMIALS = MappingProxyType({
-    "golden": (1, -1, -1),
-    "silver": (1, -2, -1),
-    "plastic": (1, 0, -1, -1),
-    "supergolden": (1, -1, 0, -1),
-    "tribonacci": (1, -1, -1, -1),
-})
+FAMILY_POLYNOMIALS = MappingProxyType({name: family.polynomial for name, family in PV_REGISTRY.items()})
 
 
 @dataclass(frozen=True)
@@ -150,14 +131,15 @@ class AlgebraicFrequency:
     base: Fraction
     coefficient: int
 
+    def __post_init__(self):
+        if self.family not in FAMILY_POLYNOMIALS or _rational(self.base)<=0:
+            raise ValueError("registered family and positive exact base required")
+        if type(self.coefficient) is not int or self.coefficient<=0:
+            raise ValueError("positive integer coefficient required")
+
     @property
     def polynomial(self):
         return FAMILY_POLYNOMIALS[self.family]
-
-    def numeric(self):
-        from chronus.research.golden_nature_reference import numeric_frequency
-        return numeric_frequency(self)
-
 
 def anti_resonant_frequencies_exact(n_blocks, base_omega=Fraction(3,20)):
     """Symbolic frequencies base*(1+j*alpha), j positive and unique per family.
@@ -175,16 +157,6 @@ def anti_resonant_frequencies_exact(n_blocks, base_omega=Fraction(3,20)):
     names = tuple(FAMILY_POLYNOMIALS)
     return [AlgebraicFrequency(names[k%len(names)], base, 1+k//len(names))
             for k in range(_count(n_blocks))]
-
-
-def anti_resonant_frequencies(n_blocks,base_omega=0.15):
-    from chronus.research.golden_nature_reference import anti_resonant_frequencies as project
-    return project(n_blocks,base_omega)
-
-
-def evolve_anti_resonant(state,time_step=0.5,base_omega=0.15):
-    from chronus.research.golden_nature_reference import evolve_anti_resonant as project
-    return project(state,time_step,base_omega)
 
 
 def ranked_zeckendorf_bits(rows):
@@ -209,8 +181,11 @@ class RankedBits(tuple):
     """Ordinal vector with explicit basis metadata."""
     def __new__(cls, values, basis):
         instance=super().__new__(cls,values)
-        instance.basis=tuple(basis)
+        object.__setattr__(instance,"basis",tuple(basis))
         return instance
+
+    def __setattr__(self,name,value):
+        raise AttributeError("ordinal basis is immutable")
 
 
 def ranked_fidelity(left, right):

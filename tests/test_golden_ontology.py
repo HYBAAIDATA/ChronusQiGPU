@@ -5,6 +5,14 @@ import time
 import unittest
 from pathlib import Path
 from fractions import Fraction
+from types import SimpleNamespace
+
+# Pytest classification metadata when present; unittest needs no dependency.
+try:
+    import pytest
+except ModuleNotFoundError:
+    pytest=SimpleNamespace(mark=SimpleNamespace(real=None))
+pytestmark = pytest.mark.real
 
 from golden_ontology.filter import NonMonotoneWarpError,PisotFilter,ZeckendorfMap
 from golden_ontology.fold import PeriodError,RangeError,fold_words,unfold_words

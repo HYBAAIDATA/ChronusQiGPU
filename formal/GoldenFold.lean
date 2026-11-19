@@ -100,8 +100,9 @@ theorem mod_mul (m a : Int) : (m*a)%m = 0 := by
 
 theorem mod_lift (m : Int) (A : Mat2) (hm : 1 < m) :
     (Mat2.id.add (Mat2.scale m A)).mod m = Mat2.id := by
+  have h : (1 : Int) % m = 1 := Int.emod_eq_of_lt (by decide) hm
   cases A
-  simp [Mat2.mod, Mat2.add, Mat2.scale, Mat2.id, mod_one_plus_mul, mod_mul, hm]
+  simp [Mat2.mod, Mat2.add, Mat2.scale, Mat2.id, h]
 
 theorem pow2_gt_one (n : Nat) : 1 < (2 : Int)^(n+1) := by
   induction n with
