@@ -14,12 +14,19 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python scripts/ci/check_repo_hygiene.py --report artifacts/repo_hygiene_report.json
+      - name: Execute hygiene gate with raw command evidence
+        run: python scripts/ci/capture_command.py "$RUNNER_TEMP/hygiene-logs" hygiene -- python scripts/ci/check_repo_hygiene.py --report artifacts/repo_hygiene_report.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: repo-hygiene-report-${{ github.sha }}
           path: artifacts/repo_hygiene_report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hygiene-raw-logs-${{ github.sha }}
+          path: ${{ runner.temp }}/hygiene-logs/
+          if-no-files-found: error
   gitleaks-secret-scan:
     runs-on: ubuntu-latest
     steps:
@@ -38,16 +45,23 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install
-        run: python -m pip install -e ".[dev]" blake3
+        run: python scripts/ci/capture_command.py "$RUNNER_TEMP/theseus-logs" install -- python -m pip install -e ".[dev]" blake3
       - name: Gate G2 deterministic fault tests
-        run: python -m pytest -v --strict-markers tests/test_theseus_gate_g2_fenced_custody.py
+        if: always()
+        run: python scripts/ci/capture_command.py "$RUNNER_TEMP/theseus-logs" gate-g2 -- python -m pytest -v --strict-markers tests/test_theseus_gate_g2_fenced_custody.py
       - name: Lifecycle and schema regressions
         if: always()
-        run: python -m pytest -v --strict-markers tests/test_theseus_lifecycle.py tests/test_wiring_entrypoints.py tests/test_repo_hygiene_manifest_boundary.py
+        run: python scripts/ci/capture_command.py "$RUNNER_TEMP/theseus-logs" lifecycle-schema -- python -m pytest -v --strict-markers tests/test_theseus_lifecycle.py tests/test_wiring_entrypoints.py tests/test_repo_hygiene_manifest_boundary.py
       - name: Regression qualification
         if: always()
         run: |
-          python -m pytest -q tests/test_triad_production.py tests/test_triad_capability_manifest.py tests/test_geodesic_tensor_migration.py tests/test_qualification.py tests/test_product_gates.py tests/test_release_gate.py
+          python scripts/ci/capture_command.py "$RUNNER_TEMP/theseus-logs" qualification -- python -m pytest -q tests/test_triad_production.py tests/test_triad_capability_manifest.py tests/test_geodesic_tensor_migration.py tests/test_qualification.py tests/test_product_gates.py tests/test_release_gate.py
       - name: Working tree
         if: always()
-        run: git status --short
+        run: python scripts/ci/capture_command.py "$RUNNER_TEMP/theseus-logs" git-status -- git status --short
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: theseus-verification-raw-logs-${{ github.sha }}
+          path: ${{ runner.temp }}/theseus-logs/
+          if-no-files-found: error

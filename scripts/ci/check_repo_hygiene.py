@@ -206,8 +206,12 @@ def main() -> int:
     }
 
     if args.report is not None:
-        args.report.parent.mkdir(parents=True, exist_ok=True)
-        args.report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+        try:
+            args.report.parent.mkdir(parents=True, exist_ok=True)
+            args.report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+        except OSError as exc:
+            print(f"FATAL: cannot persist hygiene report: {exc}", file=sys.stderr)
+            return 2
 
     if violations:
         print(f"HYGIENE GATE FAILED ({len(violations)} violations):", file=sys.stderr)

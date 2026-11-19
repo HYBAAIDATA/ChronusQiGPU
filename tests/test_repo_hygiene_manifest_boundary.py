@@ -40,3 +40,33 @@ validate_policy(doc)
     result = subprocess.run([sys.executable, "-c", code, mutation], cwd=ROOT, capture_output=True, text=True, check=False)
     assert result.returncode != 0
     assert "ValueError:" in result.stderr or "re.PatternError:" in result.stderr or "re.error:" in result.stderr
+
+
+def test_sensitive_content_rules_cover_json_secret_and_valuation():
+    import json
+    import re
+    policy = json.loads((ROOT / "manifests/public_root_allowlist.json").read_text())
+    rules = {rule["id"]: re.compile(rule["pattern"]) for rule in policy["forbidden_content_regexes"]}
+    # Construct deliberately synthetic strings rather than hardcode credentials.
+    jwt = "CHRONUS_" + "JWT_SECRET"
+    assert rules["HARDCODED_CHRONUS_JWT_SECRET"].search(f'"{jwt}": "' + "A" * 24 + '"')
+    prefix = "confidential" + " valuation"
+    assert rules["CONFIDENTIAL_VALUATION_VALUE"].search(prefix + ": " + "$" + "123")
+    assert not rules["CONFIDENTIAL_VALUATION_VALUE"].search("valuation methodology")
+
+
+def test_capture_command_preserves_stream_bytes_and_exit_code(tmp_path):
+    out = b"stdout\\x00\\xff\\n"
+    err = b"stderr\\r\\n"
+    command = [
+        sys.executable, str(ROOT / "scripts/ci/capture_command.py"), str(tmp_path), "check", "--",
+        sys.executable, "-c",
+        f"import sys; sys.stdout.buffer.write({out!r}); sys.stderr.buffer.write({err!r}); sys.exit(7)",
+    ]
+    result = subprocess.run(command, capture_output=True, check=False)
+    assert result.returncode == 7
+    assert result.stdout == out
+    assert result.stderr == err
+    assert (tmp_path / "check.stdout").read_bytes() == out
+    assert (tmp_path / "check.stderr").read_bytes() == err
+    assert (tmp_path / "check.exit_code").read_text() == "7\n"

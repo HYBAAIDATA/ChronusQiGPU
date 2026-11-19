@@ -1,32 +1,15 @@
 {
-  "run": 44443175475,
-  "merge_candidate": "84ec5a645c051dee0e1cec448bc60878787a4fcc",
-  "reported_violation_count": 370,
+  "run": 44452240397,
+  "merge_candidate": "bdc9c03ff55cdf1ef1b92309a8a49b899a4c86d2",
+  "head_sha": "49152749d1e45a2bae7455fe6a0426dcd3fe4920",
+  "reported_violation_count": 366,
+  "exit_code": 1,
+  "artifact_id": 14496052185,
   "extracted_findings": [
     {
       "rule_id": "ROOT_DIR_NOT_ALLOWLISTED",
       "path": ".agents/",
       "detail": "Top-level directory is absent from manifests/public_root_allowlist.json"
-    },
-    {
-      "rule_id": "BANNED_PATH_PATTERN",
-      "path": "BLOCKER_MILLENIEIEUM_1.patch",
-      "detail": "Matched banned pattern '**/*.patch'"
-    },
-    {
-      "rule_id": "ROOT_FILE_NOT_ALLOWLISTED",
-      "path": "BLOCKER_MILLENIEIEUM_1.patch",
-      "detail": "Top-level file is absent from manifests/public_root_allowlist.json"
-    },
-    {
-      "rule_id": "BANNED_PATH_PATTERN",
-      "path": "BLOCKER_MILLENIEIEUM_2.patch",
-      "detail": "Matched banned pattern '**/*.patch'"
-    },
-    {
-      "rule_id": "ROOT_FILE_NOT_ALLOWLISTED",
-      "path": "BLOCKER_MILLENIEIEUM_2.patch",
-      "detail": "Top-level file is absent from manifests/public_root_allowlist.json"
     },
     {
       "rule_id": "BANNED_PATH_PATTERN",
@@ -599,11 +582,6 @@
       "detail": "Matched restricted IP or credential boundary pattern"
     },
     {
-      "rule_id": "ROOT_FILE_NOT_ALLOWLISTED",
-      "path": "docs_readme.txt",
-      "detail": "Top-level file is absent from manifests/public_root_allowlist.json"
-    },
-    {
       "rule_id": "ROOT_DIR_NOT_ALLOWLISTED",
       "path": "funding/",
       "detail": "Top-level directory is absent from manifests/public_root_allowlist.json"
@@ -752,6 +730,11 @@
       "rule_id": "BANNED_PATH_PATTERN",
       "path": "reviews/onboarding_phase0_gap_analysis.md",
       "detail": "Matched banned pattern 'reviews/**'"
+    },
+    {
+      "rule_id": "ROOT_DIR_NOT_ALLOWLISTED",
+      "path": "tests_installed/",
+      "detail": "Top-level directory is absent from manifests/public_root_allowlist.json"
     },
     {
       "rule_id": "BANNED_PATH_PATTERN",

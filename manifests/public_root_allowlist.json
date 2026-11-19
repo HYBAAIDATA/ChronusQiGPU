@@ -98,7 +98,11 @@
     },
     {
       "id": "HARDCODED_CHRONUS_JWT_SECRET",
-      "pattern": "CHRONUS_JWT_SECRET\\s*=\\s*['\"]?(?!replace|changeme|example|\\$\\{)[A-Za-z0-9_\\-]{20,}"
+      "pattern": "CHRONUS_JWT_SECRET[\"']?\\s*[:=]\\s*['\"]?(?!replace|changeme|example|\\$\\{)[A-Za-z0-9_\\-]{20,}"
+    },
+    {
+      "id": "CONFIDENTIAL_VALUATION_VALUE",
+      "pattern": "(?i)(?:pre[- ]money|post[- ]money|confidential|internal|private|investor|company|equity)\\s+valuation\\s*(?:[:=]|of)?\\s*(?:[$£€]|\\b(?:USD|GBP|EUR)\\s*)\\s*\\d"
     }
   ]
 }
