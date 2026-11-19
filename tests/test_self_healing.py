@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import sqlite3
+from contextlib import closing
 
 import pytest
 
@@ -23,7 +24,7 @@ PAYLOAD = bytes((i * 37 + 11) % 256 for i in range(200))
 
 
 def _corrupt(path, object_id: str, positions) -> bytes:
-    with sqlite3.connect(path) as db:
+    with closing(sqlite3.connect(path)) as db, db:
         (blob,) = db.execute("SELECT payload FROM objects WHERE object_id=?", (object_id,)).fetchone()
         damaged = bytearray(blob)
         for p in positions:
@@ -34,12 +35,12 @@ def _corrupt(path, object_id: str, positions) -> bytes:
 
 
 def _raw(path, object_id: str) -> bytes:
-    with sqlite3.connect(path) as db:
+    with closing(sqlite3.connect(path)) as db, db:
         return bytes(db.execute("SELECT payload FROM objects WHERE object_id=?", (object_id,)).fetchone()[0])
 
 
 def _events(path):
-    with sqlite3.connect(path) as db:
+    with closing(sqlite3.connect(path)) as db, db:
         return [r[0] for r in db.execute("SELECT kind FROM self_heal_events ORDER BY event_id")]
 
 
@@ -96,7 +97,7 @@ def test_beyond_bound_fails_closed_and_is_recorded(tmp_path):
 def test_length_change_fails_closed(tmp_path):
     path = tmp_path / "t.sqlite3"
     record = DurableTheseusService(str(path)).store("tenant-a", PAYLOAD)
-    with sqlite3.connect(path) as db:
+    with closing(sqlite3.connect(path)) as db, db:
         db.execute("UPDATE objects SET payload=? WHERE object_id=?", (PAYLOAD[:-1], record.object_id))
         db.commit()
     with pytest.raises(StorageIntegrityError):
@@ -106,7 +107,7 @@ def test_length_change_fails_closed(tmp_path):
 def test_corrupted_parity_cannot_forge_and_is_regenerated(tmp_path):
     path = tmp_path / "t.sqlite3"
     record = DurableTheseusService(str(path)).store("tenant-a", PAYLOAD)
-    with sqlite3.connect(path) as db:
+    with closing(sqlite3.connect(path)) as db, db:
         db.execute("UPDATE object_parity SET parity=? WHERE object_id=?", (b"\x00" * 10, record.object_id))
         db.commit()
     reopened = DurableTheseusService(str(path))  # payload intact; parity rebuilt
@@ -184,7 +185,7 @@ def test_damaged_sidecar_metadata_fails_closed_then_is_regenerated(tmp_path, col
     path = tmp_path / "t.sqlite3"
     store = DurableTheseusService(str(path))
     record = store.store("tenant-a", PAYLOAD)
-    with sqlite3.connect(path) as db:
+    with closing(sqlite3.connect(path)) as db, db:
         db.execute(f"UPDATE object_parity SET {column}=? WHERE object_id=?", (value, record.object_id))
         db.commit()
     _corrupt(path, record.object_id, [3])
@@ -192,7 +193,7 @@ def test_damaged_sidecar_metadata_fails_closed_then_is_regenerated(tmp_path, col
         store.reconstruct("tenant-a", record.object_id)
     assert _events(path) == ["UNREPAIRABLE"]
     # restore the payload; reopening rebuilds the sidecar, which then repairs again
-    with sqlite3.connect(path) as db:
+    with closing(sqlite3.connect(path)) as db, db:
         db.execute("UPDATE objects SET payload=? WHERE object_id=?", (PAYLOAD, record.object_id))
         db.commit()
     reopened = DurableTheseusService(str(path))
@@ -204,7 +205,7 @@ def test_damaged_sidecar_metadata_fails_closed_then_is_regenerated(tmp_path, col
 def test_lowered_limit_still_maintains_existing_sidecar(tmp_path, monkeypatch):  # mock-ok: sets environment configuration only; no behaviour is replaced
     path = tmp_path / "t.sqlite3"
     record = DurableTheseusService(str(path)).store("tenant-a", PAYLOAD)
-    with sqlite3.connect(path) as db:
+    with closing(sqlite3.connect(path)) as db, db:
         db.execute("UPDATE object_parity SET parity=? WHERE object_id=?", (b"\x01" * 4, record.object_id))
         db.commit()
     monkeypatch.setenv("CHRONUS_SELF_HEALING_MAX_BYTES", "16")  # mock-ok: sets environment configuration only; no behaviour is replaced

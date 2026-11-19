@@ -32,6 +32,14 @@ implemented.
   - `CHRONUS_SELF_HEALING_MAX_BYTES` (default `262144`, capped at 1 MiB, the encoder limit). Larger objects get no
     parity, because encoding is pure Python (about 0.2 s per 256 KiB).
   - `DurableTheseusService(path, self_healing=False)` overrides per instance.
+  - The size limit governs which objects *get new* parity. An object that
+    already has a sidecar stays repairable after the limit is lowered; that is
+    deliberate, since repair only ever returns bytes matching the content
+    address.
+- **Cost:** encoding is about 0.2 s per 256 KiB. Decoding a heavily damaged
+  256 KiB object (an error in every block) can take over a minute in pure
+  Python. It runs outside the write transaction and the service lock, so other
+  writers are not blocked, but that read or open waits for it.
 - **Visibility:** `DurableTheseusService.evidence()["self_healing"]` and
   `self_heal_events()`. `ProductionTriad.production_posture()` includes it.
 - **Existing databases:** the new tables are created on open, so this is

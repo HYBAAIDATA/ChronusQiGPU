@@ -362,36 +362,61 @@ class DurableTheseusService:
         Accepts the repair only if the corrected bytes hash to ``object_id``;
         then writes them back and records a REPAIRED event. Failed attempts are
         recorded as UNREPAIRABLE so the operator can see them.
+
+        Decoding (which can take tens of seconds for a large, heavily damaged
+        object) runs outside any write transaction and outside the service
+        lock. The write-back then re-reads the row under ``BEGIN IMMEDIATE``
+        and commits only if the payload and sidecar are unchanged.
         """
         if not self.self_healing:
             return None
-        with self._lock, self._connect(immediate=True) as db:
+        # 1. Snapshot the damaged payload and its sidecar (read transaction).
+        with self._connect() as db:
             current = db.execute(
                 "SELECT payload, size_bytes FROM objects WHERE object_id=?", (object_id,)
             ).fetchone()
-            if current is None:
-                return None
-            payload = bytes(current["payload"])
-            if hashlib.sha256(payload).hexdigest() == object_id:
-                return payload  # healed concurrently
             parity_row = db.execute(
                 "SELECT scheme, n, k, parity, parity_sha256 FROM object_parity WHERE object_id=?",
                 (object_id,),
             ).fetchone()
-            if parity_row is None:
-                self._log_heal(db, object_id, "UNREPAIRABLE", 0, "no parity sidecar")
-                return None
-            parity = bytes(parity_row["parity"])
-            if not self._sidecar_intact(parity_row):
-                self._log_heal(db, object_id, "UNREPAIRABLE", 0, "parity sidecar failed verification")
-                return None
+        if current is None:
+            return None
+        payload = bytes(current["payload"])
+        if hashlib.sha256(payload).hexdigest() == object_id:
+            return payload  # healed concurrently
+        failure: str | None = None
+        outcome = None
+        if parity_row is None:
+            failure = "no parity sidecar"
+        elif not self._sidecar_intact(parity_row):
+            failure = "parity sidecar failed verification"
+        else:
+            # 2. Decode with no lock or transaction held.
             outcome = self_heal.heal_payload(
-                payload, object_id, parity, int(current["size_bytes"]),
+                payload, object_id, bytes(parity_row["parity"]), int(current["size_bytes"]),
                 n=int(parity_row["n"]), k=int(parity_row["k"]),
             )
             if not outcome.ok:
-                self._log_heal(db, object_id, "UNREPAIRABLE", 0, outcome.reason)
+                failure = outcome.reason
+        # 3. Short write transaction: recheck, then commit repair or audit row.
+        with self._lock, self._connect(immediate=True) as db:
+            now = db.execute(
+                "SELECT payload FROM objects WHERE object_id=?", (object_id,)
+            ).fetchone()
+            if now is None:
                 return None
+            now_payload = bytes(now["payload"])
+            if hashlib.sha256(now_payload).hexdigest() == object_id:
+                return now_payload  # healed concurrently
+            if failure is not None:
+                self._log_heal(db, object_id, "UNREPAIRABLE", 0, failure)
+                return None
+            now_parity = db.execute(
+                "SELECT parity_sha256 FROM object_parity WHERE object_id=?", (object_id,)
+            ).fetchone()
+            if (now_payload != payload or now_parity is None
+                    or now_parity["parity_sha256"] != parity_row["parity_sha256"]):
+                return None  # changed underneath us; caller fails closed, a retry re-decodes
             db.execute(
                 "UPDATE objects SET payload=? WHERE object_id=?",
                 (sqlite3.Binary(outcome.repaired), object_id),
