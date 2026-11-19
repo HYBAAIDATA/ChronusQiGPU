@@ -22,18 +22,23 @@ Bounds (what it cannot do)
 * Objects larger than ``CHRONUS_SELF_HEALING_MAX_BYTES`` (default 256 KiB,
   capped at the encoder's 1 MiB limit) get no parity. They keep fail-closed
   behaviour. Encoding and decoding use the batched numpy decoder in
-  ``reed_solomon`` (measured numbers: ``benchmarks/results/self_healing_benchmark.json``).
+  ``reed_solomon`` (measured numbers: ``benchmarks/acceleration/self_healing_raw.json``).
 * Metadata rows (records, journal) are verified but not repaired.
 
-This is the in-repo implementation of "bounded self-healing". The separate
-Salamander remediation package described in the architecture docs is not part
-of this checkout.
+THESEUS owns this storage integrity function. Remediation authority can be
+handed to Salamander (``CHRONUS_SELF_HEALING_REPAIR=salamander``; see
+``chronus.integration.salamander_theseus``), which uses the canonical
+Salamander package when it is installed.
 
 Configuration
 -------------
 ``CHRONUS_SELF_HEALING``: ``1`` (default) enables parity and repair; ``0``
 restores the previous strict fail-closed behaviour.
 ``CHRONUS_SELF_HEALING_MAX_BYTES``: largest payload that gets parity.
+``CHRONUS_SELF_HEALING_REPAIR``: ``theseus`` (default) repairs in place on
+open/read; ``salamander`` makes THESEUS detect and diagnose only, and the
+repair is executed through Salamander's AL HARAS-authorised control plane
+(``chronus.integration.salamander_theseus``).
 """
 
 from __future__ import annotations
@@ -64,6 +69,16 @@ def self_healing_enabled() -> bool:
     if value in _FALSE:
         return False
     raise ValueError("CHRONUS_SELF_HEALING must be 1/0, true/false, yes/no or on/off")
+
+
+REPAIR_AUTHORITIES = frozenset({"theseus", "salamander"})
+
+
+def repair_authority() -> str:
+    raw = os.getenv("CHRONUS_SELF_HEALING_REPAIR", "theseus").strip().lower()
+    if raw not in REPAIR_AUTHORITIES:
+        raise ValueError("CHRONUS_SELF_HEALING_REPAIR must be 'theseus' or 'salamander'")
+    return raw
 
 
 def encoder_max_bytes() -> int:

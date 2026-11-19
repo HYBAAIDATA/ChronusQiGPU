@@ -2561,26 +2561,37 @@ class DSWInstantonSelfHealer:
     Computes Seiberg-Witten monopole duals along an exact cobordism W: Σ_1 → Σ_2
     to repair trace faults instantaneously without inference state rollback.
 
-    NOT IMPLEMENTED: this legacy monolith code performs no detection or repair.
-    It XORs byte 0 twice (a no-op) and always reports success, so the "I27
-    PASS" line it feeds proves nothing. The implemented mechanism is
-    Reed-Solomon RS(n, k) over GF(257) in
-    ``chronus.security.al_haras.reed_solomon`` (and the THESEUS storage
-    self-healing in ``chronus.storage.self_heal``).
+    The DSW / instanton wording is a naming metaphor carried over from the
+    research notes; it is not the mechanism. This method now performs a real
+    check with the implemented code, Reed-Solomon RS(48, 32) over GF(257)
+    (``chronus.security.al_haras.reed_solomon``): the trace is protected,
+    a deterministic fault is injected when ``injected_fault`` is set, the
+    trace is decoded, and success is reported only if the repaired bytes
+    match the trace's SHA-256. It used to XOR byte 0 twice and always return
+    success. If the Chronus package is not importable, it reports failure.
+
+    Returns ``(repaired_trace, corrected_byte_count, integrity_verified)``.
     """
     @staticmethod
     def heal_execution_trace(
         trace_bytes: bytes,
         injected_fault: bool = False
     ) -> Tuple[bytes, int, bool]:
-        trace = bytearray(trace_bytes)
-        instanton_number = 1 if injected_fault else 0
-        if injected_fault and len(trace) > 0:
-            # Instanton detected & repaired along SW monopole dual cobordism
-            trace[0] ^= 0x5A
-            trace[0] ^= 0x5A
-        cobordism_valid = True
-        return bytes(trace), instanton_number, cobordism_valid
+        try:
+            from chronus.security.al_haras import reed_solomon as _rs
+        except ImportError:
+            return bytes(trace_bytes), 0, False
+        trace = bytes(trace_bytes)
+        envelope = _rs.protect(trace)
+        received = trace
+        if injected_fault and trace:
+            received = _rs.inject_faults(trace, _rs.deterministic_fault_positions(trace, 1))
+        result = _rs.heal(received, envelope)
+        return (
+            result["repaired"],
+            len(result["corrected_data_positions"]),
+            bool(result["integrity_verified"]) and result["repaired"] == trace,
+        )
 
 
 
@@ -4073,8 +4084,8 @@ def run_invariant_tests(prebuilt_pipeline: "UnifiedFullStackPipeline" = None) ->
 
     # I27 — Donaldson-Seiberg-Witten Instanton Monopole Cobordism Trace Self-Healing
     healed_trace, k_inst, cob_ok = DSWInstantonSelfHealer.heal_execution_trace(b"execution_trace_data", injected_fault=True)
-    assert cob_ok and healed_trace == b"execution_trace_data", "I27 FAIL: DSW instanton cobordism trace repair failed"
-    print("I27 PASS — Donaldson-Seiberg-Witten Instanton Cobordism Trace Self-Healing (instantaneous repair)")
+    assert cob_ok and healed_trace == b"execution_trace_data", "I27 FAIL: Reed-Solomon trace repair did not verify"
+    print("I27 PASS — trace fault corrected by Reed-Solomon RS(48,32)/GF(257), SHA-256 verified (DSW naming is a metaphor)")
 
     # I28 — All Seven Millennium Problems Operationalized Invariance
     all_7_ok = MillenniumProblemsMatrix.verify_all_seven_millennium_problems()
@@ -6218,8 +6229,8 @@ def run_invariant_tests(prebuilt_pipeline: "UnifiedFullStackPipeline" = None) ->
 
     # I27 — Donaldson-Seiberg-Witten Instanton Monopole Cobordism Trace Self-Healing
     healed_trace, k_inst, cob_ok = DSWInstantonSelfHealer.heal_execution_trace(b"execution_trace_data", injected_fault=True)
-    assert cob_ok and healed_trace == b"execution_trace_data", "I27 FAIL: DSW instanton cobordism trace repair failed"
-    print("I27 PASS — Donaldson-Seiberg-Witten Instanton Cobordism Trace Self-Healing (instantaneous repair)")
+    assert cob_ok and healed_trace == b"execution_trace_data", "I27 FAIL: Reed-Solomon trace repair did not verify"
+    print("I27 PASS — trace fault corrected by Reed-Solomon RS(48,32)/GF(257), SHA-256 verified (DSW naming is a metaphor)")
 
     # I28 — All Seven Millennium Problems Operationalized Invariance
     all_7_ok = MillenniumProblemsMatrix.verify_all_seven_millennium_problems()

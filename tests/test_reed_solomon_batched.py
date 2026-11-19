@@ -97,3 +97,22 @@ def test_heal_beyond_bound_reports_block_and_keeps_bytes():
 def test_symbols_outside_field_rejected():
     with pytest.raises(rs.ReedSolomonError):
         rs.decode_blocks(np.full((1, N), rs.P), N, K)
+
+
+def test_legacy_dsw_healer_reports_success_only_after_a_real_repair():
+    """chronus_gpiu-v36's I27 path used to return success unconditionally."""
+    import importlib.util
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[1] / "src" / "chronus" / "chronus_gpiu-v36.py"
+    spec = importlib.util.spec_from_file_location("chronus_gpiu_v36_under_test", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    healer = module.DSWInstantonSelfHealer
+    trace = b"execution_trace_data"
+    repaired, corrected, verified = healer.heal_execution_trace(trace, injected_fault=True)
+    assert (repaired, corrected, verified) == (trace, 1, True)
+    # The injected fault really changes the bytes the decoder sees.
+    positions = rs.deterministic_fault_positions(trace, 1)
+    assert rs.inject_faults(trace, positions) != trace
+    assert healer.heal_execution_trace(trace) == (trace, 0, True)

@@ -178,7 +178,7 @@ class DSW4DInstantonMonopoleHealer:
         corrected = outcome["corrected_data_positions"]
         healed = bool(corrected) and outcome["integrity_verified"]
         return {
-            "mechanism": "Reed-Solomon RS(n,k) over GF(257), Berlekamp-Welch decoding",
+            "mechanism": "Reed-Solomon RS(n,k) over GF(257), batched syndrome decoding (Berlekamp-Massey, Chien, Forney)",
             "mode": mode,
             "code_parameters": {"n": envelope["n"], "k": envelope["k"], "correctable_symbols_per_block": envelope["correctable_symbols_per_block"]},
             "trace_bytes": envelope["length"],
