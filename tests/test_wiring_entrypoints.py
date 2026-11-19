@@ -76,7 +76,7 @@ def test_console_scripts_resolve() -> None:
         assert callable(getattr(module, attr)), f"{name} -> {target} is not callable"
 
 
-def test_dockerfile_api_target_serves_health(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_dockerfile_api_target_serves_health() -> None:
     dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
     m = re.search(r'CMD \["uvicorn", "([\w.]+):(\w+)"', dockerfile)
     assert m, "api-runtime CMD no longer launches uvicorn"
@@ -86,12 +86,15 @@ def test_dockerfile_api_target_serves_health(monkeypatch: pytest.MonkeyPatch) ->
     from chronus.service.dependencies import service_config
 
     # Probe the in-process app only; never a configured remote execution adapter.
-    monkeypatch.setattr(service_config, "execution_backend_url", None)
-
-    with TestClient(app) as client:
-        # Same probe as the Dockerfile/compose HEALTHCHECK.
-        assert client.get("/health/ready").status_code == 200
-        assert client.get("/health/live").status_code == 200
+    saved = service_config.execution_backend_url
+    service_config.execution_backend_url = None
+    try:
+        with TestClient(app) as client:
+            # Same probe as the Dockerfile/compose HEALTHCHECK.
+            assert client.get("/health/ready").status_code == 200
+            assert client.get("/health/live").status_code == 200
+    finally:
+        service_config.execution_backend_url = saved
 
 
 def test_miner_wrapper_targets_exist() -> None:
