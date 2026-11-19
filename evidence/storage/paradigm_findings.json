@@ -1,0 +1,35 @@
+{
+  "schema": "chronus.closure-findings/1",
+  "items": [
+    {
+      "id": "CHRN-PARAM-1",
+      "status": "OPEN",
+      "requirement": "Authoritative prime-basis transform and canonical vectors",
+      "owner": "OVID / discovery owner"
+    },
+    {
+      "id": "CHRN-RECOVERY",
+      "status": "OPEN",
+      "requirement": "Specify CHRN recovery profile and measure real fault recovery",
+      "owner": "OVID / THESEUS"
+    },
+    {
+      "id": "FOLDED-RESIDENCY",
+      "status": "OPEN",
+      "requirement": "Measure native execution counters and equal-work baseline on declared workloads",
+      "owner": "Chronus"
+    },
+    {
+      "id": "ROOT-CODEC-RECONCILIATION",
+      "status": "OPEN",
+      "requirement": "Trace root research prototype callers and retire false or stale metrics",
+      "owner": "Chronus"
+    },
+    {
+      "id": "PARADIGM-QC",
+      "status": "OPEN",
+      "requirement": "Independent replay, acceptance and applicable CI at exact revision",
+      "owner": "QC"
+    }
+  ]
+}
