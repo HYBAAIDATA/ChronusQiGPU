@@ -1,0 +1,1857 @@
+{
+  "run": 44443175475,
+  "merge_candidate": "84ec5a645c051dee0e1cec448bc60878787a4fcc",
+  "reported_violation_count": 370,
+  "extracted_findings": [
+    {
+      "rule_id": "ROOT_DIR_NOT_ALLOWLISTED",
+      "path": ".agents/",
+      "detail": "Top-level directory is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "BLOCKER_MILLENIEIEUM_1.patch",
+      "detail": "Matched banned pattern '**/*.patch'"
+    },
+    {
+      "rule_id": "ROOT_FILE_NOT_ALLOWLISTED",
+      "path": "BLOCKER_MILLENIEIEUM_1.patch",
+      "detail": "Top-level file is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "BLOCKER_MILLENIEIEUM_2.patch",
+      "detail": "Matched banned pattern '**/*.patch'"
+    },
+    {
+      "rule_id": "ROOT_FILE_NOT_ALLOWLISTED",
+      "path": "BLOCKER_MILLENIEIEUM_2.patch",
+      "detail": "Top-level file is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "BLOCKER_TOE_1.patch",
+      "detail": "Matched banned pattern '**/*.patch'"
+    },
+    {
+      "rule_id": "ROOT_FILE_NOT_ALLOWLISTED",
+      "path": "BLOCKER_TOE_1.patch",
+      "detail": "Top-level file is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "FORENSIC_ANALYSIS.md",
+      "detail": "Matched banned pattern 'FORENSIC_ANALYSIS.md'"
+    },
+    {
+      "rule_id": "ROOT_FILE_NOT_ALLOWLISTED",
+      "path": "FORENSIC_ANALYSIS.md",
+      "detail": "Top-level file is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "RELEASE_DECISION_MCKINSEY_TECH.md",
+      "detail": "Matched banned pattern 'RELEASE_DECISION_MCKINSEY_TECH.md'"
+    },
+    {
+      "rule_id": "ROOT_FILE_NOT_ALLOWLISTED",
+      "path": "RELEASE_DECISION_MCKINSEY_TECH.md",
+      "detail": "Top-level file is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "al_haras_security_module.py",
+      "detail": "Matched banned pattern 'al_haras_*'"
+    },
+    {
+      "rule_id": "ROOT_FILE_NOT_ALLOWLISTED",
+      "path": "al_haras_security_module.py",
+      "detail": "Top-level file is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "al_haras_sovereign_edition.py",
+      "detail": "Matched banned pattern 'al_haras_*'"
+    },
+    {
+      "rule_id": "ROOT_FILE_NOT_ALLOWLISTED",
+      "path": "al_haras_sovereign_edition.py",
+      "detail": "Top-level file is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "al_haras_topological_os.py",
+      "detail": "Matched banned pattern 'al_haras_*'"
+    },
+    {
+      "rule_id": "ROOT_FILE_NOT_ALLOWLISTED",
+      "path": "al_haras_topological_os.py",
+      "detail": "Top-level file is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "ROOT_DIR_NOT_ALLOWLISTED",
+      "path": "archive/",
+      "detail": "Top-level directory is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "INTERNAL_CONFIDENTIAL_MARKER",
+      "path": "archive/legacy/master_repo/docs/directives/Absolutely._I_ll_use_HYBAAIENTERPRISE_Chronusv2_a….md:258",
+      "detail": "Matched restricted IP or credential boundary pattern"
+    },
+    {
+      "rule_id": "ROOT_DIR_NOT_ALLOWLISTED",
+      "path": "artifacts/",
+      "detail": "Top-level directory is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "ROOT_DIR_NOT_ALLOWLISTED",
+      "path": "audit/",
+      "detail": "Top-level directory is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "audit/synthetic_audit_report.md",
+      "detail": "Matched banned pattern 'audit/**'"
+    },
+    {
+      "rule_id": "ROOT_FILE_NOT_ALLOWLISTED",
+      "path": "chronus_live_miner.py",
+      "detail": "Top-level file is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "ROOT_FILE_NOT_ALLOWLISTED",
+      "path": "chronus_master_end_to_end_engine.py",
+      "detail": "Top-level file is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "ROOT_DIR_NOT_ALLOWLISTED",
+      "path": "chronus_source_backup/",
+      "detail": "Top-level directory is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/.gitignore",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/LICENSE",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/README.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/console/chronus_console.html",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/#_Chronus_GPIU_v6.0_(Phase_VI)__Exact_Cyclotomic_….md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/#_MASTER_ENGINEERING_DIRECTIVE.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/AUDIT___VERIFICATION___BENCHMARK.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/Absolutely._I_ll_use_HYBAAIENTERPRISE_Chronusv2_a….md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "INTERNAL_CONFIDENTIAL_MARKER",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/Absolutely._I_ll_use_HYBAAIENTERPRISE_Chronusv2_a….md:258",
+      "detail": "Matched restricted IP or credential boundary pattern"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/Agreed._Chronus_GPIU_needs_a_proper_qualification….md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/An_audit_of__Chronus_GPIU_v4_(_chronus_gpiu-v4.p….md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/An_audit_of_the_latest_implementation_in_your_Stu….md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/At_the_same_time,_it_helps_to_stay_grounded_in_ho….md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/CLEANUP_PROGRAMME.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/CLOSE_OUT.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/ENGINEERING_CLOSE_OUT.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/ENHANCED_HYPERSCALERS_FLEET_OFFERING.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/ENHNACED_FLEET_TEST_-_Please_use_real_data.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/EVIDENCE.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/FRONTEND.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/Feedback_and_revisions.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/LANGUAGES.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/Looking_at_your_Gemini_Notebook,_the_system_has_g….md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/M5_Test_benchmark.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/NEW_ONTOLOGY.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/NEXT_FRONTIER.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/NEXT_GEN.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/NEXT_HORIZON.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/ONTOLOGY_CLOSURE.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/ONTOLOGY_CONTINUED.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/OPPORTUNITY.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/PACKAGING.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/PARADIGM_CLOSE.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/PARADIGM_SHIFT.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/Please_implement_I_ll_proceed_with_the_in-place_c….md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/Please_implement_and_address_This_is_a_substantia….md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/Questions____Acceptance.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/SCRUTINY.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/SYSTEM_VERIFICATION.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/Some_might_be_relevant_some_might_not_be_but_ther….md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/The_Millennium_Prize_Problems_are__not__out_of_….md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/The_chronology_is_important,_and_I_would_treat_th….md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/The_key_architectural_point_is_that_Chronus_shoul….md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/The_proposed_enhancements_for_the__Chronus_Quant….md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/This_is_a_meaningful_improvement_in_the_mathemati….md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/This_restatement_makes_the_architectural_intentio….md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/V18_now_describes_the_right_verification_architec….md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/V28_introduces_an_important_distinction_that_I_th….md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/_.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/availability.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/concrete_evidence.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/missing.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/sh_the_system_from_an_engineering_specification_t….md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/so_we_will_use_this_to_solve_the_hyperscalers_mem….md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/v12_is_the_right_architectural_progression._It_br….md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/directives/workload.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/docs/reports/chronus_invariant_reconciliation_report.md",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/manifests/qualification_manifest_final.json",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/manifests/qualification_manifest_v26.json",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/manifests/qualification_manifest_v27.json",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/manifests/qualification_manifest_v28.json",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/manifests/qualification_manifest_v29.json",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/manifests/qualification_manifest_v30.json",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/manifests/qualification_manifest_v31.json",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/manifests/qualification_manifest_v32.json",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/manifests/qualification_manifest_v33.json",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/manifests/qualification_manifest_v34.json",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/manifests/qualification_manifest_v35.json",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/manifests/qualification_manifest_v36.json",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/pyproject.toml",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/requirements.txt",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/setup.py",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/src/chronus/__init__.py",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/src/chronus/chronus_gpiu-final.py",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/src/chronus/chronus_gpiu-v26.py",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/src/chronus/chronus_gpiu-v27.py",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/src/chronus/chronus_gpiu-v28.py",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/src/chronus/chronus_gpiu-v29.py",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/src/chronus/chronus_gpiu-v30.py",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/src/chronus/chronus_gpiu-v31.py",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/src/chronus/chronus_gpiu-v32.py",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/src/chronus/chronus_gpiu-v33.py",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/src/chronus/chronus_gpiu-v34.py",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/src/chronus/chronus_gpiu-v35.py",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/src/chronus/chronus_gpiu-v36.py",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/src/chronus/config.py",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/src/chronus/core.py",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "chronus_source_backup/chronus-quantum-igpu/tests/test_chronus_suite.py",
+      "detail": "Matched banned pattern 'chronus_source_backup/**'"
+    },
+    {
+      "rule_id": "ROOT_DIR_NOT_ALLOWLISTED",
+      "path": "claims/",
+      "detail": "Top-level directory is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "claims/register.json",
+      "detail": "Matched banned pattern 'claims/**'"
+    },
+    {
+      "rule_id": "ROOT_DIR_NOT_ALLOWLISTED",
+      "path": "console/",
+      "detail": "Top-level directory is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "ROOT_DIR_NOT_ALLOWLISTED",
+      "path": "demo/",
+      "detail": "Top-level directory is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "INTERNAL_CONFIDENTIAL_MARKER",
+      "path": "docs/directives/Absolutely._I_ll_use_HYBAAIENTERPRISE_Chronusv2_a….md:258",
+      "detail": "Matched restricted IP or credential boundary pattern"
+    },
+    {
+      "rule_id": "INTERNAL_CONFIDENTIAL_MARKER",
+      "path": "docs/production/PULVINI_HERMES_EXPERIMENTAL_API.md:65",
+      "detail": "Matched restricted IP or credential boundary pattern"
+    },
+    {
+      "rule_id": "ROOT_FILE_NOT_ALLOWLISTED",
+      "path": "docs_readme.txt",
+      "detail": "Top-level file is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "ROOT_DIR_NOT_ALLOWLISTED",
+      "path": "funding/",
+      "detail": "Top-level directory is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "funding/FINANCIAL_PROJECTIONS.md",
+      "detail": "Matched banned pattern 'funding/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "funding/FUNDING_PITCH.md",
+      "detail": "Matched banned pattern 'funding/**'"
+    },
+    {
+      "rule_id": "ROOT_DIR_NOT_ALLOWLISTED",
+      "path": "hardware/",
+      "detail": "Top-level directory is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "hardware/rtl/t_isa_coprocessor.sv",
+      "detail": "Matched banned pattern 'hardware/rtl/**'"
+    },
+    {
+      "rule_id": "ROOT_DIR_NOT_ALLOWLISTED",
+      "path": "harness/",
+      "detail": "Top-level directory is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "ROOT_DIR_NOT_ALLOWLISTED",
+      "path": "hw/",
+      "detail": "Top-level directory is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "ROOT_DIR_NOT_ALLOWLISTED",
+      "path": "hyba-mine/",
+      "detail": "Top-level directory is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "hyba-mine/LATEST.txt",
+      "detail": "Matched banned pattern 'hyba-mine/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "hyba-mine/runs/43379180751-1.txt",
+      "detail": "Matched banned pattern 'hyba-mine/**'"
+    },
+    {
+      "rule_id": "ROOT_DIR_NOT_ALLOWLISTED",
+      "path": "hyba_mcp/",
+      "detail": "Top-level directory is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "ROOT_DIR_NOT_ALLOWLISTED",
+      "path": "port-review/",
+      "detail": "Top-level directory is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "port-review/chronus_init_from_prior_repo.py",
+      "detail": "Matched banned pattern 'port-review/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "port-review/core_facade_from_prior_repo.py",
+      "detail": "Matched banned pattern 'port-review/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "port-review/core_init_from_prior_repo.py",
+      "detail": "Matched banned pattern 'port-review/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "port-review/security_init_from_prior_repo.py",
+      "detail": "Matched banned pattern 'port-review/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "port-review/security_kms_from_prior_repo.py",
+      "detail": "Matched banned pattern 'port-review/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "port-review/security_signers_from_prior_repo.py",
+      "detail": "Matched banned pattern 'port-review/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "qigpu_acceleration_system.py",
+      "detail": "Matched banned pattern 'qigpu_*.py'"
+    },
+    {
+      "rule_id": "ROOT_FILE_NOT_ALLOWLISTED",
+      "path": "qigpu_acceleration_system.py",
+      "detail": "Top-level file is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "qigpu_master_tour_de_force.py",
+      "detail": "Matched banned pattern 'qigpu_*tour_de_force*.py'"
+    },
+    {
+      "rule_id": "ROOT_FILE_NOT_ALLOWLISTED",
+      "path": "qigpu_master_tour_de_force.py",
+      "detail": "Top-level file is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "qigpu_unified__acceleration_system.py",
+      "detail": "Matched banned pattern 'qigpu_*.py'"
+    },
+    {
+      "rule_id": "ROOT_FILE_NOT_ALLOWLISTED",
+      "path": "qigpu_unified__acceleration_system.py",
+      "detail": "Top-level file is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "ROOT_DIR_NOT_ALLOWLISTED",
+      "path": "recovery_merge/",
+      "detail": "Top-level directory is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "recovery_merge/README.md",
+      "detail": "Matched banned pattern 'recovery_merge/**'"
+    },
+    {
+      "rule_id": "ROOT_DIR_NOT_ALLOWLISTED",
+      "path": "reviews/",
+      "detail": "Top-level directory is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "reviews/acceleration_review.md",
+      "detail": "Matched banned pattern 'reviews/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "reviews/attestation-file-review-2026-11-11.md",
+      "detail": "Matched banned pattern 'reviews/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "reviews/onboarding_phase0_gap_analysis.md",
+      "detail": "Matched banned pattern 'reviews/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "theory_of_everything.py",
+      "detail": "Matched banned pattern 'theory_of_everything.py'"
+    },
+    {
+      "rule_id": "ROOT_FILE_NOT_ALLOWLISTED",
+      "path": "theory_of_everything.py",
+      "detail": "Top-level file is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "ROOT_DIR_NOT_ALLOWLISTED",
+      "path": "vendor/",
+      "detail": "Top-level directory is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/README.md",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/.gitignore",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/01-cgminer.rules",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ADL_SDK/.gitignore",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ADL_SDK/readme.txt",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/API-README",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/API.class",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/API.java",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ASIC-README",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/AUTHORS",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/COPYING",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ChangeLog",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/FPGA-README",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/GPU-README",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/LICENSE",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/MCast.class",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/MCast.java",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/Makefile.am",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/NEWS",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/README",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/SCRYPT-README",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/adl.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/adl.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/adl_functions.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/api-example.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/api-example.php",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/api-example.py",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/api.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/arg-nonnull.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/autogen.sh",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/bench_block.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/bitforce-firmware-flash.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/bitstreams/COPYING_fpgaminer",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/bitstreams/fpgaminer_top_fixed7_197MHz.ncd",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/c++defs.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/Makefile.am",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/compiler/LICENSE",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/compiler/_info",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/compiler/compiler.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/compiler/test/compile_fail-printf.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/compiler/test/run-is_compile_constant.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/opt/LICENSE",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/opt/_info",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/opt/helpers.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/opt/opt.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/opt/opt.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/opt/parse.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/opt/private.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/opt/test/compile_ok-const-arg.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/opt/test/run-checkopt.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/opt/test/run-correct-reporting.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/opt/test/run-helpers.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/opt/test/run-iter.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/opt/test/run-no-options.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/opt/test/run-usage.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/opt/test/run.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/opt/test/utils.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/opt/test/utils.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/opt/usage.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/typesafe_cb/LICENSE",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/typesafe_cb/_info",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/typesafe_cb/test/compile_fail-cast_if_type-promotable.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/typesafe_cb/test/compile_fail-typesafe_cb-int.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/typesafe_cb/test/compile_fail-typesafe_cb.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/typesafe_cb/test/compile_fail-typesafe_cb_cast-multi.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/typesafe_cb/test/compile_fail-typesafe_cb_cast.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/typesafe_cb/test/compile_fail-typesafe_cb_postargs.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/typesafe_cb/test/compile_fail-typesafe_cb_preargs.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/typesafe_cb/test/compile_ok-typesafe_cb-NULL.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/typesafe_cb/test/compile_ok-typesafe_cb-undefined.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/typesafe_cb/test/compile_ok-typesafe_cb-vars.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/typesafe_cb/test/compile_ok-typesafe_cb_cast.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/typesafe_cb/test/run.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ccan/typesafe_cb/typesafe_cb.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/cgminer.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/.gitignore",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/Makefile.am",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/CHANGES",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/LICENSE",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/Makefile.am",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/README.rst",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/configure.ac",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/jansson.pc.in",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/m4/.gitignore",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/src/Makefile.am",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/src/dump.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/src/error.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/src/hashtable.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/src/hashtable.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/src/jansson.def",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/src/jansson.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/src/jansson_config.h.in",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/src/jansson_private.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/src/load.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/src/memory.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/src/pack_unpack.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/src/strbuffer.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/src/strbuffer.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/src/strconv.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/src/utf.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/src/utf.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/jansson-2.5/src/value.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/AUTHORS",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/COPYING",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/Makefile.am",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/NEWS",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/PORTING",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/README",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/THANKS",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/TODO",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/configure.ac",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb-1.0.pc.in",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/Makefile.am",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/core.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/descriptor.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/hotplug.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/hotplug.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/io.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/libusb-1.0.def",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/libusb-1.0.rc",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/libusb.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/libusbi.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/os/darwin_usb.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/os/darwin_usb.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/os/linux_netlink.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/os/linux_udev.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/os/linux_usbfs.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/os/linux_usbfs.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/os/openbsd_usb.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/os/poll_posix.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/os/poll_windows.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/os/poll_windows.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/os/threads_posix.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/os/threads_posix.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/os/threads_windows.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/os/threads_windows.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/os/windows_usb.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/os/windows_usb.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/sync.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/libusb/version.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/compat/libusb-1.0/m4/.gitignore",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/configure.ac",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/diablo130302.cl",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/diakgcn121016.cl",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/driver-avalon.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/driver-avalon.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/driver-bflsc.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/driver-bflsc.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/driver-bitforce.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/driver-bitfury.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/driver-bitfury.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/driver-hashfast.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/driver-hashfast.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/driver-icarus.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/driver-klondike.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/driver-knc-spi-fpga.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/driver-modminer.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/driver-opencl.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/driver-opencl.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/elist.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/example.conf",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/findnonce.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/findnonce.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/fpgautils.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/fpgautils.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/hexdump.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/hf_protocol.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/hf_protocol_be.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/linux-usb-cgminer",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/logging.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/logging.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/m4/00gnulib.m4",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/m4/extensions.m4",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/m4/gnulib-cache.m4",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/m4/gnulib-common.m4",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/m4/gnulib-comp.m4",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/m4/gnulib-tool.m4",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/m4/include_next.m4",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/m4/longlong.m4",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/m4/memchr.m4",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/m4/memmem.m4",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/m4/mmap-anon.m4",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/m4/multiarch.m4",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/m4/onceonly.m4",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/m4/sigaction.m4",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/m4/signal_h.m4",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/m4/signalblocking.m4",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/m4/stddef_h.m4",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/m4/stdint.m4",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/m4/string_h.m4",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/m4/warn-on-use.m4",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/m4/wchar_t.m4",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/miner.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/miner.php",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/mknsis.sh",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ocl.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/ocl.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/phatk121016.cl",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/poclbm130302.cl",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/scrypt.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/scrypt.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/scrypt130511.cl",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/sha2.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/sha2.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/usbtest.py",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/usbutils.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/usbutils.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/uthash.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/util.c",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/util.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/warn-on-use.h",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "vendor/cgminer-3.7.2/windows-build.txt",
+      "detail": "Matched banned pattern 'vendor/**'"
+    },
+    {
+      "rule_id": "ROOT_DIR_NOT_ALLOWLISTED",
+      "path": "work_orders/",
+      "detail": "Top-level directory is absent from manifests/public_root_allowlist.json"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "work_orders/H5.0_legal_review_status.md",
+      "detail": "Matched banned pattern 'work_orders/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "work_orders/acceleration.md",
+      "detail": "Matched banned pattern 'work_orders/**'"
+    },
+    {
+      "rule_id": "BANNED_PATH_PATTERN",
+      "path": "work_orders/sovereign_horizons.md",
+      "detail": "Matched banned pattern 'work_orders/**'"
+    }
+  ]
+}

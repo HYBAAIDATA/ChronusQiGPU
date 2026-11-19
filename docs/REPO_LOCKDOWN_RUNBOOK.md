@@ -59,3 +59,7 @@ This is a proposed extension, not fleet qualification. Simulator tests are
 labelled simulated, not operational evidence. Live etcd, transport security,
 signer authorisation, hardware, independent multi-node receipt replay and
 commit-bound fleet benchmarks remain required. No production flag is changed.
+
+## Executed first hygiene scan
+
+Run https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44443175475 checked merge candidate `84ec5a645c051dee0e1cec448bc60878787a4fcc`; exit 1, 370 violations. The itemised finding list (paths/rules, not secret values) is retained in `docs/REPO_HYGIENE_EXECUTED_FINDINGS.json`. This is not an instruction to purge all matched files. The Gitleaks action failed before scanning because GITLEAKS_LICENSE is unset.

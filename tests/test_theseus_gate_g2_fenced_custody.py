@@ -8,13 +8,13 @@ from __future__ import annotations
 
 import dataclasses
 from dataclasses import dataclass
-import hmac
 from pathlib import Path
 import sqlite3
 import threading
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-import blake3
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.exceptions import InvalidSignature
 import pytest
 
 pytestmark = pytest.mark.simulated
@@ -59,13 +59,13 @@ class VirtualClock:
 
 
 class DeterministicTestSigner:
-    """Keyed BLAKE3 signer explicitly flagged hardware_backed=False for CI."""
+    """Deterministic Ed25519 software key explicitly marked non-hardware."""
 
     def __init__(self, key_id: str = "ci-ephemeral-key-01", secret: bytes = b"A" * 32) -> None:
         if len(secret) != 32:
             raise ValueError("BLAKE3 keyed mode requires exactly 32-byte key")
         self._key_id = key_id
-        self._secret = secret
+        self._key = Ed25519PrivateKey.from_private_bytes(secret)
 
     @property
     def key_id(self) -> str:
@@ -76,10 +76,14 @@ class DeterministicTestSigner:
         return False
 
     def sign(self, message: bytes) -> bytes:
-        return blake3.blake3(message, key=self._secret).digest(length=32)
+        return self._key.sign(message)
 
     def verify(self, message: bytes, signature: bytes) -> bool:
-        return hmac.compare_digest(self.sign(message), signature)
+        try:
+            self._key.public_key().verify(signature, message)
+        except InvalidSignature:
+            return False
+        return True
 
 
 # ---------------------------------------------------------------------------
@@ -685,3 +689,43 @@ def test_merkle_cardinalities(count: int) -> None:
         proof = tree.proof_for(i)
         assert proof.verify(leaf, tree.root)
         assert not dataclasses.replace(proof, steps=proof.steps + ((tree.root, "R"),)).verify(leaf, tree.root)
+
+def test_remote_ack_recovery_and_exact_250_receipt_tail(tmp_path: Path) -> None:
+    clock = VirtualClock()
+    etcd = FakeEtcdCluster(clock)
+    signer = DeterministicTestSigner()
+    quorum = EtcdAnchorQuorumClient(etcd, verify_anchor=lambda a: signer.verify(a.signing_preimage(), a.signature))
+    fencer = EtcdLeaseFencer(etcd_client=etcd, node_id="n", slot_id="s", clock_ns=clock.now_ns)
+    db = tmp_path / "tail.db"
+    fencer.acquire()
+    store = FencedTheseusEdgeStore(db_path=db, node_id="n", slot_id="s",
+        fencer=fencer, signer=signer, quorum=quorum,
+        clock_ns=clock.now_ns, monotonic_ns=clock.now_ns)
+    store.reconcile_recovery_tail()
+    for i in range(250):
+        store.append_receipt(tenant_id="t", event_type="receipt", payload={"i": i})
+    store.close()
+    fencer.release()
+    fencer = EtcdLeaseFencer(etcd_client=etcd, node_id="n", slot_id="s", clock_ns=clock.now_ns)
+    fencer.acquire()
+    store = FencedTheseusEdgeStore(db_path=db, node_id="n", slot_id="s",
+        fencer=fencer, signer=signer, quorum=quorum,
+        clock_ns=clock.now_ns, monotonic_ns=clock.now_ns)
+    with pytest.raises(CustodyError):
+        store.append_receipt(tenant_id="t", event_type="receipt", payload={"i": 250})
+    with sqlite3.connect(db) as conn:
+        conn.execute("CREATE TRIGGER deny_anchor BEFORE INSERT ON theseus_epoch_anchors BEGIN SELECT RAISE(ABORT, 'injected local commit failure'); END")
+    with pytest.raises(sqlite3.IntegrityError):
+        store.reconcile_recovery_tail()
+    assert quorum.last_anchored_seq("n", "s") == 250
+    with pytest.raises(CustodyError):
+        store.append_receipt(tenant_id="t", event_type="receipt", payload={"i": 250})
+    with sqlite3.connect(db) as conn:
+        conn.execute("DROP TRIGGER deny_anchor")
+    assert store.reconcile_recovery_tail() is None
+    for seq in (1, 125, 250):
+        env, anchor, proof = store.inclusion_proof_for_seq(seq)
+        assert (anchor.seq_start, anchor.seq_end, anchor.anchor_kind) == (1, 250, "RECOVERY_TAIL")
+        assert proof.verify(env.canonical_leaf_bytes(), anchor.merkle_root)
+    store.close()
+    fencer.release()

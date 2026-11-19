@@ -974,6 +974,20 @@ class FencedTheseusEdgeStore:
                 """
             )
 
+    def _valid_token(self) -> FencingToken:
+        token = self._fencer.current_valid_token()
+        if token.node_id != self._node_id or token.slot_key.rsplit("/", 1)[-1] != self._slot_id:
+            raise LeaseLostError("Fence does not match custody stream")
+        return token
+
+    def assert_write_ready(self) -> None:
+        with self._write_lock:
+            if not self._recovery_complete:
+                raise CustodyError("Must call reconcile_recovery_tail() before dispatch")
+            self._valid_token()
+            if self.health_status() is CustodyHealth.CUSTODY_HALT:
+                raise CustodyHaltError("Custody hard watermark exceeded")
+
     def close(self) -> None:
         with self._write_lock:
             self._conn.close()
@@ -1021,7 +1035,7 @@ class FencedTheseusEdgeStore:
         """Validate the complete local chain and reconcile signed quorum anchors."""
         with self._write_lock:
             self._recovery_complete = False
-            token = self._fencer.current_valid_token()
+            token = self._valid_token()
             if token.node_id != self._node_id:
                 raise LeaseLostError("Fence holder does not match custody node")
             rows = self._conn.execute(
@@ -1077,7 +1091,7 @@ class FencedTheseusEdgeStore:
             if remote < len(rows):
                 anchor = self._seal_range_locked(
                     rows=rows[remote:], fencing_epoch=token.epoch, anchor_kind="RECOVERY_TAIL")
-            self._fencer.current_valid_token()
+            self._valid_token()
             self._recovery_complete = True
             self._last_anchor_monotonic_ns = self._monotonic_ns()
             return anchor
@@ -1099,7 +1113,7 @@ class FencedTheseusEdgeStore:
                     "Unanchored custody backlog exceeded hard watermark; compute dispatch halted."
                 )
 
-            token = self._fencer.current_valid_token()
+            token = self._valid_token()
             if token.node_id != self._node_id:
                 raise LeaseLostError("Fence holder does not match custody node")
             head_seq, prev_hash, max_seen_epoch = self._head_state_locked()
@@ -1125,7 +1139,7 @@ class FencedTheseusEdgeStore:
                 # Cross-process contenders cannot append from a stale head.
                 if self._head_state_locked() != (head_seq, prev_hash, max_seen_epoch):
                     raise StaleFencingEpochError("Concurrent edge writer changed head; recover before retry")
-                if self._fencer.current_valid_token() != token:
+                if self._valid_token() != token:
                     raise LeaseLostError("Fence changed before receipt write")
                 self._conn.execute(
                     """
@@ -1148,7 +1162,7 @@ class FencedTheseusEdgeStore:
                         envelope.record_hash,
                     ),
                 )
-                if self._fencer.current_valid_token() != token:
+                if self._valid_token() != token:
                     raise LeaseLostError("Fence changed before receipt commit")
                 self._conn.execute("COMMIT;")
             except Exception:
@@ -1163,7 +1177,7 @@ class FencedTheseusEdgeStore:
         if max_batch_size <= 0:
             raise ValueError("max_batch_size must be > 0")
         with self._write_lock:
-            token = self._fencer.current_valid_token()
+            token = self._valid_token()
             last_anchored = self._last_local_anchored_seq_locked()
             rows = self._conn.execute(
                 """
@@ -1368,21 +1382,31 @@ class EdgeAnchorSidecar:
         self._stop = threading.Event()
         self._fault = threading.Event()
         self._thread: Optional[threading.Thread] = None
+        self._started = False
         self.error: Optional[Exception] = None
 
     def start(self) -> None:
         if self._thread is not None:
             raise CustodyError("Sidecar cannot be started twice")
-        self.store.reconcile_recovery_tail()
+        self.store._fencer.acquire()
+        try:
+            self.store.reconcile_recovery_tail()
+        except BaseException:
+            self.store._fencer.release()
+            raise
+        self._started = True
         self._thread = threading.Thread(target=self._run, name="theseus-anchor", daemon=True)
-        self._thread.start()
+        try:
+            self._thread.start()
+        except BaseException:
+            self._started = False
+            self.store._fencer.release()
+            raise
 
     def assert_healthy(self) -> None:
         if self._fault.is_set():
             raise CustodyHaltError("Anchor sidecar fault") from self.error
-        self.store._fencer.current_valid_token()
-        if self.store.health_status() is CustodyHealth.CUSTODY_HALT:
-            raise CustodyHaltError("Custody hard watermark exceeded")
+        self.store.assert_write_ready()
 
     def _run(self) -> None:
         while not self._stop.wait(self.interval_s):
@@ -1402,6 +1426,12 @@ class EdgeAnchorSidecar:
             self._thread.join(timeout_s)
             if self._thread.is_alive():
                 raise CustodyHaltError("Anchor sidecar did not stop")
-        if self._fault.is_set():
-            raise CustodyHaltError("Anchor sidecar failed") from self.error
-        self.store.seal_pending_epoch()
+        if not self._started:
+            return
+        try:
+            if self._fault.is_set():
+                raise CustodyHaltError("Anchor sidecar failed") from self.error
+            self.store.seal_pending_epoch()
+        finally:
+            self._started = False
+            self.store._fencer.release()

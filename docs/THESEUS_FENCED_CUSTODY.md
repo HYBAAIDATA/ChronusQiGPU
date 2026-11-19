@@ -1,0 +1,23 @@
+# Fenced custody integration
+
+The old d:\\chronus-quantum-igpu\\main.py snippet is not a maintained file in the inspected Git tree.
+`chronus_live_miner.py` delegates to `chronus.execution.mining_entrypoint`.
+`src/chronus/execution/main.py` is a skeleton. Myrmidon, stealth and EUCLID modules
+are different contracts and are not silently rewritten. The maintained asynchronous
+mining runner and fleet CLI now use explicit lifecycle/notification primitives.
+
+The mining engine accepts an optional explicit `custody_store` and
+`custody_tenant_id`. Sidecar owns fence acquisition, restart reconciliation and
+shutdown seal/release. Existing default constructor and admission/target gates
+remain intact. A sidecar fault requests stop; locally verified candidate evidence
+is written before submission. No default etcd URL, credentials, trust registry or
+tenant is inferred. Fleet CLI avoids lock-taking signal handlers and checks worker
+and heartbeat survivors under one join budget. Native hung kernels cannot be
+preempted by Python thread cancellation; no hard total shutdown-time claim.
+
+In production, inject an authenticated etcd client and authority-approved
+EpochSigner and verify_anchor policy. A callable is not hardware attestation.
+The single-node fencer is not an alternative to distributed consensus.
+No live etcd or signer deployment was performed. Physical 1,000-GPU capacity is
+Unavailable. Gate G2 tests with deterministic doubles are simulated tests, not
+deployment qualification. The release gate is unchanged.

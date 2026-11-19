@@ -210,7 +210,7 @@ def test_alembic_upgrade_over_runtime_created_schema(tmp_path: Path) -> None:
         _assert_matches_metadata(_schema(conn))
         kept = conn.execute(sa.text("SELECT reason FROM ciaas_capacity_ledger")).scalar_one()
         assert kept == "keep"
-        _run_downgrade_expecting_refusal(conn, revisions[-1])
+        _run_downgrade_expecting_refusal(conn, next(rev for rev in revisions if rev.revision == "0002_ciaas_tenancy_tables"))
         assert conn.execute(sa.text("SELECT count(*) FROM ciaas_capacity_ledger")).scalar_one() == 1
 
 
@@ -239,7 +239,7 @@ def test_alembic_downgrade_of_empty_ciaas_tables(tmp_path: Path) -> None:
         _run_upgrades(conn, revisions)
         op_proxy._proxy = Operations(MigrationContext.configure(conn))
         try:
-            revisions[-1].module.downgrade()
+            next(rev for rev in revisions if rev.revision == "0002_ciaas_tenancy_tables").module.downgrade()
         finally:
             op_proxy._proxy = None
         assert "ciaas_tenants" not in _schema(conn)
@@ -296,3 +296,14 @@ def test_offline_downgrade_sql_keeps_populated_table_guard() -> None:
         guard = sql.index(f"LOCK TABLE {table} IN ACCESS EXCLUSIVE MODE")
         assert f"refusing to downgrade 0002: {table} contains rows" in sql
         assert guard < sql.index(f"DROP TABLE IF EXISTS {table}")
+
+def test_fenced_custody_migration_preserves_populated_fences(tmp_path: Path) -> None:
+    import sqlalchemy as sa
+    engine = sa.create_engine(f"sqlite:///{tmp_path / 'fenced.sqlite3'}")
+    with engine.begin() as conn:
+        revisions = _alembic_revisions()
+        _run_upgrades(conn, revisions)
+        assert {"theseus_fenced_receipts", "theseus_epoch_anchors", "theseus_local_fences"} <= set(_schema(conn))
+        conn.execute(sa.text("INSERT INTO theseus_local_fences(slot_key, epoch) VALUES ('s', 1)"))
+        _run_downgrade_expecting_refusal(conn, next(rev for rev in revisions if rev.revision == "0003_theseus_fenced_custody"))
+        assert conn.execute(sa.text("SELECT epoch FROM theseus_local_fences")).scalar_one() == 1
