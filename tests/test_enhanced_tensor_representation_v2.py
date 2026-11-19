@@ -32,6 +32,9 @@ from chronus.tensor.enhanced_representation import (
     SearchResult,
 )
 from chronus.service.production_hr_api_v2 import app
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 class TestEnhancedTensorCharter(unittest.TestCase):
@@ -228,7 +231,8 @@ class TestProductionHRAPIv2Endpoints(unittest.TestCase):
         data = resp.json()
 
         self.assertFalse(data["is_quantum"])  # MANDATORY
-        self.assertEqual(data["method"], "tensor_network_inner_product")
+        # bdd7817 relabelled the method to what search() actually computes.
+        self.assertEqual(data["method"], "numpy_cosine_similarity")
         self.assertIn("ids", data)
         self.assertIn("scores", data)
         self.assertIn("latency_ms", data)

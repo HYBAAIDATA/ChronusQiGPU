@@ -42,6 +42,8 @@ from chronus.security.al_haras import (
     decode_t_isa_instruction,
 )
 
+pytestmark = pytest.mark.real
+
 
 TOKEN = "al-haras-millennium-test-token"
 AUTH = {"Authorization": f"Bearer {TOKEN}"}

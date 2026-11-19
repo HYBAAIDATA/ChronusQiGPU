@@ -16,6 +16,9 @@ from chronus.fleet.lattice import LATTICE_LABEL, RESIDENT_RUNGS, SchedulingLatti
 from chronus.fleet.scheduler import pool_budgets
 from chronus.fleet.workunit import WorkUnit
 from tests.fleet_support import state_dir
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 class LatticeTests(unittest.TestCase):

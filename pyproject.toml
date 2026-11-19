@@ -63,6 +63,8 @@ dev = [
     "pandas>=2.0",
     "scikit-learn>=1.3",
     "statsmodels>=0.14",
+    # Lets tests/test_wiring_entrypoints.py replay migrations against store metadata.
+    "alembic>=1.13",
 ]
 ml = [
     "joblib>=1.3",
@@ -90,6 +92,8 @@ fleet-opencl = [
 
 [project.scripts]
 chronus-fleet = "chronus.fleet.cli:main"
+chronus-verify-chain = "chronus.verify_cli:main"
+chronus-verify-bundle = "chronus.crypto.verify_bundle:main"
 ga-api = "ga.cli:main"
 
 [tool.setuptools]

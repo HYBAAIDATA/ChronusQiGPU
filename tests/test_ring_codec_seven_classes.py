@@ -6,6 +6,8 @@ from hypothesis import given, settings, strategies as st
 from chronus.quantum.geometric_polychoron import Cyclotomic5 as C
 from chronus.quantum.ring_codec import MAX_BYTES, encode, decode
 
+pytestmark = pytest.mark.real
+
 
 class TestInvariant:
     def test_exhaustive_octets(self):

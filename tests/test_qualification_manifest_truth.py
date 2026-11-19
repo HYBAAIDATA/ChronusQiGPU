@@ -9,6 +9,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.simulated
+
 
 def _load_manifest():
     path = Path(__file__).resolve().parents[1] / "scripts" / "ci" / "manifest.py"

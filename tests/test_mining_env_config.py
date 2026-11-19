@@ -6,6 +6,8 @@ import pytest
 from chronus.execution import mining_entrypoint as entry
 from chronus.stratum.endpoint import parse_endpoint
 
+pytestmark = pytest.mark.simulated
+
 
 @pytest.fixture(autouse=True)
 def isolated_config(monkeypatch):

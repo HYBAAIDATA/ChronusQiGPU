@@ -13,6 +13,8 @@ from chronus.quantum.entanglement import (
 )
 from chronus.quantum.statevector import StateVector
 
+pytestmark = pytest.mark.real
+
 
 def test_uniform_superposition_state_preparation():
     state = create_superposition_state(3)

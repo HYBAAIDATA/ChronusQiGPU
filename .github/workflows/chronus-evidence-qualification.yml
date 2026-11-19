@@ -137,7 +137,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          python scripts/ci/evaluate_attested.py --evidence evidence/test-evidence.json --expected-commit "${{ github.sha }}" --expected-run-id "${{ github.run_id }}" --repository "${{ github.repository }}" --output manifests/ci-verdict.json
+          python scripts/ci/evaluate_attested.py --evidence evidence/test-evidence.json --expected-commit "${{ github.sha }}" --expected-run-id "${{ github.run_id }}" --repository "${{ github.repository }}" --product-gates evidence/product-gates.json --output manifests/ci-verdict.json
       - name: Attest the evaluated qualification verdict
         uses: actions/attest-build-provenance@v2
         with:

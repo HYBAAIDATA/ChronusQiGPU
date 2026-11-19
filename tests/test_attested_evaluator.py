@@ -8,6 +8,9 @@ from types import SimpleNamespace
 
 from chronus.core import qualification
 from scripts.ci import evaluate_attested
+import pytest
+
+pytestmark = pytest.mark.simulated
 
 
 def _evidence(path, *, status="PASS", skipped=0):

@@ -19,6 +19,9 @@ from chronus.fleet.scale import issue_grant, issue_selection, parse_duration, ve
 from chronus.fleet.signing import FleetSigner
 from chronus.fleet.workunit import WorkUnit
 from tests.fleet_support import state_dir
+import pytest
+
+pytestmark = pytest.mark.real
 
 DAY = 86_400
 

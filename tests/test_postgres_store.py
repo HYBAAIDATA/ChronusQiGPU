@@ -30,6 +30,9 @@ from chronus.service.postgres_store import (
 )
 from chronus.service.store_interface import WorkloadStoreInterface
 from chronus.service.workload_store import SQLiteWorkloadStore, get_workload_store
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 class TestWorkloadStoreInterface(unittest.TestCase):

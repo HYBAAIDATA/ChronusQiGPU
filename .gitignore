@@ -77,6 +77,7 @@ dmypy.json
 # Common secrets / environment files
 .env
 .env.local
+.env.miner
 *.pem
 *.key
 *.pfx
@@ -120,3 +121,10 @@ master_repo/
 /chronus_gpiu-v36.py
 /qualification_manifest_v36.json
 .venv-test/
+
+# Local scratch output and saved web pages (never commit; the repo is public)
+.pytest_temp_*/
+*.mhtml
+temp_pytest_output.txt
+*_test_output.txt
+*_scenarios_output.txt

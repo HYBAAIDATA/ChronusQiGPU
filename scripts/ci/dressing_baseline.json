@@ -1,0 +1,4640 @@
+{
+  "schema": "chronus.dressing-baseline/1",
+  "description": "Historical no_dressing findings recorded as debt (ratchet). Shrink only; never add entries to admit new wording.",
+  "entries": [
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/acceleration/state.py",
+      "word": "atol",
+      "line_sha256_16": "6282dbd6f6335a15",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/acceleration/state.py",
+      "word": "atol",
+      "line_sha256_16": "748aec93b68ebb70",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/acceleration/state.py",
+      "word": "float(",
+      "line_sha256_16": "c6a72c314fd78b47",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/acceleration/state.py",
+      "word": "rtol",
+      "line_sha256_16": "6282dbd6f6335a15",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/acceleration/state.py",
+      "word": "rtol",
+      "line_sha256_16": "748aec93b68ebb70",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/acceleration/state.py",
+      "word": "tolerance",
+      "line_sha256_16": "0b58536766f737f4",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/acceleration/state.py",
+      "word": "tolerance",
+      "line_sha256_16": "3c01a859da35438d",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/acceleration/state.py",
+      "word": "tolerance",
+      "line_sha256_16": "6282dbd6f6335a15",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/acceleration/state.py",
+      "word": "tolerance",
+      "line_sha256_16": "748aec93b68ebb70",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/acceleration/state.py",
+      "word": "tolerance",
+      "line_sha256_16": "8b926773059d79bc",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/access_control.py",
+      "word": "float(",
+      "line_sha256_16": "28b21a9dfa218647",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/access_control.py",
+      "word": "float(",
+      "line_sha256_16": "a09a390821289d7c",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "1e-9",
+      "line_sha256_16": "31ff55b01fd8b1dc",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "1e-9",
+      "line_sha256_16": "6a77ca406daa0fc3",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "epsilon",
+      "line_sha256_16": "53da783f91db63d2",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "float(",
+      "line_sha256_16": "32593490d9e6a074",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "float(",
+      "line_sha256_16": "353070280b90142a",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "float(",
+      "line_sha256_16": "39bef7fee4b1827c",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "float(",
+      "line_sha256_16": "66d93541bd60495c",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "float(",
+      "line_sha256_16": "81cc14b0b45d1dc0",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "float(",
+      "line_sha256_16": "8b49afc6b0409357",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "float(",
+      "line_sha256_16": "91448e1dd3391d9f",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "float(",
+      "line_sha256_16": "a08635443ce80352",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "float(",
+      "line_sha256_16": "a14ff78f88066fef",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "float(",
+      "line_sha256_16": "a9fdd8fd44b2ada8",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "float(",
+      "line_sha256_16": "e7d8435cde2aeb6f",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "float(",
+      "line_sha256_16": "ed468ec7be91f459",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "float(",
+      "line_sha256_16": "f22f08ae031ed88c",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "round(",
+      "line_sha256_16": "062f7844ff780b15",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "round(",
+      "line_sha256_16": "0e882ea6f787eeba",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "round(",
+      "line_sha256_16": "113a92044cb5df47",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "round(",
+      "line_sha256_16": "14e961816474f448",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "round(",
+      "line_sha256_16": "32593490d9e6a074",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "round(",
+      "line_sha256_16": "37dd111995822d45",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "round(",
+      "line_sha256_16": "44ec8a2cfc387977",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "round(",
+      "line_sha256_16": "4b28b14675b6943d",
+      "count": 3
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "round(",
+      "line_sha256_16": "4b3db3b39a6279a7",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "round(",
+      "line_sha256_16": "629246e55aa3fce1",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "round(",
+      "line_sha256_16": "6a77ca406daa0fc3",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "round(",
+      "line_sha256_16": "7f3d38b9e136a455",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "round(",
+      "line_sha256_16": "922803f412259955",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "round(",
+      "line_sha256_16": "98c12a1c2a847f2c",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "round(",
+      "line_sha256_16": "b05069128a24ea12",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "round(",
+      "line_sha256_16": "b108fd751815c12b",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "round(",
+      "line_sha256_16": "b693c9d536e5846f",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "round(",
+      "line_sha256_16": "de2e17b29d8467d1",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "round(",
+      "line_sha256_16": "dff521089f7bc691",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "round(",
+      "line_sha256_16": "f1a05d6b04301ee3",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/compute/igpu_dispatcher.py",
+      "word": "atol",
+      "line_sha256_16": "ee6b84ed40e67360",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/compute/igpu_dispatcher.py",
+      "word": "rtol",
+      "line_sha256_16": "ee6b84ed40e67360",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/core/purity_scanner.py",
+      "word": "float(",
+      "line_sha256_16": "074a1c15a73b189f",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/core/purity_scanner.py",
+      "word": "float(",
+      "line_sha256_16": "b62d0c9b216c236c",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/database/connection.py",
+      "word": "round(",
+      "line_sha256_16": "0be543c23303693a",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/execution/elevation.py",
+      "word": "round(",
+      "line_sha256_16": "7b12fa545a2385f2",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/execution/hashrate_cap.py",
+      "word": "float(",
+      "line_sha256_16": "5bf846151a43f7a3",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/execution/hashrate_cap.py",
+      "word": "float(",
+      "line_sha256_16": "97bb22be0afcee4c",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/execution/mining_admin.py",
+      "word": "float(",
+      "line_sha256_16": "6cb0de68f42beb25",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/execution/mining_admin.py",
+      "word": "float(",
+      "line_sha256_16": "99a356d72cd91ac3",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/execution/mining_admin.py",
+      "word": "float(",
+      "line_sha256_16": "d99546c51738a89d",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/execution/mining_admin.py",
+      "word": "round(",
+      "line_sha256_16": "011916ac00ed146d",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/execution/mining_admin.py",
+      "word": "round(",
+      "line_sha256_16": "1d14318fb13f1bd8",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/execution/mining_admin.py",
+      "word": "round(",
+      "line_sha256_16": "1f9b79c7de62f05e",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/execution/mining_admin.py",
+      "word": "round(",
+      "line_sha256_16": "53ff85ab5cf05fdc",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/execution/mining_admin.py",
+      "word": "round(",
+      "line_sha256_16": "630238d41951b7f8",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/execution/mining_admin.py",
+      "word": "round(",
+      "line_sha256_16": "71726daaed1c2020",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/execution/mining_admin.py",
+      "word": "round(",
+      "line_sha256_16": "b9ac07b9e41bb30e",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/execution/mining_admin.py",
+      "word": "round(",
+      "line_sha256_16": "d54ad238724186fa",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/execution/mining_admin.py",
+      "word": "round(",
+      "line_sha256_16": "e2c2ca3e4f75accd",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/execution/mining_scheduler.py",
+      "word": "tolerance",
+      "line_sha256_16": "51de19966f103317",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/execution/stealth_orchestrator.py",
+      "word": "float(",
+      "line_sha256_16": "16d24b926293f99f",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/execution/stealth_orchestrator.py",
+      "word": "float(",
+      "line_sha256_16": "6a20d5e458500eaf",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/fleet/cli.py",
+      "word": "float(",
+      "line_sha256_16": "e7faadf36701bb26",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/fleet/value_share.py",
+      "word": "1e-9",
+      "line_sha256_16": "1fb3fbf5cded8331",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/fleet/value_share.py",
+      "word": "1e-9",
+      "line_sha256_16": "7ab3a79550a31b4a",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/fleet/value_share.py",
+      "word": "float(",
+      "line_sha256_16": "004aa3a22e52e966",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/fleet/value_share.py",
+      "word": "float(",
+      "line_sha256_16": "d6bfd7f26d7baa2d",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/fleet/value_share.py",
+      "word": "tolerance",
+      "line_sha256_16": "1fb3fbf5cded8331",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/fleet/value_share.py",
+      "word": "tolerance",
+      "line_sha256_16": "51ee3b59002dbbf3",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/fleet/value_share.py",
+      "word": "tolerance",
+      "line_sha256_16": "7ab3a79550a31b4a",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/fleet/value_share.py",
+      "word": "tolerance",
+      "line_sha256_16": "c95d9dfc71c9f579",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/geodesic/discovery.py",
+      "word": "tolerance",
+      "line_sha256_16": "53fdaa25327b928b",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/geodesic/embedding_11d.py",
+      "word": "tolerance",
+      "line_sha256_16": "2f73469865543372",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/geodesic/m32.py",
+      "word": "float(",
+      "line_sha256_16": "a91b5db65b6be2bc",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/geodesic/m32.py",
+      "word": "tolerance",
+      "line_sha256_16": "b3875246a5f9da72",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/geodesic/spectral.py",
+      "word": "float(",
+      "line_sha256_16": "89af7ab80a4aa8fa",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/geodesic/workbench.py",
+      "word": "float(",
+      "line_sha256_16": "7aedcda1c888753d",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/geodesic/workbench.py",
+      "word": "float(",
+      "line_sha256_16": "f6ba20768eade9b5",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/hermes/__init__.py",
+      "word": "tolerance",
+      "line_sha256_16": "febdf6244a85aa01",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/identity.py",
+      "word": "float(",
+      "line_sha256_16": "ae64bfedbe5e0243",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "atol",
+      "line_sha256_16": "07d6759006aff442",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "atol",
+      "line_sha256_16": "20378505228a529b",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "atol",
+      "line_sha256_16": "2c169ce3d48d93a5",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "atol",
+      "line_sha256_16": "36707d02a3e3f92a",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "atol",
+      "line_sha256_16": "827758f99ae469bd",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "atol",
+      "line_sha256_16": "e86567e3fd94eaaf",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "0a5bc53466ceb56d",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "0e051f87992fe1c6",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "10456e970fb9dccd",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "17246df77a3c0863",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "18ba7d57ac21ed8f",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "1cb41c04dad25df4",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "201722942779eeee",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "2e419f25b2fb0bf2",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "330ae60b42273797",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "3617343ece38a7fe",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "4b9006a8e0c1767e",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "51d8e12c46ebc3df",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "542e38cc1bceaa81",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "557f26388a8c0eea",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "5b34dd6fad954020",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "5c3ccecb507b2b8a",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "5c92812990483f1d",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "5cbe5be4fb2a9d45",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "610460a29bf15422",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "6b061ced4fe25855",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "6d6e017bddc2b066",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "6e225760169999e3",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "6f5ab71bf046049a",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "768a15310376cb3a",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "7da41cced4098711",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "7f73789e59f60336",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "7f85d82605a9ada4",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "8755de4ccfde0f22",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "88eaabee5b5e2a21",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "89de9b8846068e94",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "8bfd2b30136f7961",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "8c5356b540cbe6d2",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "9badb8697a994695",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "a263f63ec096554b",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "ad89b6d0b94989cb",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "b1b88037af8882fa",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "c75c82456b299539",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "c95f8dbe7697c1d8",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "cbb4f62d0bb18e1b",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "de69b95b8fe8bb95",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "e292eda477cffcf4",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "e3ad927332672158",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "edc2c8653049f3f6",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "ede6b36e07c4138f",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "eed0fc8ef0f44d34",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "ef35a51fc01f36fc",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "f2b639a857321502",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "f7b35592770561d9",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "float(",
+      "line_sha256_16": "fec7f6f04d1e3454",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/ladder.py",
+      "word": "round(",
+      "line_sha256_16": "924b2c4d15af2861",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/ladder.py",
+      "word": "round(",
+      "line_sha256_16": "dada4ddbc97ca0b4",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/observability/metrics.py",
+      "word": "float(",
+      "line_sha256_16": "914f92f9baa07a9d",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/procurement/book.py",
+      "word": "round(",
+      "line_sha256_16": "976311dd3128e345",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/procurement/book.py",
+      "word": "tolerance",
+      "line_sha256_16": "bead4ce2a4bf8855",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/procurement/ledger.py",
+      "word": "float(",
+      "line_sha256_16": "135ec26150acc780",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/procurement/ledger.py",
+      "word": "float(",
+      "line_sha256_16": "8b615f76fd9d14bf",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/procurement/ledger.py",
+      "word": "float(",
+      "line_sha256_16": "d22c2f1a109ecbeb",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/formal.py",
+      "word": "float(",
+      "line_sha256_16": "6c81267892a13d87",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/formal.py",
+      "word": "float(",
+      "line_sha256_16": "6eba81d4f797aa8b",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/formal.py",
+      "word": "float(",
+      "line_sha256_16": "bc947a7f247d9fe3",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/formal.py",
+      "word": "round(",
+      "line_sha256_16": "30d63e0abf87f8ec",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/interop.py",
+      "word": "float(",
+      "line_sha256_16": "1c443a0bc401126a",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/interop.py",
+      "word": "float(",
+      "line_sha256_16": "b2524a81c87b8e3a",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/interop.py",
+      "word": "tolerance",
+      "line_sha256_16": "12c4a33ecda8495f",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/interop.py",
+      "word": "tolerance",
+      "line_sha256_16": "1e152104346cb0c5",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/interop.py",
+      "word": "tolerance",
+      "line_sha256_16": "3b60602f3fbf1dda",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/interop.py",
+      "word": "tolerance",
+      "line_sha256_16": "84be7180634d9cda",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/interop.py",
+      "word": "tolerance",
+      "line_sha256_16": "8c8fdfe50081da3a",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/linear_arithmetic.py",
+      "word": "atol",
+      "line_sha256_16": "f98488ace78d3355",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/linear_arithmetic.py",
+      "word": "float(",
+      "line_sha256_16": "ac224e9aa870e532",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/linear_arithmetic.py",
+      "word": "float(",
+      "line_sha256_16": "d79f537a9e3ed35b",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/linear_arithmetic.py",
+      "word": "rtol",
+      "line_sha256_16": "f98488ace78d3355",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/linear_arithmetic.py",
+      "word": "tolerance",
+      "line_sha256_16": "dc1f19b7d5baf442",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/linear_arithmetic.py",
+      "word": "tolerance",
+      "line_sha256_16": "f91313c70425c0c7",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/linear_arithmetic.py",
+      "word": "tolerance",
+      "line_sha256_16": "f98488ace78d3355",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/operator_calculus.py",
+      "word": "float(",
+      "line_sha256_16": "1da051cb20ff022d",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/operator_calculus.py",
+      "word": "float(",
+      "line_sha256_16": "63543306d567961f",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/operator_calculus.py",
+      "word": "float(",
+      "line_sha256_16": "8a02d570b3513df5",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/operator_calculus.py",
+      "word": "float(",
+      "line_sha256_16": "9a71c3e2d6a9861e",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/operator_calculus.py",
+      "word": "float(",
+      "line_sha256_16": "a80c9869e7f1ee88",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/operator_calculus.py",
+      "word": "float(",
+      "line_sha256_16": "c51769f0a19f082e",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/operator_calculus.py",
+      "word": "float(",
+      "line_sha256_16": "fa86b0bf467e3395",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/operator_calculus.py",
+      "word": "tolerance",
+      "line_sha256_16": "071df8b9d03bab42",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/operator_calculus.py",
+      "word": "tolerance",
+      "line_sha256_16": "25531bea8a4c9165",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/operator_calculus.py",
+      "word": "tolerance",
+      "line_sha256_16": "47dfdcf0ae3f10bc",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/operator_calculus.py",
+      "word": "tolerance",
+      "line_sha256_16": "6de9ad65af2349a8",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/operator_calculus.py",
+      "word": "tolerance",
+      "line_sha256_16": "7fb9fd1d18cd86b6",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/operator_calculus.py",
+      "word": "tolerance",
+      "line_sha256_16": "b33ec29e1d383cb9",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/operator_calculus.py",
+      "word": "tolerance",
+      "line_sha256_16": "b6649e83f23ba7d8",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/operator_calculus.py",
+      "word": "tolerance",
+      "line_sha256_16": "d2dcab119f40ad9f",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/operator_calculus.py",
+      "word": "tolerance",
+      "line_sha256_16": "dc1f19b7d5baf442",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "float(",
+      "line_sha256_16": "314dacbf781a62ad",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "float(",
+      "line_sha256_16": "61abd3de350b511a",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "float(",
+      "line_sha256_16": "627cfca04ea625cf",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "float(",
+      "line_sha256_16": "70a34027abc813d9",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "float(",
+      "line_sha256_16": "848ed1104c674125",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "float(",
+      "line_sha256_16": "a5b60b02050f6690",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "float(",
+      "line_sha256_16": "b529e92cac2a0358",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "float(",
+      "line_sha256_16": "c9c9ce3c10ea0824",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "float(",
+      "line_sha256_16": "d05354a6baa63af5",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "float(",
+      "line_sha256_16": "d290a215c4e94ff1",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "float(",
+      "line_sha256_16": "d7c2efaf1e67892b",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "float(",
+      "line_sha256_16": "f6a40c53d03f341b",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "float(",
+      "line_sha256_16": "fc30d1793c98c4a7",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "round(",
+      "line_sha256_16": "4c660762be0c802d",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "round(",
+      "line_sha256_16": "521083d4058da13e",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "round(",
+      "line_sha256_16": "55e0e4e2801458ed",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "round(",
+      "line_sha256_16": "78b3f87dce5e8dfb",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "round(",
+      "line_sha256_16": "7f590efd4dee86fe",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "round(",
+      "line_sha256_16": "8ad698233bf10318",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "round(",
+      "line_sha256_16": "900ea3230b8cf026",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "round(",
+      "line_sha256_16": "a7e28ded331436ed",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "round(",
+      "line_sha256_16": "b0702fb5b438ade0",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "round(",
+      "line_sha256_16": "bc190e13139fa6e4",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "round(",
+      "line_sha256_16": "e142631f9a3a8e02",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "round(",
+      "line_sha256_16": "fca8993e2e610a49",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "tolerance",
+      "line_sha256_16": "1423024a44b98714",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "tolerance",
+      "line_sha256_16": "25531bea8a4c9165",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "tolerance",
+      "line_sha256_16": "39444e4d214eddc1",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "tolerance",
+      "line_sha256_16": "3e359ac2053eae32",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "tolerance",
+      "line_sha256_16": "5384efa004bce914",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "tolerance",
+      "line_sha256_16": "5542bce0490ab93c",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "tolerance",
+      "line_sha256_16": "6acd4477680a18a5",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "tolerance",
+      "line_sha256_16": "bbf24c583ee58b40",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "tolerance",
+      "line_sha256_16": "bee12e627add5b77",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "float(",
+      "line_sha256_16": "2063373399fcf766",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "float(",
+      "line_sha256_16": "25e744dd775354e4",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "float(",
+      "line_sha256_16": "27737f7a03ce12f3",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "float(",
+      "line_sha256_16": "35cf2c82a908a54f",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "float(",
+      "line_sha256_16": "38d651a3e4259a93",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "float(",
+      "line_sha256_16": "3d8995a32e7a0d98",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "float(",
+      "line_sha256_16": "3e5c91017eae1cd5",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "float(",
+      "line_sha256_16": "3f22d1ccaa9a0cef",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "float(",
+      "line_sha256_16": "4ed5d62c9bc3b927",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "float(",
+      "line_sha256_16": "6bb4c06d49960799",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "float(",
+      "line_sha256_16": "819deca98dc18e86",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "float(",
+      "line_sha256_16": "858437fe70b33cea",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "float(",
+      "line_sha256_16": "8cb93536bd4b841c",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "float(",
+      "line_sha256_16": "906c543ed59957f5",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "float(",
+      "line_sha256_16": "930bad2ad12331aa",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "float(",
+      "line_sha256_16": "b7d12b19bd9b64a0",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "float(",
+      "line_sha256_16": "f06ce7d9fb8704c9",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "float(",
+      "line_sha256_16": "f7ab9fe822cfd0c4",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "float(",
+      "line_sha256_16": "fe24f4ef90fd49e2",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_optimizer.py",
+      "word": "float(",
+      "line_sha256_16": "0bec3895dd795f5f",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_optimizer.py",
+      "word": "float(",
+      "line_sha256_16": "20c7dd1af915e9e6",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_optimizer.py",
+      "word": "float(",
+      "line_sha256_16": "218b37323ce01f4b",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_optimizer.py",
+      "word": "float(",
+      "line_sha256_16": "5312508a4f4481db",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_optimizer.py",
+      "word": "float(",
+      "line_sha256_16": "5d928252e174d086",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_optimizer.py",
+      "word": "float(",
+      "line_sha256_16": "8f8f54f107114f7d",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_optimizer.py",
+      "word": "float(",
+      "line_sha256_16": "a3ce180b9e59253d",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_optimizer.py",
+      "word": "float(",
+      "line_sha256_16": "f69a7a3d4ce93964",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_optimizer.py",
+      "word": "float(",
+      "line_sha256_16": "f9f19762652ad03b",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_optimizer.py",
+      "word": "tolerance",
+      "line_sha256_16": "1bb666c5d5f707c6",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_optimizer.py",
+      "word": "tolerance",
+      "line_sha256_16": "ee171d540282dac0",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/pulvini/recovered/quantum_optimizer.py",
+      "word": "tolerance",
+      "line_sha256_16": "fdeb2bf7dde718cf",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/qsdl/qsdl_compiler.py",
+      "word": "1e-9",
+      "line_sha256_16": "486e513e2466764b",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/qsdl/qsdl_compiler.py",
+      "word": "atol",
+      "line_sha256_16": "486e513e2466764b",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/qsdl/qsdl_compiler.py",
+      "word": "float(",
+      "line_sha256_16": "10c511593ffb2e4e",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/qsdl/qsdl_compiler.py",
+      "word": "float(",
+      "line_sha256_16": "1a368166ab2d86ad",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/qsdl/qsdl_compiler.py",
+      "word": "float(",
+      "line_sha256_16": "8284722bb809bbf5",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/qsdl/qsdl_compiler.py",
+      "word": "float(",
+      "line_sha256_16": "910973174e371892",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/qsdl/qsdl_compiler.py",
+      "word": "float(",
+      "line_sha256_16": "cad507b5d70969b0",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/qsdl/qsdl_compiler.py",
+      "word": "float(",
+      "line_sha256_16": "e70f9080f4c87a3e",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/qsdl/qsdl_compiler.py",
+      "word": "float(",
+      "line_sha256_16": "e9595f9a6e30c1ac",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/qsdl/qsdl_parser.py",
+      "word": "float(",
+      "line_sha256_16": "02ae1f7f79883128",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/qsdl/qsdl_parser.py",
+      "word": "float(",
+      "line_sha256_16": "b7f8de1bd6669832",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/research/millennium_bridge.py",
+      "word": "1e-9",
+      "line_sha256_16": "ed1d0256e28da0d8",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/research/millennium_bridge.py",
+      "word": "float(",
+      "line_sha256_16": "570469a3041f2b17",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/research/millennium_bridge.py",
+      "word": "float(",
+      "line_sha256_16": "ba9cefed6786b121",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/sdk/client.py",
+      "word": "round(",
+      "line_sha256_16": "404846e3d8fb88ac",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/sdk/client.py",
+      "word": "round(",
+      "line_sha256_16": "b2c34334398131b0",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/seam/scale.py",
+      "word": "float(",
+      "line_sha256_16": "3d3ae0225199134d",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/seam/scale.py",
+      "word": "float(",
+      "line_sha256_16": "4174ccbe4e0b15aa",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/seam/scale.py",
+      "word": "float(",
+      "line_sha256_16": "70c781ccdd087b5d",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/security/al_haras/defense_frontiers.py",
+      "word": "tolerance",
+      "line_sha256_16": "11977c8282cd5a8a",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/security/al_haras/defense_frontiers.py",
+      "word": "tolerance",
+      "line_sha256_16": "3bec91611af3d8b6",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/security/al_haras/defense_frontiers.py",
+      "word": "tolerance",
+      "line_sha256_16": "40a7eff020c60c28",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/security/al_haras/defense_frontiers.py",
+      "word": "tolerance",
+      "line_sha256_16": "6dbac3c3bd364908",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/security/al_haras/defense_frontiers.py",
+      "word": "tolerance",
+      "line_sha256_16": "b129f89dfe6c6970",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/security/al_haras/defense_frontiers.py",
+      "word": "tolerance",
+      "line_sha256_16": "e6f0388f1d56b984",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/security/al_haras/defense_frontiers.py",
+      "word": "tolerance",
+      "line_sha256_16": "f3b7aa05c29e18df",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/security/al_haras/engine.py",
+      "word": "tolerance",
+      "line_sha256_16": "4f2ebcee8b0588cb",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/security/al_haras/engine.py",
+      "word": "tolerance",
+      "line_sha256_16": "a12128eaa886935a",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/security/al_haras/engine.py",
+      "word": "tolerance",
+      "line_sha256_16": "b342d8bdf4795817",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/security/al_haras/engine.py",
+      "word": "tolerance",
+      "line_sha256_16": "dbdd9feaaa4dd8ce",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/security/al_haras/expander.py",
+      "word": "epsilon",
+      "line_sha256_16": "536edf53aff1cd09",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/security/al_haras/expander.py",
+      "word": "epsilon",
+      "line_sha256_16": "8a90f83e8a6067be",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/security/al_haras/expander.py",
+      "word": "epsilon",
+      "line_sha256_16": "b9a0d071fa7ab806",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/security/al_haras/orbital_mesh.py",
+      "word": "1e-9",
+      "line_sha256_16": "f92c8461a8630635",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/security/al_haras/sheaf.py",
+      "word": "tolerance",
+      "line_sha256_16": "41eb9a43a1953323",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/security/al_haras/sheaf.py",
+      "word": "tolerance",
+      "line_sha256_16": "88eb97bda07da88e",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/security/al_haras/sheaf.py",
+      "word": "tolerance",
+      "line_sha256_16": "a12128eaa886935a",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/security/al_haras/sheaf.py",
+      "word": "tolerance",
+      "line_sha256_16": "cf3c3e4499eab2a0",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/security/al_haras/sheaf.py",
+      "word": "tolerance",
+      "line_sha256_16": "f4caeae2362f737b",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/security/al_haras/sovereign.py",
+      "word": "tolerance",
+      "line_sha256_16": "50fe325b1d0f03af",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/security/al_haras/sovereign.py",
+      "word": "tolerance",
+      "line_sha256_16": "a12128eaa886935a",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/storage/connectors.py",
+      "word": "round(",
+      "line_sha256_16": "1e814f433c76ed29",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/storage/connectors.py",
+      "word": "round(",
+      "line_sha256_16": "441bfd0574d391bd",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/storage/connectors.py",
+      "word": "round(",
+      "line_sha256_16": "88d0c40d9c0a9e78",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/storage/connectors.py",
+      "word": "round(",
+      "line_sha256_16": "a78eb9e337dfb957",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/storage/connectors.py",
+      "word": "round(",
+      "line_sha256_16": "b7418e75624e21d9",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/storage/connectors.py",
+      "word": "round(",
+      "line_sha256_16": "c82d531d8ee843d1",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/storage/connectors.py",
+      "word": "round(",
+      "line_sha256_16": "d39f7d3976210361",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/storage/connectors.py",
+      "word": "round(",
+      "line_sha256_16": "daa9c74da585cd3d",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/storage/connectors.py",
+      "word": "round(",
+      "line_sha256_16": "ec513cccae9c4dd2",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/storage/connectors.py",
+      "word": "round(",
+      "line_sha256_16": "f44ff137e4a107b6",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/storage/connectors.py",
+      "word": "round(",
+      "line_sha256_16": "f7d1d0678ed6175c",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/storage/connectors.py",
+      "word": "round(",
+      "line_sha256_16": "fcb433e57d82aa31",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/adaptive_contraction.py",
+      "word": "round(",
+      "line_sha256_16": "60a41f264d79878a",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/causal_intelligence.py",
+      "word": "round(",
+      "line_sha256_16": "061cd70acbec449f",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/causal_intelligence.py",
+      "word": "round(",
+      "line_sha256_16": "0623a5b83e7f8c20",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/causal_intelligence.py",
+      "word": "round(",
+      "line_sha256_16": "5fe7194f9de92354",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/causal_intelligence.py",
+      "word": "round(",
+      "line_sha256_16": "882682481efe58bc",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/causal_intelligence.py",
+      "word": "round(",
+      "line_sha256_16": "8a31c90b57d5492f",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/causal_intelligence.py",
+      "word": "round(",
+      "line_sha256_16": "9a833677bca4ec3d",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/causal_intelligence.py",
+      "word": "round(",
+      "line_sha256_16": "9d3ee2a0e1ddd496",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/causal_intelligence.py",
+      "word": "round(",
+      "line_sha256_16": "c45c125d94149ab9",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/causal_intelligence.py",
+      "word": "round(",
+      "line_sha256_16": "c90e3401097cff9c",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/causal_intelligence.py",
+      "word": "round(",
+      "line_sha256_16": "ded098833b647389",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/causal_intelligence.py",
+      "word": "round(",
+      "line_sha256_16": "ed0b11742e4240bc",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/dmrg.py",
+      "word": "1e-9",
+      "line_sha256_16": "1f032f6461478aee",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/dmrg.py",
+      "word": "1e-9",
+      "line_sha256_16": "514455bbadcc186e",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/dmrg.py",
+      "word": "atol",
+      "line_sha256_16": "4dc22ce3f5731d49",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/dmrg.py",
+      "word": "float(",
+      "line_sha256_16": "369cfe7814666142",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/dmrg.py",
+      "word": "float(",
+      "line_sha256_16": "bce44d7d081b1141",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/dmrg.py",
+      "word": "rtol",
+      "line_sha256_16": "4dc22ce3f5731d49",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/dmrg.py",
+      "word": "tolerance",
+      "line_sha256_16": "6035f444e67fad5a",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/enhanced_representation.py",
+      "word": "float(",
+      "line_sha256_16": "3752ebc4ad003b0f",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/enhanced_representation.py",
+      "word": "float(",
+      "line_sha256_16": "9d372af4526c447d",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/enhanced_representation.py",
+      "word": "round(",
+      "line_sha256_16": "0b78f0b2d82dc01b",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/enhanced_representation.py",
+      "word": "round(",
+      "line_sha256_16": "e673580c5e2e186b",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/exact_rational_tt.py",
+      "word": "tolerance",
+      "line_sha256_16": "2c1be2f70fecddb1",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/experiments.py",
+      "word": "float(",
+      "line_sha256_16": "77c45e8cc561a131",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/experiments.py",
+      "word": "float(",
+      "line_sha256_16": "785600739f80646d",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/experiments.py",
+      "word": "round(",
+      "line_sha256_16": "040e52dab7ac120b",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/experiments.py",
+      "word": "round(",
+      "line_sha256_16": "08e9606439b2c126",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/experiments.py",
+      "word": "round(",
+      "line_sha256_16": "1e34d571208dc9da",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/experiments.py",
+      "word": "round(",
+      "line_sha256_16": "2876a0a3bd9f833c",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/experiments.py",
+      "word": "round(",
+      "line_sha256_16": "3fd80512c207f668",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/experiments.py",
+      "word": "round(",
+      "line_sha256_16": "4c13a743e166856a",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/experiments.py",
+      "word": "round(",
+      "line_sha256_16": "6d4041210e36b6f3",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/experiments.py",
+      "word": "round(",
+      "line_sha256_16": "a3b54e54e174aad2",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/experiments.py",
+      "word": "round(",
+      "line_sha256_16": "a54c58ed31a12f23",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/experiments.py",
+      "word": "round(",
+      "line_sha256_16": "f28703d3492833a3",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/folded_compute.py",
+      "word": "atol",
+      "line_sha256_16": "758e85233defd77f",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/folded_compute.py",
+      "word": "atol",
+      "line_sha256_16": "f88cb6a368996518",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/folded_compute.py",
+      "word": "float(",
+      "line_sha256_16": "4c3daf0a95accf1e",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/folded_compute.py",
+      "word": "rtol",
+      "line_sha256_16": "1c9a28a442e699db",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/folded_compute.py",
+      "word": "rtol",
+      "line_sha256_16": "877b33f2386d09ca",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/folded_compute.py",
+      "word": "tolerance",
+      "line_sha256_16": "1c9a28a442e699db",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/folded_compute.py",
+      "word": "tolerance",
+      "line_sha256_16": "33837a0cf3d7d2d3",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/folded_compute.py",
+      "word": "tolerance",
+      "line_sha256_16": "4c3daf0a95accf1e",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/folded_compute.py",
+      "word": "tolerance",
+      "line_sha256_16": "758e85233defd77f",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/folded_compute.py",
+      "word": "tolerance",
+      "line_sha256_16": "86ff2a4a7c7f1ada",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/folded_compute.py",
+      "word": "tolerance",
+      "line_sha256_16": "877b33f2386d09ca",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/folded_compute.py",
+      "word": "tolerance",
+      "line_sha256_16": "cb37961d8db02938",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/folded_compute.py",
+      "word": "tolerance",
+      "line_sha256_16": "dc1f19b7d5baf442",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/folded_compute.py",
+      "word": "tolerance",
+      "line_sha256_16": "f88cb6a368996518",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/gate.py",
+      "word": "float(",
+      "line_sha256_16": "1927809e2f8abeb9",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/gate.py",
+      "word": "float(",
+      "line_sha256_16": "43076b4f0cf93130",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/gate.py",
+      "word": "float(",
+      "line_sha256_16": "7c78675356ef45e8",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/gate.py",
+      "word": "float(",
+      "line_sha256_16": "8fd9bf36c2a563ad",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/gate.py",
+      "word": "float(",
+      "line_sha256_16": "932845169df6914f",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/gate.py",
+      "word": "float(",
+      "line_sha256_16": "f5c6c3f5f9a062ad",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/gate.py",
+      "word": "tolerance",
+      "line_sha256_16": "f91313c70425c0c7",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/geodesic.py",
+      "word": "float(",
+      "line_sha256_16": "0b1a1834b63a73f8",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/geodesic.py",
+      "word": "float(",
+      "line_sha256_16": "1e73ee3b932ac17b",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/geodesic.py",
+      "word": "float(",
+      "line_sha256_16": "309fb1028355a65e",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/geodesic.py",
+      "word": "float(",
+      "line_sha256_16": "3259b251c463e413",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/geodesic.py",
+      "word": "float(",
+      "line_sha256_16": "53a0d49c4c446d79",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/geodesic.py",
+      "word": "float(",
+      "line_sha256_16": "78b8d78678c9246d",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/geodesic.py",
+      "word": "float(",
+      "line_sha256_16": "852cf64d7a1330a2",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/geodesic.py",
+      "word": "float(",
+      "line_sha256_16": "ca104b37b8db3e71",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/geodesic.py",
+      "word": "float(",
+      "line_sha256_16": "f1ef1e415e2bb127",
+      "count": 4
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/geodesic.py",
+      "word": "float(",
+      "line_sha256_16": "f1eff074859609ad",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/geodesic.py",
+      "word": "float(",
+      "line_sha256_16": "fde103f3b56e4151",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/geodesic.py",
+      "word": "tolerance",
+      "line_sha256_16": "18b12b03881621e8",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/geodesic.py",
+      "word": "tolerance",
+      "line_sha256_16": "25531bea8a4c9165",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/geodesic.py",
+      "word": "tolerance",
+      "line_sha256_16": "7444513f549e129b",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/geodesic.py",
+      "word": "tolerance",
+      "line_sha256_16": "747ce231a783e66a",
+      "count": 2
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/geodesic.py",
+      "word": "tolerance",
+      "line_sha256_16": "8e5480b8c9c23de4",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/geodesic.py",
+      "word": "tolerance",
+      "line_sha256_16": "ae9d1a96e4828d00",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/measurement.py",
+      "word": "float(",
+      "line_sha256_16": "cd2877dfff4810d3",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/measurement.py",
+      "word": "float(",
+      "line_sha256_16": "dfcea8a7bee54df1",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/measurement.py",
+      "word": "float(",
+      "line_sha256_16": "fe2e627d7df8463d",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/metal_backend.py",
+      "word": "float(",
+      "line_sha256_16": "0b81f195a12fb696",
+      "count": 1
+    },
+    {
+      "category": "exact_arithmetic",
+      "path": "src/chronus/tensor/opencl_backend.py",
+      "word": "float(",
+      "line_sha256_16": "c024be966d81f435",
+      "count": 2
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/compute/igpu_dispatcher.py",
+      "word": "estimated",
+      "line_sha256_16": "6337266a1538e8db",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/compute/quantum_evolution_igpu.py",
+      "word": "approximate",
+      "line_sha256_16": "73868761351e40e2",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/compute/quantum_evolution_igpu.py",
+      "word": "approximate",
+      "line_sha256_16": "dcbf497fa6a1044e",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/config.py",
+      "word": "estimate",
+      "line_sha256_16": "f0e970e7bf4d4482",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/core/purity_scanner.py",
+      "word": "heuristic",
+      "line_sha256_16": "34c36ad745975646",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/core/purity_scanner.py",
+      "word": "heuristic",
+      "line_sha256_16": "d00836f5932a5719",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/geodesic/dual_120cell.py",
+      "word": "guess",
+      "line_sha256_16": "d20faf907ab6f88b",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/geodesic/spectral.py",
+      "word": "approximate",
+      "line_sha256_16": "4a6d5aee5307f38f",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/geodesic/spectral.py",
+      "word": "approximate",
+      "line_sha256_16": "9327e13f6a28ef86",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "estimate",
+      "line_sha256_16": "3b12000fd8bcef8e",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "approximate",
+      "line_sha256_16": "ac6bc84716616865",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "approximate",
+      "line_sha256_16": "cbf7e893dfdf61a3",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "approximate",
+      "line_sha256_16": "da3a299be966a9b4",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "approximate",
+      "line_sha256_16": "f0f346b041ba13bf",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "estimated",
+      "line_sha256_16": "4d37eacf0f39e7aa",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "estimated",
+      "line_sha256_16": "baca2340567eea07",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/pulvini/recovered/quantum_optimizer.py",
+      "word": "approximate",
+      "line_sha256_16": "597c60dfa129c5d5",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/pulvini/recovered/quantum_optimizer.py",
+      "word": "estimate",
+      "line_sha256_16": "03c430caca13db84",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/security/al_haras/agentic_immune.py",
+      "word": "heuristic",
+      "line_sha256_16": "27678133f25de5ca",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/security/al_haras/agentic_immune.py",
+      "word": "heuristic",
+      "line_sha256_16": "397c4c874fc47788",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/security/al_haras/agentic_immune.py",
+      "word": "heuristic",
+      "line_sha256_16": "400a9129a6d186f2",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/security/al_haras/agentic_immune.py",
+      "word": "heuristic",
+      "line_sha256_16": "6b53f1261c45f73b",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/security/al_haras/agentic_immune.py",
+      "word": "heuristic",
+      "line_sha256_16": "a78b248f70539160",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/security/al_haras/agentic_immune.py",
+      "word": "heuristic",
+      "line_sha256_16": "f15bf6e81e2090d1",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/tensor/enhanced_representation.py",
+      "word": "approximate",
+      "line_sha256_16": "e541f0675b436b77",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/tensor/exact_mps.py",
+      "word": "approximate",
+      "line_sha256_16": "bab67832f9be02b6",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/tensor/gate.py",
+      "word": "estimate",
+      "line_sha256_16": "c20dda6edcf185b7",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/tensor/measurement.py",
+      "word": "approximate",
+      "line_sha256_16": "503711cd8464046a",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/tensor/measurement.py",
+      "word": "estimate",
+      "line_sha256_16": "fe2f779e4b8a2270",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/tensor/measurement.py",
+      "word": "estimated",
+      "line_sha256_16": "7e73ca6f62828def",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/tensor/peps.py",
+      "word": "approximate",
+      "line_sha256_16": "09bf717f8d7e32f6",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/tensor/peps.py",
+      "word": "approximate",
+      "line_sha256_16": "8f69bf96d98f267a",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/tensor/peps.py",
+      "word": "estimated",
+      "line_sha256_16": "2e6db5b5c520d8ec",
+      "count": 1
+    },
+    {
+      "category": "heuristic",
+      "path": "src/chronus/tensor/types.py",
+      "word": "estimate",
+      "line_sha256_16": "2e0b8f4e6debddc7",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/CHALLENGE.md",
+      "word": "quantum speedup",
+      "line_sha256_16": "b2828e2731fa6037",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/agents.md",
+      "word": "quantum speedup",
+      "line_sha256_16": "d109053afe27ac93",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/audits/2026-11-16-notion-library-source-recovery.md",
+      "word": "qpu",
+      "line_sha256_16": "af75d467674d19c4",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/audits/2026-11-16-source-archive-reconciliation.md",
+      "word": "qpu",
+      "line_sha256_16": "91151f8747f1c314",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/audits/2026-11-16-source-archive-reconciliation.md",
+      "word": "qpu",
+      "line_sha256_16": "d9166e68fe57a81d",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/#_CHRONUS_QUANTUM_iGPU___MASTER_DIRECTIVE_02.md",
+      "word": "qpu",
+      "line_sha256_16": "027ac23d2e98efd7",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/#_CHRONUS_QUANTUM_iGPU___MASTER_DIRECTIVE_02.md",
+      "word": "qpu",
+      "line_sha256_16": "0288e41e9ce5dfcc",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/#_CHRONUS_QUANTUM_iGPU___MASTER_DIRECTIVE_02.md",
+      "word": "qpu",
+      "line_sha256_16": "0c99eb5c616fba8f",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/#_CHRONUS_QUANTUM_iGPU_\u2014_MASTER_DIRECTIVE_02.md",
+      "word": "qpu",
+      "line_sha256_16": "027ac23d2e98efd7",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/#_CHRONUS_QUANTUM_iGPU_\u2014_MASTER_DIRECTIVE_02.md",
+      "word": "qpu",
+      "line_sha256_16": "0288e41e9ce5dfcc",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/#_CHRONUS_QUANTUM_iGPU_\u2014_MASTER_DIRECTIVE_02.md",
+      "word": "qpu",
+      "line_sha256_16": "0c99eb5c616fba8f",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/#_MASTER_ENGINEERING_DIRECTIVE.md",
+      "word": "qpu",
+      "line_sha256_16": "18c32280caccafed",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/#_MASTER_ENGINEERING_DIRECTIVE.md",
+      "word": "qpu",
+      "line_sha256_16": "201bd8dc04d8b8b4",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/#_MASTER_ENGINEERING_DIRECTIVE.md",
+      "word": "qpu",
+      "line_sha256_16": "8e0e9be5a335eddd",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/#_MASTER_ENGINEERING_DIRECTIVE.md",
+      "word": "quantum advantage",
+      "line_sha256_16": "d0bd82a782c1fbd6",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/#_MASTER_ENGINEERING_DIRECTIVE.md",
+      "word": "quantum-native",
+      "line_sha256_16": "47876c9427a7f63d",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/Agreed._Chronus_GPIU_needs_a_proper_qualification\u2026.md",
+      "word": "qpu",
+      "line_sha256_16": "540c1c65c07d8731",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/An_audit_of__Chronus_GPIU_v4_(_chronus_gpiu-v4.p\u2026.md",
+      "word": "qpu",
+      "line_sha256_16": "7235496fb2aea7c1",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/An_audit_of__Chronus_GPIU_v4_(_chronus_gpiu-v4.p\u2026.md",
+      "word": "qpu",
+      "line_sha256_16": "f03c6f630aa1af6c",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/ENGINEERING_CLOSE_OUT.md",
+      "word": "qpu",
+      "line_sha256_16": "e5d2ee8214a35d91",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/M5_Test_benchmark.md",
+      "word": "qpu",
+      "line_sha256_16": "475f55ffa3e46334",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/NEXT_FRONTIER.md",
+      "word": "qpu",
+      "line_sha256_16": "36a9fc47cfe678e0",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/NEXT_FRONTIER.md",
+      "word": "qpu",
+      "line_sha256_16": "9f66ec510db81257",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/NEXT_FRONTIER.md",
+      "word": "qpu",
+      "line_sha256_16": "cf26cd4daefee855",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/NEXT_FRONTIER.md",
+      "word": "qpu",
+      "line_sha256_16": "f11b3274deee70ef",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/NEXT_GEN.md",
+      "word": "qpu",
+      "line_sha256_16": "2b81eeccabb9f2fe",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/Please_implement_I_ll_proceed_with_the_in-place_c\u2026.md",
+      "word": "qpu",
+      "line_sha256_16": "813f9ca811ee9701",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/Please_implement_and_address_This_is_a_substantia\u2026.md",
+      "word": "qpu",
+      "line_sha256_16": "8eeced51d90d53c1",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/SCRUTINY.md",
+      "word": "qpu",
+      "line_sha256_16": "ddd584a8eb799cb8",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/The_Millennium_Prize_Problems_are__not__out_of_\u2026.md",
+      "word": "qpu",
+      "line_sha256_16": "accb4cb0a018875e",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "127cba60bc9d918c",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "1693921ac2b5eb51",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "17f525bc392617bb",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "1cce19d473c7b4e4",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "21ad30ae851edf89",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "3875debfa078badc",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "42e2ede2a029a6e3",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "4e92ec3ae0358d16",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "5359ce61d68ccdaf",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "53d153d547903449",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "6316f482804a87dd",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "6777918f88854be0",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "677fd4ec01623732",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "7361e1c4a053def6",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "80e32aae30c4feea",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "8e2ecad8c630d8b9",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "9705dd4a563b91f0",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "9a4749b75c1a6609",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "a88f9c41028d1da4",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "b9ad34fc0cbd5cc1",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "d71adb1890108a3f",
+      "count": 2
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "e3b4cbf27a559398",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "f7cb7fd380d4caa2",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/_.md",
+      "word": "qpu",
+      "line_sha256_16": "fdd5efab6baa622d",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/directives/sh_the_system_from_an_engineering_specification_t\u2026.md",
+      "word": "qpu",
+      "line_sha256_16": "ee381fd051489928",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/production/CHECKLIST_IMPLEMENTATION_20261116.md",
+      "word": "qpu",
+      "line_sha256_16": "7acf42b2d5d1f0d4",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/production/PUBLIC_UCI_BENCHMARK_20261116.md",
+      "word": "quantum advantage",
+      "line_sha256_16": "6152945b845a068d",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/production/REAL_WORKLOAD_BENCHMARK.md",
+      "word": "quantum advantage",
+      "line_sha256_16": "b52a59cccb078385",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/production/STORAGE_RESEARCH_CLOSEOUT_20261116.md",
+      "word": "quantum advantage",
+      "line_sha256_16": "bc62b59f415dfd91",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/production/TENSOR_CONTRACTION_TRUTH_20261116.md",
+      "word": "quantum advantage",
+      "line_sha256_16": "9deebc40fd741787",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/research/PHI_GEOMETRIC_DISCOVERY_SUBSTRATE.md",
+      "word": "quantum advantage",
+      "line_sha256_16": "a0e8533e37da41ad",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/research/PHI_GEOMETRIC_DISCOVERY_SUBSTRATE.md",
+      "word": "quantum advantage",
+      "line_sha256_16": "c8baa0e393b7b371",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/research/PULVINI_V3_FOLD_AUTHORITY.md",
+      "word": "qpu",
+      "line_sha256_16": "4ff89b332ba65b97",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/supervision/2026-11-11-turing-and-packaging.md",
+      "word": "quantum advantage",
+      "line_sha256_16": "af7ca0a184fdee31",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/system-update/qigpu-substrate-agnostic.md",
+      "word": "quantum advantage",
+      "line_sha256_16": "7e51d8b3f884ff70",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "docs/system-update/quantum-package-taxonomy.md",
+      "word": "quantum advantage",
+      "line_sha256_16": "eb1871f8cd2d6f04",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "qpu",
+      "line_sha256_16": "127cba60bc9d918c",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "qpu",
+      "line_sha256_16": "1cce19d473c7b4e4",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "qpu",
+      "line_sha256_16": "21ad30ae851edf89",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "qpu",
+      "line_sha256_16": "29bdc653b8108de4",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "qpu",
+      "line_sha256_16": "301445cfa99e14d6",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "qpu",
+      "line_sha256_16": "384ca004e3dd34b0",
+      "count": 2
+    },
+    {
+      "category": "quantum_claim",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "qpu",
+      "line_sha256_16": "609dd42e31c177ad",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "qpu",
+      "line_sha256_16": "64debb9771a3e0ea",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "qpu",
+      "line_sha256_16": "6777918f88854be0",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "qpu",
+      "line_sha256_16": "8e2ecad8c630d8b9",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "qpu",
+      "line_sha256_16": "b3c1c3f0fbd35d75",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "qpu",
+      "line_sha256_16": "d71adb1890108a3f",
+      "count": 2
+    },
+    {
+      "category": "quantum_claim",
+      "path": "src/chronus/execution/elevation.py",
+      "word": "qpu",
+      "line_sha256_16": "5a5ee8658ca2f6cb",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "src/chronus/geodesic/benchmarks.py",
+      "word": "quantum advantage",
+      "line_sha256_16": "8a8d1fb2e64d4ed6",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "src/chronus/ladder.py",
+      "word": "quantum advantage",
+      "line_sha256_16": "294bd3563a9ff76e",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "src/chronus/pulvini/AGENTS.md",
+      "word": "qpu",
+      "line_sha256_16": "7b9925d70af92409",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "src/chronus/pulvini/operator_calculus.py",
+      "word": "qpu",
+      "line_sha256_16": "7e93e504de994bca",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "src/chronus/quantum/README.md",
+      "word": "quantum advantage",
+      "line_sha256_16": "390580ee3f86f647",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "src/chronus/quantum/README.md",
+      "word": "quantum advantage",
+      "line_sha256_16": "4b66edbef1127286",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "src/chronus/quantum/README.md",
+      "word": "quantum speedup",
+      "line_sha256_16": "7af8062860e43fd6",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "src/chronus/quantum/__init__.py",
+      "word": "quantum advantage",
+      "line_sha256_16": "ad1970f221f91115",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "src/chronus/tensor/charter.py",
+      "word": "quantum advantage",
+      "line_sha256_16": "df40d53953d9f60f",
+      "count": 1
+    },
+    {
+      "category": "quantum_claim",
+      "path": "src/chronus/tensor/enhanced_representation.py",
+      "word": "quantum speedup",
+      "line_sha256_16": "f625303143171c01",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/access_control.py",
+      "word": "simulated",
+      "line_sha256_16": "2ad24b6bd735da3e",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "simulate",
+      "line_sha256_16": "a95495afa0f60565",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "simulate",
+      "line_sha256_16": "c7a1aab1a284bcd8",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "simulate_complete_zeckendorf_addition",
+      "line_sha256_16": "0c430829876b4d74",
+      "count": 2
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "simulate_complete_zeckendorf_addition",
+      "line_sha256_16": "2d908145bb49f790",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "simulate_complete_zeckendorf_addition",
+      "line_sha256_16": "410393fa23cc816b",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "simulate_complete_zeckendorf_addition",
+      "line_sha256_16": "a4afdaa641e38aff",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "simulate_process_crash_and_restart",
+      "line_sha256_16": "2d45549a459d5f82",
+      "count": 2
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "simulate_process_crash_and_restart",
+      "line_sha256_16": "dac4ab1888eaf28d",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "simulate_rtl_zeckendorf_alu",
+      "line_sha256_16": "25fa47cb0b5c2d2a",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "simulate_rtl_zeckendorf_alu",
+      "line_sha256_16": "74318ab83d3dcaea",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "simulate_rtl_zeckendorf_alu",
+      "line_sha256_16": "9decba1c76bb0c0c",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "simulated",
+      "line_sha256_16": "74e8f957a4963d3a",
+      "count": 2
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "simulated",
+      "line_sha256_16": "ddc14eaf07301ae3",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "simulated",
+      "line_sha256_16": "ec03771d88e963a8",
+      "count": 2
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "simulates",
+      "line_sha256_16": "0d5f2bfbdec81898",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "simulates",
+      "line_sha256_16": "22d671e2c75a6393",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "simulation",
+      "line_sha256_16": "3c5885b5217d03d4",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "simulation",
+      "line_sha256_16": "43fe6be7e94cf4e9",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "simulation",
+      "line_sha256_16": "841550ecec7e364d",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "simulation",
+      "line_sha256_16": "ec03771d88e963a8",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "simulation_bytes",
+      "line_sha256_16": "76962e2f6e40b3e5",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "simulation_bytes",
+      "line_sha256_16": "8ca05ed8e4f752c6",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "simulator",
+      "line_sha256_16": "8f05d851975baff0",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/chronus_gpiu-v36.py",
+      "word": "synthetic",
+      "line_sha256_16": "8a5b53375bb6eb34",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/core/constants.py",
+      "word": "simulation",
+      "line_sha256_16": "431b1a33b51513fd",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/core/constants.py",
+      "word": "simulation",
+      "line_sha256_16": "94a4d98010f22ab5",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/core/constants.py",
+      "word": "simulation",
+      "line_sha256_16": "bc71953fd286763d",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/core/enums.py",
+      "word": "stub",
+      "line_sha256_16": "3fc93f991b58fb69",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/distributed/failure_injection.py",
+      "word": "simulated",
+      "line_sha256_16": "41449af429a4f51c",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/evidence/__init__.py",
+      "word": "stub",
+      "line_sha256_16": "a087b06c57d7385b",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/execution/master_e2e_engine.py",
+      "word": "simulate",
+      "line_sha256_16": "22f417797b80c576",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/execution/reference.py",
+      "word": "simulate_32lane_reduction",
+      "line_sha256_16": "25ccb515e0d5d2e1",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/execution/stealth_orchestrator.py",
+      "word": "simulated",
+      "line_sha256_16": "8e284a76ee961e60",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/execution/stealth_orchestrator.py",
+      "word": "simulation",
+      "line_sha256_16": "9b55d978f31b7a56",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/execution/stealth_orchestrator.py",
+      "word": "simulation",
+      "line_sha256_16": "abf26e1822aef4a8",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/execution/systemverilog_backend.py",
+      "word": "simulate",
+      "line_sha256_16": "dd9fa1cc8662e525",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/execution/systemverilog_backend.py",
+      "word": "simulate_32lane_reduction",
+      "line_sha256_16": "1ea645e11701edc3",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/execution/systemverilog_backend.py",
+      "word": "simulate_32lane_reduction",
+      "line_sha256_16": "ce7a2f47d180ff79",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/execution/systemverilog_backend.py",
+      "word": "simulation",
+      "line_sha256_16": "ae667a89cdbe2a31",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/execution/systemverilog_backend.py",
+      "word": "simulator",
+      "line_sha256_16": "52701eaead61dab0",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/execution/systemverilog_backend.py",
+      "word": "simulator",
+      "line_sha256_16": "79c4f81cf761651b",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/fleet/crossbar.py",
+      "word": "placeholder",
+      "line_sha256_16": "7def22a33951987a",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/fleet/cuda.py",
+      "word": "stub",
+      "line_sha256_16": "256517a9f3328f3c",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/fleet/ledger.py",
+      "word": "placeholder",
+      "line_sha256_16": "fd3dc7de01df7f0a",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/geodesic/benchmarks.py",
+      "word": "synthetic",
+      "line_sha256_16": "8a8d1fb2e64d4ed6",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/geodesic/workbench.py",
+      "word": "simulated",
+      "line_sha256_16": "dd02e316c1d798e7",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/governance/__init__.py",
+      "word": "simulation",
+      "line_sha256_16": "621af4f0e4c76a95",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/governance/__init__.py",
+      "word": "simulation",
+      "line_sha256_16": "94eb6a9feea280d0",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/igpu/adapters.py",
+      "word": "simulating",
+      "line_sha256_16": "8efcf6cf1aea4810",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/intelligence/predictive_engine.py",
+      "word": "synthetic",
+      "line_sha256_16": "e0d410eee2f22e5a",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/licensing/fingerprint.py",
+      "word": "placeholder",
+      "line_sha256_16": "431fd64e8a95656a",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "simulate",
+      "line_sha256_16": "680f41b03f42ef72",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/pulvini/recovered/geodesic_tensor_engine.py",
+      "word": "simulated",
+      "line_sha256_16": "016254cf2e00a158",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "word": "simulated",
+      "line_sha256_16": "8c685ac5e9c47ed3",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/qsdl/qsdl_compiler.py",
+      "word": "stub",
+      "line_sha256_16": "11b7e52e0c508d6c",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/qsdl/qsdl_compiler.py",
+      "word": "stub",
+      "line_sha256_16": "268dc118d9c072fc",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/quantum/README.md",
+      "word": "simulation",
+      "line_sha256_16": "4b66edbef1127286",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/quantum/statevector.py",
+      "word": "simulator",
+      "line_sha256_16": "c95b958ea4485752",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/roadmap/phases.py",
+      "word": "simulate",
+      "line_sha256_16": "e908fbc4cef38cb3",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/sdk/client.py",
+      "word": "simulate",
+      "line_sha256_16": "0cbd230651600309",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/sdk/client.py",
+      "word": "simulate",
+      "line_sha256_16": "58987bf4d2a73346",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/sdk/client.py",
+      "word": "simulate_adversarial",
+      "line_sha256_16": "2c93bf94734ee6a5",
+      "count": 2
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/sdk/client.py",
+      "word": "simulate_adversarial",
+      "line_sha256_16": "e62e1d0e5f4a8114",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/sdk/client.py",
+      "word": "simulate_double_spend",
+      "line_sha256_16": "3ca878ffcdee5a5f",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/sdk/client.py",
+      "word": "simulate_double_spend",
+      "line_sha256_16": "b11c383112eddc56",
+      "count": 2
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/sdk/client.py",
+      "word": "simulate_patroclus_mining",
+      "line_sha256_16": "6cddb70a31586044",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/agentic_immune.py",
+      "word": "simulate_poisoning",
+      "line_sha256_16": "1f5555f5cb688c03",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/agentic_immune.py",
+      "word": "simulate_poisoning",
+      "line_sha256_16": "3539ace154534ca5",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/agentic_immune.py",
+      "word": "simulate_poisoning",
+      "line_sha256_16": "60d1e416af57e881",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/agentic_immune.py",
+      "word": "simulate_poisoning",
+      "line_sha256_16": "b5f85b84c78ba9e6",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/agentic_immune.py",
+      "word": "simulate_poisoning",
+      "line_sha256_16": "c1712911a8bb3727",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/agentic_immune.py",
+      "word": "simulated_in_transit_modification",
+      "line_sha256_16": "b5f85b84c78ba9e6",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/agentic_immune.py",
+      "word": "simulated_injection",
+      "line_sha256_16": "27b059c74f196800",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/agentic_immune.py",
+      "word": "simulated_injection",
+      "line_sha256_16": "2e266de9c0227bdf",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/agentic_immune.py",
+      "word": "simulated_injection",
+      "line_sha256_16": "5b3dc9f78e202419",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/defense_frontiers.py",
+      "word": "simulated_cyber_physical_strike",
+      "line_sha256_16": "0d69a12e4f8c769f",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/defense_frontiers.py",
+      "word": "simulated_cyber_physical_strike",
+      "line_sha256_16": "0f6180d164b4e6d8",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/defense_frontiers.py",
+      "word": "simulated_cyber_physical_strike",
+      "line_sha256_16": "511c2c9507e29d33",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/defense_frontiers.py",
+      "word": "simulated_cyber_physical_strike",
+      "line_sha256_16": "6ba013d51180cf90",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/defense_frontiers.py",
+      "word": "simulated_cyber_physical_strike",
+      "line_sha256_16": "7f6416f5760d011f",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/defense_frontiers.py",
+      "word": "simulated_cyber_physical_strike",
+      "line_sha256_16": "86901c4045caba43",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/defense_frontiers.py",
+      "word": "simulation",
+      "line_sha256_16": "a2a4590bad153603",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/defense_frontiers.py",
+      "word": "simulation",
+      "line_sha256_16": "a3febc3beda251fc",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/defense_frontiers.py",
+      "word": "synthetic",
+      "line_sha256_16": "b878c3addbe4a51b",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/hardware_t_isa.py",
+      "word": "simulated",
+      "line_sha256_16": "d9140287432abaaf",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/holographic_qec.py",
+      "word": "simulated",
+      "line_sha256_16": "ce93f2d30937c3d6",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/holographic_qec.py",
+      "word": "simulation",
+      "line_sha256_16": "c91862fb6054542c",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/millennium_unification.py",
+      "word": "simulated",
+      "line_sha256_16": "23e12db307861793",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/millennium_unification.py",
+      "word": "simulated",
+      "line_sha256_16": "39fe2188ad78d8da",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/orbital_mesh.py",
+      "word": "simulate_space_weather_and_jamming",
+      "line_sha256_16": "f4939d850caa91a9",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/orbital_mesh.py",
+      "word": "simulation_latency_ms",
+      "line_sha256_16": "5a5c1257bad41019",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/orbital_mesh.py",
+      "word": "synthetic",
+      "line_sha256_16": "64184eceeb47984c",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/sovereign_settlement.py",
+      "word": "simulate_",
+      "line_sha256_16": "fd43cebfd7971ba7",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/sovereign_settlement.py",
+      "word": "simulate_double_spend",
+      "line_sha256_16": "3ca878ffcdee5a5f",
+      "count": 3
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/sovereign_settlement.py",
+      "word": "simulate_double_spend",
+      "line_sha256_16": "491e22b2bc9c3ad1",
+      "count": 2
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/sovereign_settlement.py",
+      "word": "simulate_double_spend",
+      "line_sha256_16": "498c166f54560cd9",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/sovereign_settlement.py",
+      "word": "simulate_double_spend",
+      "line_sha256_16": "7f626df196960b98",
+      "count": 2
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/sovereign_settlement.py",
+      "word": "simulate_double_spend",
+      "line_sha256_16": "965f7faacb0352e8",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/sovereign_settlement.py",
+      "word": "simulate_inflation",
+      "line_sha256_16": "137f932f2ebed327",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/sovereign_settlement.py",
+      "word": "simulate_inflation",
+      "line_sha256_16": "2aca1315782749b3",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/sovereign_settlement.py",
+      "word": "simulate_inflation",
+      "line_sha256_16": "c7b0171750a3845e",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/sovereign_settlement.py",
+      "word": "simulate_unbacked_inflation",
+      "line_sha256_16": "22dbde7f5b426ddf",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/sovereign_settlement.py",
+      "word": "simulate_unbacked_inflation",
+      "line_sha256_16": "74fbc09e4899a3c0",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/sovereign_settlement.py",
+      "word": "simulate_unbacked_inflation",
+      "line_sha256_16": "c33b1d97aa7b7dbb",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/zk_neural.py",
+      "word": "placeholder",
+      "line_sha256_16": "5bd22a6436210dce",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/zk_neural.py",
+      "word": "simulate_tampering",
+      "line_sha256_16": "0b62437bf0cab626",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/zk_neural.py",
+      "word": "simulate_tampering",
+      "line_sha256_16": "108bb56244fbe98d",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/zk_neural.py",
+      "word": "simulate_tampering",
+      "line_sha256_16": "2e0158ba9330e0b4",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/zk_neural.py",
+      "word": "simulate_tampering",
+      "line_sha256_16": "c4d40255780ff4bb",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/al_haras/zk_neural.py",
+      "word": "simulation",
+      "line_sha256_16": "c4d40255780ff4bb",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/kms.py",
+      "word": "placeholder",
+      "line_sha256_16": "8329ef87680fd23d",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/kms.py",
+      "word": "placeholder",
+      "line_sha256_16": "92eea5a7adbdea4e",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/kms.py",
+      "word": "placeholder",
+      "line_sha256_16": "fe0c9b6542b911a7",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/signers.py",
+      "word": "placeholder",
+      "line_sha256_16": "49a0a704060b038d",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/security/signers.py",
+      "word": "placeholder",
+      "line_sha256_16": "f3cff06720e52f78",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/instant_provisioning.py",
+      "word": "simulate_concurrent_activations",
+      "line_sha256_16": "03a1e23e42d7560b",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/instant_provisioning.py",
+      "word": "simulating",
+      "line_sha256_16": "a8a5a2cf94ee2e56",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/instant_provisioning.py",
+      "word": "simulation",
+      "line_sha256_16": "0caa47f82d92fd4d",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/instant_provisioning.py",
+      "word": "simulation",
+      "line_sha256_16": "28ed5a37f01e4500",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/instant_provisioning.py",
+      "word": "simulation",
+      "line_sha256_16": "c6b9b306690f2371",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/al_haras.py",
+      "word": "placeholder",
+      "line_sha256_16": "ed21d13afee34dd4",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/al_haras.py",
+      "word": "simulate",
+      "line_sha256_16": "b45526c8aaf05e2d",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/al_haras.py",
+      "word": "simulate",
+      "line_sha256_16": "cd17c5a29dfd329c",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/al_haras.py",
+      "word": "simulate_backdoor",
+      "line_sha256_16": "108d6bb91480fa51",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/al_haras.py",
+      "word": "simulate_backdoor",
+      "line_sha256_16": "dd5aaa4da07dfc3b",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/al_haras.py",
+      "word": "simulate_defense_frontier",
+      "line_sha256_16": "50d928c2167f6514",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/al_haras.py",
+      "word": "simulate_double_spend",
+      "line_sha256_16": "0c2b78ac6c9d5088",
+      "count": 2
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/al_haras.py",
+      "word": "simulate_double_spend",
+      "line_sha256_16": "c5cfae5d98fdeb31",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/al_haras.py",
+      "word": "simulate_hostile_strike",
+      "line_sha256_16": "777995eff03f7a64",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/al_haras.py",
+      "word": "simulate_hostile_strike",
+      "line_sha256_16": "84e58b287d89f610",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/al_haras.py",
+      "word": "simulate_hostile_strike",
+      "line_sha256_16": "ea3286fe7c2d5d02",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/al_haras.py",
+      "word": "simulate_orbital_mesh",
+      "line_sha256_16": "19e6ac9758d31f58",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/al_haras.py",
+      "word": "simulate_poisoning",
+      "line_sha256_16": "00f42a0224ccba5a",
+      "count": 2
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/al_haras.py",
+      "word": "simulate_poisoning",
+      "line_sha256_16": "06bd10b12d5971fb",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/al_haras.py",
+      "word": "simulate_space_weather_and_jamming",
+      "line_sha256_16": "a20377f55ce0ad7c",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/al_haras.py",
+      "word": "simulate_tampering",
+      "line_sha256_16": "108d6bb91480fa51",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/al_haras.py",
+      "word": "simulated_cyber_physical_strike",
+      "line_sha256_16": "777995eff03f7a64",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/al_haras.py",
+      "word": "simulation",
+      "line_sha256_16": "1f91073a67c02ef8",
+      "count": 2
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/ciaas.py",
+      "word": "simulate",
+      "line_sha256_16": "2cfb4b8d26ce4161",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/ciaas.py",
+      "word": "simulate_concurrent_activations",
+      "line_sha256_16": "c2084114099235b2",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/ciaas.py",
+      "word": "simulate_instant_onboarding_load",
+      "line_sha256_16": "06e8386c8f019b5b",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/ciaas.py",
+      "word": "simulator",
+      "line_sha256_16": "893d495047a89ad7",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/connectors.py",
+      "word": "simulate_adversarial",
+      "line_sha256_16": "2bbc466d65d86218",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/connectors.py",
+      "word": "simulate_adversarial",
+      "line_sha256_16": "bc8262fb9886eff5",
+      "count": 2
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/mining_admin.py",
+      "word": "simulate",
+      "line_sha256_16": "296b460822864749",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/mining_admin.py",
+      "word": "simulate_patroclus_session",
+      "line_sha256_16": "d124a9b0a2cc38d8",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/mining_admin.py",
+      "word": "simulatepatroclusrequest",
+      "line_sha256_16": "1bec69efdb11ac07",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/service/routers/mining_admin.py",
+      "word": "simulatepatroclusrequest",
+      "line_sha256_16": "211f1e6f484cc579",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/storage/connectors.py",
+      "word": "simulate_adversarial",
+      "line_sha256_16": "50b2bccfeb40c4b5",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/storage/connectors.py",
+      "word": "simulate_adversarial",
+      "line_sha256_16": "6a2a0842cc176211",
+      "count": 2
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/storage/connectors.py",
+      "word": "simulate_adversarial",
+      "line_sha256_16": "e62e1d0e5f4a8114",
+      "count": 2
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/tensor/enhanced_representation.py",
+      "word": "fake",
+      "line_sha256_16": "5f40e4690372f7f2",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/tensor/experiments.py",
+      "word": "simulation",
+      "line_sha256_16": "69967b2228c1916d",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/tensor/experiments.py",
+      "word": "simulator",
+      "line_sha256_16": "08824ea4506f2d29",
+      "count": 1
+    },
+    {
+      "category": "simulation",
+      "path": "src/chronus/tensor/peps.py",
+      "word": "placeholder",
+      "line_sha256_16": "5577b0dee254814d",
+      "count": 1
+    }
+  ]
+}

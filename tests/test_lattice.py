@@ -21,6 +21,8 @@ from chronus.backends.opencl_pv import (
 from chronus.backends.lattice_workload import wire_integer
 from chronus.backends.limbs import decode_int256, encode_int256
 
+pytestmark = pytest.mark.simulated
+
 
 def test_q5_conversion_is_exact_for_fractional_coefficients():
     element = PhiElement.from_q5(Fraction(3, 7), Fraction(2, 5))

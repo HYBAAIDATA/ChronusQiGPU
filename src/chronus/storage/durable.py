@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Iterator
 
 from chronus.config import runtime_bounds
+from chronus.storage import self_heal
 from chronus.storage.phyllotaxis import PhyllotaxisCoordinate, phyllotaxis_coordinate
 from chronus.storage.theseus import StorageIntegrityError, TenantStateJournalEntry, TheseusRecord
 
@@ -41,7 +42,9 @@ class DurableTheseusService:
     concern and is not inferred from this class.
     """
 
-    def __init__(self, path: str, lane_count: int | None = None) -> None:
+    def __init__(
+        self, path: str, lane_count: int | None = None, *, self_healing: bool | None = None
+    ) -> None:
         if not path or not isinstance(path, str):
             raise ValueError("path must be a non-empty string")
         if lane_count is None:
@@ -50,8 +53,16 @@ class DurableTheseusService:
             raise ValueError("lane_count must be a positive integer")
         self.path = str(Path(path))
         self.lane_count = lane_count
+        if self_healing is None:
+            self_healing = self_heal.self_healing_enabled()
+        if not isinstance(self_healing, bool):
+            raise ValueError("self_healing must be a bool")
+        self.self_healing = self_healing
+        self.self_healing_max_bytes = self_heal.self_healing_max_bytes()
         Path(self.path).parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.RLock()
+        self._heal_locks: dict[str, list] = {}  # object_id -> [lock, waiters]
+        self._heal_locks_guard = threading.Lock()
         self._bootstrap()
         self.verify_store()
 
@@ -116,6 +127,25 @@ class DurableTheseusService:
                     PRIMARY KEY (tenant_id, sequence),
                     FOREIGN KEY (object_id) REFERENCES objects(object_id)
                 );
+                CREATE TABLE IF NOT EXISTS object_parity (
+                    object_id TEXT PRIMARY KEY,
+                    scheme TEXT NOT NULL,
+                    n INTEGER NOT NULL,
+                    k INTEGER NOT NULL,
+                    parity BLOB NOT NULL,
+                    parity_sha256 TEXT NOT NULL,
+                    FOREIGN KEY (object_id) REFERENCES objects(object_id)
+                );
+                CREATE TABLE IF NOT EXISTS self_heal_events (
+                    event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    object_id TEXT NOT NULL,
+                    kind TEXT NOT NULL,
+                    corrected_bytes INTEGER NOT NULL,
+                    detail TEXT NOT NULL,
+                    timestamp_ns INTEGER NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS self_heal_events_object
+                    ON self_heal_events(object_id, event_id);
                 """
             )
             row = db.execute(
@@ -180,6 +210,17 @@ class DurableTheseusService:
     def store(self, tenant_id: str, payload: bytes, scale_index: int = 0) -> TheseusRecord:
         self._validate_payload(tenant_id, payload, scale_index)
         object_id = hashlib.sha256(payload).hexdigest()
+        # Encode parity before taking the write lock so writers are not stalled,
+        # unless the content already has a sidecar (re-storing existing content);
+        # _ensure_parity re-encodes under the lock only if that sidecar is damaged.
+        parity = None
+        if self.self_healing and len(payload) <= self.self_healing_max_bytes:
+            with self._connect() as db:
+                has_sidecar = db.execute(
+                    "SELECT 1 FROM object_parity WHERE object_id=?", (object_id,)
+                ).fetchone() is not None
+            if not has_sidecar:
+                parity = self_heal.encode_parity(payload)
         with self._lock, self._connect(immediate=True) as db:
             existing = db.execute(
                 "SELECT * FROM records WHERE tenant_id=? AND object_id=?",
@@ -193,6 +234,7 @@ class DurableTheseusService:
                     raise StorageIntegrityError(
                         f"authoritative content for {object_id} failed equality verification"
                     )
+                self._ensure_parity(db, object_id, payload, parity)
                 return self._record_from_row(existing)
 
             object_row = db.execute(
@@ -207,6 +249,7 @@ class DurableTheseusService:
                 raise StorageIntegrityError(
                     f"existing content for {object_id} failed digest verification"
                 )
+            self._ensure_parity(db, object_id, payload, parity)
 
             seq = int(
                 db.execute(
@@ -271,8 +314,183 @@ class DurableTheseusService:
             raise StorageIntegrityError(f"content for {object_id} is unavailable")
         payload = bytes(row["payload"])
         if hashlib.sha256(payload).hexdigest() != object_id:
-            raise StorageIntegrityError(f"content for {object_id} failed digest verification")
+            repaired = self._try_heal(object_id, payload)
+            if repaired is None:
+                raise StorageIntegrityError(f"content for {object_id} failed digest verification")
+            return repaired
         return payload
+
+    # ------------------------------------------------------------------
+    # Bounded self-healing (see chronus.storage.self_heal)
+    # ------------------------------------------------------------------
+
+    def _ensure_parity(
+        self, db: sqlite3.Connection, object_id: str, payload: bytes,
+        precomputed: bytes | None = None,
+    ) -> None:
+        """Write the Reed-Solomon parity sidecar for a verified payload."""
+        if not self.self_healing:
+            return
+        row = db.execute(
+            "SELECT scheme, n, k, parity, parity_sha256 FROM object_parity WHERE object_id=?",
+            (object_id,),
+        ).fetchone()
+        if row is not None and self._sidecar_intact(row):
+            return
+        # New protection honours the configured limit; an existing sidecar is
+        # maintained regardless (up to the encoder limit) so lowering the limit
+        # never strands a damaged sidecar that is still used for repair.
+        limit = self_heal.encoder_max_bytes() if row is not None else self.self_healing_max_bytes
+        if len(payload) > limit:
+            return
+        parity = precomputed if precomputed is not None else self_heal.encode_parity(payload)
+        db.execute(
+            "INSERT OR REPLACE INTO object_parity(object_id,scheme,n,k,parity,parity_sha256) "
+            "VALUES(?,?,?,?,?,?)",
+            (object_id, self_heal.SCHEME, self_heal.RS_N, self_heal.RS_K,
+             sqlite3.Binary(parity), hashlib.sha256(parity).hexdigest()),
+        )
+        if row is not None:
+            self._log_heal(db, object_id, "PARITY_REGENERATED", 0, "parity sidecar failed verification")
+
+    @staticmethod
+    def _sidecar_intact(row: sqlite3.Row) -> bool:
+        return (self_heal.sidecar_metadata_valid(row["scheme"], row["n"], row["k"])
+                and hashlib.sha256(bytes(row["parity"])).hexdigest() == row["parity_sha256"])
+
+    @staticmethod
+    def _log_heal(db: sqlite3.Connection, object_id: str, kind: str, corrected: int, detail: str) -> None:
+        if kind == "UNREPAIRABLE":
+            last = db.execute(
+                "SELECT kind, detail FROM self_heal_events WHERE object_id=? "
+                "ORDER BY event_id DESC LIMIT 1",
+                (object_id,),
+            ).fetchone()
+            if last is not None and last["kind"] == kind and last["detail"] == detail:
+                return  # same failure already recorded; don't grow the log on retries
+        db.execute(
+            "INSERT INTO self_heal_events(object_id,kind,corrected_bytes,detail,timestamp_ns) "
+            "VALUES(?,?,?,?,?)",
+            (object_id, kind, corrected, detail, time.time_ns()),
+        )
+
+    def _try_heal(self, object_id: str, corrupted: bytes) -> bytes | None:
+        """Repair a payload that failed its content address, or return None.
+
+        Accepts the repair only if the corrected bytes hash to ``object_id``;
+        then writes them back and records a REPAIRED event. Failed attempts are
+        recorded as UNREPAIRABLE so the operator can see them.
+
+        Decoding (which can take tens of seconds for a large, heavily damaged
+        object) runs outside any write transaction and outside the service
+        lock. The write-back then re-reads the row under ``BEGIN IMMEDIATE``
+        and commits only if the payload and sidecar are unchanged.
+        """
+        if not self.self_healing:
+            return None
+        # One decode per object per process: concurrent callers wait, then see
+        # the repaired row (or the recorded failure) instead of re-decoding.
+        with self._heal_locks_guard:
+            entry = self._heal_locks.setdefault(object_id, [threading.Lock(), 0])
+            entry[1] += 1
+        try:
+            with entry[0]:
+                return self._try_heal_locked(object_id)
+        finally:
+            with self._heal_locks_guard:
+                entry[1] -= 1
+                if entry[1] == 0:
+                    self._heal_locks.pop(object_id, None)  # no lock kept after the last caller
+
+    def _try_heal_locked(self, object_id: str) -> bytes | None:
+        # 1. Snapshot the damaged payload and its sidecar (read transaction).
+        with self._connect() as db:
+            current = db.execute(
+                "SELECT payload, size_bytes FROM objects WHERE object_id=?", (object_id,)
+            ).fetchone()
+            parity_row = db.execute(
+                "SELECT scheme, n, k, parity, parity_sha256 FROM object_parity WHERE object_id=?",
+                (object_id,),
+            ).fetchone()
+        if current is None:
+            return None
+        payload = bytes(current["payload"])
+        if hashlib.sha256(payload).hexdigest() == object_id:
+            return payload  # healed concurrently
+        failure: str | None = None
+        outcome = None
+        if parity_row is None:
+            failure = "no parity sidecar"
+        elif not self._sidecar_intact(parity_row):
+            failure = "parity sidecar failed verification"
+        else:
+            # 2. Decode with no lock or transaction held.
+            outcome = self_heal.heal_payload(
+                payload, object_id, bytes(parity_row["parity"]), int(current["size_bytes"]),
+                n=int(parity_row["n"]), k=int(parity_row["k"]),
+            )
+            if not outcome.ok:
+                failure = outcome.reason
+        # 3. Short write transaction: recheck, then commit repair or audit row.
+        with self._lock, self._connect(immediate=True) as db:
+            now = db.execute(
+                "SELECT payload FROM objects WHERE object_id=?", (object_id,)
+            ).fetchone()
+            if now is None:
+                return None
+            now_payload = bytes(now["payload"])
+            if hashlib.sha256(now_payload).hexdigest() == object_id:
+                return now_payload  # healed concurrently
+            if failure is not None:
+                self._log_heal(db, object_id, "UNREPAIRABLE", 0, failure)
+                return None
+            now_parity = db.execute(
+                "SELECT parity_sha256 FROM object_parity WHERE object_id=?", (object_id,)
+            ).fetchone()
+            if (now_payload != payload or now_parity is None
+                    or now_parity["parity_sha256"] != parity_row["parity_sha256"]):
+                return None  # changed underneath us; caller fails closed, a retry re-decodes
+            db.execute(
+                "UPDATE objects SET payload=? WHERE object_id=?",
+                (sqlite3.Binary(outcome.repaired), object_id),
+            )
+            self._log_heal(
+                db, object_id, "REPAIRED", len(outcome.corrected_positions),
+                "Reed-Solomon RS(%d,%d) over GF(257); SHA-256 verified" % (parity_row["n"], parity_row["k"]),
+            )
+            return outcome.repaired
+
+    def self_heal_events(self) -> list[dict]:
+        """Self-healing audit trail, oldest first."""
+        with self._connect() as db:
+            rows = db.execute(
+                "SELECT event_id, object_id, kind, corrected_bytes, detail, timestamp_ns "
+                "FROM self_heal_events ORDER BY event_id"
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def self_healing_status(self) -> dict:
+        with self._connect() as db:
+            protected = int(db.execute("SELECT COUNT(*) FROM object_parity").fetchone()[0])
+            objects = int(db.execute("SELECT COUNT(*) FROM objects").fetchone()[0])
+            repairs = int(db.execute(
+                "SELECT COUNT(*) FROM self_heal_events WHERE kind='REPAIRED'"
+            ).fetchone()[0])
+            failures = int(db.execute(
+                "SELECT COUNT(DISTINCT object_id) FROM self_heal_events WHERE kind='UNREPAIRABLE'"
+            ).fetchone()[0])
+        return {
+            "enabled": self.self_healing,
+            "scheme": self_heal.SCHEME,
+            "code": f"RS({self_heal.RS_N},{self_heal.RS_K}) over GF(257)",
+            "correctable_bytes_per_block": (self_heal.RS_N - self_heal.RS_K) // 2,
+            "block_bytes": self_heal.RS_K,
+            "max_protected_bytes": self.self_healing_max_bytes,
+            "objects": objects,
+            "protected_objects": protected,
+            "repairs": repairs,
+            "unrepairable_objects": failures,
+        }
 
     def scale_record(self, tenant_id: str, object_id: str, increment: int) -> TheseusRecord:
         if not isinstance(increment, int) or isinstance(increment, bool) or increment < 0:
@@ -462,12 +680,21 @@ class DurableTheseusService:
             if foreign_key_errors:
                 raise StorageIntegrityError("THESEUS durable foreign-key integrity failed")
             objects = db.execute("SELECT object_id,payload FROM objects").fetchall()
-            for row in objects:
-                payload = bytes(row["payload"])
-                if hashlib.sha256(payload).hexdigest() != row["object_id"]:
-                    raise StorageIntegrityError(
-                        f"durable content {row['object_id']} failed digest verification"
-                    )
+            damaged = [
+                (str(row["object_id"]), bytes(row["payload"]))
+                for row in objects
+                if hashlib.sha256(bytes(row["payload"])).hexdigest() != row["object_id"]
+            ]
+        # Repair outside the read transaction; fail closed on the first object
+        # that cannot be repaired within bounds.
+        for object_id, payload in damaged:
+            if self._try_heal(object_id, payload) is None:
+                raise StorageIntegrityError(
+                    f"durable content {object_id} failed digest verification"
+                )
+        if self.self_healing:
+            self._verify_parity_sidecars()
+        with self._connect() as db:
             records = db.execute(
                 "SELECT r.*, o.size_bytes AS object_size "
                 "FROM records AS r JOIN objects AS o USING (object_id)"
@@ -487,6 +714,24 @@ class DurableTheseusService:
                 raise StorageIntegrityError(
                     f"THESEUS journal continuity failed for tenant {tenant_id}"
                 )
+
+    def _verify_parity_sidecars(self) -> None:
+        """Regenerate parity whose own digest fails, from verified payloads."""
+        with self._connect() as db:
+            bad = [
+                str(row["object_id"])
+                for row in db.execute(
+                    "SELECT object_id, scheme, n, k, parity, parity_sha256 FROM object_parity"
+                ).fetchall()
+                if not self._sidecar_intact(row)
+            ]
+        for object_id in bad:
+            with self._lock, self._connect(immediate=True) as db:
+                row = db.execute(
+                    "SELECT payload FROM objects WHERE object_id=?", (object_id,)
+                ).fetchone()
+                if row is not None and hashlib.sha256(bytes(row["payload"])).hexdigest() == object_id:
+                    self._ensure_parity(db, object_id, bytes(row["payload"]))
 
     def checkpoint(self) -> dict:
         # sqlite3's connection context manager commits or rolls back the
@@ -533,6 +778,7 @@ class DurableTheseusService:
             "path": str(Path(self.path).resolve()),
             "schema_version": _SCHEMA_VERSION,
             "integrity": "PASS",
+            "self_healing": self.self_healing_status(),
             "stats": self.stats(),
             "checkpoint": self.checkpoint(),
         }

@@ -3,12 +3,25 @@
 GitHub Actions billing on hosted runners is bypassed for the **critical path**
 by routing those jobs to a machine labelled `[self-hosted, windows]`.
 
-## Accepted trade-off
+## Runner selection (hosted fallback)
 
-Four critical gates run on **one unmanaged box**. If that laptop sleeps, goes
-offline, or the runner service stops, those jobs queue and the PR is
-**unmergeable** until the machine is back — there is no hosted fallback behind
-the self-hosted label. That is the accepted trade for now.
+The three critical-path jobs listed below read their `runs-on` labels from the repository variable
+`CHRONUS_CRITICAL_RUNNER` (a JSON array):
+
+```yaml
+runs-on: ${{ fromJSON(vars.CHRONUS_CRITICAL_RUNNER || '["ubuntu-latest"]') }}
+```
+
+* Variable **unset** (default): jobs run on GitHub-hosted `ubuntu-latest`.
+* Variable set to `["self-hosted","windows"]` (Settings → Secrets and
+  variables → Actions → Variables): jobs route to the self-hosted machine
+  described below.
+
+Previously the label was hard-coded to `[self-hosted, windows]`. With no runner
+registered every push and PR queued for 24 h and then failed, so `main` could
+never go green. Only set the variable while a persistent runner is online —
+if that machine sleeps, goes offline, or the service stops, the jobs queue and
+the PR is **unmergeable** until it is back.
 
 ## Critical-path jobs only
 
@@ -16,24 +29,27 @@ In `.github/workflows/ci.yml` these jobs use the self-hosted label:
 
 - `tests` (pytest)
 - `quality-and-package` (lint / compile / package)
-- `purity-gate` (mathematical purity + mechanism seal + attestation gates)
 - `offline-stratum-smoke` (fake-pool accept round-trip)
+
+`purity-gate` (mathematical purity + mechanism seal + attestation gates) runs on
+hosted `ubuntu-latest` and is **not** moved by `CHRONUS_CRITICAL_RUNNER`.
 
 All other workflow jobs remain on `ubuntu-latest`. Do **not** attach the
 self-hosted label to the full 50+ check matrix — one machine serialises those
 jobs and turns every PR into a long queue.
 
-Each critical-path job also has:
+Each critical-path job selects its runner with:
 
 ```yaml
-if: >-
-  github.event_name != 'pull_request'
-  || github.event.pull_request.head.repo.full_name == github.repository
+runs-on: ${{ fromJSON((github.event_name == 'pull_request'
+  && github.event.pull_request.head.repo.full_name != github.repository)
+  && '["ubuntu-latest"]' || vars.CHRONUS_CRITICAL_RUNNER || '["ubuntu-latest"]') }}
 ```
 
-so **fork PRs never run on the self-hosted machine**, while `push` and
-`workflow_dispatch` still do (the left clause short-circuits before
-`pull_request` is read). Jobs also set `timeout-minutes` and the workflow uses
+so **fork PRs never run on the self-hosted machine** but still execute the
+suite on GitHub-hosted `ubuntu-latest` (a skipped critical job is not passing
+evidence; `ci-required` fails on any non-success result), while `push`,
+`workflow_dispatch` and same-repository PRs use the configured runner. Jobs also set `timeout-minutes` and the workflow uses
 `concurrency.cancel-in-progress` so a hung or stale run cannot occupy the only
 slot forever.
 
@@ -44,9 +60,9 @@ slot forever.
 | **Python 3.13** on PATH (and via `actions/setup-python`) | Critical jobs pin 3.13; `runner_doctor` fails below that |
 | **Git for Windows** on PATH | checkout and local evidence binding |
 | **Work directory outside OneDrive** | Sync client file locks mid-build; import benchmarks become non-comparable |
-| Runner registered as a **persistent** service | One `--ephemeral` run only covers the first of four jobs |
+| Runner registered as a **persistent** service | One `--ephemeral` run only covers the first of three jobs |
 
-## Register a runner (persistent — required for four jobs)
+## Register a runner (persistent — required for three jobs)
 
 Put `_work` on a local disk path, **not** under `OneDrive`:
 
@@ -75,7 +91,7 @@ mystery timeout.
 ### Optional: ephemeral loop (advanced)
 
 If you prefer ephemeral runners, you must **re-register after every job** —
-one `--ephemeral` `./run.cmd` is not enough for four jobs:
+one `--ephemeral` `./run.cmd` is not enough for three jobs:
 
 ```powershell
 while ($true) {
@@ -97,8 +113,9 @@ code: that pattern runs with base-repo privileges and secrets (the “pwn
 request” anti-pattern). Keep fork validation on `ubuntu-latest` hosted
 runners, or require a push to a branch in this repository after review.
 
-Until a self-hosted runner with the `windows` label is online, those four jobs
-will stay queued for same-repo events — that is expected, not a billing failure.
+While `CHRONUS_CRITICAL_RUNNER` points at the self-hosted labels and no runner
+with the `windows` label is online, those three jobs stay queued for same-repo
+events. Unset the variable to fall back to hosted `ubuntu-latest`.
 
 ## Ops note
 

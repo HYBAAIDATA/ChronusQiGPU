@@ -5,6 +5,8 @@ import pytest
 from chronus.backends.lattice import LatticeOverflowError, PhiElement, phi_power
 from chronus.execution import ExecutionRouter
 
+pytestmark = pytest.mark.real
+
 
 class FixtureBackend:
     name = "fixture"

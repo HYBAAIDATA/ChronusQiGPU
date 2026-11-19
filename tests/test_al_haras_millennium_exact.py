@@ -29,6 +29,8 @@ from chronus.security.al_haras import (
     UltrametricMemorySandbox,
 )
 
+pytestmark = pytest.mark.simulated
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MODULES = [
     REPO_ROOT / "src/chronus/security/al_haras/millennium_security.py",

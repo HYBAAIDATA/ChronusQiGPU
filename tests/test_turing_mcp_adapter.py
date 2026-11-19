@@ -30,6 +30,9 @@ from turing import (
     QuantumState,
     tensor_operators,
 )
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 def _bell():

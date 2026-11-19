@@ -8,6 +8,8 @@ from chronus.execution.pv_scale_fleet import PVFieldScaleKernel
 from chronus.fleet.errors import KernelError
 from chronus.fleet import FleetExecutor, WorkUnit
 
+pytestmark = pytest.mark.real
+
 
 def recurrence(payload, index):
     pairs = list(struct.iter_unpack('<HH', payload))

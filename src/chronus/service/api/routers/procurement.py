@@ -176,9 +176,10 @@ async def admit_route(
     try:
         _ledger_singleton().record(result, tenant_id=principal.tenant_id)
     except OSError:
+        # %r keeps a client-supplied identifier on one log line (no CR/LF forging).
         LOG.exception(
-            "utilisation ledger write failed for %s; retry will re-record",
-            body.reservation_id,
+            "utilisation ledger write failed for %r; retry will re-record",
+            body.reservation_id.replace("\r", "").replace("\n", ""),
         )
     return result
 

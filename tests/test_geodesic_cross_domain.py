@@ -8,6 +8,8 @@ from chronus.geodesic.benchmarks import benchmark, h4_graph_order, run_trial
 from chronus.geodesic.workbench import MathematicalWorkbench
 from turing.exact.geometry.hilbert import SparseState, TensorHilbert
 
+pytestmark = pytest.mark.real
+
 
 def test_sat_exact_benchmark_parity_and_measured_data():
     instance = SATProblem(3, ((1,2), (-1,3), (-2,-3)))

@@ -35,3 +35,5 @@ tests/test_al_haras_scenarios.py::TestWrongPassphraseRejected::test_wrong_passph
 # --- tests/test_wiring.py ---
 #
 # --- tests/test_repository_layout.py ---
+#
+# --- tests/test_falsifiable_tensor.py ---

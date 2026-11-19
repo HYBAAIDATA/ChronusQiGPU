@@ -8,6 +8,8 @@ import pytest
 
 from chronus.tensor.exact_rational_tt import ExactRationalTensorTrain as TT
 
+pytestmark = pytest.mark.real
+
 
 def test_exact_high_rank_nonsymmetric():
     source = list(range(24))

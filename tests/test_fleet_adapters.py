@@ -22,6 +22,9 @@ from chronus.fleet.canonical import deterministic_bytes, sha256_hex
 from chronus.fleet.errors import DeviceUnavailableError, SelfTestFailedError
 from chronus.fleet.metal import MetalAdapter, MLXEngine
 from chronus.fleet.opencl import OpenCLAdapter
+import pytest
+
+pytestmark = pytest.mark.simulated
 
 
 def builtin():

@@ -5,6 +5,9 @@ import os
 from unittest.mock import patch
 from fractions import Fraction
 from chronus.stratum.gateway import StratumGateway
+import pytest
+
+pytestmark = pytest.mark.simulated
 
 
 class TestGateway(unittest.TestCase):

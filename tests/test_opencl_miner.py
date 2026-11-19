@@ -18,6 +18,8 @@ from chronus.execution.opencl_sha256d import (
     _KERNEL_PATH,
 )
 
+pytestmark = pytest.mark.simulated
+
 
 def _kernel_twin(header: bytes, nonce: int) -> bytes:
     """CPU twin of sha256d_search.cl: identical midstate decomposition."""

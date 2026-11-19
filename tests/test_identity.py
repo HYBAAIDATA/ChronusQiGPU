@@ -20,6 +20,8 @@ from chronus.identity import (
     _swap,
 )
 
+pytestmark = pytest.mark.real
+
 
 RECORD = {
     "claim": "CO-014",
