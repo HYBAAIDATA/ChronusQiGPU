@@ -1,0 +1,34 @@
+{
+  "schema": "chronus.recovery-closeout-evidence/1",
+  "assignment_id": "CHRN-RECOVERY-20261119",
+  "baseline_sha": "93d6068f2c668f3f1106a9e6df204f37033fc163",
+  "working_ref": "fix/chrn-v1-closure",
+  "original_brief": "Owner-supplied CHRN-ECC-V11 review: reuse existing RS257, interleave, protected dispatch, v5/v6, drill and committed evidence",
+  "decisions": [
+    "Nine-bit packed GF257 parity; 400 bytes full body; rotate parity lanes for tail coverage",
+    "Reject 65-byte systematic burst; no universal upper physical-burst rejection claim",
+    "Existing XOR/THESEUS and AL HARAS code unchanged"
+  ],
+  "measurement": {
+    "source_commit": "a83f5f0b892e1bac9e818bcc4b525b12f502d113",
+    "evidence_path": "evidence/capacity/chrn_recovery_e00b29a57362e6a5812f11e9b1462808cb38e7c3eddb4e3ef2e3bd66b2c9a120.json",
+    "evidence_sha256": "e00b29a57362e6a5812f11e9b1462808cb38e7c3eddb4e3ef2e3bd66b2c9a120",
+    "workflow_run": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44594052261",
+    "job": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44594052261/job/135807458725",
+    "focused_tests_passed": 49,
+    "measured_trials": 131,
+    "successful_verified_recoveries": 67,
+    "expected_rejections": 64,
+    "scope": "deterministic software fault injection; no physical qualification",
+    "independent_qc": "PENDING",
+    "profile_ratification": "PENDING"
+  },
+  "verdicts": {
+    "implementation": "EXECUTED",
+    "software_acceptance": "PASS",
+    "evidence": "COMMITTED_IN_THIS_CHANGE",
+    "owner_ratification": "PENDING",
+    "qc": "PENDING",
+    "production": "NOT_QUALIFIED"
+  }
+}

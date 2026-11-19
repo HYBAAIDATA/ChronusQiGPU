@@ -59,3 +59,7 @@ The drill is a software fault-injection measurement, not customer capacity
 or deployed recovery. Commit the exact measured JSON under evidence/capacity
 with its byte SHA-256 after observing the run; independent QC and owner
 ratification of the corrected wire contract remain separate.
+
+## Executed software recovery evidence
+
+Exact source commit `a83f5f0b892e1bac9e818bcc4b525b12f502d113`, [recovery job](https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44594052261/job/135807458725): 49 focused tests passed, 67 verified recoveries (64 systematic, one mixed, two parity), 64 expected systematic rejections; all 131 trial outcomes matched. The measured JSON is committed at [e00b29a57362e6a5812f11e9b1462808cb38e7c3eddb4e3ef2e3bd66b2c9a120](../../evidence/capacity/chrn_recovery_e00b29a57362e6a5812f11e9b1462808cb38e7c3eddb4e3ef2e3bd66b2c9a120.json) and independently byte-hashed from the raw runner log before commit. It records timing and failure positions; physical sector recovery and customer capacity are not measured. Corrected profile ratification and independent QC remain open.

@@ -23,4 +23,8 @@ Prior findings stay open until exact-commit evidence and independent acceptance 
 
 ## Executable gate
 
-Run `python scripts/ci/check_paradigm_closure.py --output reference-evidence/paradigm-closure.json` from a clean tracked checkout. The gate runs both focused test files, requires all four sentinels and no skips, checks source purity, validates the commit-bound findings register and writes a verifiable content-only envelope. It exits nonzero while any closure findings remain open. `--report-only` permits open findings in a CI evidence artifact, but still fails any missing/skipped/failing test or purity violation. The envelope is not production qualification.
+Run `python scripts/ci/check_paradigm_closure.py --output reference-evidence/paradigm-closure.json` from a clean tracked checkout. The gate runs all three focused test files, requires the four original sentinels plus protected-frame recovery and no skips, checks source purity, validates the commit-bound findings register and writes a verifiable content-only envelope. It exits nonzero while any closure findings remain open. `--report-only` permits open findings in a CI evidence artifact, but still fails any missing/skipped/failing test or purity violation. The envelope is not production qualification.
+
+## Recovery addendum
+
+See [CHRN-RS257 profile](CHRN_RS257_PROFILE.md). The exact-head recovery job passed 49 tests and 131 measured fault cases. [Content-addressed recovery evidence](../../evidence/capacity/chrn_recovery_e00b29a57362e6a5812f11e9b1462808cb38e7c3eddb4e3ef2e3bd66b2c9a120.json). The proposed parameter 2 profile is distinct from discovery ID 1; final ratification and independent QC remain pending.

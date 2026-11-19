@@ -25,7 +25,8 @@
     "src/chronus/storage/chrn_rs257.py",
     "tests/test_chrn_rs257.py",
     "tests/vectors/chrn_rs257_v11.json",
-    "scripts/benchmarks/chrn_recovery_drill.py"
+    "scripts/benchmarks/chrn_recovery_drill.py",
+    "evidence/capacity/chrn_recovery_e00b29a57362e6a5812f11e9b1462808cb38e7c3eddb4e3ef2e3bd66b2c9a120.json"
   ],
   "obligations": [
     {
@@ -50,10 +51,25 @@
       "id": "A3",
       "requirement": "Recovery module (corrupt-block recovery, tested)",
       "execution": "IN_PROGRESS",
-      "technical": "UNAVAILABLE",
+      "technical": "PASS",
       "owner": "OVID / THESEUS",
-      "blocker": "Proposed corrected 400-byte wire profile implemented; exact-head execution artifact, owner ratification and independent QC pending.",
-      "evidence": "docs/storage/CHRN_RS257_PROFILE.md; src/chronus/storage/chrn_rs257.py; tests/test_chrn_rs257.py; scripts/benchmarks/chrn_recovery_drill.py"
+      "blocker": "Owner ratification of wire correction and independent QC pending; not canonical parameter 1 or physical deployment.",
+      "evidence": "docs/storage/CHRN_RS257_PROFILE.md; src/chronus/storage/chrn_rs257.py; tests/test_chrn_rs257.py; scripts/benchmarks/chrn_recovery_drill.py",
+      "technical_scope": "RS257 proposed parameter 2 software fault model only",
+      "measurement": {
+        "source_commit": "a83f5f0b892e1bac9e818bcc4b525b12f502d113",
+        "evidence_path": "evidence/capacity/chrn_recovery_e00b29a57362e6a5812f11e9b1462808cb38e7c3eddb4e3ef2e3bd66b2c9a120.json",
+        "evidence_sha256": "e00b29a57362e6a5812f11e9b1462808cb38e7c3eddb4e3ef2e3bd66b2c9a120",
+        "workflow_run": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44594052261",
+        "job": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44594052261/job/135807458725",
+        "focused_tests_passed": 49,
+        "measured_trials": 131,
+        "successful_verified_recoveries": 67,
+        "expected_rejections": 64,
+        "scope": "deterministic software fault injection; no physical qualification",
+        "independent_qc": "PENDING",
+        "profile_ratification": "PENDING"
+      }
     },
     {
       "id": "A4",
