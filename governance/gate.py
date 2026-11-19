@@ -19,7 +19,8 @@ SCOPE=("golden_ontology","spec/GOLDEN_ONTOLOGY.md","spec/test_vectors.json",
        "formal/check_golden_fold.sh","verify","governance/gate.py",
        "scripts/fold_verify.py","src/chronus/math/golden_nature.py",
        "src/chronus/research/golden_nature_reference.py",
-       "tests/test_golden_nature_exact.py",".github/workflows/golden-ontology.yml","pyproject.toml")
+       "tests/test_golden_nature_exact.py","tests_installed/test_golden_ontology_installed.py",
+       ".github/workflows/golden-ontology.yml","pyproject.toml")
 
 def _sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -81,6 +82,9 @@ def validate(data):
         review.get("state")!="APPROVED" or review.get("commit_id")!=commit or
         review["user"]["login"].casefold()!=reviewer.casefold()):
         raise ValueError("no matching independent GitHub approval")
+    body=review.get("body") or ""
+    if not all(token in body for token in (evidence,rec["spec_sha256"],rec["vectors_sha256"])):
+        raise ValueError("review does not attest the report and exact specification digests")
     return None
 
 def main():

@@ -14,6 +14,9 @@ class ContractionCertificate:
     radius: int
     mu_upper: Fraction
     bound_at_radius: Fraction
+    alpha_polynomial: tuple
+    alpha_root_interval: tuple
+    alpha_exponent: Fraction
 
 class PisotFilter:
     def __init__(self,family="golden",radius=4):
@@ -27,7 +30,8 @@ class PisotFilter:
         total=math.fsum(raw)
         self.kernel=tuple(w/total for w in raw)
         self.certificate=ContractionCertificate(
-            family,radius,self.family.mu_upper,self.family.contraction_bound(radius))
+            family,radius,self.family.mu_upper,self.family.contraction_bound(radius),
+            self.family.polynomial,(lo,hi),self.family.conjugate_power_exponent(radius))
 
     def apply(self,signal):
         if any(type(v) is bool or not math.isfinite(v) for v in signal):

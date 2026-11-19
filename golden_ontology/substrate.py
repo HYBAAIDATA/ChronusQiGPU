@@ -104,6 +104,10 @@ class PVFamily:
     def degree(self):
         return len(self.companion)
 
+    def conjugate_power_exponent(self,k):
+        """Exact descriptor: |mu|max**k is the designated root alpha to this power."""
+        return Fraction(-_nat(k),1 if self.degree==2 else 2)
+
     def contraction_bound(self,k):
         return self.mu_upper**_nat(k)
 
@@ -183,3 +187,10 @@ def generalized_pisano_period(family_name,mod,max_steps=100_000):
         if cur==ident:
             return k
     raise RuntimeError("exact order exceeds search bound")
+
+def generalized_lucas(family_name,n,mod=None):
+    """Exact power sum of all conjugate roots: trace(C_family**n)."""
+    family=get_family(family_name)
+    matrix=mat_pow(family.companion,n,mod)
+    value=sum(matrix[i][i] for i in range(family.degree))
+    return value if mod is None else value%mod

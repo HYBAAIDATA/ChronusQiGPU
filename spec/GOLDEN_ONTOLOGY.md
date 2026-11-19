@@ -52,9 +52,14 @@ conjugate magnitudes respectively: (8/5,5/8), (12/5,5/12), (5/4,9/10),
 (13/9,5/6), (9/5,3/4). Quadratics have conjugate magnitude 1/alpha;
 cubics have negative discriminant and a conjugate complex pair of modulus
 sqrt(1/alpha). Irreducibility follows by rational root test; the sign change
-and discriminant certify existence of the designated root. Bound^radius is
+and discriminant certify existence of the designated root. ContractionCertificate specifies the actual algebraic conjugate power exactly as
+the designated positive root alpha of the recorded polynomial and isolating
+rational interval raised to exponent -radius (degree 2) or -radius/2 (degree 3).
+The additional rational Bound^radius is
 exact rational upper bound, not an exact evaluation of the algebraic conjugate
 magnitude and not a statistical noise-filter guarantee. Other family IDs rejected.
+The generalized Lucas power sum is trace(C^n), including for cubic families;
+its characteristic-polynomial recurrence is verified by the conformance suite.
 Generalized period is the least positive matrix order modulo m; non-golden
 or non-power-of-two computation is bounded enumeration and explicitly fails
 when unavailable. No universal closed form or constant-time order claim.
@@ -78,7 +83,11 @@ Byte-compare normative JSON outcomes, including negative cases; replay the
 Python suite and Lean checker; independently inspect minimal-order argument,
 purity, error paths and authority boundaries. Record reviewer identity, commit,
 spec/vector digests, commands, aggregate and individual outputs, mismatch count,
-and signed/authorized disposition. An executor run or CodeRabbit review is
+and signed/authorized disposition. The designated independent reviewer must be
+provisioned through the release-governance GOLDEN_QC_REVIEWER variable and must
+approve the reviewed commit on PR #207 with the evidence URL and both exact
+SHA-256 digests in the review body. The gate checks the authenticated approval
+and rejects changed reviewed scope. This only clears QC-001, not other gates. An executor run or CodeRabbit review is
 not independent mathematical acceptance. Do not publish or ratify merely
 because tests pass. No release gate can be satisfied by an empty register.
 

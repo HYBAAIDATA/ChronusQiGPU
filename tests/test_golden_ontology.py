@@ -19,7 +19,7 @@ from golden_ontology.fold import PeriodError,RangeError,fold_words,unfold_words
 from golden_ontology.resonance import certify_pairwise_irrationality,phi_neg_power_cert
 from golden_ontology.substrate import (
     PV_REGISTRY,UnregisteredFamilyError,fib_pair,generalized_pisano_period,
-    get_family,lucas_uv,mat_identity,mat_pow,pisano_period_pow2,
+    get_family,lucas_uv,mat_identity,mat_pow,pisano_period_pow2,generalized_lucas,
 )
 
 VECTORS=Path(__file__).resolve().parents[1]/"spec/test_vectors.json"
@@ -94,6 +94,14 @@ class TestExactSubstrate(unittest.TestCase):
                     self.assertEqual(mat_pow(fam.companion,p,m),mat_identity(fam.degree))
                     self.assertTrue(all(mat_pow(fam.companion,k,m)!=mat_identity(fam.degree)
                                         for k in range(1,p)))
+    def test_generalized_lucas(self):
+        for name,family in PV_REGISTRY.items():
+            d=family.degree
+            values=[generalized_lucas(name,n) for n in range(16)]
+            self.assertEqual(values[0],d)
+            for n in range(d,16):
+                self.assertEqual(values[n],-sum(family.polynomial[k]*values[n-k] for k in range(1,d+1)))
+                self.assertEqual(generalized_lucas(name,n,17),values[n]%17)
     def test_lucas_and_modulus(self):
         for n in (0,1,2,10,37):
             for m in (None,1,17):
@@ -125,6 +133,9 @@ class TestResonanceFilter(unittest.TestCase):
             self.assertEqual(f.apply([]),[])
             self.assertTrue(all(abs(x-1)<1e-12 for x in f.apply([1]*9)))
             self.assertLess(f.certificate.bound_at_radius,1)
+            self.assertEqual(f.certificate.alpha_polynomial,f.family.polynomial)
+            self.assertEqual(f.certificate.alpha_exponent,Fraction(-3,1 if f.family.degree==2 else 2))
+            self.assertEqual(f.certificate.bound_at_radius,f.certificate.mu_upper**3)
     def test_rank_ties_and_warps(self):
         x=[-1,0,0,2,3]
         for y in ([v**3 for v in x],[3*v+8 for v in x]):
