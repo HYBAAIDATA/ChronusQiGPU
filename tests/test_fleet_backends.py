@@ -19,6 +19,9 @@ from chronus.fleet.executor import FleetExecutor
 from chronus.fleet.worker import FleetWorker, WorkerConfig
 from chronus.fleet.workunit import WorkUnit
 from tests.fleet_support import state_dir
+import pytest
+
+pytestmark = pytest.mark.simulated
 
 
 class FakeHostGPU(DeviceAdapter):

@@ -5,6 +5,9 @@ import importlib.util
 from pathlib import Path
 
 import numpy as np
+import pytest
+
+pytestmark = pytest.mark.real
 
 _SCRIPT = Path(__file__).resolve().parents[1] / "scripts/benchmarks/storage_closeout.py"
 _SPEC = importlib.util.spec_from_file_location("chronus_storage_closeout", _SCRIPT)

@@ -1,6 +1,9 @@
 import asyncio
 import unittest
 from chronus.stratum.sharding import WorkPartitioner, DedupLedger, ShareCandidate, emit_share_candidate
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 class TestSharding(unittest.TestCase):

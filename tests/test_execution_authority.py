@@ -13,7 +13,7 @@ from chronus.service.app import create_app
 from chronus.service.dependencies import auth_service
 
 
-pytestmark = pytest.mark.skipif(os.name != "posix", reason="POSIX execution limits require a POSIX host")
+pytestmark = [pytest.mark.skipif(os.name != "posix", reason="POSIX execution limits require a POSIX host"), pytest.mark.simulated]
 
 
 def _hold_slot(path, ready, release):

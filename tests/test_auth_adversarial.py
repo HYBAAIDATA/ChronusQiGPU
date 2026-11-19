@@ -24,6 +24,8 @@ from chronus.service.auth_middleware import (
 )
 from chronus.service.dependencies import AuthService, RateLimiter, ServiceConfig
 
+pytestmark = pytest.mark.simulated
+
 SECRET = "test-secret-key-for-hmac-32bytes-chronus!!"
 ISSUER = "https://auth.chronus.io"
 AUDIENCE = "chronus-api"

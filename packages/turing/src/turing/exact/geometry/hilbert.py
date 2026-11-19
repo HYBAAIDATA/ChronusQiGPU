@@ -71,8 +71,10 @@ class TensorHilbert:
 
     @property
     def dimension(self) -> int:
-        from math import prod
-        return prod(self.factors)
+        dimension = 1
+        for n in self.factors:  # positive ints (validated above): exact product
+            dimension *= n
+        return dimension
 
     def index(self, coordinates: tuple[int, ...]) -> int:
         if len(coordinates) != len(self.factors):

@@ -168,6 +168,13 @@ def run_or_inspect_experiment(exp_id: str) -> dict[str, Any]:
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"Experiment honest refusal: {e!s}",
         )
+    except NotImplementedError as e:
+        # A capability the experiment needs is not implemented: refuse honestly
+        # instead of reporting an internal error (or a claim).
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail=f"Experiment not runnable: {e!s}",
+        )
     except Exception as e:  # noqa: BLE001
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

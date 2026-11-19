@@ -1,6 +1,9 @@
 import pytest
 from chronus.crypto.signers import Ed25519Signer
 from chronus.security.receipts import Receipt, ReceiptLog
+
+pytestmark = pytest.mark.real
+
 def make_receipt(i, prev, key):
     return Receipt("w", "t", "0" * 64, "n", i, "2026-01-01T00:00:00Z", key.key_id, prev_digest=prev)
 def test_chain_and_tamper():

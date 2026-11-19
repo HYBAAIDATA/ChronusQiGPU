@@ -16,6 +16,8 @@ from chronus.backends.metallic import metallic_power, metallic_sequence
 from chronus.execution import ExecutionRouter, NativeMathReferenceBackend
 from chronus.execution.reference import _decimal_string, _fib_pair
 
+pytestmark = pytest.mark.real
+
 
 def test_lucas_identity_holds_across_scaling_range():
     """L_n = 2*F_{n+1} - F_n at every order the workloads serve."""

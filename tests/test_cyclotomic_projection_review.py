@@ -5,6 +5,9 @@ from pathlib import Path
 import random
 import sys
 import unittest
+import pytest
+
+pytestmark = pytest.mark.real
 
 path = Path(__file__).resolve().parents[1] / 'src/chronus/quantum/geometric_polychoron.py'
 spec = importlib.util.spec_from_file_location('review_cyclotomic_source', path)

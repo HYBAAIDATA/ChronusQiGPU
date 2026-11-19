@@ -198,9 +198,9 @@
     {
       "path": "src/chronus/tensor/enhanced_representation.py",
       "token": 3,
-      "count": 3,
+      "count": 2,
       "basis": "refusal-or-denial",
-      "note": "Listed among refused claims returned to callers"
+      "note": "Listed among refused claims (FORBIDDEN_HYPE_STRINGS and refused_claims) returned to callers"
     },
     {
       "path": "src/chronus/tensor/evolution.py",
@@ -243,6 +243,55 @@
       "count": 1,
       "basis": "mathematical-term",
       "note": "Geometric-tier classifier names a fixed-base decay model"
+    },
+    {
+      "path": "evidence/migration/2026-11-16-archive-focused-test-replay.md",
+      "token": 0,
+      "count": 1,
+      "basis": "mathematical-term",
+      "note": "Names a negative test for an unbounded iterator source"
+    },
+    {
+      "path": "src/chronus/pulvini/recovered/quantum_formalism.py",
+      "token": 1,
+      "count": 1,
+      "basis": "refusal-or-denial",
+      "note": "claim_boundary explicitly denies any speedup guarantee"
+    },
+    {
+      "path": "src/chronus/pulvini/recovered/quantum_optimizer.py",
+      "token": 1,
+      "count": 3,
+      "basis": "mathematical-term",
+      "note": "Name of an annealing temperature-decay schedule, not a performance claim"
+    },
+    {
+      "path": "src/chronus/tensor/exact_rational_tt.py",
+      "token": 0,
+      "count": 1,
+      "basis": "mathematical-term",
+      "note": "Comment on bounded consumption of an unbounded iterable"
+    },
+    {
+      "path": "tests/test_exact_rational_tt_recovery.py",
+      "token": 0,
+      "count": 3,
+      "basis": "mathematical-term",
+      "note": "Negative test feeding an unbounded generator; asserts bounded consumption"
+    },
+    {
+      "path": "tests/test_pulvini_operator_calculus_recovery.py",
+      "token": 0,
+      "count": 1,
+      "basis": "mathematical-term",
+      "note": "Test name: a finite matrix must not return an unbounded lift"
+    },
+    {
+      "path": "theory_of_everything.py",
+      "token": 1,
+      "count": 1,
+      "basis": "mathematical-term",
+      "note": "Matrix exp of a self-adjoint operator is unitary (mathematical statement)"
     }
   ]
 }

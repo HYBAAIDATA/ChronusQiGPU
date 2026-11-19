@@ -3,6 +3,8 @@ from dataclasses import replace
 import pytest
 from chronus.storage.erasure import encode_stripe, recover_stripe
 
+pytestmark = pytest.mark.real
+
 
 def test_exact_single_shard_erasure():
     for payload in (b"A", b"abc", b"abcdefghijklm", bytes(range(251))):

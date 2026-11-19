@@ -4,6 +4,9 @@ import hashlib
 from pathlib import Path
 import tempfile
 import unittest
+import pytest
+
+pytestmark = pytest.mark.real
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('verifier', ROOT/'scripts/ci/verify_capacity_artifacts.py')

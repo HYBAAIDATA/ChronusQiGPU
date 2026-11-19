@@ -12,6 +12,9 @@ from chronus.fleet.ledger import AnchorLedger, verify_ledger
 from chronus.fleet.receipts import RECEIPT_SCHEMA, sign_receipt, verify_receipt
 from chronus.fleet.signing import FleetSigner, load_mldsa_signer, verify_signature
 from tests.fleet_support import filesystem_keeps_modes, state_dir
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 def fill(ledger, count):

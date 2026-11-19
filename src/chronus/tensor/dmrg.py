@@ -19,7 +19,6 @@ from typing import Any, List, Optional
 import numpy as np
 
 from chronus.tensor.types import (
-    BondId,
     ContractionCertificate,
     ErrorLedger,
     Leg,

@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 from scripts.ci import build_product_gates
+import pytest
+
+pytestmark = pytest.mark.simulated
 
 
 def test_software_base_product_gates_pass_when_required_providers_exist(monkeypatch):

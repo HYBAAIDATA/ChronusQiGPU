@@ -6,6 +6,8 @@ from chronus.tensor.hamiltonian import HamiltonianTerm, TFIM_terms, build_hamilt
 from chronus.tensor.geodesic import TopologicalIntegrityGate
 from chronus.tensor.types import UnsupportedHamiltonian
 
+pytestmark = pytest.mark.real
+
 
 def dense(mpo):
     value = np.ones((1, 1, 1), dtype=complex)

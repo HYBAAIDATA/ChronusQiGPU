@@ -13,6 +13,9 @@ from chronus.fleet.value_share import (
     is_irreducible,
     reconcile_value_share,
 )
+import pytest
+
+pytestmark = pytest.mark.real
 
 FOUR = ["hyba-data", "hyba-security", "hyba-software", "hyba-finance"]
 

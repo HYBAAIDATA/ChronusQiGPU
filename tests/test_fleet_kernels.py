@@ -9,6 +9,9 @@ import unittest
 from chronus.fleet import kernels as K
 from chronus.fleet.canonical import deterministic_bytes
 from chronus.fleet.errors import KernelError
+import pytest
+
+pytestmark = pytest.mark.real
 
 MANIFESTO_M15 = (219, 98, 98, 121)
 MANIFESTO_M15_INV = (135, 98, 98, 37)

@@ -7,6 +7,8 @@ from chronus.tensor.enhanced_representation import (
     EnhancedTensorRepresentation,
 )
 
+pytestmark = pytest.mark.real
+
 @pytest.mark.parametrize("n", [2,3,5])
 def test_actual_norm_matches_independent_dense_contraction(n):
     net, _ = build_network(n, topology="MPS", chi_max=8)

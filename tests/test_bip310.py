@@ -6,6 +6,9 @@ from chronus.stratum.bip310 import (
     format_extranonce2,
     compute_shard_version_bits,
 )
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 class TestBIP310(unittest.TestCase):

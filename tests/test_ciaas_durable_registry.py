@@ -11,6 +11,8 @@ from chronus.service.ciaas_store import CIaaSStore, ChronusCapacityEntitlement
 from chronus.storage.durable import DurableTheseusService
 from chronus.storage.theseus import StorageIntegrityError
 
+pytestmark = pytest.mark.simulated
+
 
 def test_registry_replays_updates_and_removals_across_restart(tmp_path, monkeypatch):
     monkeypatch.delenv("CHRONUS_ENV", raising=False)

@@ -10,6 +10,8 @@ from chronus.tensor.hamiltonian import TFIM_terms, build_hamiltonian_mpo
 from chronus.tensor.network import build_network
 from chronus.tensor.types import ErrorLedger, TruncationRecord
 
+pytestmark = pytest.mark.real
+
 
 def _dense_tfim_ground(n, j, h):
     z = np.diag([1., -1.])

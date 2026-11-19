@@ -15,6 +15,9 @@ from chronus.stratum.endian_engine import (
 )
 from chronus.stratum.bip310 import apply_version_rolling
 from chronus.stratum.sharding import DedupLedger
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 class TestGatekeeper(unittest.TestCase):

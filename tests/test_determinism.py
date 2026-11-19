@@ -1,5 +1,8 @@
 import unittest
 from scripts.ci.determinism_check import run_pipeline_deterministic
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 class TestDeterminism(unittest.TestCase):

@@ -15,6 +15,8 @@ from chronus.service.app import create_app
 from chronus.service.auth_middleware import Role, create_jwt_token
 from chronus.service.dependencies import auth_service, service_config
 
+pytestmark = pytest.mark.real
+
 
 @pytest.fixture()
 def client():

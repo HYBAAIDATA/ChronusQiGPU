@@ -9,6 +9,9 @@ from pathlib import Path
 
 from chronus.hendrix import GF257, DiscreteLogOracle, QuadraticResidueOracle
 from chronus.hendrix import structured
+import pytest
+
+pytestmark = pytest.mark.real
 
 ROOT = Path(__file__).resolve().parents[1]
 HENDRIX_DIR = ROOT / "src" / "chronus" / "hendrix"
