@@ -114,6 +114,8 @@ class ExactRay:
         dimension = len(self.numerator)
         if dimension not in (3, 4):
             raise ValueError("canonical M32/H4 dimension required")
+        if not self.is_unit():
+            raise ValueError("unit-normal certificate does not hold")
         values = tuple(
             self.numerator[i % dimension] * (PHI ** (-(i // dimension)))
             for i in range(11)
@@ -367,6 +369,13 @@ def validate_payload(encoded):
         or p.get("learned_scores_used") is not False
     ):
         raise ValueError("exact nonheuristic geometry required")
+    for name in ("cells", "adjacency", "m32_adjacency", "m32_dual_incidence"):
+        if any(type(x) is not int for row in p[name] for x in row):
+            raise ValueError("exact integer indices required: " + name)
+    for name, values in (("coarse_anchor", p["coarse_anchor"]),
+                         ("quantum rank", p["quantum"]["rank"])):
+        if any(type(x) is not int for x in values):
+            raise ValueError("exact integer indices required: " + name)
     vertices, cells, rays, adj = h4()
     faces = m32()
     ma, md = m32_relations()

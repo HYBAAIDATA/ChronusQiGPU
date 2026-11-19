@@ -199,3 +199,77 @@ def test_installed_resident_executes_real_genesis_and_refuses_foreign_work():
     assert result["executed_algorithm"] == "hendrix_coprime_stride"
     with pytest.raises(ValueError, match="stale"):
         execute_resident(p, a, GENESIS, target, replace(wi, generation=2), 0, p.window)
+
+
+@pytest.mark.parametrize("stride", [-1, 2**80 + 1])
+def test_unbounded_local_stride_uses_exact_modulo(stride):
+    _, artifact = issue(window=1200)
+    value = artifact.as_dict()
+    for row in value["shards"]:
+        row[4] = stride
+    value.pop("digest")
+    altered = ResidentHendrix.issue(value)
+    assert altered.batch(0, 1200)[0].tolist() == artifact.batch(0, 1200)[0].tolist()
+
+
+def test_resealed_artifact_cannot_change_plan_lease():
+    plan, _ = issue()
+    _, foreign = issue(window=601, base=2000)
+    from chronus.execution.resident_hendrix import plan_identity
+    value = foreign.as_dict()
+    value["plan_digest"] = seal(plan_identity(plan))
+    value.pop("digest")
+    artifact = ResidentHendrix.issue(value)
+    with pytest.raises(ValueError, match="lease differs"):
+        artifact.require_context(plan, GENESIS, bytes(32))
+
+
+@pytest.mark.parametrize("route", ["cpu_reference", "opencl_m32", "opencl_gold", "opencl_range"])
+def test_unsupported_resident_routes_rejected(route):
+    plan, _ = issue()
+    with pytest.raises(ValueError, match="executor route"):
+        compile_hendrix_plan(replace(plan, executor_route=route), GENESIS, bytes(32), precompute_pythia_search())
+
+
+def test_resident_rejects_rank_outside_certified_geometry():
+    plan, _ = issue()
+    state = precompute_pythia_search()
+    altered = replace(state, hilbert_walk_rank=tuple(reversed(state.hilbert_walk_rank)))
+    with pytest.raises(ValueError, match="certified geometry"):
+        compile_hendrix_plan(plan, GENESIS, bytes(32), altered)
+
+
+def test_all_evidence_is_detached_and_keeps_plan_digest():
+    from chronus.execution.resident_hendrix import plan_identity
+    plan, artifact = issue()
+    nested = {"items": [{"values": [1, 2]}], "tuple": ([3],)}
+    plan = replace(plan, evidence_refs={**plan.evidence_refs, "extra": nested})
+    artifact = compile_hendrix_plan(plan, GENESIS, bytes(32), precompute_pythia_search())
+    digest = seal(plan_identity(plan))
+    nested["items"][0]["values"].append(9)
+    nested["tuple"][0].append(9)
+    plan.evidence_refs["extra"]["items"][0]["values"].append(8)
+    plan.evidence_refs["extra"]["tuple"][0].append(8)
+    assert seal(plan_identity(plan)) == digest
+    artifact.require_context(plan, GENESIS, bytes(32))
+
+
+def test_execution_snapshots_inputs_before_validation(monkeypatch):
+    from chronus.execution.resident_hendrix import execute_resident
+    from chronus.pythia.search_plan import WorkIdentity
+    header, target = bytearray(GENESIS), bytearray(b"\xff" * 32)
+    plan, artifact = issue(window=1, target=target)
+    identity = WorkIdentity(plan.pool_session_id, plan.generation, "local", plan.job_fingerprint, 0, True, time.monotonic())
+    original = ResidentHendrix.require_context
+
+    def validate_then_mutate(self, plan, checked_header, checked_target):
+        assert type(checked_header) is type(checked_target) is bytes
+        original(self, plan, checked_header, checked_target)
+        header[:] = bytes(80)
+        target[:] = bytes(32)
+
+    monkeypatch.setattr(ResidentHendrix, "require_context", validate_then_mutate)
+    result = execute_resident(plan, artifact, header, target, identity, 0, 1)
+    assert result["nonce"] == plan.base_step
+    from chronus.execution.asic_sha256 import sha256d_unrolled
+    assert result["digest"] == sha256d_unrolled(GENESIS[:76] + plan.base_step.to_bytes(4, "little")).hex()

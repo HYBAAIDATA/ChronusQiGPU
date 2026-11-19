@@ -40,6 +40,8 @@ class CassiniSchedule:
         return self.width
 
     def offset_at(self, position: int) -> int:
+        if type(position) is not int:
+            raise ValueError("integer schedule position required")
         if position < 0 or position >= self.width:
             raise IndexError("schedule position out of range")
         return (self.origin + position * self.stride) % self.width

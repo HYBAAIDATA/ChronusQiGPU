@@ -2,7 +2,9 @@
 
 A common positive radical sqrt(2**(steps+1)) normalises the numerator
 state. The exact Gaussian-rational numerator uses TURING SparseState
-and the shift is a basis permutation. No floating-point conversion.
+and the shift is a basis permutation on the logical cycle subspace only,
+not on the full register basis, which includes padding positions.
+No floating-point conversion.
 """
 from fractions import Fraction
 from turing.exact.geometry.hilbert import ExactComplex, SparseState, TensorHilbert, ZERO

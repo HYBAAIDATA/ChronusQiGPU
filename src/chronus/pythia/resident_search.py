@@ -65,6 +65,8 @@ def compile_hendrix_plan(plan, header, target_be, state, *, use_hilbert=True):
     from .exact_search import ExactSearchState, exact_vertex_itinerary, exact_face_order
     from chronus.execution.resident_hendrix import issue_software_contract
 
+    if plan.executor_route != "chronus_batch":
+        raise ValueError("unsupported resident executor route")
     if plan.nonce_order != "hendrix_coprime_stride":
         raise ValueError("only canonical Hendrix may be resident-lowered")
     if len(header) != 80 or len(target_be) != 32:
@@ -81,6 +83,13 @@ def compile_hendrix_plan(plan, header, target_be, state, *, use_hilbert=True):
         )
     if plan.schedule:
         raise ValueError("advisory nonce proposals are excluded from exact profile")
+    import json
+    from chronus.math.exact_geometry import validate_payload
+
+    validate_payload(state.geometry_encoded)
+    certified_rank = tuple(json.loads(state.geometry_encoded)["quantum"]["rank"])
+    if state.hilbert_walk_rank != certified_rank:
+        raise ValueError("Hilbert walk rank differs from certified geometry")
     itinerary = exact_vertex_itinerary(
         header, state, preferred_face=plan.preferred_face, use_hilbert=use_hilbert
     )

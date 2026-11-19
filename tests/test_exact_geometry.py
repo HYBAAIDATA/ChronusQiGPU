@@ -181,3 +181,27 @@ def test_exact_pythia_directive_is_header_bound_without_learned_inputs():
         exact_mining_directive(
             header=header, target_be=bytes(32), base_step=2**32 - 1, window=2
         )
+
+
+@pytest.mark.parametrize("dimension", [3, 4])
+def test_nonunit_ray_cannot_issue_fold_certificate(dimension):
+    ray = ExactRay((ONE,) * dimension, ONE)
+    with pytest.raises(ValueError, match="unit-normal"):
+        ray.fold11()
+
+
+@pytest.mark.parametrize("field", ["cells", "adjacency", "m32_adjacency", "m32_dual_incidence", "coarse_anchor", "rank"])
+@pytest.mark.parametrize("replacement", [float, bool])
+def test_payload_indices_require_exact_integers(field, replacement):
+    import json
+    from chronus.pythia.exact_search import precompute_exact_search
+    from chronus.math.exact_geometry import validate_payload
+    payload = json.loads(precompute_exact_search().geometry_encoded)
+    values = payload["quantum"]["rank"] if field == "rank" else payload[field]
+    if isinstance(values[0], list):
+        values = values[0]
+    # Find a 0 or 1 so bool compares equal and only the type check catches it.
+    index = next(i for i, value in enumerate(values) if value in (0, 1)) if replacement is bool and any(value in (0, 1) for value in values) else 0
+    values[index] = replacement(values[index])
+    with pytest.raises(ValueError, match="exact integer"):
+        validate_payload(json.dumps(payload))

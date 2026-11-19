@@ -19,10 +19,41 @@ from __future__ import annotations
 
 import time
 import uuid
+from copy import deepcopy
 from dataclasses import dataclass, field
 from enum import Enum
-from types import MappingProxyType
 from typing import Any, Mapping
+
+
+class _EvidenceSnapshot(Mapping):
+    """Own a deep snapshot and return detached values to consumers."""
+
+    def __init__(self, values):
+        self._values = {k: self._copy(v) for k, v in values.items()}
+
+    @classmethod
+    def _copy(cls, value):
+        from chronus.execution.resident_hendrix import ImmutableJSONMapping
+
+        if isinstance(value, ImmutableJSONMapping):
+            return value
+        if isinstance(value, Mapping):
+            return _EvidenceSnapshot(value)
+        if isinstance(value, list):
+            return [cls._copy(v) for v in value]
+        if isinstance(value, tuple):
+            return tuple(cls._copy(v) for v in value)
+        return deepcopy(value)
+
+    def __getitem__(self, key):
+        return self._copy(self._values[key])
+
+    def __iter__(self):
+        return iter(self._values)
+
+    def __len__(self):
+        return len(self._values)
+
 
 _LANES = 32
 _VALID_ROUTES = frozenset(
@@ -173,6 +204,15 @@ class NonceLease:
 
     def transition(self, state: LeaseState) -> "NonceLease":
         """Return a new lease in ``state``; never mutate in place."""
+        state = LeaseState(state)
+        allowed = {
+            LeaseState.RESERVED: {LeaseState.EXECUTING, LeaseState.INVALIDATED},
+            LeaseState.EXECUTING: {LeaseState.COMPLETE, LeaseState.INVALIDATED},
+            LeaseState.COMPLETE: set(),
+            LeaseState.INVALIDATED: set(),
+        }
+        if state not in allowed[self.state]:
+            raise ValueError(f"invalid lease transition: {self.state} -> {state}")
         return NonceLease(
             lease_id=self.lease_id,
             generation=self.generation,
@@ -298,7 +338,7 @@ class SearchPlan:
                 raise ValueError("toe_frame_id cannot be empty")
             if refs.get("toe_frame_digest") != self.toe_frame_id:
                 raise ValueError("toe_frame_id must match evidence_refs.toe_frame_digest")
-        object.__setattr__(self, "evidence_refs", MappingProxyType(refs))
+        object.__setattr__(self, "evidence_refs", _EvidenceSnapshot(refs))
 
     def is_valid_for(self, identity: WorkIdentity | None) -> bool:
         """False unless session, Stratum generation and fingerprint all match."""

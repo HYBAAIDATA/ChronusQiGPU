@@ -241,6 +241,8 @@ class ResidentHendrix:
             "search_precompute_digest"
         ):
             raise ValueError("resident geometry differs from authorised substrate")
+        if v["base"] != plan.base_step or v["window"] != plan.window:
+            raise ValueError("resident lease differs from SearchPlan")
         if v["plan_digest"] != seal(plan_identity(plan)):
             raise ValueError("SearchPlan semantics changed after issuance")
         if (
@@ -264,7 +266,10 @@ class ResidentHendrix:
             or not 0 <= count <= min(65536, window - position)
         ):
             raise ValueError("bounded positional batch required")
-        rows = np.asarray([r[:6] for r in v["shards"] if r[3]], dtype=np.uint64)
+        rows = np.asarray(
+            [r[:4] + [r[4] % r[3], r[5]] for r in v["shards"] if r[3]],
+            dtype=np.uint64,
+        )
         shortest = int(rows[:, 3].min())
         head = shortest * len(rows)
         j = (
@@ -315,6 +320,7 @@ def execute_resident(plan, artifact, header, target_be, identity, position, coun
     from chronus.execution.hashrate_cap import process_cap
     if not plan.is_valid_for(identity):
         raise ValueError("stale SearchPlan or foreign Stratum work")
+    header, target_be = bytes(header), bytes(target_be)
     artifact.require_context(plan, header, target_be)
     nonces, bindings = artifact.batch(position, count)
     oracle = Sha256dTargetOracle(header[:76], int.from_bytes(target_be, "big"))
