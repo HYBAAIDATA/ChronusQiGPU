@@ -65,3 +65,21 @@ def test_max_dimension_huge_epoch_wraps_without_materialising_domain():
 @pytest.mark.parametrize('order,expected', [([], {}), ([7], {}), ([1, 1, 1], {0: 2}), ([0, 1, 7, 0], {1: 1, 2: 1, 3: 1})])
 def test_hamming_histogram_counts_only_adjacent_steps(order, expected):
     assert hamming_step_histogram(order) == expected
+
+
+@pytest.mark.parametrize('dim', [1, 2, 3, 4, 5])
+def test_every_small_epoch_is_a_complete_permutation_with_periodic_order(dim):
+    period = pisano_period_pow2(dim)
+    domain = list(range(1 << dim))
+    for epoch in range(period):
+        order = lucas_pisano_geodesic_order(dim, epoch_step=epoch)
+        assert sorted(order) == domain
+        assert lucas_pisano_geodesic_order(dim, epoch_step=epoch + period) == order
+
+
+@pytest.mark.parametrize('n', [0, 1, 2, 8, 63, 128])
+def test_exact_fibonacci_lucas_matches_unbounded_linear_recurrence(n):
+    f, g = 0, 1
+    for _ in range(n):
+        f, g = g, f + g
+    assert exact_fibonacci_lucas(n) == (f, 2 * g - f)

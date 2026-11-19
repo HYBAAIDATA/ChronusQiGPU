@@ -78,3 +78,14 @@ def test_compact_target_accepts_integer_enum():
 @pytest.mark.parametrize('data', [b'', b'abc', bytes(range(256))])
 def test_sha256d_matches_two_independent_hash_calls(data):
     assert sha256d(data) == hashlib.sha256(hashlib.sha256(data).digest()).digest()
+
+
+def test_verify_hashes_full_header_even_if_midstate_cache_is_poisoned():
+    value = (23 << 32) | 42
+    oracle = Sha256dTargetOracle(PREFIX, (1 << 256) - 1)
+    oracle.digest(value)
+    # Independent verification must not trust the accelerated evaluation cache.
+    oracle._mid[23] = hashlib.sha256(b'wrong midstate')
+    before = (oracle.evaluations, oracle.midstates, oracle.compressions)
+    assert oracle.verify(value) == (True, reference_digest(23, 42)[::-1].hex())
+    assert (oracle.evaluations, oracle.midstates, oracle.compressions) == before

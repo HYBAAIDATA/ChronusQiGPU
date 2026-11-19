@@ -63,3 +63,18 @@ def test_two_connections_claiming_empty_tip_have_exactly_one_winner(custody):
     assert len(winners) == 1
     assert custody.get_journal('t') == winners
     assert winners[0].sequence == 0
+
+
+def test_cas_tips_are_independent_per_tenant_even_for_identical_payloads(custody):
+    a0 = custody.append_journal_event('a', 'TEST', b'same', expected_last_sequence=-1)
+    b0 = custody.append_journal_event('b', 'TEST', b'same', expected_last_sequence=-1)
+    a1 = custody.append_journal_event('a', 'TEST', b'same', expected_last_sequence=0)
+    with pytest.raises(CustodyConflictError):
+        custody.append_journal_event('a', 'TEST', b'same', expected_last_sequence=0)
+    b1 = custody.append_journal_event('b', 'TEST', b'same', expected_last_sequence=0)
+    assert custody.get_journal('a') == [a0, a1]
+    assert custody.get_journal('b') == [b0, b1]
+    assert a1.prev_entry_hash == a0.entry_hash
+    assert b1.prev_entry_hash == b0.entry_hash
+    assert custody.reconstruct('a', a1.object_id) == b'same'
+    assert custody.reconstruct('b', b1.object_id) == b'same'

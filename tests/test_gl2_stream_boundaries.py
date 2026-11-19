@@ -39,3 +39,32 @@ def test_truncated_frame_fails_at_eof_and_cannot_resume(missing):
         decoder.finalize()
     with pytest.raises(RuntimeError, match='finalized'):
         decoder.update(wire[-missing:])
+
+
+@pytest.mark.parametrize('data', [b'', b'x', b'xy', b'xyz'])
+def test_stream_and_batch_enforce_same_exact_length_limit(data):
+    wire = fold(data).to_wire()
+    decoder = UnfoldStream(max_length=len(data))
+    assert decoder.update(wire) == data
+    decoder.finalize()
+    assert unfold(from_wire(wire, max_length=len(data))) == data
+    if data:
+        with pytest.raises(ValueError, match='max_length'):
+            from_wire(wire, max_length=len(data) - 1)
+        with pytest.raises(ValueError, match='max_length'):
+            UnfoldStream(max_length=len(data) - 1).update(wire)
+
+
+@pytest.mark.parametrize('split', range(25))
+def test_crc_corruption_rejected_across_chunk_boundaries(split):
+    wire = bytearray(fold(b'abc').to_wire())
+    wire[-1] ^= 1
+    decoder = UnfoldStream()
+    decoder.update(wire[:split])
+    decoder.update(wire[split:])
+    with pytest.raises(ValueError, match='CRC-32C mismatch'):
+        decoder.finalize()
+    with pytest.raises(RuntimeError, match='finalized'):
+        decoder.finalize()
+    with pytest.raises(ValueError, match='CRC-32C mismatch'):
+        from_wire(wire)

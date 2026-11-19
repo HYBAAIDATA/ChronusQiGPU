@@ -101,3 +101,83 @@ def test_invalid_search_width_leaves_no_journal_artifact(tmp_path, num_generator
     with pytest.raises(ValueError, match='num_generators'):
         triad.exact_grover_search('t', bytes(76), 0, 0, num_generators=num_generators)
     assert triad.theseus.get_journal('t') == []
+
+
+@pytest.mark.parametrize('order', [[], [0, 1, 2], [0, 1, 2, 2], [0, 1, 2, 4], [-1, 0, 1, 2]])
+def test_invalid_permutation_does_not_evaluate_or_write(adapter, order):
+    handle = adapter.stage_domain('invalid-order', FoldedRegisterN.from_domain_offset(0, num_generators=2))
+    before = adapter.theseus.custody.get_journal('t')
+    seen = []
+    with pytest.raises(ValueError, match='permutation'):
+        run_triad_exact_grover_search(
+            adapter=adapter, handle=handle, geodesic_order=order,
+            oracle_predicate=lambda value: seen.append(value),
+        )
+    assert seen == []
+    assert adapter.states_materialised == 0
+    assert adapter.theseus.custody.get_journal('t') == before
+
+
+@pytest.mark.parametrize('limit,checked', [(3, False), (4, False), (5, True)])
+def test_full_vector_check_uses_strict_state_threshold(adapter, limit, checked):
+    handle = adapter.stage_domain('threshold', FoldedRegisterN.from_domain_offset(0, num_generators=2))
+    result = run_triad_exact_grover_search(
+        adapter=adapter, handle=handle, oracle_predicate=lambda value: value == 2,
+        verify_full_vector_below=limit,
+    )
+    assert result.full_vector_checked is checked
+    assert result.winner_value == 2
+    assert result.total_marked_probability == 1
+
+
+@pytest.mark.parametrize('failure', [RuntimeError('oracle unavailable'), ValueError('invalid oracle input')])
+def test_predicate_exception_preserves_staged_handle(adapter, failure):
+    handle = adapter.stage_domain('predicate-error', FoldedRegisterN.from_domain_offset(0, num_generators=2))
+    before = adapter.theseus.custody.get_journal('t')
+
+    def predicate(value):
+        raise failure
+
+    with pytest.raises(type(failure), match=str(failure)):
+        run_triad_exact_grover_search(adapter=adapter, handle=handle, oracle_predicate=predicate)
+    assert adapter.theseus.custody.get_journal('t') == before
+    assert adapter.restore_from_theseus(handle.artifact_id) == handle
+
+
+def test_resolved_handle_rechecks_independent_verifier_without_appending(adapter):
+    handle = adapter.stage_domain('recheck', FoldedRegisterN.from_domain_offset(100, num_generators=2))
+    result = run_triad_exact_grover_search(
+        adapter=adapter, handle=handle, oracle_predicate=lambda value: value == 102,
+    )
+    resolved = adapter.restore_from_theseus(handle.artifact_id)
+    before = adapter.theseus.custody.get_journal('t')
+    seen = []
+
+    def reject(value):
+        seen.append(value)
+        return False
+
+    with pytest.raises(ArithmeticError, match='independent verification'):
+        run_triad_exact_grover_search(
+            adapter=adapter, handle=resolved, oracle_predicate=lambda value: value == 102,
+            winner_verifier=reject,
+        )
+    assert seen == [result.winner_value]
+    assert adapter.theseus.custody.get_journal('t') == before
+    retried = run_triad_exact_grover_search(
+        adapter=adapter, handle=resolved, oracle_predicate=lambda value: value == 102,
+    )
+    assert retried.receipts == result.receipts
+    assert retried.total_marked_probability == result.total_marked_probability
+    assert retried.states_materialised == 0
+    assert retried.oracle_evaluations == 1
+
+
+def test_manually_resolved_domain_cannot_claim_a_verified_search(adapter):
+    handle = adapter.stage_domain('manual', FoldedRegisterN.from_domain_offset(0, num_generators=2))
+    for index in range(2):
+        handle = adapter.commit_collapse_step(handle, index, 0)
+    before = adapter.theseus.custody.get_journal('t')
+    with pytest.raises(ValueError, match='no search outcome is pending'):
+        run_triad_exact_grover_search(adapter=adapter, handle=handle, oracle_predicate=lambda _: True)
+    assert adapter.theseus.custody.get_journal('t') == before
