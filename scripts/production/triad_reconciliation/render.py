@@ -17,7 +17,7 @@ def cell(v):
 
 w("# Chronus–OVID–THESEUS production-readiness reconciliation")
 w()
-w(f"**Candidate release SHA:** [`{CAND}`]({GH}/commit/{CAND}) (`main` after #173, #176, #180, #181, #182, #183 and #185 merged)  ")
+w(f"**Candidate release SHA:** [`{CAND}`]({GH}/commit/{CAND}) (`main` after #173, #176, #180, #181, #182, #183, #185 and #189 merged)  ")
 w(f"**Reconciled:** {cfg['date']} (Europe/London)  ")
 w("**Method:** every row is checked against code on the candidate SHA, the full local test suite run on that SHA, CI runs whose `head_sha` equals that SHA, executable cross-triad checks (`scripts/ci/triad_cross_checks.py`), benchmarks run on SHA-pinned public data, and artifacts built from that SHA. Nothing is carried forward from older revisions. Historical evidence is cited only with its own revision.  ")
 w("**This document is not a production certification.** It weakens, suppresses and redefines no gate. `PRODUCTION_QUALIFIED.json` is unchanged and still says `NOT_QUALIFIED`.")

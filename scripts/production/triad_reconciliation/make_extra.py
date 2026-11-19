@@ -97,8 +97,8 @@ if sys.argv[1] == "post":
     ci_ok = [n for n, r in cfg["ci"].items() if r["conclusion"] == "success"]; ci_no = [f"{n} ({r['conclusion']})" for n, r in cfg["ci"].items() if r["conclusion"] != "success"]
     pyj = cfg["ci"].get("CI", {}).get("jobs", {}).get("Python 3.13 tests", {})
     registers = [
-     ["1. Pull requests and merge status", ["#173 merged c11af3e6", "#176 merged ad7b9bba", "#180 merged b89a5315", "#181 merged 1894bd41", "#182 merged 38fc6373", "#185 merged ec3a43dc", "#183 merged " + CAND[:8]],
-      ["#171 open (decision brief)", "#169 open (decision brief)", "#168 open (decision brief)", "#178 open (self-healing hardening, other stream)", "#186 open (this reconciliation)"]],
+     ["1. Pull requests and merge status", ["#173 merged c11af3e6", "#176 merged ad7b9bba", "#180 merged b89a5315", "#181 merged 1894bd41", "#182 merged 38fc6373", "#185 merged ec3a43dc", "#189 merged 5f620b10", "#183 merged " + CAND[:8]],
+      ["#171 open (decision brief)", "#169 open (decision brief)", "#168 open (decision brief)", "#178 on hold (billing/IP decision; out of scope)", "#186 open (this reconciliation)"]],
      ["2. CI workflows (push, candidate SHA)", ci_ok + [f"CI / Python 3.13 tests: {pyj.get('conclusion')}"], ci_no],
      ["3. Tests and acceptance coverage", [cfg["local_suite"]] + [r["Requirement ID"] for r in rows if r["Test coverage"]["files"] and "failed 0" in r["Test execution"]],
       [f"{r['Requirement ID']}: no executable test" for r in rows if not r["Test coverage"]["files"]]],
