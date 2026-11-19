@@ -191,8 +191,21 @@ cancelled or never-started jobs are not passing evidence). On 2026-11-19
 Actions app 15368) was added to the required status checks of the `main-production`
 ruleset (id 27423249). The strict up-to-date policy is kept and there are no bypass
 actors.
-cancelled or never-started jobs are not passing evidence). Making `ci-required` the
-required status check is a repository-settings change left to the owner.
+
+Verified with the throw-away PR #192, which was closed unmerged:
+
+- **Skipped job:** skipping `pinned-dataset-tests` made `ci-required` fail with
+  `{'pinned-dataset-tests': 'skipped'}` while the 14 other required checks
+  passed. The merge API refused: *Required status check "CI required (every job
+  executed and succeeded)" is failing.*
+- **Pending (not yet reported):** during a re-run, the merge API refused with *9
+  of 15 required status checks have not succeeded: 1 expected.* A check that
+  never starts stays in this expected state.
+- **Cancelled run:** cancelling the run made `ci-required` fail with every
+  cancelled dependency listed, and the merge API refused.
+
+`tests/test_test_execution_gate.py` pins `ci-required` to depend on every gating
+job and to accept only `success`.
 
 ### Production execution paths of the five wired modules (2026-11-19)
 
