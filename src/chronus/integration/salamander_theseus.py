@@ -140,7 +140,19 @@ class SalamanderTheseusRemediation:
         self.retained_evidence.append(stored.object_id)
 
     # Execute (Chronus process, THESEUS-owned operation) ----------------
+    def _owns(self, object_id: str) -> bool:
+        """True only if this remediation's tenant has a record for the object."""
+        try:
+            self.store.get_record(self.tenant_id, object_id)
+        except KeyError:
+            return False
+        return True
+
     def _execute_repair(self, request) -> Mapping[str, Any]:
+        if not self._owns(request.target):
+            # Out-of-scope target: no write. The verifier then sees the payload
+            # unchanged and rejects the action.
+            return {"handler_reported": {"repaired": False, "reason": "object not in tenant scope"}}
         result = self.store.repair_object(request.target, authority=f"salamander:{request.action_id}")
         return {"handler_reported": result}
 
@@ -186,6 +198,10 @@ class SalamanderTheseusRemediation:
         report.health_before = self._observe(len(findings), len(unrepairable))
         for finding in findings:
             object_id = finding["object_id"]
+            if not self._owns(object_id):
+                # Scan is database-wide; another tenant's object is out of scope
+                # for this tenant's approvals and evidence.
+                continue
             if finding["status"] != "REPAIRABLE":
                 # Select remediation: outside the bound there is no safe automatic
                 # action; escalate to a human with the evidence.
