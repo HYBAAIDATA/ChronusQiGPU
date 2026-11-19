@@ -99,3 +99,54 @@ from docs. Release posture is unchanged: **NOT QUALIFIED**.
 `docs_readme.txt` (1.9 MB), `hendrix.mhtml` (7.5 MB),
 `.pytest_temp_ga_handover/`. `theory_of_everything.py` and
 `BLOCKER_TOE_1.patch` were intentionally left untouched.
+
+## Closeout (2026-11-19)
+
+Wiring PR #173 merged as `c11af3e6` (main). The follow-up closeout PR carries:
+
+### Orphaned modules (17) — disposition
+
+| Module | Finding | Disposition |
+|---|---|---|
+| `durable` (`DurableChain`) | Documented in `docs/EVALUATOR_T2.md`; no tests | **Kept, wired**: signed-replay resume and foreign-key refusal tested |
+| `verify_cli` | Independent evaluator CLI for receipt chains | **Kept, wired**: console script `chronus-verify-chain`; exit codes 0/2 tested |
+| `crypto.verify_bundle` | Public-key-only dual-signature verifier | **Kept, wired**: console script `chronus-verify-bundle`; valid/tampered tested |
+| `padovan_folded` | Exact F_257 Padovan transform, unique | **Moved** to `chronus.math.padovan_folded`; mathematical contract tested |
+| `service.production_hr_api` (v1) | Maintained module (archive README); attrition endpoint crashed (500) | **Kept, wired**: endpoints tested; attrition-risk refuses with 501 when the tensor layer refuses its objective |
+| `hermes` | Canonical namespace, already tested by `test_repository_layout` | Kept (not actually orphaned) |
+| `pulvini.recovered.{geodesic_tensor_engine, quantum_formalism, quantum_optimizer}` | Quarantined provenance; `test_recovered_merge` asserts the engine never imports them; `geodesic_tensor_engine` needs a missing `euclid` package | Kept as research provenance; not wired by design |
+| `core.types_part1`, `core.types_part2` | Definition-for-definition duplicates of `core.enums`, `core.constants`, `core.dataclasses` (AST-compared) | Removed |
+| `execution.main` | Five-line print-only skeleton | Removed |
+| `verification` | Empty package | Removed |
+| `acceleration.chronos_gpu` | NumPy wrappers plus identity "placeholder" kernels; the fleet/iGPU packages are the maintained path | Removed |
+| `integration` | Written against a non-existent `AdapterRegistry` API (`functionals`/`discover`), broken `__all__`, placeholder mining shard | Removed |
+| `stratum.stratum_v2` | Stub with a simulated Noise handshake; never imported. Stratum V2 is **not implemented** | Removed |
+
+### Version single source
+
+Handled in PR #183 (`chronus.__version__` as the only declaration, read by
+`pyproject.toml`; value `37.0.0.dev0`, tag `v37.0.0.dev0-internal`, last stable
+tag `v36.0.1`), not duplicated here.
+
+### Root cleanup
+
+Removed one-off edit scripts (`_fix*.py`, `_add_*.py`, `_find_multiline_defs.py`,
+`_test_ga_import.py`, `apply_ovid_patch.py`), captured outputs
+(`al_haras_*_output.txt`, `temp_pytest_output.txt`, `chronus_dirs.txt`,
+`chronus_files.txt`), the committed `.pytest_temp_ga_handover/` and
+`hendrix.mhtml` (a saved internal page with personal data; the repository is
+public). `hendrix.mhtml` **remains in git history**; purging it needs a history
+rewrite and force-push, which is an owner decision. Kept: `BLOCKER_TOE_1.patch`
+(instruction), `BLOCKER_MILLENIEIEUM_1/2.patch` (they apply in neither direction
+to current code; owner decision), and `docs_readme.txt` (1.9 MB of corrupted
+UTF-16 text; needs an owner decision on whether a readable source exists).
+
+### CI execution evidence
+
+`scripts/ci/test_execution_gate.py` reads pytest JUnit and fails on failures,
+passed counts below the suite floor, skips outside the hardware/platform/pinned
+dependency allowlist, and xfails missing from `tests/known-failures.txt`. The main
+tests, OpenCL reference and new pinned scikit-learn 1.8.0 dataset jobs run it, and
+`ci-required` fails unless every required job concluded `success` (skipped,
+cancelled or never-started jobs are not passing evidence). Making `ci-required` the
+required status check is a repository-settings change left to the owner.
