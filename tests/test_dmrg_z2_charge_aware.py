@@ -112,7 +112,7 @@ def test_symmetry_breaking_mpo_is_refused_as_untrusted_result():
     n = 4
     terms = TFIM_terms(1.0, 1.0, n) + [HamiltonianTerm(sites=[0], operators=["Z"], coefficient=-0.3)]
     network, ledger = build_network(n, topology="MPS", chi_max=8, group="Z2")
-    mpo = build_hamiltonian_mpo(terms, n, group="none", chi_mpo_max=4)
+    mpo = build_hamiltonian_mpo(terms, n, group="none", chi_mpo_max=16)
     with pytest.raises(Z2SymmetryViolation) as refused:
         DMRG(network, ledger, mpo, chi_max=8, sweeps=1)
     assert isinstance(refused.value, UntrustedResult)
