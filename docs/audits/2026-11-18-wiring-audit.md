@@ -124,12 +124,9 @@ Wiring PR #173 merged as `c11af3e6` (main). The follow-up closeout PR carries:
 
 ### Version single source
 
-`pyproject.toml` (`37.0.0.dev0`; tag `v37.0.0.dev0-internal`, last stable tag
-`v36.0.1`) is the only declared version. `chronus._version` reads it and every
-module, API, SDK header and receipt `producer_version` imports it
-(`/health` previously said 36.0.1, `/health/ready` 36.0.0, the SDK 36.0.0 and
-`production_hr_api_v2` 36.0.2). `tests/test_version_single_source.py` enforces it.
-The Compute API sub-app keeps its own API contract version (1.0.0).
+Handled in PR #183 (`chronus.__version__` as the only declaration, read by
+`pyproject.toml`; value `37.0.0.dev0`, tag `v37.0.0.dev0-internal`, last stable
+tag `v36.0.1`), not duplicated here.
 
 ### Root cleanup
 
