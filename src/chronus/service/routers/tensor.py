@@ -143,21 +143,40 @@ def build_tensor_network(request: NetworkBuildRequest) -> dict[str, Any]:
     }
 
 
-# E3 is a deterministic ~1 CPU-minute 1,000-site DMRG. Runs are serialised and
-# a certified result is reused per solver policy, so repeated GETs cannot
-# multiply that cost; refusals are never cached and are recomputed honestly.
+# E3 is a deterministic ~40 s single-process 1,000-site DMRG. At most one run
+# executes at a time; concurrent requests get 503 instead of occupying a
+# threadpool worker while they wait. The outcome (certified result or honest
+# refusal) is deterministic per solver policy and is reused, so repeated GETs
+# cannot multiply the cost.
 _E3_LOCK = threading.Lock()
-_E3_RESULTS: dict[int, ExperimentResult] = {}
+_E3_OUTCOMES: dict[int, ExperimentResult | Exception] = {}
+
+
+class _E3Busy(Exception):
+    pass
 
 
 def _run_e3() -> ExperimentResult:
     from chronus.config import runtime_bounds
 
     policy = int(runtime_bounds()["max_dmrg_local_dim"])
-    with _E3_LOCK:
-        if policy not in _E3_RESULTS:
-            _E3_RESULTS[policy] = E3_honest_1000_node_claim()
-        return _E3_RESULTS[policy]
+    outcome = _E3_OUTCOMES.get(policy)
+    if outcome is None:
+        if not _E3_LOCK.acquire(blocking=False):
+            raise _E3Busy("E3 is already running; retry when it completes")
+        try:
+            outcome = _E3_OUTCOMES.get(policy)
+            if outcome is None:
+                try:
+                    outcome = E3_honest_1000_node_claim()
+                except (UntrustedApproximation, UntrustedResult) as refusal:
+                    outcome = refusal
+                _E3_OUTCOMES[policy] = outcome
+        finally:
+            _E3_LOCK.release()
+    if isinstance(outcome, Exception):
+        raise outcome
+    return outcome
 
 
 @router.get("/experiments/{exp_id}", response_model=dict[str, Any])
@@ -182,6 +201,12 @@ def run_or_inspect_experiment(exp_id: str) -> dict[str, Any]:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Unknown experiment '{exp_id}'. Valid experiments are E1, E2, E3.",
             )
+    except _E3Busy as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(e),
+            headers={"Retry-After": "60"},
+        )
     except (UntrustedApproximation, UntrustedResult, RefusedMethod, CharterViolation) as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,

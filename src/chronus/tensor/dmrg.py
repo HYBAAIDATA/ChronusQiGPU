@@ -31,6 +31,7 @@ from chronus.tensor.types import (
     Node,
     SymmetricTensor,
     TruncationRecord,
+    UntrustedResult,
 )
 from chronus.tensor.network import TensorNetwork
 
@@ -78,6 +79,10 @@ _HADAMARD = np.array([[1.0, 1.0], [1.0, -1.0]], dtype=np.complex128) / math.sqrt
 _SYMMETRY_LEAK_TOL = 1e-10
 
 
+class Z2SymmetryViolation(UntrustedResult, ValueError):
+    """A Z2 charge-conservation check failed; the result is refused, never projected."""
+
+
 def _local_dimension_policy() -> int:
     """Bounded local eigensolver policy (env CHRONUS_MAX_DMRG_LOCAL_DIM)."""
     from chronus.config import runtime_bounds
@@ -106,7 +111,7 @@ def _block_svd(
     total = np.linalg.norm(matrix)
     leak = np.linalg.norm(matrix[~allowed])
     if leak > _SYMMETRY_LEAK_TOL * max(1.0, total):
-        raise ValueError(f"Z2 block structure violated (off-sector norm {leak:.3e})")
+        raise Z2SymmetryViolation(f"Z2 block structure violated (off-sector norm {leak:.3e})")
     blocks = []
     for charge in (0, 1):
         rows = np.flatnonzero(row_labels == charge)
@@ -198,8 +203,6 @@ def _local_ground_vector(
     dimension = int(index.size)
     limit = _local_dimension_policy()
     if dimension > limit:
-        from chronus.tensor.types import UntrustedResult
-
         raise UntrustedResult(
             f"local effective Hamiltonian dimension {dimension} exceeds bounded "
             f"solver policy ({limit}; CHRONUS_MAX_DMRG_LOCAL_DIM)")
@@ -223,7 +226,8 @@ def _local_ground_vector(
         image = apply_full(probe)
         leak = np.linalg.norm(np.delete(image, index))
         if leak > _SYMMETRY_LEAK_TOL * max(1.0, np.linalg.norm(image)):
-            raise ValueError("effective Hamiltonian leaks out of the Z2 sector")
+            raise Z2SymmetryViolation(
+                f"effective Hamiltonian leaks out of the Z2 sector (off-sector norm {leak:.3e})")
 
     def multiply(vector: np.ndarray) -> np.ndarray:
         state = np.zeros(full, dtype=np.complex128)
@@ -264,11 +268,12 @@ def _z2_mpo_charges(operators: list[np.ndarray]) -> None:
             if q_out[x] == -1:
                 q_out[x] = charge
             elif q_out[x] != charge:
-                raise ValueError(
-                    f"MPO site {i} does not commute with the Z2 generator prod_i X_i")
+                raise Z2SymmetryViolation(
+                    f"MPO site {i} does not commute with the Z2 generator prod_i X_i "
+                    f"in its virtual-channel gauge (mixed-charge channels are refused, not resolved)")
         q_in = np.where(q_out < 0, 0, q_out)
     if np.any(q_in != 0):
-        raise ValueError("MPO carries non-neutral total Z2 charge")
+        raise Z2SymmetryViolation("MPO carries non-neutral total Z2 charge")
 
 
 def _z2_project(sites: list[np.ndarray], target: int) -> list[np.ndarray]:
@@ -403,7 +408,12 @@ def DMRG(
 
     _right_canonicalize(sites, bond_labels)
     pending_truncations: list[tuple[int, float, int]] = []
-    accumulated_bound = 0.0
+    # claim_bound is a budget for the caller's whole ledger, including bounds
+    # already recorded before this call.
+    accumulated_bound = ledger.global_bound
+    if claim_bound is not None and accumulated_bound >= claim_bound:
+        raise UntrustedApproximation(
+            f"ledger bound {accumulated_bound:.3e} already exhausts the claim budget {claim_bound:.3e}")
     previous_energy: float | None = None
     phys = np.arange(2)
     for sweep in range(sweeps):

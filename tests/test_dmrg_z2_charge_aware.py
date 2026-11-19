@@ -103,3 +103,36 @@ def test_local_dimension_policy_refuses_instead_of_running_unbounded():
 def test_invalid_target_parity_is_refused():
     with pytest.raises(ValueError):
         _run(4, parity=2)
+
+
+def test_symmetry_breaking_mpo_is_refused_as_untrusted_result():
+    from chronus.tensor.dmrg import Z2SymmetryViolation
+    from chronus.tensor.hamiltonian import HamiltonianTerm
+
+    n = 4
+    terms = TFIM_terms(1.0, 1.0, n) + [HamiltonianTerm(sites=[0], operators=["Z"], coefficient=-0.3)]
+    network, ledger = build_network(n, topology="MPS", chi_max=8, group="Z2")
+    mpo = build_hamiltonian_mpo(terms, n, group="none", chi_mpo_max=4)
+    with pytest.raises(Z2SymmetryViolation) as refused:
+        DMRG(network, ledger, mpo, chi_max=8, sweeps=1)
+    assert isinstance(refused.value, UntrustedResult)
+    assert not ledger.truncations
+
+
+def test_claim_budget_counts_bounds_already_in_the_ledger():
+    from chronus.tensor.types import TruncationRecord
+
+    network, ledger = build_network(6, topology="MPS", chi_max=8, group="Z2")
+    ledger.append(TruncationRecord(step=ledger.next_step(), bond=(0, 1), method="svd", discarded_weight=1e-12,
+                                   kept_chi=1, error_bound=2e-6, theorem_ref="Eckart-Young-Mirsky"))
+    mpo = build_hamiltonian_mpo(TFIM_terms(1.0, 1.0, 6), 6, group="none", chi_mpo_max=4)
+    with pytest.raises(UntrustedApproximation, match="already exhausts"):
+        DMRG(network, ledger, mpo, chi_max=8, sweeps=1, claim_bound=1e-6)
+
+
+def test_e3_refuses_any_size_other_than_its_1000_node_claim():
+    from chronus.tensor.experiments import E3_honest_1000_node_claim
+
+    for n in (1, 2, 100):
+        with pytest.raises(ValueError, match="1,000-node claim"):
+            E3_honest_1000_node_claim(n_nodes=n)

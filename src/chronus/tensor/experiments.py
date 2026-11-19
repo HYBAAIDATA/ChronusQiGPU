@@ -284,6 +284,10 @@ def E3_honest_1000_node_claim(
     """
     from chronus.tensor.types import UntrustedApproximation, UntrustedResult
 
+    if n_nodes != 1000:
+        # E3 is defined as the 1,000-node claim; its summary, certificate and
+        # telemetry labels certify exactly that size and nothing else.
+        raise ValueError("E3 is the 1,000-node claim; n_nodes must be 1000")
     program_entry_check()
 
     net, ledger = build_network(n_nodes, "MPS", chi_max=chi_max, group="Z2")
@@ -293,7 +297,7 @@ def E3_honest_1000_node_claim(
     steps = 2 * sweeps * (n_nodes - 1)
     cutoff = (ledger.claim_bound / (4.0 * steps)) ** 2
     e0_1000 = DMRG(net, ledger, H_mpo, chi_max=chi_max, sweeps=sweeps, cutoff=cutoff,
-                   claim_bound=ledger.claim_bound - ledger.global_bound, target_parity=0)
+                   claim_bound=ledger.claim_bound, target_parity=0)
 
     if not ledger.is_certified():
         raise UntrustedApproximation(

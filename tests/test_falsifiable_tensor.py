@@ -358,6 +358,24 @@ def test_api_e3_policy_refusal_is_422_not_500():
     assert "honest refusal" in response.json()["detail"]
 
 
+def test_api_e3_concurrent_request_gets_503_instead_of_waiting():
+    from chronus.service.routers import tensor as tensor_router
+
+    previous = os.environ.get("CHRONUS_MAX_DMRG_LOCAL_DIM")
+    os.environ["CHRONUS_MAX_DMRG_LOCAL_DIM"] = "5"  # a policy with no cached outcome
+    assert tensor_router._E3_LOCK.acquire(blocking=False)
+    try:
+        response = client.get("/v1/tensor/experiments/E3")
+    finally:
+        tensor_router._E3_LOCK.release()
+        if previous is None:
+            os.environ.pop("CHRONUS_MAX_DMRG_LOCAL_DIM", None)
+        else:
+            os.environ["CHRONUS_MAX_DMRG_LOCAL_DIM"] = previous
+    assert response.status_code == 503
+    assert response.headers["Retry-After"] == "60"
+
+
 @pytest.mark.parametrize("exp_id", ["E1", "E2"])
 def test_api_run_experiments(exp_id):
     """Test GET /v1/tensor/experiments/{exp_id} for E1 and E2 (E3: see the E3 tests above)."""
