@@ -1,7 +1,6 @@
 """Every mathematical claim in docs/papers/grover_in_o1_exact_ring_folding.{tex,md}, checked exactly."""
 from __future__ import annotations
 
-import os
 from fractions import Fraction
 
 import pytest
