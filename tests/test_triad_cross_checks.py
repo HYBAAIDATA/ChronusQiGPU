@@ -18,9 +18,10 @@ pytestmark = pytest.mark.real
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_triad_cross_checks_have_no_failures(tmp_path: Path) -> None:
+@pytest.mark.parametrize("self_healing", ["1", "0"])
+def test_triad_cross_checks_have_no_failures(tmp_path: Path, self_healing: str) -> None:
     out = tmp_path / "cross.json"
-    env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
+    env = {**os.environ, "PYTHONPATH": str(ROOT / "src"), "CHRONUS_SELF_HEALING": self_healing}
     env.pop("CHRONUS_EXECUTION_BASE_URL", None)
     proc = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "ci" / "triad_cross_checks.py"), "--out", str(out)],
@@ -32,4 +33,8 @@ def test_triad_cross_checks_have_no_failures(tmp_path: Path) -> None:
     assert not failures, failures
     ids = {r["id"] for r in doc["results"]}
     assert {"X1", "X2a", "X2d", "X3", "X4", "X5a", "X5b", "X8", "X8b"} <= ids
+    status = {r["id"]: r["status"] for r in doc["results"]}
+    # Out-of-bound damage must fail closed in both modes; in-bound repair only when enabled.
+    assert status["X8b"] == "PASS"
+    assert status["X8"] == ("PASS" if self_healing == "1" else "GAP")
     assert doc["environment"]["physical_device_evidence"] is False

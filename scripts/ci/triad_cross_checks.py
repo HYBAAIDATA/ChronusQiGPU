@@ -191,9 +191,16 @@ def check_tenant_isolation_and_concurrency(tmp: Path) -> None:
     integ = _raises(final.theseus.verify_store)
     continuity = all(final.theseus.verify_journal_continuity(t) for t in
                      [f"tenant-{k}" for k in range(4)] + ["tenant-proc"])
-    ok = not errors and not bad and integ is None and continuity and len(receipts) == 80
+    con = sqlite3.connect(db)
+    proc_commits = int(con.execute(
+        "SELECT COUNT(*) FROM journal WHERE tenant_id='tenant-proc' AND event_type='TRIAD_REPRESENTATION_COMMITTED'"
+    ).fetchone()[0])
+    con.close()
+    ok = (not errors and not bad and integ is None and continuity and len(receipts) == 80
+          and proc_commits == 60)
     record("X4", "Concurrency: 8 threads x 10 puts + 3 processes x 20 puts on one store", "PASS" if ok else "FAIL",
-           f"thread puts={len(receipts)} in {elapsed:.2f}s, errors={errors[:2]}, unverifiable={len(bad)}, "
+           f"thread puts={len(receipts)} in {elapsed:.2f}s, process commits in journal={proc_commits}/60, "
+           f"errors={errors[:2]}, unverifiable={len(bad)}, "
            f"verify_store={'PASS' if integ is None else integ}, journal continuity={continuity}")
 
 
@@ -298,8 +305,13 @@ def check_storage_self_healing(tmp: Path) -> None:
     triad = ProductionTriad(str(db))
     if not getattr(triad.theseus, "self_healing", False):
         record("X8", "Bounded storage self-healing through the triad", "GAP",
-               "DurableTheseusService.self_healing is not enabled/available on this revision")
-        return
+               "DurableTheseusService.self_healing is not enabled (CHRONUS_SELF_HEALING off) or not available")
+    else:
+        _check_in_bound_repair(db, triad)
+    _check_out_of_bound_fails_closed(tmp)
+
+
+def _check_in_bound_repair(db: Path, triad: ProductionTriad) -> None:
     payload = os.urandom(4096)
     r = triad.put("tenant-a", payload)
     con = sqlite3.connect(db)
@@ -330,6 +342,10 @@ def check_storage_self_healing(tmp: Path) -> None:
            f"content address: {hashlib.sha256(healed).hexdigest() == r.representation_object_id}; "
            f"self_heal_events: {events}; reopen+materialise {elapsed * 1000:.1f} ms (single local run, box CPU)")
 
+
+
+def _check_out_of_bound_fails_closed(tmp: Path) -> None:
+    """Required in both modes: with self-healing on (beyond the bound) and off (strict)."""
     # Out-of-bound damage must fail closed: 9 corrupted bytes in one 32-byte block exceeds t = 8.
     db2 = tmp / "selfheal_bound.sqlite3"
     triad2 = ProductionTriad(str(db2))
