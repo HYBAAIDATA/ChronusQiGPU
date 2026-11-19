@@ -38,6 +38,8 @@ from chronus.storage.phyllotaxis import (
     metallic_conjugate_64,
 )
 
+pytestmark = pytest.mark.real
+
 MAX_EXAMPLES = dict(max_examples=60, deadline=None)
 
 

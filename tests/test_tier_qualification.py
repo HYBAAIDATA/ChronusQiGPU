@@ -11,6 +11,9 @@ from contextlib import contextmanager
 from decimal import Decimal, localcontext
 from pathlib import Path
 from typing import Iterator
+import pytest
+
+pytestmark = pytest.mark.simulated
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))

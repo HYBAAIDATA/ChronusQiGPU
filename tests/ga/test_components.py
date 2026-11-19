@@ -13,6 +13,9 @@ from ga.mathcore import (
     SegmentedWAL,
     YangMillsConnection,
 )
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 def test_weighted_forman_curvature_and_flow_are_dynamic():

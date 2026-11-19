@@ -1,5 +1,8 @@
 import json
 from scripts.ci.build_evidence import build
+import pytest
+
+pytestmark = pytest.mark.real
 
 def test_skipped_test_is_unqualified(tmp_path):
     junit=tmp_path/"junit.xml"

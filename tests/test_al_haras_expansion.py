@@ -45,6 +45,8 @@ from chronus.security.al_haras import (
     braids,
 )
 
+pytestmark = pytest.mark.simulated
+
 
 # ==============================================================================
 # SECTION 1: AGENTIC SHEAF IMMUNE SYSTEM (FRONTIER 5)

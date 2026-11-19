@@ -4,6 +4,8 @@ import numpy as np
 import pytest
 from chronus.pulvini import PhiRecursiveOperator, ValidationError, fold_verified, unfold_verified
 
+pytestmark = pytest.mark.real
+
 
 @pytest.mark.parametrize("depth", range(0, 9))
 def test_reconstruction_and_retained_bytes(depth):

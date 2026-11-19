@@ -24,6 +24,9 @@ from chronus.fleet.ledger import verify_ledger
 from chronus.fleet.receipts import verify_receipt
 from chronus.fleet.workunit import WorkUnit
 from tests.fleet_support import PLUGIN_MODULE, PYTHON, child_env, state_dir
+import pytest
+
+pytestmark = pytest.mark.real
 
 JOIN_TIMEOUT_S = 240
 JOB_TIMEOUT_S = 240

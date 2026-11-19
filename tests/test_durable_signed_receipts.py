@@ -13,6 +13,8 @@ from chronus.security.receipts import Receipt
 from chronus.storage.durable import DurableTheseusService
 from chronus.storage.theseus import StorageIntegrityError
 
+pytestmark = pytest.mark.simulated
+
 
 def receipt(log: DurableReceiptLog, key: Ed25519Signer, *, tenant="tenant-a") -> Receipt:
     return Receipt(

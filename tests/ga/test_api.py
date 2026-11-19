@@ -4,6 +4,9 @@ from fastapi.testclient import TestClient
 
 from ga.api import AppState, create_app
 from ga.mathcore import PhyllotaxisLattice
+import pytest
+
+pytestmark = pytest.mark.real
 
 ROOT = Path(__file__).resolve().parents[2]
 AUTH = {"Authorization": "Bearer test-token"}

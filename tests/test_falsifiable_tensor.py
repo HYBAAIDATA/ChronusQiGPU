@@ -49,6 +49,8 @@ from chronus.tensor import (
     theorem_for,
 )
 
+pytestmark = pytest.mark.real
+
 client = TestClient(app)
 
 
@@ -102,7 +104,8 @@ def test_hard_cap_theorem_derivation():
 
 def test_build_network_enforces_hard_cap():
     """Section 2: Assert build_network refuses bond dimensions beyond HARD_CAP_THEOREM()."""
-    with pytest.raises(AssertionError):
+    # Fail-closed planning raises ValueError (asserts vanish under python -O).
+    with pytest.raises(ValueError, match="bond dimension exceeds configured bound"):
         build_network(n_nodes=10, topology="MPS", chi_max=30000)
 
 
@@ -333,13 +336,20 @@ def test_api_network_build():
     assert data["theoretical_saving_factor"] == 2.0
 
 
-def test_api_run_experiments():
-    """Test GET /v1/tensor/experiments/{exp_id} for E1, E2, and E3."""
-    for exp_id in ("E1", "E2", "E3"):
-        response = client.get(f"/v1/tensor/experiments/{exp_id}")
-        assert response.status_code == 200
-        data = response.json()
-        assert data["experiment_id"] == exp_id
-        assert data["passed"] is True
-        assert data["status"] == "PASS"
-        assert "certificate" in data
+def test_api_e3_refuses_while_charge_aware_dmrg_is_unimplemented():
+    """E3 needs charge-aware DMRG; until it exists the API refuses with 501, not 500."""
+    response = client.get("/v1/tensor/experiments/E3")
+    assert response.status_code == 501
+    assert "charge-aware DMRG" in response.json()["detail"]
+
+
+@pytest.mark.parametrize("exp_id", ["E1", "E2"])
+def test_api_run_experiments(exp_id):
+    """Test GET /v1/tensor/experiments/{exp_id} for E1 and E2 (E3: see the 501 test above)."""
+    response = client.get(f"/v1/tensor/experiments/{exp_id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["experiment_id"] == exp_id
+    assert data["passed"] is True
+    assert data["status"] == "PASS"
+    assert "certificate" in data

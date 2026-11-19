@@ -10,6 +10,9 @@ from chronus.ladder import (
     verify,
     _self_test,
 )
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 def test_self_test_passes():

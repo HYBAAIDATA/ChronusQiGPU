@@ -16,6 +16,8 @@ from chronus.crypto.signers import (
     verify,
 )
 
+pytestmark = pytest.mark.real
+
 SEED = bytes.fromhex(
     "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60"
 )

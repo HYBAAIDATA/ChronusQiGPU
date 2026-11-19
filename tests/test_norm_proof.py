@@ -7,6 +7,8 @@ import pytest
 from chronus.execution import NativeMathReferenceBackend
 from chronus.security.norm_proof import GROUP_ORDER, P, NormProof, norm, prove, verify
 
+pytestmark = pytest.mark.real
+
 
 def test_field_arithmetic_norm_identities():
     assert norm((1, 0)) == 1

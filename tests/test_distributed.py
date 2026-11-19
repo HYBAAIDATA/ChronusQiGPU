@@ -17,6 +17,8 @@ from chronus.distributed import (
     NodeStatus,
 )
 
+pytestmark = pytest.mark.real
+
 
 # ---------------------------------------------------------------------------
 # ClusterOrchestrator

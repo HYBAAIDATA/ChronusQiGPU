@@ -41,6 +41,8 @@ from chronus.storage.connectors import (
     classify_memory_access_class,
 )
 
+pytestmark = pytest.mark.simulated
+
 
 class TestZeroCopyPrimitives:
     def test_all_enterprise_and_hyperscaler_connector_specs_present(self):

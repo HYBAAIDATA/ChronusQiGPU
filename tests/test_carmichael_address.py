@@ -10,6 +10,9 @@ from chronus.math.carmichael_address import (
     primitive_divisor,
     self_test,
 )
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 class CarmichaelAddressTests(unittest.TestCase):

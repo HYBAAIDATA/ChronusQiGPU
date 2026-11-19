@@ -12,6 +12,8 @@ from chronus.fleet.receipts import verify_receipt, RECEIPT_SCHEMA, SIGNATURE_ALG
 from chronus.fleet.transport import FleetClient, FleetHTTPServer
 from chronus.fleet.workunit import WorkUnit
 
+pytestmark = pytest.mark.simulated
+
 
 def test_replay_capacity_never_forgets_unexpired_nonces():
     cache = ReplayCache(capacity=2)

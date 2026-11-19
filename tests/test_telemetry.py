@@ -4,6 +4,8 @@ import pytest
 
 from chronus.service.telemetry import PrometheusMetricsRegistry, current_trace_id, trace_span
 
+pytestmark = pytest.mark.real
+
 
 def test_hardware_metrics_are_absent_until_observed():
     registry = PrometheusMetricsRegistry()

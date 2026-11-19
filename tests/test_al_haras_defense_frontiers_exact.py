@@ -28,6 +28,8 @@ from chronus.security.al_haras.defense_frontiers import (
 )
 from chronus.security.al_haras.receipts import ReceiptSigner
 
+pytestmark = pytest.mark.simulated
+
 BANNED_LABELS = [
     "Pentagon", "JADC2", "GCHQ", "NCSC", "DARPA", "NATO", "Five Eyes", "FIVE_EYES", "FedRAMP", "IL6",
     "OPERATIONAL_DEPLOYED", "SUPREMACY", "MISSION_QUALIFIED", "CERTIFIED", "mldsa87_", "EXASCALE", "1-Cycle", "1_CYCLE",

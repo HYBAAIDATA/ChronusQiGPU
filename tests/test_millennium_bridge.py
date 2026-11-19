@@ -15,6 +15,9 @@ from chronus.research.millennium_bridge import (
     self_test,
     wilson_gap,
 )
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 class GoldenArithmeticTests(unittest.TestCase):

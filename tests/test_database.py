@@ -20,6 +20,8 @@ from chronus.database.models import (
     WorkloadRecord,
 )
 
+pytestmark = pytest.mark.simulated
+
 
 # ---------------------------------------------------------------------------
 # DatabaseConfig

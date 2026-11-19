@@ -13,6 +13,8 @@ import pytest
 from chronus.tensor.geodesic import TopologicalIntegrityGate
 from chronus.tensor.opencl_backend import OpenCLTensorBackend
 
+pytestmark = pytest.mark.real
+
 
 def test_componentwise_higham_accepts_actual_float32_result():
     a = np.array([[1.0, 2.0, -3.0], [4.0, 5.0, 6.0]], dtype=np.float32)

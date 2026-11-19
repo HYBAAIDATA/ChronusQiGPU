@@ -28,6 +28,9 @@ from sovereign_attestation import (
     verify_toe_quantum_pillar,
     verify_distribution_packages,
 )
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 class TestBehavioralSovereignAttestation(unittest.TestCase):

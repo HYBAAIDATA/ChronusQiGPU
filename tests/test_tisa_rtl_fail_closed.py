@@ -6,6 +6,9 @@ from pathlib import Path
 import re
 
 from chronus.security.al_haras.hardware_t_isa import RTL_SEMANTICS
+import pytest
+
+pytestmark = pytest.mark.real
 
 
 def test_unimplemented_stark_rtl_traps_instead_of_returning_pass():
