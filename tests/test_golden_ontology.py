@@ -62,6 +62,10 @@ class TestNormativeVectors(unittest.TestCase):
                         self.fail("unknown reject operation")
 
 class TestExactSubstrate(unittest.TestCase):
+    def test_sequence_and_width_contract(self):
+        for width in (1,8,4097):
+            x=range(2)
+            self.assertEqual(unfold_words(fold_words(x,7,width),7,width),list(x))
     def test_4096_bit_roundtrip(self):
         b=4096
         p=pisano_period_pow2(b)

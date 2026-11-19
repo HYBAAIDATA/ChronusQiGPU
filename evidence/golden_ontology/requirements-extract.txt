@@ -1,0 +1,14 @@
+All core modules use the Python standard library exclusively.
+Fixes the exponential-complexity bug by performing modular reduction inside every fast-doubling iteration
+implements the full unimodular Pisot-Vijayaraghavan (PV) registry (golden, silver, plastic, supergolden, tribonacci)
+Eliminates silent truncation (% m on inputs).
+before any floating-point evaluation.
+Wires all 5 PV families into PisotFilter
+ZeckendorfMap with strict monotonicity verification.
+Adversarial Classical Benchmarks (verify/benchmark.py)
+Machine-Checked Formal Proof (formal/GoldenFold.lean)
+Normative Third-Party QC Specification
+Fail-Closed Governance Gate
+Loads `spec/test_vectors.json` directly, enforces every `accept` and `reject` vector, verifies 4096-bit modular fast-doubling latency/bijectivity, and checks all five PV families and Q(5) norm certificates.
+General Pisano Periodicity Proof (`formal/GoldenFold.lean`)
+self.assertLess(elapsed, 1.0, f"4096-bit fold too slow: {elapsed:.3f}s")

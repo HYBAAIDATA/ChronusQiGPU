@@ -1,4 +1,5 @@
 """Canonical modular Q-fold; no input coercion."""
+from collections.abc import Sequence
 from .substrate import fib_pair,pisano_period_pow2
 
 class RangeError(ValueError):
@@ -8,12 +9,13 @@ class PeriodError(ValueError):
     pass
 
 def _apply(words,steps,bits,expected_period,inverse):
-    if type(bits) is not int or not 1<=bits<=4096:
-        raise ValueError("width must be in [1,4096]")
+    if type(bits) is not int or bits<1:
+        raise ValueError("width must be a positive integer")
     if type(steps) is not int or steps<0:
         raise ValueError("nonnegative integer steps required")
-    if not isinstance(words,(list,tuple)) or len(words)%2:
+    if not isinstance(words,Sequence) or isinstance(words,str) or len(words)%2:
         raise ValueError("even word sequence required")
+    words=list(words)
     m=1<<bits
     if any(type(v) is not int or not 0<=v<m for v in words):
         raise RangeError("noncanonical unsigned word")

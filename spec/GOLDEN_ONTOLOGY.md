@@ -7,7 +7,7 @@ OVID, AL HARAS, THESEUS or TURING authority paths. The earlier checkpoint profil
 
 ## GO-01 — exact golden fold
 
-For width b in [1,4096], modulus m=2^b, canonical even-length integer words
+For every positive integer width b, modulus m=2^b, canonical even-length integer words
 (including the empty sequence), and nonnegative integer steps s, let Q=[[1,1],[1,0]].
 Reject booleans, negative and out-of-range words, odd length and invalid width;
 do not reduce input words. An explicit period must be the exact integer
@@ -16,6 +16,7 @@ reducing on every iteration modulo m. Multiply successive pairs by
 [[F(n+1),F(n)],[F(n),F(n+1)-F(n)]] modulo m. Inverse uses (-s) mod P.
 Cassini: determinant is (-1)^n, hence a unit. Bit complexity depends on width
 and multiplication; O(log n) counts modular integer operations, not bit operations.
+The measured acceptance width is 4096 bits, not a mathematical maximum.
 This bijection neither compresses nor proves authenticity of a particular payload.
 A trusted original/digest is required for payload integrity; a bare image is unbound.
 
