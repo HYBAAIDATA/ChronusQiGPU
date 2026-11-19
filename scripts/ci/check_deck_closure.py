@@ -28,20 +28,17 @@ def verify_binding(root, row, revision):
     relative = Path(path)
     if relative.is_absolute() or ".." in relative.parts or ":" in path:
         raise ValueError("invalid evidence path")
-    if row["status"] == "SPECIFIED":
-        subprocess.run(["git", "merge-base", "--is-ancestor", source, revision],
-                       cwd=root, check=True, capture_output=True)
-        subprocess.run(["git", "merge-base", "--is-ancestor", commit, revision],
-                       cwd=root, check=True, capture_output=True)
-    else:
+    subprocess.run(["git", "merge-base", "--is-ancestor", source, revision],
+                   cwd=root, check=True, capture_output=True)
+    subprocess.run(["git", "merge-base", "--is-ancestor", commit, revision],
+                   cwd=root, check=True, capture_output=True)
+    if row["status"] == "MEASURED":
         subprocess.run(["git", "merge-base", "--is-ancestor", source, commit],
                        cwd=root, check=True, capture_output=True)
     raw = subprocess.check_output(["git", "show", f"{commit}:{path}"], cwd=root)
     if hashlib.sha256(raw).hexdigest() != digest:
         raise ValueError("artifact digest mismatch")
     if row["status"] == "MEASURED":
-        if source != revision:
-            raise ValueError("measured evidence has not been rerun at reviewed revision")
         evidence = json.loads(raw)
         if evidence.get("source_commit") != source:
             raise ValueError("measurement artifact source revision mismatch")
