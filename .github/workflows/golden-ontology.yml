@@ -74,6 +74,7 @@ jobs:
           mkdir -p golden-lean-evidence
           git rev-parse HEAD > golden-lean-evidence/commit.txt
           elan run leanprover/lean4:v4.36.0 lean --version | tee golden-lean-evidence/toolchain.txt
+          elan run leanprover/lean4:v4.36.0 lean formal/GoldenFold.lean 2>&1 | tee golden-lean-evidence/compile.log
           bash formal/check_golden_fold.sh 2>&1 | tee golden-lean-evidence/lean.log
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()

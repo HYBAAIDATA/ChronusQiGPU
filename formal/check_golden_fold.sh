@@ -47,8 +47,13 @@ open Lean in
     IO.println s!"GOLDENDECL {(privateToUserName? n).getD n} AXIOMS {axs.toList}"
 LEAN
 } > "$probe"
-output=$("${lean_cmd[@]}" "$probe" 2>&1)
-printf '%s\n' "$output"
+if output=$("${lean_cmd[@]}" "$probe" 2>&1); then
+  printf '%s\n' "$output"
+else
+  rc=$?
+  printf '%s\n' "$output" >&2
+  exit "$rc"
+fi
 if printf '%s\n' "$output" | grep -E '^GOLDENAXIOMDECL '; then
   echo 'An axiom is declared in namespace GoldenFold' >&2
   exit 1
