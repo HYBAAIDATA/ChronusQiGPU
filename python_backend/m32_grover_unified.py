@@ -162,6 +162,7 @@ def window_base_excluding_winner(nonce: int, window: int) -> int:
     nonce &= 0xFFFFFFFF
     base = (nonce + window) & 0xFFFFFFFF
     # If the unwrapped window [base, base+window) contains nonce, shift again.
+
     def contains(b: int) -> bool:
         end = b + window
         if end <= 1 << 32:
@@ -297,7 +298,9 @@ def unified_search(header80: bytes, target: int, base: int, window: int, *,
         rec = asdict(lr)
         if isinstance(rec.get("p_marked"), Fraction):
             rec["p_marked"] = f"{rec['p_marked'].numerator}/{rec['p_marked'].denominator}"
-        runs.append(rec); iters += lr.iterations * max(1, lr.repetitions); meas += lr.repetitions
+        runs.append(rec)
+        iters += lr.iterations * max(1, lr.repetitions)
+        meas += lr.repetitions
         if lr.verified:
             tel = oracle.telemetry
             return SearchResult(
@@ -315,11 +318,9 @@ def unified_search(header80: bytes, target: int, base: int, window: int, *,
     )
 
 
-
 # ---------------------------------------------------------------------------
 # CLI: run on verified mainnet headers (offline, no pool access)
 # ---------------------------------------------------------------------------
-
 
 
 def fair_linear_cost(header80: bytes, target: int, base: int, window: int, *,

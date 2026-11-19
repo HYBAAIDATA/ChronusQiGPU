@@ -1,5 +1,4 @@
 """Tests for m32_grover_unified.py, BitSlicedDomainOracle, and Grover helper fixes."""
-import hashlib
 import inspect
 import json
 import math
@@ -7,7 +6,6 @@ import random
 import struct
 from pathlib import Path
 
-import numpy as np
 import pytest
 
 from fractions import Fraction
@@ -48,7 +46,6 @@ def hashlib_mask(header_prefix76: bytes, nonces, target: int) -> int:
         if hash_meets_target(digest, target):
             m |= 1 << i
     return m
-
 
 
 SEARCH_PATH = [
@@ -137,7 +134,6 @@ def test_optimal_iterations_found_by_exact_stepping():
     assert u.peak_iterations(4096, 1) == 50
     # N=2, M=1: p stays 1/2, so the peak is at 0 iterates.
     assert u.peak_iterations(2, 1) == 0
-    huge = u.optimal_iterations if hasattr(u, "optimal_iterations") else None
     from python_backend.exact_folded_grover import optimal_iterations
     assert optimal_iterations(10**100, 1) == ITERATION_CAP + 1
 
@@ -145,7 +141,7 @@ def test_optimal_iterations_found_by_exact_stepping():
 def test_pisot_damp_is_exact_in_qsqrt5_not_a_phase():
     # 1 - |psi| = 1 - (sqrt5-1)/2 = (3-sqrt5)/2
     assert pisot_damp_qsqrt5(1) == QSqrt5(Fraction(3, 2), Fraction(-1, 2))
-    # 1 - |psi|^2 = 1 - (3-sqrt5)/2 wait |psi|^2 = (3-sqrt5)/2? 
+    # 1 - |psi|^2 = 1 - (3-sqrt5)/2 wait |psi|^2 = (3-sqrt5)/2?
     # |psi|^2 = ((sqrt5-1)/2)^2 = (5-2sqrt5+1)/4 = (3-sqrt5)/2
     # 1 - that = 1 - (3-sqrt5)/2 = (2-3+sqrt5)/2 = (sqrt5-1)/2
     assert pisot_damp_qsqrt5(2) == QSqrt5(Fraction(-1, 2), Fraction(1, 2))
