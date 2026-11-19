@@ -1,0 +1,66 @@
+{
+  "schema": "chronus.five-lens.artifacts/1",
+  "source_commit": "a08593daf4c9d64fbb23d401407586c22b9befa6",
+  "artifacts": [
+    {
+      "path": "docs/settlement/IPMVP_CONFORMITY.md",
+      "sha256": "f5da28588a652ea51bef8a6e3d85f73b7b8d3d8610a784bab6f9dd8b58bc0285"
+    },
+    {
+      "path": "tests/test_ipmvp.py",
+      "sha256": "0b0076ec371d1033709e8eeb4025dee1935af26f65c7163101182ca638df1c88"
+    },
+    {
+      "path": "docs/executive/CEO_STAKE_MEMO.md",
+      "sha256": "9f70e79eb0540bcdb1dce2655e8b6b6e90bb6479c941b45500f23001df472bb1"
+    },
+    {
+      "path": "docs/analysts/TEI_INITIATION.md",
+      "sha256": "86879ef708e2192b9191ef8ea0a0946bea1b481da74234e33ec8353d7fc5f888"
+    },
+    {
+      "path": "scripts/benchmarks/fold_residency_campaign.py",
+      "sha256": "7b96eb8adc70da95ea6dad0b3271058bd1783b471d74c30bb5216f638aeea667"
+    },
+    {
+      "path": "docs/analysts/ANALYST_PACKAGE.md",
+      "sha256": "8db609b7c5c992bf63b10212d7577a3e0edcec1cd1c72153e5cc76d006834e0c"
+    },
+    {
+      "path": "go_to_market/NAMED_ROSTER.md",
+      "sha256": "faa2905e7cd32c14edf4444f8207934b952886fd94686d942c6750d7dd434c91"
+    },
+    {
+      "path": "go_to_market/PARTNER_READINESS.md",
+      "sha256": "898c8cd95fd6468d7a7d60caad4d8858194ba94b0ba758abba80d291ae305b43"
+    },
+    {
+      "path": "deploy/reference_architectures/financial_records_archive.md",
+      "sha256": "258121dcd2a1b1fd34bda61390161dbdec8c321728c925641094c25d65705df2"
+    },
+    {
+      "path": "deploy/reference_architectures/medical_imaging_pacs.md",
+      "sha256": "10d9169a96d713124145946661f4d5446c11a877a8b1943db85b4f71c7f3dba1"
+    },
+    {
+      "path": "deploy/reference_architectures/regulated_ai_checkpointing.md",
+      "sha256": "31f9eac580417f584865fd44a6e919ceaa1e8e428483f060f6624fb9546b6e94"
+    },
+    {
+      "path": "evidence/residency/0f94d2d6ae917eb819943dda6cb7d58baa99a08c/campaign.json",
+      "sha256": "95da6c4d659c8795765ac14512840423bfa6559824777b5835c6e72ae2d396c9"
+    },
+    {
+      "path": "evidence/five_lens/runs/0f94d2d6ae917eb819943dda6cb7d58baa99a08c/receipt.json",
+      "sha256": "6b5f266bd1d1326ca162c27ee2ff2c033ee8c622c4412ecf3fc747347b44ca4a"
+    },
+    {
+      "path": "evidence/five_lens/findings.json",
+      "sha256": "91fa9af684990aa4452edc116bfdec958775703a2bff5c728caa3f8b2442b59e"
+    },
+    {
+      "path": "STATUS.md",
+      "sha256": "784bbd6feea2505dd437499276256db7a3545c9120a910df395e6638126e36cc"
+    }
+  ]
+}
