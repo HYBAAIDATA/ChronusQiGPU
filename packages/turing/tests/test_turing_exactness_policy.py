@@ -128,3 +128,18 @@ def test_new_modules_do_not_load_floating_point_modules():
             if isinstance(node, ast.ImportFrom) and node.level >= 1 and node.module:
                 tree_imports.add(node.module.split(".")[0])
     assert tree_imports.isdisjoint(LEGACY_MODULES)
+
+@pytest.mark.parametrize("source, rejected", [
+    ("from turing.exact.geometry.hilbert import SparseState", False),
+    ("import turing.exact.geometry.operators", False),
+    ("from turing.state import State", True),
+    ("import turing.operator", True),
+    ("from chronus.quantum import state", True),
+    ("from turing import state", True),
+    ("value = 0.5", True),
+    ("import random", True),
+])
+def test_policy_distinguishes_exact_imports_from_prohibited_code(tmp_path, source, rejected):
+    path = tmp_path / "sample.py"
+    path.write_text(source, encoding="utf-8")
+    assert bool(_violations(path)) is rejected
