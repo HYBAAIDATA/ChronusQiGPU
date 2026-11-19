@@ -28,6 +28,24 @@ ARCHIVED_ROOT_FILES = (
     "qudit_qec.py",
     "production_hr_api.py",
     "production_hr_api-v2.py",
+    # Scratch scripts, captured outputs, superseded patches and a saved internal
+    # page removed in the 2026-11-19 wiring closeout.
+    "_fix3.py",
+    "_fix6.py",
+    "_fix7.py",
+    "_fix_claims.py",
+    "_add_constants.py",
+    "_add_mask64.py",
+    "_find_multiline_defs.py",
+    "_test_ga_import.py",
+    "apply_ovid_patch.py",
+    "al_haras_scenarios_output.txt",
+    "al_haras_test_output.txt",
+    "temp_pytest_output.txt",
+    "chronus_dirs.txt",
+    "chronus_files.txt",
+    "hendrix.mhtml",
+    ".pytest_temp_ga_handover",
 )
 
 
