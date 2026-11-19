@@ -116,12 +116,20 @@ class MiningAdminEngine:
         }
 
     def execute_dsw_heal(self) -> Dict[str, Any]:
-        """Execute 1-cycle DSW instanton monopole cobordism heal."""
+        """Clear the anomaly flag set by :meth:`inject_anomaly`.
+
+        This is a flag reset, not a repair mechanism: it resets the
+        flags that ``inject_anomaly`` set and performs no detection or
+        correction of real state. The implemented self-healing is the
+        Reed-Solomon parity repair in ``chronus.storage.self_heal`` (durable
+        storage) and ``chronus.security.al_haras.reed_solomon`` (traces).
+        """
         self.anomaly_injected = False
         self.consensus_status = "HARMONIC_CONSENSUS"
         return {
             "sheaf_cohomology_h1": 0.0,
             "consensus_status": "HARMONIC_CONSENSUS",
+            "repair_performed": False,
         }
 
     @classmethod

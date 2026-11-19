@@ -2560,6 +2560,13 @@ class DSWInstantonSelfHealer:
     A hardware fault creates a Yang-Mills instanton tunneling event (F_A = -*F_A).
     Computes Seiberg-Witten monopole duals along an exact cobordism W: Σ_1 → Σ_2
     to repair trace faults instantaneously without inference state rollback.
+
+    NOT IMPLEMENTED: this legacy monolith code performs no detection or repair.
+    It XORs byte 0 twice (a no-op) and always reports success, so the "I27
+    PASS" line it feeds proves nothing. The implemented mechanism is
+    Reed-Solomon RS(n, k) over GF(257) in
+    ``chronus.security.al_haras.reed_solomon`` (and the THESEUS storage
+    self-healing in ``chronus.storage.self_heal``).
     """
     @staticmethod
     def heal_execution_trace(

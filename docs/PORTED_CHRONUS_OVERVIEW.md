@@ -26,7 +26,7 @@ The repository now contains an initial executable security and qualification imp
 - **AL HARAS:** authentication, authorization, security policy.
 - **OVID:** exactness, transformation and equivalence contracts.
 - **THESEUS:** custody, provenance, recovery and replay.
-- **Salamander:** bounded self-healing and optimization.
+- **Salamander:** bounded self-healing and optimization. The Salamander package itself is not in this checkout; the implemented bounded self-healing is THESEUS Reed-Solomon parity repair, see `docs/SELF_HEALING.md`.
 
 ## Engineering priorities
 
