@@ -61,7 +61,7 @@ class DurableTheseusService:
         self.self_healing_max_bytes = self_heal.self_healing_max_bytes()
         Path(self.path).parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.RLock()
-        self._heal_locks: dict[str, threading.Lock] = {}
+        self._heal_locks: dict[str, list] = {}  # object_id -> [lock, waiters]
         self._heal_locks_guard = threading.Lock()
         self._bootstrap()
         self.verify_store()
@@ -210,12 +210,17 @@ class DurableTheseusService:
     def store(self, tenant_id: str, payload: bytes, scale_index: int = 0) -> TheseusRecord:
         self._validate_payload(tenant_id, payload, scale_index)
         object_id = hashlib.sha256(payload).hexdigest()
-        # Encode parity before taking the write lock so writers are not stalled.
-        parity = (
-            self_heal.encode_parity(payload)
-            if self.self_healing and len(payload) <= self.self_healing_max_bytes
-            else None
-        )
+        # Encode parity before taking the write lock so writers are not stalled,
+        # unless the content already has a sidecar (re-storing existing content);
+        # _ensure_parity re-encodes under the lock only if that sidecar is damaged.
+        parity = None
+        if self.self_healing and len(payload) <= self.self_healing_max_bytes:
+            with self._connect() as db:
+                has_sidecar = db.execute(
+                    "SELECT 1 FROM object_parity WHERE object_id=?", (object_id,)
+                ).fetchone() is not None
+            if not has_sidecar:
+                parity = self_heal.encode_parity(payload)
         with self._lock, self._connect(immediate=True) as db:
             existing = db.execute(
                 "SELECT * FROM records WHERE tenant_id=? AND object_id=?",
@@ -386,9 +391,16 @@ class DurableTheseusService:
         # One decode per object per process: concurrent callers wait, then see
         # the repaired row (or the recorded failure) instead of re-decoding.
         with self._heal_locks_guard:
-            object_lock = self._heal_locks.setdefault(object_id, threading.Lock())
-        with object_lock:  # entries are kept; one small lock per damaged object seen
-            return self._try_heal_locked(object_id)
+            entry = self._heal_locks.setdefault(object_id, [threading.Lock(), 0])
+            entry[1] += 1
+        try:
+            with entry[0]:
+                return self._try_heal_locked(object_id)
+        finally:
+            with self._heal_locks_guard:
+                entry[1] -= 1
+                if entry[1] == 0:
+                    self._heal_locks.pop(object_id, None)  # no lock kept after the last caller
 
     def _try_heal_locked(self, object_id: str) -> bytes | None:
         # 1. Snapshot the damaged payload and its sidecar (read transaction).

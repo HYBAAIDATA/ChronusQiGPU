@@ -238,3 +238,21 @@ def test_concurrent_readers_share_one_repair(tmp_path):
         results = list(pool.map(lambda _: store.reconstruct("tenant-a", record.object_id), range(6)))
     assert results == [PAYLOAD] * 6
     assert _events(path) == ["REPAIRED"]
+
+
+def test_heal_locks_are_released_after_repair(tmp_path):
+    path = tmp_path / "t.sqlite3"
+    store = DurableTheseusService(str(path))
+    record = store.store("tenant-a", PAYLOAD)
+    _corrupt(path, record.object_id, [0, 1])
+    assert store.reconstruct("tenant-a", record.object_id) == PAYLOAD
+    assert store._heal_locks == {}
+
+
+def test_restoring_existing_content_keeps_its_sidecar(tmp_path):
+    path = tmp_path / "t.sqlite3"
+    store = DurableTheseusService(str(path))
+    store.store("tenant-a", PAYLOAD)
+    store.store("tenant-b", PAYLOAD)  # same content: no second sidecar, still protected
+    status = store.self_healing_status()
+    assert status["objects"] == status["protected_objects"] == 1
