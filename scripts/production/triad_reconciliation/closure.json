@@ -1,0 +1,44 @@
+[
+ {
+  "n": 173,
+  "title": "Wiring audit (other stream)",
+  "mc": "c11af3e62bc7a121b47cfa5d3a764cd9c72ca027",
+  "merged": "2026-11-19 01:20:32",
+  "checks": "53 success, 3 skipped (head ba6c36f0)"
+ },
+ {
+  "n": 180,
+  "title": "Security sweep: CodeQL #49/#59/#60, next 16.4.6",
+  "mc": "b89a5315f0b3a5b54a7a3f1ee3831989a87622cf",
+  "merged": "2026-11-19 01:29:10",
+  "checks": "55 success, 2 skipped (head dde24fee)"
+ },
+ {
+  "n": 176,
+  "title": "THESEUS storage self-healing (other stream)",
+  "mc": "ad7b9bba4ccd9607147d5edf2bea0ec630f6ffd8",
+  "merged": "2026-11-19 01:39:40",
+  "checks": "57 success, 4 skipped (head 2e3176ca)"
+ },
+ {
+  "n": 182,
+  "title": "Qualification workflow evaluates attested product gates",
+  "mc": "38fc63733356833241225322dabb9f105322ce65",
+  "merged": "2026-11-19 01:47:11",
+  "checks": "54 success, 3 skipped (head 3af34606)"
+ },
+ {
+  "n": 181,
+  "title": "Wiring closeout: orphan-module audit, root cleanup, CI test-execution gate (other stream)",
+  "mc": "1894bd411536b20c24fe70c842c113f53fd2ee36",
+  "merged": "2026-11-19 02:11:43",
+  "checks": "59 success, 4 skipped (head 02a85e5d)"
+ },
+ {
+  "n": 185,
+  "title": "Tensor: Z2 charge-aware DMRG (other stream)",
+  "mc": "ec3a43dcb42170ff0c5d926a80ebf21185c1e0c3",
+  "merged": "2026-11-19 02:29:25",
+  "checks": "58 success, 2 skipped (head e055f441)"
+ }
+]
