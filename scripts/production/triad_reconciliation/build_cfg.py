@@ -4,6 +4,22 @@ import json, subprocess, sys, os, re
 from pathlib import Path
 CAND = sys.argv[1]; D = Path(sys.argv[2]); OUTDIR = Path(sys.argv[3]); EXTRA = json.loads(Path(sys.argv[4]).read_text())
 REPO = "HYBAAIDATA/ChronusQiGPU"
+def reject(msg): sys.exit(f"build_cfg: rejected evidence for {CAND}: {msg}")
+# provenance: every evidence input must be bound to the candidate SHA
+env_sha = next((l.split("=", 1)[1].strip() for l in (D / "env.txt").read_text().splitlines() if l.startswith("sha=")), None)
+if env_sha != CAND: reject(f"env.txt records sha={env_sha}")
+xc_sha = json.loads((D / "xchecks.json").read_text()).get("git_sha")
+if xc_sha != CAND: reject(f"xchecks.json records git_sha={xc_sha}")
+wt_head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=os.environ.get("WT", "/workspace/closeout-cand"), capture_output=True, text=True).stdout.strip()
+if wt_head != CAND: reject(f"worktree HEAD is {wt_head}")
+# every recorded required step must have exited 0
+failed = []
+for l in (D / "gates.txt").read_text().splitlines():
+    m = re.search(r"exit[= ](\d+)", l)
+    if m and m.group(1) != "0": failed.append(l.strip())
+pe = [l for l in (D / "pytest.txt").read_text().splitlines() if l.startswith("pytest exit ")]
+if not pe or pe[-1].split()[-1] != "0": failed.append(pe[-1] if pe else "pytest exit not recorded")
+if failed: reject("failed or unrecorded required steps: " + "; ".join(failed))
 def gh(*a):
     return subprocess.run(["gh", *a], capture_output=True, text=True).stdout
 runs = json.loads(gh("run", "list", "-R", REPO, "--commit", CAND, "--limit", "100", "--json", "databaseId,workflowName,conclusion,status,event,headSha"))
