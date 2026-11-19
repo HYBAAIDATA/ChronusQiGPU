@@ -32,6 +32,8 @@ PAYLOAD = bytes((i * 131 + 7) % 256 for i in range(4096))
 def _default_env(monkeypatch):  # mock-ok: sets environment configuration only; no behaviour is replaced
     monkeypatch.delenv("CHRONUS_SELF_HEALING", raising=False)  # mock-ok: sets environment configuration only; no behaviour is replaced
     monkeypatch.delenv("CHRONUS_SELF_HEALING_MAX_BYTES", raising=False)  # mock-ok: sets environment configuration only; no behaviour is replaced
+    monkeypatch.delenv("CHRONUS_SELF_HEALING_REPAIR", raising=False)  # mock-ok: sets environment configuration only; no behaviour is replaced
+    monkeypatch.delenv("CHRONUS_SELF_HEALING_BACKFILL_LIMIT", raising=False)  # mock-ok: sets environment configuration only; no behaviour is replaced
 
 
 def _corrupt(path, object_id, positions):
@@ -247,3 +249,24 @@ def test_disabled_store_reads_existing_parity_database_unchanged(tmp_path):
     with pytest.raises(StorageIntegrityError):
         strict.reconstruct("tenant-a", record.object_id)
     assert _events(path) == []
+
+
+def test_backfill_is_bounded_per_open_and_continues(tmp_path, monkeypatch):  # mock-ok: sets environment configuration only; no behaviour is replaced
+    path = tmp_path / "legacy.sqlite3"
+    payloads = [hashlib.sha256(str(i).encode()).digest() * 4 for i in range(5)]
+    _legacy_store(path, payloads)
+    monkeypatch.setenv("CHRONUS_SELF_HEALING_BACKFILL_LIMIT", "2")  # mock-ok: sets environment configuration only; no behaviour is replaced
+    assert DurableTheseusService(str(path)).self_healing_status()["protected_objects"] == 2
+    assert DurableTheseusService(str(path)).self_healing_status()["protected_objects"] == 4
+    assert DurableTheseusService(str(path)).self_healing_status()["protected_objects"] == 5
+
+
+def test_theseus_mode_repair_object_is_theseus_own_operation(tmp_path):
+    path = tmp_path / "t.sqlite3"
+    store = DurableTheseusService(str(path))
+    record = store.store("tenant-a", PAYLOAD)
+    _corrupt(path, record.object_id, [9])
+    assert store.diagnose_object(record.object_id)["status"] == "REPAIRABLE"
+    result = store.repair_object(record.object_id, authority="operator:test")
+    assert result["repaired"] and result["status"] == "HEALTHY"
+    assert "authority=operator:test" in [e for e in store.self_heal_events() if e["kind"] == "REPAIRED"][0]["detail"]

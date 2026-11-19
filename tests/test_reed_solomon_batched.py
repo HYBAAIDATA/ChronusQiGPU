@@ -116,3 +116,13 @@ def test_legacy_dsw_healer_reports_success_only_after_a_real_repair():
     positions = rs.deterministic_fault_positions(trace, 1)
     assert rs.inject_faults(trace, positions) != trace
     assert healer.heal_execution_trace(trace) == (trace, 0, True)
+    big = bytes(rs.MAX_TRACE_BYTES + 1)
+    assert healer.heal_execution_trace(big, injected_fault=True) == (big, 0, None)  # not run, not a pass
+
+
+def test_heal_reduces_out_of_range_parity_like_the_reference():
+    trace = bytes(range(64))
+    env = rs.protect(trace)
+    env["parity"] = [[v + rs.P * (2 ** 70) for v in row] for row in env["parity"]]  # huge ints, same residues
+    out = rs.heal(trace, env)
+    assert out["integrity_verified"] and out["repaired"] == trace

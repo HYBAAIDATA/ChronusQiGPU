@@ -90,6 +90,7 @@ class CycleReport:
     repaired: list[str] = field(default_factory=list)
     escalated: list[dict] = field(default_factory=list)
     rejected: list[dict] = field(default_factory=list)
+    out_of_scope: list[dict] = field(default_factory=list)
     health_before: str = ""
     health_after: str = ""
     evidence_head: str = ""
@@ -117,7 +118,10 @@ class SalamanderTheseusRemediation:
         self.tenant_id = tenant_id
         self.actor_id = actor_id
         self.clock_ns = clock_ns
-        self._snapshots: dict[str, str] = {}
+        self._snapshots: dict[str, str | None] = {}
+        self._in_flight: set[tuple[str, str]] = set()
+        if store.repair_authority == "salamander":
+            store.bind_repair_authority(self._authorised_now)
         sink = self._retain_in_theseus if retain_evidence_in_theseus else None
         self.ledger = self._s["EvidenceLedger"](sink=sink)
         registry = self._s["ActionRegistry"]()
@@ -140,8 +144,19 @@ class SalamanderTheseusRemediation:
         self.retained_evidence.append(stored.object_id)
 
     # Execute (Chronus process, THESEUS-owned operation) ----------------
+    def _authorised_now(self, object_id: str, authority: str) -> bool:
+        # True only inside a handler call, which Salamander's registry makes
+        # only after consuming a valid single-use AL HARAS decision.
+        return (object_id, authority) in self._in_flight
+
     def _execute_repair(self, request) -> Mapping[str, Any]:
-        result = self.store.repair_object(request.target, authority=f"salamander:{request.action_id}")
+        authority = f"salamander:{request.action_id}"
+        token = (request.target, authority)
+        self._in_flight.add(token)
+        try:
+            result = self.store.repair_object(request.target, authority=authority)
+        finally:
+            self._in_flight.discard(token)
         return {"handler_reported": result}
 
     def _execute_confirm(self, request) -> Mapping[str, Any]:
@@ -161,7 +176,7 @@ class SalamanderTheseusRemediation:
     def _verify_confirm(self, request, response) -> Mapping[str, Any]:
         observed = _payload_sha(self.store.path, request.target)
         before = self._snapshots.get(request.target)
-        ok = observed in {before, request.target}
+        ok = observed is not None and observed in {before, request.target}
         return {"verified": ok, "evidence_ref": f"sqlite-reread:{request.target}:{observed}" if ok else None,
                 "observations": {"observed_sha256": observed, "pre_action_sha256": before},
                 "error": None if ok else "payload changed to bytes that are neither the original nor verified"}
@@ -186,6 +201,12 @@ class SalamanderTheseusRemediation:
         report.health_before = self._observe(len(findings), len(unrepairable))
         for finding in findings:
             object_id = finding["object_id"]
+            holders = self.store.tenants_for_object(object_id)
+            if self.tenant_id not in holders:
+                # Custody scope: this remediation tenant holds no record for the
+                # object, so it may not act on it. Reported, not actuated.
+                report.out_of_scope.append({**finding, "tenants": holders})
+                continue
             if finding["status"] != "REPAIRABLE":
                 # Select remediation: outside the bound there is no safe automatic
                 # action; escalate to a human with the evidence.

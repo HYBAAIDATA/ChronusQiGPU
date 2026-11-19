@@ -349,7 +349,15 @@ def heal(received: bytes, envelope: Dict[str, Any], received_parity: Optional[Li
         raise ReedSolomonError("received trace length differs from the protected length")
     if len(parity) != int(envelope["blocks"]):
         raise ReedSolomonError("parity block count does not match the envelope")
-    parity_arr = np.asarray(parity, dtype=np.int64).reshape(len(parity), n - k) if len(parity) else np.zeros((0, n - k), dtype=np.int64)
+    # Same acceptance as the reference path (``int(v) % P``); arbitrary-size
+    # integers are reduced in Python before they reach int64 arrays.
+    rows = []
+    for row in parity:
+        reduced = [int(v) % P for v in row]
+        if len(reduced) != n - k:
+            raise ReedSolomonError("parity block has the wrong number of symbols")
+        rows.append(reduced)
+    parity_arr = np.array(rows, dtype=np.int64) if rows else np.zeros((0, n - k), dtype=np.int64)
     return heal_blocks(received, parity_arr, n, k, envelope["sha256"])
 
 

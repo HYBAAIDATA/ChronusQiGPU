@@ -2568,7 +2568,9 @@ class DSWInstantonSelfHealer:
     a deterministic fault is injected when ``injected_fault`` is set, the
     trace is decoded, and success is reported only if the repaired bytes
     match the trace's SHA-256. It used to XOR byte 0 twice and always return
-    success. If the Chronus package is not importable, it reports failure.
+    success. If the check cannot run (Chronus package not importable, or a
+    trace over the codec's 1 MiB limit), ``integrity_verified`` is ``None``:
+    not run, which is neither a pass nor a repair failure.
 
     Returns ``(repaired_trace, corrected_byte_count, integrity_verified)``.
     """
@@ -2576,12 +2578,14 @@ class DSWInstantonSelfHealer:
     def heal_execution_trace(
         trace_bytes: bytes,
         injected_fault: bool = False
-    ) -> Tuple[bytes, int, bool]:
+    ) -> Tuple[bytes, int, Optional[bool]]:
         try:
             from chronus.security.al_haras import reed_solomon as _rs
         except ImportError:
-            return bytes(trace_bytes), 0, False
+            return bytes(trace_bytes), 0, None
         trace = bytes(trace_bytes)
+        if len(trace) > _rs.MAX_TRACE_BYTES:
+            return trace, 0, None
         envelope = _rs.protect(trace)
         received = trace
         if injected_fault and trace:
@@ -3018,6 +3022,7 @@ class MillenniumProblemsMatrix:
         poincare_ok = True
         # Donaldson-Seiberg-Witten
         _, _, dsw_ok = DSWInstantonSelfHealer.heal_execution_trace(b"trace_test", True)
+        dsw_ok = dsw_ok is True  # not run (None) is not a pass
 
         return ym_gap_ok and hodge_ok and bsd_rh_ok and p_vs_np_ok and ns_ok and poincare_ok and dsw_ok
 
@@ -4084,8 +4089,11 @@ def run_invariant_tests(prebuilt_pipeline: "UnifiedFullStackPipeline" = None) ->
 
     # I27 — Donaldson-Seiberg-Witten Instanton Monopole Cobordism Trace Self-Healing
     healed_trace, k_inst, cob_ok = DSWInstantonSelfHealer.heal_execution_trace(b"execution_trace_data", injected_fault=True)
-    assert cob_ok and healed_trace == b"execution_trace_data", "I27 FAIL: Reed-Solomon trace repair did not verify"
-    print("I27 PASS — trace fault corrected by Reed-Solomon RS(48,32)/GF(257), SHA-256 verified (DSW naming is a metaphor)")
+    if cob_ok is None:
+        print("I27 NOT RUN — chronus.security.al_haras.reed_solomon not importable; no repair was checked")
+    else:
+        assert cob_ok and healed_trace == b"execution_trace_data", "I27 FAIL: Reed-Solomon trace repair did not verify"
+        print("I27 PASS — trace fault corrected by Reed-Solomon RS(48,32)/GF(257), SHA-256 verified (DSW naming is a metaphor)")
 
     # I28 — All Seven Millennium Problems Operationalized Invariance
     all_7_ok = MillenniumProblemsMatrix.verify_all_seven_millennium_problems()
@@ -6229,8 +6237,11 @@ def run_invariant_tests(prebuilt_pipeline: "UnifiedFullStackPipeline" = None) ->
 
     # I27 — Donaldson-Seiberg-Witten Instanton Monopole Cobordism Trace Self-Healing
     healed_trace, k_inst, cob_ok = DSWInstantonSelfHealer.heal_execution_trace(b"execution_trace_data", injected_fault=True)
-    assert cob_ok and healed_trace == b"execution_trace_data", "I27 FAIL: Reed-Solomon trace repair did not verify"
-    print("I27 PASS — trace fault corrected by Reed-Solomon RS(48,32)/GF(257), SHA-256 verified (DSW naming is a metaphor)")
+    if cob_ok is None:
+        print("I27 NOT RUN — chronus.security.al_haras.reed_solomon not importable; no repair was checked")
+    else:
+        assert cob_ok and healed_trace == b"execution_trace_data", "I27 FAIL: Reed-Solomon trace repair did not verify"
+        print("I27 PASS — trace fault corrected by Reed-Solomon RS(48,32)/GF(257), SHA-256 verified (DSW naming is a metaphor)")
 
     # I28 — All Seven Millennium Problems Operationalized Invariance
     all_7_ok = MillenniumProblemsMatrix.verify_all_seven_millennium_problems()

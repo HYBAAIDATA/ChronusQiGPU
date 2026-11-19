@@ -72,11 +72,11 @@ def _kinds(ledger):
 
 def test_deferred_mode_detects_but_does_not_repair_without_authority(tmp_path):
     path = tmp_path / "t.sqlite3"
-    record = _deferred_store(path).store("tenant-a", PAYLOAD)
+    record = _deferred_store(path).store(TENANT, PAYLOAD)
     _corrupt(path, record.object_id, [0, 33, 700])
     store = _deferred_store(path)  # opens: damage is within bound, quarantined
     with pytest.raises(StorageIntegrityError):
-        store.reconstruct("tenant-a", record.object_id)
+        store.reconstruct(TENANT, record.object_id)
     assert [f["status"] for f in store.scan_integrity()] == ["REPAIRABLE"]
     assert "DETECTED" in [e["kind"] for e in store.self_heal_events()]
     assert "REPAIRED" not in [e["kind"] for e in store.self_heal_events()]
@@ -84,7 +84,7 @@ def test_deferred_mode_detects_but_does_not_repair_without_authority(tmp_path):
 
 def test_closed_loop_repairs_through_al_haras_and_retains_evidence_in_theseus(tmp_path):
     path = tmp_path / "t.sqlite3"
-    record = _deferred_store(path).store("tenant-a", PAYLOAD)
+    record = _deferred_store(path).store(TENANT, PAYLOAD)
     _corrupt(path, record.object_id, list(range(0, 2048, 32)))  # one byte in every block
     store = _deferred_store(path)
     guardian, token = _guardian()
@@ -93,7 +93,7 @@ def test_closed_loop_repairs_through_al_haras_and_retains_evidence_in_theseus(tm
     report = loop.run_cycle()
     assert report.repaired == [record.object_id]
     assert report.health_before == "DEGRADED" and report.health_after == "HEALTHY"
-    assert store.reconstruct("tenant-a", record.object_id) == PAYLOAD
+    assert store.reconstruct(TENANT, record.object_id) == PAYLOAD
     repaired = [e for e in store.self_heal_events() if e["kind"] == "REPAIRED"]
     assert len(repaired) == 1 and "authority=salamander:theseus-repair:" in repaired[0]["detail"]
     kinds = _kinds(loop.ledger)
@@ -114,7 +114,7 @@ def test_closed_loop_repairs_through_al_haras_and_retains_evidence_in_theseus(tm
 
 def test_al_haras_denial_blocks_execution(tmp_path):
     path = tmp_path / "t.sqlite3"
-    record = _deferred_store(path).store("tenant-a", PAYLOAD)
+    record = _deferred_store(path).store(TENANT, PAYLOAD)
     _corrupt(path, record.object_id, [5])
     store = _deferred_store(path)
     guardian, token = _guardian(operations=("salamander.rollback",))  # repair not permitted by policy
@@ -125,13 +125,13 @@ def test_al_haras_denial_blocks_execution(tmp_path):
     assert "AL HARAS authorization denied" in report.rejected[0]["reason"]
     assert "REPAIRED" not in [e["kind"] for e in store.self_heal_events()]
     with pytest.raises(StorageIntegrityError):
-        store.reconstruct("tenant-a", record.object_id)
+        store.reconstruct(TENANT, record.object_id)
 
 
 def test_unrepairable_is_escalated_not_actuated(tmp_path):
     path = tmp_path / "t.sqlite3"
-    record = _deferred_store(path).store("tenant-a", PAYLOAD)
-    good = _deferred_store(path).store("tenant-a", b"x" * 100)
+    record = _deferred_store(path).store(TENANT, PAYLOAD)
+    good = _deferred_store(path).store(TENANT, b"x" * 100)
     _corrupt(path, record.object_id, range(64, 64 + 9))  # beyond t = 8 in one block
     with pytest.raises(StorageIntegrityError):
         _deferred_store(path)  # unrepairable still fails closed at open
@@ -147,12 +147,12 @@ def test_unrepairable_is_escalated_not_actuated(tmp_path):
     assert report.health_before == "FAILED" and report.repaired == []
     assert "action-authorization" not in _kinds(loop.ledger)
     assert "remediation-escalated" in _kinds(loop.ledger)
-    assert store.reconstruct("tenant-a", good.object_id) == b"x" * 100
+    assert store.reconstruct(TENANT, good.object_id) == b"x" * 100
 
 
 def test_recovery_budget_bounds_repeated_remediation(tmp_path):
     path = tmp_path / "t.sqlite3"
-    record = _deferred_store(path).store("tenant-a", PAYLOAD)
+    record = _deferred_store(path).store(TENANT, PAYLOAD)
     store = _deferred_store(path)
     guardian, token = _guardian()
     loop = SalamanderTheseusRemediation(store, guardian=guardian, token_provider=lambda _: token,
@@ -163,3 +163,53 @@ def test_recovery_budget_bounds_repeated_remediation(tmp_path):
     report = loop.run_cycle()
     assert report.repaired == [] and "budget exhausted" in report.rejected[0]["reason"]
     assert "recovery-escalated" in _kinds(loop.ledger)
+
+
+def test_repair_object_refused_without_an_authorised_action(tmp_path):
+    path = tmp_path / "t.sqlite3"
+    record = _deferred_store(path).store(TENANT, PAYLOAD)
+    _corrupt(path, record.object_id, [3])
+    store = _deferred_store(path)
+    with pytest.raises(PermissionError):
+        store.repair_object(record.object_id, authority="anyone")  # no bound authority
+    guardian, token = _guardian()
+    SalamanderTheseusRemediation(store, guardian=guardian, token_provider=lambda _: token,
+                                 tenant_id=TENANT, actor_id=ACTOR)
+    with pytest.raises(PermissionError):
+        store.repair_object(record.object_id, authority="salamander:forged")  # bound, not in flight
+    assert "REPAIRED" not in [e["kind"] for e in store.self_heal_events()]
+    with pytest.raises(PermissionError):
+        store.bind_repair_authority(lambda *_: True)  # cannot rebind to another authority
+
+
+def test_other_tenants_objects_are_out_of_scope(tmp_path):
+    path = tmp_path / "t.sqlite3"
+    record = _deferred_store(path).store("other-tenant", PAYLOAD)
+    _corrupt(path, record.object_id, [3])
+    store = _deferred_store(path)
+    guardian, token = _guardian()
+    loop = SalamanderTheseusRemediation(store, guardian=guardian, token_provider=lambda _: token,
+                                        tenant_id=TENANT, actor_id=ACTOR)
+    report = loop.run_cycle()
+    assert report.repaired == [] and [f["object_id"] for f in report.out_of_scope] == [record.object_id]
+    assert "action-authorization" not in _kinds(loop.ledger)
+
+
+def test_quarantined_journal_object_does_not_block_open_and_heals(tmp_path):
+    path = tmp_path / "t.sqlite3"
+    entry = _deferred_store(path).append_journal_event(TENANT, "state", PAYLOAD)
+    _corrupt(path, entry.object_id, [7, 900])
+    store = _deferred_store(path)  # journal continuity must not read the quarantined bytes
+    with pytest.raises(StorageIntegrityError):
+        store.reconstruct(TENANT, entry.object_id)
+    reads = 3
+    for _ in range(reads):
+        with pytest.raises(StorageIntegrityError):
+            store.reconstruct(TENANT, entry.object_id)
+    assert [e["kind"] for e in store.self_heal_events()].count("DETECTED") == 1  # not one per read
+    guardian, token = _guardian()
+    loop = SalamanderTheseusRemediation(store, guardian=guardian, token_provider=lambda _: token,
+                                        tenant_id=TENANT, actor_id=ACTOR)
+    assert loop.run_cycle().repaired == [entry.object_id]
+    assert store.reconstruct(TENANT, entry.object_id) == PAYLOAD
+    assert store.verify_journal_continuity(TENANT)

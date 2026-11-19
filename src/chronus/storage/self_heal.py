@@ -39,6 +39,8 @@ restores the previous strict fail-closed behaviour.
 open/read; ``salamander`` makes THESEUS detect and diagnose only, and the
 repair is executed through Salamander's AL HARAS-authorised control plane
 (``chronus.integration.salamander_theseus``).
+``CHRONUS_SELF_HEALING_BACKFILL_LIMIT``: most pre-parity objects given a
+sidecar per open (default 1024); later opens continue.
 """
 
 from __future__ import annotations
@@ -79,6 +81,23 @@ def repair_authority() -> str:
     if raw not in REPAIR_AUTHORITIES:
         raise ValueError("CHRONUS_SELF_HEALING_REPAIR must be 'theseus' or 'salamander'")
     return raw
+
+
+DEFAULT_BACKFILL_LIMIT = 1024
+
+
+def backfill_limit() -> int:
+    """Most legacy objects given parity per open (``CHRONUS_SELF_HEALING_BACKFILL_LIMIT``)."""
+    raw = os.getenv("CHRONUS_SELF_HEALING_BACKFILL_LIMIT")
+    if raw is None:
+        return DEFAULT_BACKFILL_LIMIT
+    try:
+        value = int(raw)
+    except ValueError as exc:
+        raise ValueError("CHRONUS_SELF_HEALING_BACKFILL_LIMIT must be an integer") from exc
+    if value < 0:
+        raise ValueError("CHRONUS_SELF_HEALING_BACKFILL_LIMIT must be >= 0")
+    return value
 
 
 def encoder_max_bytes() -> int:

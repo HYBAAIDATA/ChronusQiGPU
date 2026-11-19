@@ -15,6 +15,18 @@ questions; a "yes" needs the named code or test.
 | Repository / CI healing | no (exists in HYBAEnterprise, not here; see below) | no | no | no | no |
 | Metadata, journal, SQLite page or whole-database repair | no | no | no | no | no |
 
+**Authority boundary.** THESEUS storage repair (section 1) is a THESEUS
+integrity function: Reed-Solomon parity correction of stored bytes, verified
+against the content address. It is not Salamander and it is not "self-healing"
+in the architectural sense. Salamander (section 3) is the remediation and
+optimisation authority for the whole system; for storage it can take over the
+decision to repair (`CHRONUS_SELF_HEALING_REPAIR=salamander`), but the repair
+operation itself stays inside THESEUS (`repair_object`), and in that mode
+THESEUS refuses `repair_object` unless an AL HARAS-authorised Salamander action
+for that object is executing. In code: `chronus.storage.self_heal` and
+`DurableTheseusService` hold no Salamander logic; `chronus.integration.salamander_theseus`
+holds no repair logic.
+
 Nothing on this page is production-qualified. Salamander's own
 `outcome_evidence.unqualified_readiness()` lists the gates that are still open.
 
@@ -47,14 +59,20 @@ Nothing on this page is production-qualified. Salamander's own
   guess, and a repeated identical failure is recorded once (`UNREPAIRABLE`).
 - **Existing databases:** the parity tables are created on open. Verified
   objects that have no sidecar get one on open (`PARITY_BACKFILLED` event per
-  object, batches of 256, re-checked under the write lock). Objects above the
+  object, batches of 256, re-checked under the write lock, at most
+  `CHRONUS_SELF_HEALING_BACKFILL_LIMIT` per open). Objects above the
   size limit stay unprotected and fail closed.
 - **Repair authority:** `CHRONUS_SELF_HEALING_REPAIR=theseus` (default)
   repairs in place. `salamander` makes THESEUS detect and diagnose only
   (`DETECTED` event); a repairable object stays quarantined (reads fail
   closed) until the Salamander control plane runs an AL HARAS-authorised
-  repair through `DurableTheseusService.repair_object`. Unrepairable damage
-  still fails closed at open in both modes.
+  repair through `DurableTheseusService.repair_object`, which THESEUS refuses
+  unless the bound Salamander authority has an authorised action for that
+  object in flight. A quarantined object does not block opening (journal
+  continuity skips its bytes) and is recorded once as `DETECTED`, not once per
+  read. Salamander acts only on objects its tenant holds a record for; others
+  are reported out of scope. Unrepairable damage still fails closed at open in
+  both modes.
 - **Bounds:** up to 8 corrupted bytes per 32-byte block. Not covered: changed
   length, metadata/journal rows, SQLite page corruption (`PRAGMA
   integrity_check` fails closed), lost database or disk. Parity sits in the
@@ -62,6 +80,8 @@ Nothing on this page is production-qualified. Salamander's own
 - **Configuration:** `CHRONUS_SELF_HEALING=1|0` (default `1`);
   `CHRONUS_SELF_HEALING_MAX_BYTES` (default 262144, capped at 1 MiB);
   `CHRONUS_SELF_HEALING_REPAIR=theseus|salamander`;
+  `CHRONUS_SELF_HEALING_BACKFILL_LIMIT` (default 1024 legacy objects given
+  parity per open, so a large old store does not stall startup);
   `DurableTheseusService(path, self_healing=..., repair_authority=...)`.
 - **Visibility:** `evidence()["self_healing"]`, `self_heal_events()`,
   `scan_integrity()`, `diagnose_object()`.
@@ -178,7 +198,9 @@ owner decision and is tracked as open.
 - `DSWInstantonSelfHealer` in `src/chronus/chronus_gpiu-v36.py`: used to XOR
   byte 0 twice and always report success. It now protects the trace with
   RS(48, 32), injects a real fault, decodes, and reports success only if the
-  repaired bytes match the trace's SHA-256 (`test_legacy_dsw_healer_*`).
+  repaired bytes match the trace's SHA-256 (`test_legacy_dsw_healer_*`). When
+  the check cannot run (package not importable, trace over 1 MiB) it returns
+  `None` and the monolith prints "I27 NOT RUN", never PASS.
 
 ### Reed-Solomon and the DSW instanton research
 
