@@ -1,0 +1,223 @@
+{
+  "spec_version": "2.0",
+  "accept": [
+    {
+      "id": "ACC-FOLD-8BIT",
+      "op": "fold_words",
+      "bits": 8,
+      "steps": 5,
+      "input": [
+        1,
+        0
+      ],
+      "expected": [
+        8,
+        5
+      ],
+      "pisano_period": 384
+    },
+    {
+      "id": "ACC-FOLD-PERIOD-IDENTITY",
+      "op": "fold_words",
+      "bits": 8,
+      "steps": 384,
+      "input": [
+        137,
+        42
+      ],
+      "expected": [
+        137,
+        42
+      ],
+      "pisano_period": 384
+    },
+    {
+      "id": "ACC-RESONANCE-K3",
+      "op": "phi_neg_power_cert",
+      "k": 3,
+      "expected": {
+        "p": -4,
+        "q": 2,
+        "norm": -4,
+        "norm_certified": true
+      }
+    },
+    {
+      "id": "ACC-FOLD-PAIRWISE",
+      "op": "fold_words",
+      "bits": 8,
+      "steps": 7,
+      "input": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "expected": [
+        47,
+        29,
+        115,
+        71
+      ],
+      "pisano_period": 384
+    },
+    {
+      "id": "ACC-FOLD-1BIT",
+      "op": "fold_words",
+      "bits": 1,
+      "steps": 1,
+      "input": [
+        1,
+        1
+      ],
+      "expected": [
+        0,
+        1
+      ],
+      "pisano_period": 3
+    },
+    {
+      "id": "ACC-FOLD-EMPTY",
+      "op": "fold_words",
+      "bits": 8,
+      "steps": 1,
+      "input": [],
+      "expected": [],
+      "pisano_period": 384
+    }
+  ],
+  "reject": [
+    {
+      "id": "REJ-OVERFLOW-TRUNCATION",
+      "op": "fold_words",
+      "bits": 8,
+      "steps": 3,
+      "input": [
+        256,
+        0
+      ],
+      "expected_error": "RangeError"
+    },
+    {
+      "id": "REJ-TAMPERED-BIT",
+      "op": "unfold_verify",
+      "bits": 8,
+      "steps": 5,
+      "original": [
+        1,
+        0
+      ],
+      "tampered_folded": [
+        9,
+        5
+      ],
+      "expected_mismatch": true
+    },
+    {
+      "id": "REJ-WRONG-PISANO-PERIOD",
+      "op": "fold_words",
+      "bits": 8,
+      "steps": 5,
+      "input": [
+        1,
+        0
+      ],
+      "expected_period": 383,
+      "expected_error": "PeriodError"
+    },
+    {
+      "id": "REJ-NON-MONOTONE-WARP",
+      "op": "verify_monotone_warp",
+      "original": [
+        1,
+        2,
+        3
+      ],
+      "warped": [
+        1,
+        3,
+        2
+      ],
+      "expected_error": "NonMonotoneWarpError"
+    },
+    {
+      "id": "REJ-UNREGISTERED-FAMILY",
+      "op": "get_family",
+      "family": "bronze_unverified",
+      "expected_error": "UnregisteredFamilyError"
+    },
+    {
+      "id": "REJ-NEGATIVE",
+      "op": "fold_words",
+      "bits": 8,
+      "steps": 3,
+      "input": [
+        -1,
+        0
+      ],
+      "expected_error": "RangeError"
+    },
+    {
+      "id": "REJ-BOOL",
+      "op": "fold_words",
+      "bits": 8,
+      "steps": 3,
+      "input": [
+        true,
+        0
+      ],
+      "expected_error": "RangeError"
+    },
+    {
+      "id": "REJ-ODD-LENGTH",
+      "op": "fold_words",
+      "bits": 8,
+      "steps": 3,
+      "input": [
+        1
+      ],
+      "expected_error": "ValueError"
+    },
+    {
+      "id": "REJ-TIE-SPLIT",
+      "op": "verify_monotone_warp",
+      "original": [
+        1,
+        1,
+        2
+      ],
+      "warped": [
+        1,
+        2,
+        3
+      ],
+      "expected_error": "NonMonotoneWarpError"
+    },
+    {
+      "id": "REJ-TIE-MERGE",
+      "op": "verify_monotone_warp",
+      "original": [
+        1,
+        2,
+        3
+      ],
+      "warped": [
+        1,
+        1,
+        3
+      ],
+      "expected_error": "NonMonotoneWarpError"
+    },
+    {
+      "id": "REJ-INVALID-WIDTH",
+      "op": "fold_words",
+      "bits": 0,
+      "steps": 3,
+      "input": [
+        1,
+        0
+      ],
+      "expected_error": "ValueError"
+    }
+  ]
+}
