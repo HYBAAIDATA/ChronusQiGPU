@@ -23,6 +23,7 @@ import time
 from fractions import Fraction
 from typing import Dict, Any, Tuple, Optional
 
+from chronus.execution.asic_sha256 import sha256d_unrolled
 from chronus.stratum.bip310 import apply_version_rolling
 from chronus.stratum.endian_engine import swap_prevhash_words, compute_merkle_root_stratum, build_header80, sha256d
 
@@ -181,6 +182,17 @@ class LocalPreSubmitGatekeeper:
             self.last_verification_ns = time.perf_counter_ns() - t0
             return False, DropReason.BAD_HEX, "", 0, 0, False
 
+        # Independently hash the coinbase and every branch, then verify the
+        # full header below. Matching header digests alone cannot detect an
+        # erroneous shared Merkle root.
+        independent_root = sha256d_unrolled(bytes.fromhex(
+            job_data["coinb1_hex"] + extranonce1_hex + extranonce2_hex + job_data["coinb2_hex"]
+        ))
+        for branch in job_data["merkle_branches"]:
+            independent_root = sha256d_unrolled(independent_root + bytes.fromhex(branch))
+        if independent_root != merkle_root_bytes:
+            raise ArithmeticError("Independent Merkle root implementations disagree")
+
         # Version-rolling mask constraint check
         try:
             rolled_bits_int = int(version_bits_hex, 16)
@@ -215,6 +227,11 @@ class LocalPreSubmitGatekeeper:
 
         # Compute SHA-256d hash and compare against targets
         raw_digest = sha256d(header_80b)
+        # Cross-check the digest using the independent existing full-header
+        # round implementation. Never allow a backend/candidate hash or
+        # shared library fault to be the only pre-submit proof.
+        if raw_digest != sha256d_unrolled(header_80b):
+            raise ArithmeticError("Independent SHA-256d implementations disagree")
         hash_int = int.from_bytes(raw_digest, byteorder="little")
         block_hash_be_hex = raw_digest[::-1].hex()
 
