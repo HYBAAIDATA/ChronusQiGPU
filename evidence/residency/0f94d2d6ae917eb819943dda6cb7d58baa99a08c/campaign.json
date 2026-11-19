@@ -1,0 +1,177 @@
+{
+  "classes": {
+    "analytics": {
+      "baseline": {
+        "egress_materializations": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "ingress_materializations": 12,
+        "materializations": 18,
+        "observations": [
+          true
+        ],
+        "op_multiset": {
+          "equals": 1,
+          "magnitude_join": 1,
+          "sort": 2,
+          "threshold": 1,
+          "topk": 1
+        },
+        "output": []
+      },
+      "candidate": {
+        "egress_materializations": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "ingress_materializations": 12,
+        "materializations": 18,
+        "observations": [
+          true
+        ],
+        "op_multiset": {
+          "equals": 1,
+          "magnitude_join": 1,
+          "sort": 2,
+          "threshold": 1,
+          "topk": 1
+        },
+        "output": []
+      },
+      "dataset_sha256": "ae47d1649bd2b087f4057efcd68b16b5aa3d1e2357c229f7ebde2f8e61cf9060",
+      "prediction": "low",
+      "residency": "1/6"
+    },
+    "event_log": {
+      "baseline": {
+        "egress_materializations": [
+          1,
+          1
+        ],
+        "ingress_materializations": 4,
+        "materializations": 6,
+        "observations": [
+          false,
+          118
+        ],
+        "op_multiset": {
+          "add": 4,
+          "equals": 1,
+          "gram_dot": 1,
+          "scale": 1,
+          "sort": 1
+        },
+        "output": [
+          73,
+          114,
+          155,
+          196
+        ]
+      },
+      "candidate": {
+        "egress_materializations": [
+          1,
+          1
+        ],
+        "ingress_materializations": 4,
+        "materializations": 6,
+        "observations": [
+          false,
+          118
+        ],
+        "op_multiset": {
+          "add": 4,
+          "equals": 1,
+          "gram_dot": 1,
+          "scale": 1,
+          "sort": 1
+        },
+        "output": [
+          73,
+          114,
+          155,
+          196
+        ]
+      },
+      "dataset_sha256": "ae47d1649bd2b087f4057efcd68b16b5aa3d1e2357c229f7ebde2f8e61cf9060",
+      "prediction": "high",
+      "residency": "7/8"
+    },
+    "object_store": {
+      "baseline": {
+        "egress_materializations": [
+          1,
+          1
+        ],
+        "ingress_materializations": 4,
+        "materializations": 6,
+        "observations": [
+          2,
+          "found",
+          false,
+          2,
+          "found",
+          false
+        ],
+        "op_multiset": {
+          "dedup": 2,
+          "equals": 2,
+          "keyed_lookup": 2,
+          "sort": 1
+        },
+        "output": [
+          11,
+          22,
+          33,
+          44
+        ]
+      },
+      "candidate": {
+        "egress_materializations": [
+          1,
+          1
+        ],
+        "ingress_materializations": 4,
+        "materializations": 6,
+        "observations": [
+          2,
+          "found",
+          false,
+          2,
+          "found",
+          false
+        ],
+        "op_multiset": {
+          "dedup": 2,
+          "equals": 2,
+          "keyed_lookup": 2,
+          "sort": 1
+        },
+        "output": [
+          11,
+          22,
+          33,
+          44
+        ]
+      },
+      "dataset_sha256": "ae47d1649bd2b087f4057efcd68b16b5aa3d1e2357c229f7ebde2f8e61cf9060",
+      "prediction": "high",
+      "residency": "6/7"
+    }
+  },
+  "data_class": "committed synthetic operation traces",
+  "dataset_sha256": "ae47d1649bd2b087f4057efcd68b16b5aa3d1e2357c229f7ebde2f8e61cf9060",
+  "note": "measured, not benchmarked; no speed or customer workload claim",
+  "schema": "chronus.fold-residency/1",
+  "script_sha256": "7b96eb8adc70da95ea6dad0b3271058bd1783b471d74c30bb5216f638aeea667",
+  "source_commit": "0f94d2d6ae917eb819943dda6cb7d58baa99a08c"
+}
