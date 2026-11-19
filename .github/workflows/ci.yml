@@ -155,6 +155,7 @@ jobs:
 
   pinned-dataset-tests:
     name: Pinned public-dataset tests (scikit-learn 1.8.0)
+    if: ${{ false }}  # TEST PR ONLY: prove ci-required fails when a required job is skipped
     # These tests skip in the main job unless scikit-learn is exactly 1.8.0
     # (the pinned public UCI bytes); this job executes them so they are not
     # counted as passing evidence while skipped.
