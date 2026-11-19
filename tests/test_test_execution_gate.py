@@ -30,8 +30,11 @@ def _policy(tmp_path: Path, **suite) -> Path:
 PASS = '<testcase classname="t" name="p{}" />'
 
 
-def _run(tmp_path, cases, **suite) -> int:
-    return gate.main(["--suite", "s", "--junit", str(_junit(tmp_path, cases)), "--policy", str(_policy(tmp_path, **suite))])
+def _run(tmp_path, cases, registry=(), **suite) -> int:
+    known = tmp_path / "known-failures.txt"
+    known.write_text("# registry\n" + "".join(f"{line}\n" for line in registry))
+    return gate.main(["--suite", "s", "--junit", str(_junit(tmp_path, cases)), "--policy", str(_policy(tmp_path, **suite)),
+                      "--known-failures", str(known)])
 
 
 def test_all_executed_passes(tmp_path):
@@ -60,11 +63,25 @@ def test_module_level_skip_reason_is_read_from_text(tmp_path):
     assert _run(tmp_path, [PASS.format(1), PASS.format(2), module]) == 0
 
 
-def test_xfail_must_be_recorded_in_known_failures(tmp_path):
-    known = '<testcase classname="t" name="x"><skipped type="pytest.xfail" message="known failure recorded in tests/known-failures.txt"/></testcase>'
-    unknown = '<testcase classname="t" name="y"><skipped type="pytest.xfail" message="flaky"/></testcase>'
-    assert _run(tmp_path, [PASS.format(1), PASS.format(2), known]) == 0
-    assert _run(tmp_path, [PASS.format(1), PASS.format(2), unknown]) == 1
+def test_xfail_must_be_listed_by_node_id_in_known_failures(tmp_path):
+    xfail = ('<testcase classname="tests.test_mod.TestCls" name="test_x[1]">'
+             '<skipped type="pytest.xfail" message="see known-failures.txt"/></testcase>')
+    base = [PASS.format(1), PASS.format(2), xfail]
+    # A reason string mentioning the registry is not enough; the node id must be listed.
+    assert _run(tmp_path, base) == 1
+    assert _run(tmp_path, base, registry=["tests/test_mod.py::TestCls::test_x"]) == 0
+    assert _run(tmp_path, base, registry=["tests/test_mod.py::TestCls::test_x[1]"]) == 0
+
+
+def test_platform_only_skips_are_allowed_only_on_that_platform(tmp_path):
+    posix_only = '<testcase classname="t" name="p"><skipped type="pytest.skip" message="needs POSIX process signals"/></testcase>'
+    platform = {"nt": ["POSIX"]}
+    cases = [PASS.format(1), PASS.format(2), posix_only]
+    junit = _junit(tmp_path, cases)
+    policy = {"min_passed": 2, "max_skipped": 0, "allowed_skip_reasons": [], "platform_skip_reasons": platform}
+    result = gate.classify(junit)
+    assert gate.evaluate(result, policy, os_name="nt", known_failures=set()) == []
+    assert gate.evaluate(result, policy, os_name="posix", known_failures=set())
 
 
 def test_unreadable_input_is_exit_2(tmp_path):

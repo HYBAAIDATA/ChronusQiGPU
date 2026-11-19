@@ -18,13 +18,11 @@ jobs:
     # Critical path. Runner comes from repo variable CHRONUS_CRITICAL_RUNNER (JSON label
     # list, e.g. '["self-hosted","windows"]'); hosted ubuntu-latest when unset so the
     # gate cannot queue forever with no runner online (docs/ci/self-hosted-runner.md).
-    # Short-circuit: push/workflow_dispatch never touch pull_request.*; fork PRs skip.
-    if: >-
-      github.event_name != 'pull_request'
-      || github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: read
-    runs-on: ${{ fromJSON(vars.CHRONUS_CRITICAL_RUNNER || '["ubuntu-latest"]') }}
+    # Fork pull requests always run on GitHub-hosted ubuntu-latest (never on a
+    # self-hosted runner), so the suite executes for them instead of skipping.
+    runs-on: ${{ fromJSON((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) && '["ubuntu-latest"]' || vars.CHRONUS_CRITICAL_RUNNER || '["ubuntu-latest"]') }}
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -59,12 +57,11 @@ jobs:
     # Critical path. Runner comes from repo variable CHRONUS_CRITICAL_RUNNER (JSON label
     # list, e.g. '["self-hosted","windows"]'); hosted ubuntu-latest when unset so the
     # gate cannot queue forever with no runner online (docs/ci/self-hosted-runner.md).
-    if: >-
-      github.event_name != 'pull_request'
-      || github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: read
-    runs-on: ${{ fromJSON(vars.CHRONUS_CRITICAL_RUNNER || '["ubuntu-latest"]') }}
+    # Fork pull requests always run on GitHub-hosted ubuntu-latest (never on a
+    # self-hosted runner), so the suite executes for them instead of skipping.
+    runs-on: ${{ fromJSON((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) && '["ubuntu-latest"]' || vars.CHRONUS_CRITICAL_RUNNER || '["ubuntu-latest"]') }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -425,12 +422,11 @@ jobs:
     # Critical path. Runner comes from repo variable CHRONUS_CRITICAL_RUNNER (JSON label
     # list, e.g. '["self-hosted","windows"]'); hosted ubuntu-latest when unset so the
     # gate cannot queue forever with no runner online (docs/ci/self-hosted-runner.md).
-    if: >-
-      github.event_name != 'pull_request'
-      || github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: read
-    runs-on: ${{ fromJSON(vars.CHRONUS_CRITICAL_RUNNER || '["ubuntu-latest"]') }}
+    # Fork pull requests always run on GitHub-hosted ubuntu-latest (never on a
+    # self-hosted runner), so the suite executes for them instead of skipping.
+    runs-on: ${{ fromJSON((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) && '["ubuntu-latest"]' || vars.CHRONUS_CRITICAL_RUNNER || '["ubuntu-latest"]') }}
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4

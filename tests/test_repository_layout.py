@@ -49,8 +49,23 @@ ARCHIVED_ROOT_FILES = (
 )
 
 
+def _tracked(names):
+    """Names tracked by git; falls back to on-disk presence outside a checkout."""
+    import shutil
+    import subprocess
+
+    git = shutil.which("git")
+    if git and (ROOT / ".git").exists():
+        out = subprocess.run([git, "ls-files", "-z", "--", *names], cwd=ROOT,
+                             capture_output=True, check=True).stdout.decode()
+        return sorted({entry.split("/")[0] for entry in out.split("\0") if entry})
+    return [name for name in names if (ROOT / name).exists()]
+
+
 def test_archived_root_files_stay_out_of_the_root():
-    assert [name for name in ARCHIVED_ROOT_FILES if (ROOT / name).exists()] == []
+    # Checks what is committed: an ignored local file such as
+    # `pytest > temp_pytest_output.txt` must not fail the suite.
+    assert _tracked(ARCHIVED_ROOT_FILES) == []
 
 
 def test_one_turing_source_tree():
