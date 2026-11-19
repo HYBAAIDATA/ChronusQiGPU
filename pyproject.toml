@@ -41,6 +41,7 @@ dependencies = [
 [project.optional-dependencies]
 test = [
     "pytest>=8.0",
+    "tomli>=1.1; python_version < '3.11'",
 ]
 mining = ["hyba-turing==0.2.0.dev0"]
 # Optional local mathematical workbench, dependent on the separately built
@@ -56,6 +57,7 @@ dev = [
     "pyyaml>=6,<7",
     "pytest>=7.0",
     "pytest-cov>=4.0",
+    "tomli>=1.1; python_version < '3.11'",
     "hypothesis>=6.100",
     "PyYAML>=6,<7",
     "numpy>=1.26,<3",
