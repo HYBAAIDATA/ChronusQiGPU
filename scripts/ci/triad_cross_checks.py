@@ -172,7 +172,12 @@ def check_tenant_isolation_and_concurrency(tmp: Path) -> None:
             procs.append(subprocess.Popen([sys.executable, "-c", child, str(db), str(ROOT / "src")],
                                           stderr=subprocess.PIPE, text=True))
         for p in procs:
-            _, stderr = p.communicate(timeout=300)
+            try:
+                _, stderr = p.communicate(timeout=300)
+            except subprocess.TimeoutExpired:
+                # Recorded as an X4 error (so X4 reports FAIL); the finally block reaps the child.
+                errors.append(f"child writer pid {p.pid} timed out after 300 s")
+                continue
             if p.returncode:
                 errors.append(stderr.strip()[-300:])
     finally:
