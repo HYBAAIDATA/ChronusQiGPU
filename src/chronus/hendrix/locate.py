@@ -220,6 +220,8 @@ def is_proven_prime(n: int, trial_bound: int = 1 << 20) -> bool:
                 small[cofactor] = 1
                 cofactor = 1
         except ValueError:
+            # Cofactor undecided: keep it unfactored; the F * F > n check below
+            # then decides whether the trial-division part alone certifies n.
             pass
     f = (n - 1) // cofactor
     if f * f <= n:
