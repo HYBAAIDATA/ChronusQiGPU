@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 
 # Single source of truth: the version comes from src/chronus/__init__.py (chronus.__version__).
+# Registered as a configure dependency so a version-only edit re-runs configuration.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../src/chronus/__init__.py")
 file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/../src/chronus/__init__.py" _chronus_version_line
      REGEX "^__version__ = \"[^\"]+\"")
 string(REGEX REPLACE "^__version__ = \"([^\"]+)\".*" "\\1" CHRONUS_VERSION "${_chronus_version_line}")

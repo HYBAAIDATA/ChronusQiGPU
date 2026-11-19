@@ -14,6 +14,8 @@ from typing import Any
 
 from chronus import __version__ as _CHRONUS_VERSION
 
+LEGACY_MANIFEST_FILENAME = "qualification_manifest_v36.json"
+
 
 @dataclass(frozen=True)
 class GateResult:
@@ -195,6 +197,7 @@ class ChronusVerificationOrchestrator:
         record = observed.to_dict()
         record.update({
             "version": _CHRONUS_VERSION,
+            "manifest_format": LEGACY_MANIFEST_FILENAME.removesuffix(".json"),
             "qualification_status": "NOT_QUALIFIED",
             "execution_mode": "LOCAL_DIAGNOSTIC_ONLY",
             "total_release_gates_evaluated": len(observed.gates),
@@ -206,7 +209,10 @@ class ChronusVerificationOrchestrator:
         out_dir = os.getenv("CHRONUS_MANIFEST_OUT_DIR")
         if not out_dir:
             return record
-        target = Path(out_dir) / "qualification_manifest_v36.json"
+        # The file name is a stable identifier that existing consumers read
+        # (scripts/ci/run_irrefutable_audit.py, docs). It names the manifest
+        # format, not the release; the release version is record["version"].
+        target = Path(out_dir) / LEGACY_MANIFEST_FILENAME
         try:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")

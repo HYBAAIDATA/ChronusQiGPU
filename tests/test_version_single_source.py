@@ -69,21 +69,23 @@ def _declared() -> str:
     return chronus.__version__
 
 
-def test_deployment_manifests_carry_the_single_version():
-    """Kubernetes version labels and Chronus image tags match chronus.__version__."""
-    version = _declared()
+def test_deployment_manifests_pin_one_published_image_version():
+    """Kubernetes manifests describe what is deployed: the last published images.
+
+    Their `version` labels must equal their image tags, so a label never claims a
+    version the pod does not run. They move to chronus.__version__ only when a
+    release publishes images at that tag (no image is built for a dev version).
+    """
     offenders = []
     for rel in ("infra/k8s/deployment.yaml", "infra/k8s/chronus-k8s-deployment.yaml", "chronus-k8s-deployment.yaml"):
         path = ROOT / rel
         if not path.exists():
             continue
         text = path.read_text(encoding="utf-8")
-        for m in re.finditer(r'^\s*version:\s*"([^"]+)"', text, re.M):
-            if m.group(1) != version:
-                offenders.append(f"{rel}: label version {m.group(1)}")
-        for m in re.finditer(r"registry\.chronus\.dev/chronus/[a-z-]+:v?([^\s\"']+)", text):
-            if m.group(1) != version:
-                offenders.append(f"{rel}: image tag {m.group(1)}")
+        labels = set(re.findall(r'^\s*version:\s*"([^"]+)"', text, re.M))
+        tags = set(re.findall(r"registry\.chronus\.dev/chronus/[a-z-]+:v?([^\s\"']+)", text))
+        if len(labels | tags) > 1:
+            offenders.append(f"{rel}: labels {sorted(labels)} vs image tags {sorted(tags)}")
     assert offenders == []
 
 
@@ -96,6 +98,9 @@ def test_native_library_reads_the_single_version():
     c_api = (ROOT / "cpp" / "src" / "c_api.cpp").read_text(encoding="utf-8")
     assert "CHRONUS_VERSION_STRING" in c_api
     assert not re.search(r'"\d+\.\d+\.\d+', c_api)
+    makefile = (ROOT / "cpp" / "Makefile").read_text(encoding="utf-8")
+    assert "../src/chronus/__init__.py" in makefile and "-DCHRONUS_VERSION_STRING=" in makefile
+    assert "CMAKE_CONFIGURE_DEPENDS" in cmake
 
 
 def test_test_package_and_facade_use_the_single_version():
@@ -104,6 +109,8 @@ def test_test_package_and_facade_use_the_single_version():
     assert tests.__version__ == _declared()
     facade = (SRC / "core" / "facade.py").read_text(encoding="utf-8")
     assert "chronus_gpiu-v36" not in facade
+    from chronus.core import facade as facade_mod
+    assert facade_mod.LEGACY_MANIFEST_FILENAME == "qualification_manifest_v36.json"  # format id, not release
 
 
 def test_release_tag_must_carry_the_single_version(tmp_path):
@@ -121,12 +128,14 @@ def test_release_tag_must_carry_the_single_version(tmp_path):
     dist = tmp_path / "dist"
     dist.mkdir()
     (dist / f"hyba_chronus-{version}-py3-none-any.whl").write_bytes(b"")
+    assert mod.check(f"v{version}", version, dist)  # sdist missing
+    (dist / f"hyba_chronus-{version}.tar.gz").write_bytes(b"")
     assert mod.check(f"v{version}", version, dist) == []
-    (dist / "hyba_chronus-36.0.0.tar.gz").write_bytes(b"")
+    (dist / f"hyba_chronus-{version}1-py3-none-any.whl").write_bytes(b"")  # prefix-sharing version
     assert mod.check(f"v{version}", version, dist)
-    empty = tmp_path / "empty"
-    empty.mkdir()
-    assert mod.check(f"v{version}", version, empty)
+    (dist / f"hyba_chronus-{version}1-py3-none-any.whl").unlink()
+    (dist / "other-1.0.tar.gz").write_bytes(b"")  # unexpected artifact
+    assert mod.check(f"v{version}", version, dist)
     release = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
     assert release.count("scripts/ci/check_release_version.py") == 2
 

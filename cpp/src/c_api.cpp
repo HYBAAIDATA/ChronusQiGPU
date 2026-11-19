@@ -8,7 +8,7 @@
 #include <new>
 
 #ifndef CHRONUS_VERSION_STRING
-#error "CHRONUS_VERSION_STRING must be defined by the build (cpp/CMakeLists.txt reads chronus.__version__)"
+#error "CHRONUS_VERSION_STRING must be defined by the build (cpp/CMakeLists.txt and cpp/Makefile read chronus.__version__)"
 #endif
 
 const char* chronus_get_version(void) {

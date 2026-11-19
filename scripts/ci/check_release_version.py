@@ -32,12 +32,12 @@ def check(tag: str, version: str, dist: Path | None = None) -> list[str]:
     if not (tag == f"v{version}" or tag.startswith(f"v{version}-")):
         problems.append(f"tag {tag!r} does not carry chronus.__version__ {version!r} (expected 'v{version}' or 'v{version}-<suffix>')")
     if dist is not None:
-        built = sorted(p.name for p in dist.iterdir() if p.suffix in (".whl", ".gz"))
-        if not built:
-            problems.append(f"no wheel or sdist found in {dist}")
-        for name in built:
-            if name.startswith("hyba_chronus-") and not name.startswith(f"hyba_chronus-{version}"):
-                problems.append(f"artifact {name} does not carry version {version}")
+        expected = {f"hyba_chronus-{version}-py3-none-any.whl", f"hyba_chronus-{version}.tar.gz"}
+        present = {p.name for p in dist.iterdir() if p.is_file()}
+        for name in sorted(expected - present):
+            problems.append(f"expected artifact {name} is missing from {dist}")
+        for name in sorted(present - expected):
+            problems.append(f"unexpected file {name} in {dist} (only the exact {version} wheel and sdist may be published)")
     return problems
 
 
