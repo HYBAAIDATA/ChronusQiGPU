@@ -420,7 +420,10 @@ jobs:
           PYTHONPATH: src
         shell: pwsh
         run: |
-          $pool = Start-Process -PassThru -NoNewWindow -FilePath python -ArgumentList @('scripts/smoke/fake_pool.py','--port','3333','--exit-after','30')
+          # Share difficulty 1e-4 (~4e5 expected SHA-256d) so the submit/accept
+          # round trip completes in seconds; difficulty 1 (~2^32) cannot finish
+          # inside --exit-after on a CPU runner, as stratum_smoke.py documents.
+          $pool = Start-Process -PassThru -NoNewWindow -FilePath python -ArgumentList @('scripts/smoke/fake_pool.py','--port','3333','--exit-after','30','--difficulty','0.0001')
           $ready = $false
           foreach ($i in 1..50) {
             try {
