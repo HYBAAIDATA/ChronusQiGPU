@@ -150,16 +150,24 @@ jobs:
           python-version: '3.13'
       # packages/hyba-client has not been committed yet; skip (with a notice)
       # instead of failing every PR that touches the licensing paths above.
+      # Once the package exists on the base branch, removing it fails the gate.
       - name: Check the client package exists
         id: client
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_REF: ${{ github.base_ref }}
         run: |
           if [ -f packages/hyba-client/pyproject.toml ] || [ -f packages/hyba-client/setup.py ]; then
             echo "present=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::packages/hyba-client is not in the repository; participant client wheel not built"
+            exit 0
           fi
+          if [ -n "$BASE_REF" ] && gh api "repos/${GITHUB_REPOSITORY}/contents/packages/hyba-client?ref=${BASE_REF}" > /dev/null 2>&1; then
+            echo "::error::packages/hyba-client exists on ${BASE_REF} but not in this change; the participant client gate cannot be skipped"
+            exit 1
+          fi
+          echo "present=false" >> "$GITHUB_OUTPUT"
+          echo "::notice::packages/hyba-client is not in the repository; participant client wheel not built"
       - name: Install build tooling
         if: steps.client.outputs.present == 'true'
         run: python -m pip install build
