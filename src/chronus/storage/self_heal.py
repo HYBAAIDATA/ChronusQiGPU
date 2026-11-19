@@ -19,8 +19,9 @@ Bounds (what it cannot do)
 * Parity lives in the same SQLite file. It does not protect against a lost or
   page-corrupted database (``PRAGMA integrity_check`` still fails closed) or a
   lost disk; that needs replication, which is a deployment concern.
-* Objects larger than ``CHRONUS_SELF_HEALING_MAX_BYTES`` (default 256 KiB) get
-  no parity, because encoding is pure Python. They keep fail-closed behaviour.
+* Objects larger than ``CHRONUS_SELF_HEALING_MAX_BYTES`` (default 256 KiB,
+  capped at the encoder's 1 MiB limit) get no parity, because encoding is pure
+  Python. They keep fail-closed behaviour.
 * Metadata rows (records, journal) are verified but not repaired.
 
 This is the in-repo implementation of "bounded self-healing". The separate
@@ -62,17 +63,28 @@ def self_healing_enabled() -> bool:
     raise ValueError("CHRONUS_SELF_HEALING must be 1/0, true/false, yes/no or on/off")
 
 
+def encoder_max_bytes() -> int:
+    """Largest payload the Reed-Solomon encoder accepts (1 MiB)."""
+    return int(_rs().MAX_TRACE_BYTES)
+
+
 def self_healing_max_bytes() -> int:
+    """Effective protection limit: the configured value, capped at the encoder limit."""
     raw = os.getenv("CHRONUS_SELF_HEALING_MAX_BYTES")
     if raw is None:
-        return DEFAULT_MAX_BYTES
+        return min(DEFAULT_MAX_BYTES, encoder_max_bytes())
     try:
         value = int(raw)
     except ValueError as exc:
         raise ValueError("CHRONUS_SELF_HEALING_MAX_BYTES must be an integer") from exc
     if value < 1:
         raise ValueError("CHRONUS_SELF_HEALING_MAX_BYTES must be positive")
-    return value
+    return min(value, encoder_max_bytes())
+
+
+def sidecar_metadata_valid(scheme: object, n: object, k: object) -> bool:
+    """Only the fixed scheme and dimensions are trusted for repair."""
+    return scheme == SCHEME and n == RS_N and k == RS_K
 
 
 def _rs():
@@ -123,6 +135,8 @@ def heal_payload(received: bytes, object_id: str, parity: bytes,
     """
     if len(received) != expected_length:
         return HealOutcome(None, (), "length differs from the recorded size")
+    if not sidecar_metadata_valid(SCHEME, n, k):
+        return HealOutcome(None, (), "unsupported parity dimensions")
     try:
         blocks = _decode_parity(parity, expected_length, n, k)
     except ValueError as exc:
@@ -135,7 +149,10 @@ def heal_payload(received: bytes, object_id: str, parity: bytes,
         "parity": blocks,
         "sha256": object_id,
     }
-    result = _rs().heal(received, envelope)
+    try:
+        result = _rs().heal(received, envelope)
+    except (ValueError, ZeroDivisionError) as exc:  # ReedSolomonError is a ValueError
+        return HealOutcome(None, (), f"decoder rejected the sidecar: {exc}")
     repaired = result["repaired"]
     if result["uncorrectable_blocks"]:
         return HealOutcome(None, (), f"{len(result['uncorrectable_blocks'])} block(s) beyond correction bound")

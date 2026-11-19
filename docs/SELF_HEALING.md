@@ -17,8 +17,10 @@ implemented.
   only if the corrected bytes hash to the content address. It is then written
   back, and a `REPAIRED` row goes into `self_heal_events`. Failed attempts are
   recorded as `UNREPAIRABLE` and the store fails closed exactly as before.
-  Parity whose own digest fails is rebuilt from the verified payload
-  (`PARITY_REGENERATED`).
+  A sidecar whose digest or scheme/dimensions fail verification is never used
+  for repair. It is rebuilt from the verified payload (`PARITY_REGENERATED`),
+  even if the size limit has since been lowered. A repeated identical failure
+  is recorded once.
 - **Bounds:** up to 8 corrupted bytes per 32-byte block. It does not repair a
   changed length, metadata/journal rows, SQLite page corruption
   (`PRAGMA integrity_check` still fails closed), or a lost database or disk.
@@ -27,7 +29,7 @@ implemented.
 - **Configuration:**
   - `CHRONUS_SELF_HEALING=1|0` (default `1`). `0` restores strict fail-closed
     behaviour with no parity written.
-  - `CHRONUS_SELF_HEALING_MAX_BYTES` (default `262144`). Larger objects get no
+  - `CHRONUS_SELF_HEALING_MAX_BYTES` (default `262144`, capped at 1 MiB, the encoder limit). Larger objects get no
     parity, because encoding is pure Python (about 0.2 s per 256 KiB).
   - `DurableTheseusService(path, self_healing=False)` overrides per instance.
 - **Visibility:** `DurableTheseusService.evidence()["self_healing"]` and

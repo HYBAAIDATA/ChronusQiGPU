@@ -311,12 +311,19 @@ class DurableTheseusService:
 
     def _ensure_parity(self, db: sqlite3.Connection, object_id: str, payload: bytes) -> None:
         """Write the Reed-Solomon parity sidecar for a verified payload."""
-        if not self.self_healing or len(payload) > self.self_healing_max_bytes:
+        if not self.self_healing:
             return
         row = db.execute(
-            "SELECT parity, parity_sha256 FROM object_parity WHERE object_id=?", (object_id,)
+            "SELECT scheme, n, k, parity, parity_sha256 FROM object_parity WHERE object_id=?",
+            (object_id,),
         ).fetchone()
-        if row is not None and hashlib.sha256(bytes(row["parity"])).hexdigest() == row["parity_sha256"]:
+        if row is not None and self._sidecar_intact(row):
+            return
+        # New protection honours the configured limit; an existing sidecar is
+        # maintained regardless (up to the encoder limit) so lowering the limit
+        # never strands a damaged sidecar that is still used for repair.
+        limit = self_heal.encoder_max_bytes() if row is not None else self.self_healing_max_bytes
+        if len(payload) > limit:
             return
         parity = self_heal.encode_parity(payload)
         db.execute(
@@ -326,10 +333,23 @@ class DurableTheseusService:
              sqlite3.Binary(parity), hashlib.sha256(parity).hexdigest()),
         )
         if row is not None:
-            self._log_heal(db, object_id, "PARITY_REGENERATED", 0, "parity sidecar failed its digest")
+            self._log_heal(db, object_id, "PARITY_REGENERATED", 0, "parity sidecar failed verification")
+
+    @staticmethod
+    def _sidecar_intact(row: sqlite3.Row) -> bool:
+        return (self_heal.sidecar_metadata_valid(row["scheme"], row["n"], row["k"])
+                and hashlib.sha256(bytes(row["parity"])).hexdigest() == row["parity_sha256"])
 
     @staticmethod
     def _log_heal(db: sqlite3.Connection, object_id: str, kind: str, corrected: int, detail: str) -> None:
+        if kind == "UNREPAIRABLE":
+            last = db.execute(
+                "SELECT kind, detail FROM self_heal_events WHERE object_id=? "
+                "ORDER BY event_id DESC LIMIT 1",
+                (object_id,),
+            ).fetchone()
+            if last is not None and last["kind"] == kind and last["detail"] == detail:
+                return  # same failure already recorded; don't grow the log on retries
         db.execute(
             "INSERT INTO self_heal_events(object_id,kind,corrected_bytes,detail,timestamp_ns) "
             "VALUES(?,?,?,?,?)",
@@ -362,9 +382,8 @@ class DurableTheseusService:
                 self._log_heal(db, object_id, "UNREPAIRABLE", 0, "no parity sidecar")
                 return None
             parity = bytes(parity_row["parity"])
-            if (parity_row["scheme"] != self_heal.SCHEME
-                    or hashlib.sha256(parity).hexdigest() != parity_row["parity_sha256"]):
-                self._log_heal(db, object_id, "UNREPAIRABLE", 0, "parity sidecar failed its digest")
+            if not self._sidecar_intact(parity_row):
+                self._log_heal(db, object_id, "UNREPAIRABLE", 0, "parity sidecar failed verification")
                 return None
             outcome = self_heal.heal_payload(
                 payload, object_id, parity, int(current["size_bytes"]),
@@ -400,7 +419,7 @@ class DurableTheseusService:
                 "SELECT COUNT(*) FROM self_heal_events WHERE kind='REPAIRED'"
             ).fetchone()[0])
             failures = int(db.execute(
-                "SELECT COUNT(*) FROM self_heal_events WHERE kind='UNREPAIRABLE'"
+                "SELECT COUNT(DISTINCT object_id) FROM self_heal_events WHERE kind='UNREPAIRABLE'"
             ).fetchone()[0])
         return {
             "enabled": self.self_healing,
@@ -412,7 +431,7 @@ class DurableTheseusService:
             "objects": objects,
             "protected_objects": protected,
             "repairs": repairs,
-            "unrepairable": failures,
+            "unrepairable_objects": failures,
         }
 
     def scale_record(self, tenant_id: str, object_id: str, increment: int) -> TheseusRecord:
@@ -617,9 +636,9 @@ class DurableTheseusService:
             bad = [
                 str(row["object_id"])
                 for row in db.execute(
-                    "SELECT object_id, parity, parity_sha256 FROM object_parity"
+                    "SELECT object_id, scheme, n, k, parity, parity_sha256 FROM object_parity"
                 ).fetchall()
-                if hashlib.sha256(bytes(row["parity"])).hexdigest() != row["parity_sha256"]
+                if not self._sidecar_intact(row)
             ]
         for object_id in bad:
             with self._lock, self._connect(immediate=True) as db:

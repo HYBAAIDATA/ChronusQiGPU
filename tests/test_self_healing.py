@@ -164,3 +164,63 @@ def test_production_triad_materialises_through_storage_fault(tmp_path):
     assert reopened.verify(receipt) is True
     posture = reopened.production_posture()["durable_custody"]["self_healing"]
     assert posture["enabled"] is True and posture["repairs"] == 2
+
+
+def test_repeated_failed_reads_do_not_grow_the_audit_log(tmp_path, monkeypatch):  # mock-ok: sets environment configuration only; no behaviour is replaced
+    monkeypatch.setenv("CHRONUS_SELF_HEALING_MAX_BYTES", "64")  # mock-ok: sets environment configuration only; no behaviour is replaced
+    path = tmp_path / "t.sqlite3"
+    store = DurableTheseusService(str(path))
+    record = store.store("tenant-a", PAYLOAD)  # above the limit: no sidecar
+    _corrupt(path, record.object_id, [0])
+    for _ in range(3):
+        with pytest.raises(StorageIntegrityError):
+            store.reconstruct("tenant-a", record.object_id)
+    assert _events(path) == ["UNREPAIRABLE"]
+    assert store.self_healing_status()["unrepairable_objects"] == 1
+
+
+@pytest.mark.parametrize("column,value", [("n", 0), ("k", 48), ("scheme", "other")])
+def test_damaged_sidecar_metadata_fails_closed_then_is_regenerated(tmp_path, column, value):
+    path = tmp_path / "t.sqlite3"
+    store = DurableTheseusService(str(path))
+    record = store.store("tenant-a", PAYLOAD)
+    with sqlite3.connect(path) as db:
+        db.execute(f"UPDATE object_parity SET {column}=? WHERE object_id=?", (value, record.object_id))
+        db.commit()
+    _corrupt(path, record.object_id, [3])
+    with pytest.raises(StorageIntegrityError):  # not ZeroDivisionError / ReedSolomonError
+        store.reconstruct("tenant-a", record.object_id)
+    assert _events(path) == ["UNREPAIRABLE"]
+    # restore the payload; reopening rebuilds the sidecar, which then repairs again
+    with sqlite3.connect(path) as db:
+        db.execute("UPDATE objects SET payload=? WHERE object_id=?", (PAYLOAD, record.object_id))
+        db.commit()
+    reopened = DurableTheseusService(str(path))
+    assert _events(path)[-1] == "PARITY_REGENERATED"
+    _corrupt(path, record.object_id, [3])
+    assert reopened.reconstruct("tenant-a", record.object_id) == PAYLOAD
+
+
+def test_lowered_limit_still_maintains_existing_sidecar(tmp_path, monkeypatch):  # mock-ok: sets environment configuration only; no behaviour is replaced
+    path = tmp_path / "t.sqlite3"
+    record = DurableTheseusService(str(path)).store("tenant-a", PAYLOAD)
+    with sqlite3.connect(path) as db:
+        db.execute("UPDATE object_parity SET parity=? WHERE object_id=?", (b"\x01" * 4, record.object_id))
+        db.commit()
+    monkeypatch.setenv("CHRONUS_SELF_HEALING_MAX_BYTES", "16")  # mock-ok: sets environment configuration only; no behaviour is replaced
+    reopened = DurableTheseusService(str(path))
+    assert _events(path) == ["PARITY_REGENERATED"]
+    _corrupt(path, record.object_id, [9])
+    assert reopened.reconstruct("tenant-a", record.object_id) == PAYLOAD
+
+
+def test_limit_is_capped_at_encoder_maximum_and_large_writes_succeed(tmp_path, monkeypatch):  # mock-ok: sets environment configuration only; no behaviour is replaced
+    monkeypatch.setenv("CHRONUS_SELF_HEALING_MAX_BYTES", str(8 << 20))  # mock-ok: sets environment configuration only; no behaviour is replaced
+    monkeypatch.setenv("CHRONUS_MAX_PAYLOAD_BYTES", str(2 << 20))  # mock-ok: sets environment configuration only; no behaviour is replaced
+    assert self_heal.self_healing_max_bytes() == self_heal.encoder_max_bytes() == 1 << 20
+    store = DurableTheseusService(str(tmp_path / "t.sqlite3"))
+    big = bytes(range(256)) * ((1 << 20) // 256 + 1)  # just over 1 MiB
+    record = store.store("tenant-a", big)
+    assert store.reconstruct("tenant-a", record.object_id) == big
+    status = store.self_healing_status()
+    assert status["protected_objects"] == 0 and status["max_protected_bytes"] == 1 << 20
