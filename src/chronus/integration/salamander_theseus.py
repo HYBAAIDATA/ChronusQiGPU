@@ -91,7 +91,7 @@ class CycleReport:
     repaired: list[str] = field(default_factory=list)
     escalated: list[dict] = field(default_factory=list)
     rejected: list[dict] = field(default_factory=list)
-    out_of_scope: list[dict] = field(default_factory=list)
+    out_of_scope: int = 0  # count only: other tenants' objects are not described
     health_before: str = ""
     health_after: str = ""
     evidence_head: str = ""
@@ -204,10 +204,11 @@ class SalamanderTheseusRemediation:
         for finding in findings:
             object_id = finding["object_id"]
             holders = self.store.tenants_for_object(object_id)
-            if self.tenant_id not in holders:
+            if self.tenant_id not in holders and EVIDENCE_TENANT not in holders:
                 # Custody scope: this remediation tenant holds no record for the
-                # object, so it may not act on it. Reported, not actuated.
-                report.out_of_scope.append({**finding, "tenants": holders})
+                # object, so it may not act on it. Only a count is reported, so a
+                # tenant-scoped report reveals nothing about other tenants' data.
+                report.out_of_scope += 1
                 continue
             if finding["status"] != "REPAIRABLE":
                 # Select remediation: outside the bound there is no safe automatic

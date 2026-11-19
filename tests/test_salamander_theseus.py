@@ -191,7 +191,9 @@ def test_other_tenants_objects_are_out_of_scope(tmp_path):
     loop = SalamanderTheseusRemediation(store, guardian=guardian, token_provider=lambda _: token,
                                         tenant_id=TENANT, actor_id=ACTOR)
     report = loop.run_cycle()
-    assert report.repaired == [] and [f["object_id"] for f in report.out_of_scope] == [record.object_id]
+    assert report.repaired == [] and report.out_of_scope == 1
+    # The tenant-scoped report carries no detail about another tenant's object.
+    assert record.object_id not in repr(report) and "other-tenant" not in repr(report)
     assert "action-authorization" not in _kinds(loop.ledger)
 
 
@@ -239,3 +241,14 @@ def test_independent_verifier_handles_uri_special_characters_in_path(tmp_path):
                                         tenant_id=TENANT, actor_id=ACTOR)
     assert loop.run_cycle().repaired == [record.object_id]
     assert store.reconstruct(TENANT, record.object_id) == PAYLOAD
+
+
+def test_quarantined_journal_object_that_becomes_unrepairable_fails_continuity(tmp_path):
+    path = tmp_path / "t.sqlite3"
+    entry = _deferred_store(path).append_journal_event(TENANT, "state", PAYLOAD)
+    _corrupt(path, entry.object_id, [7, 900])
+    store = _deferred_store(path)  # quarantined: repairable at open
+    _corrupt(path, entry.object_id, range(0, 32))  # now beyond the bound in block 0
+    assert store.diagnose_object(entry.object_id)["status"] == "UNREPAIRABLE"
+    with pytest.raises(StorageIntegrityError):
+        store.verify_journal_continuity(TENANT)

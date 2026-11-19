@@ -70,9 +70,11 @@ Nothing on this page is production-qualified. Salamander's own
   repair through `DurableTheseusService.repair_object`, which THESEUS refuses
   unless the bound Salamander authority has an authorised action for that
   object in flight. A quarantined object does not block opening (journal
-  continuity skips its bytes) and is recorded once as `DETECTED`, not once per
-  read. Salamander acts only on objects its tenant holds a record for; others
-  are reported out of scope. Unrepairable damage still fails closed at open in
+  continuity skips its bytes while it is still diagnosed repairable) and is
+  recorded once as `DETECTED`, not once per read. Salamander acts only on
+  objects its tenant (or its own evidence tenant) holds a record for; others
+  are counted as out of scope with no object IDs or tenant names in the
+  report. One remediation authority is bound per store per process. Unrepairable damage still fails closed at open in
   both modes.
 - **Bounds:** up to 8 corrupted bytes per 32-byte block. Not covered: changed
   length, metadata/journal rows, SQLite page corruption (`PRAGMA
@@ -201,7 +203,11 @@ owner decision and is tracked as open.
   RS(48, 32), injects a real fault, decodes, and reports success only if the
   repaired bytes match the trace's SHA-256 (`test_legacy_dsw_healer_*`). When
   the check cannot run (package not importable, trace over 1 MiB) it returns
-  `None` and the monolith prints "I27 NOT RUN", never PASS.
+  `None` and the monolith prints "I27 NOT RUN", never PASS; the I28 matrix,
+  which depends on it, then also returns `None` and prints "I28 NOT RUN".
+  Still open (not changed here): in the same file, Gate 3 ("Invariant
+  Preservation I1-I28") is a hard-coded `"status": "PASS"` dict in three
+  places and does not reflect the result of `run_invariant_tests`.
 
 ### Reed-Solomon and the DSW instanton research
 

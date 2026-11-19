@@ -126,3 +126,23 @@ def test_heal_reduces_out_of_range_parity_like_the_reference():
     env["parity"] = [[v + rs.P * (2 ** 70) for v in row] for row in env["parity"]]  # huge ints, same residues
     out = rs.heal(trace, env)
     assert out["integrity_verified"] and out["repaired"] == trace
+
+
+def test_legacy_invariant_matrix_is_not_run_when_the_decoder_is_unavailable(monkeypatch):  # mock-ok: only makes a real module unimportable; no behaviour is replaced
+    """I27/I28 report NOT RUN (None), never PASS or an abort, without the decoder."""
+    import importlib.util
+    import sys
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[1] / "src" / "chronus" / "chronus_gpiu-v36.py"
+    spec = importlib.util.spec_from_file_location("chronus_gpiu_v36_no_rs", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert module.MillenniumProblemsMatrix.verify_all_seven_millennium_problems() is True
+    import chronus.security.al_haras as al_haras_pkg
+
+    # As in a standalone run: the decoder module cannot be imported.
+    monkeypatch.setitem(sys.modules, "chronus.security.al_haras.reed_solomon", None)  # mock-ok: module made unimportable; no behaviour is replaced
+    monkeypatch.delattr(al_haras_pkg, "reed_solomon")  # mock-ok: drops the cached submodule so the import really fails
+    assert module.DSWInstantonSelfHealer.heal_execution_trace(b"t", True)[2] is None
+    assert module.MillenniumProblemsMatrix.verify_all_seven_millennium_problems() is None

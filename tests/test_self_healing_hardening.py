@@ -270,3 +270,13 @@ def test_theseus_mode_repair_object_is_theseus_own_operation(tmp_path):
     result = store.repair_object(record.object_id, authority="operator:test")
     assert result["repaired"] and result["status"] == "HEALTHY"
     assert "authority=operator:test" in [e for e in store.self_heal_events() if e["kind"] == "REPAIRED"][0]["detail"]
+
+
+def test_backfill_on_a_store_with_self_healing_disabled_writes_and_reports_nothing(tmp_path):
+    path = tmp_path / "legacy.sqlite3"
+    _legacy_store(path, [PAYLOAD])
+    store = DurableTheseusService(str(path), self_healing=False)
+    assert store.backfill_parity() == 0
+    with closing(sqlite3.connect(path)) as db:
+        assert db.execute("SELECT COUNT(*) FROM object_parity").fetchone()[0] == 0
+    assert _events(path, "PARITY_BACKFILLED") == []

@@ -517,12 +517,12 @@ class DurableTheseusService:
 
     def scan_integrity(self) -> list[dict]:
         """Observe and detect: diagnose every object whose payload fails its address."""
+        damaged = []
         with self._connect() as db:
-            damaged = [
-                str(row["object_id"])
-                for row in db.execute("SELECT object_id, payload FROM objects").fetchall()
-                if hashlib.sha256(bytes(row["payload"])).hexdigest() != row["object_id"]
-            ]
+            # Stream rows: only one payload is held in memory at a time.
+            for row in db.execute("SELECT object_id, payload FROM objects"):
+                if hashlib.sha256(bytes(row["payload"])).hexdigest() != row["object_id"]:
+                    damaged.append(str(row["object_id"]))
         return [self.diagnose_object(object_id) for object_id in damaged]
 
     def repair_object(self, object_id: str, *, authority: str) -> dict:
@@ -721,10 +721,11 @@ class DurableTheseusService:
                 return False
             if entry.coordinate != coordinate:
                 return False
-            if entry.object_id not in self._quarantined:
+            if (entry.object_id not in self._quarantined
+                    or self.diagnose_object(entry.object_id)["status"] != "REPAIRABLE"):
                 self.reconstruct(tenant_id, entry.object_id)
-            # A quarantined object (salamander mode) was diagnosed repairable
-            # within bound on open; its reads stay fail-closed until repaired.
+            # A quarantined object (salamander mode) is skipped only while it is
+            # still diagnosed repairable; its reads stay fail-closed until repaired.
             material = (
                 f"{entry.ovid_namespace}|{entry.sequence}|{entry.event_type}|"
                 f"{entry.object_id}|{entry.prev_entry_hash}|{entry.timestamp_ns}"
@@ -820,8 +821,8 @@ class DurableTheseusService:
         """
         written = 0
         after = ""
-        if limit is not None and limit <= 0:
-            return 0
+        if not self.self_healing or (limit is not None and limit <= 0):
+            return 0  # parity is not written when self-healing is disabled; report nothing
         while True:
             with self._connect() as db:
                 rows = db.execute(
