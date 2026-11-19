@@ -35,7 +35,7 @@ def test_local_gates_do_not_issue_production_qualification(
         module.main()
 
     assert outcome.value.code == exit_code
-    data = json.loads((tmp_path / "PRODUCTION_QUALIFIED.json").read_text(encoding="utf-8"))
+    data = json.loads((tmp_path / "reference-evidence" / "PRODUCTION_QUALIFIED.json").read_text(encoding="utf-8"))
     assert data["status"] == "NOT_QUALIFIED"
     assert data["local_ci_checks"] == ("PASS" if local_checks_pass else "FAIL")
     assert data["signature"] is None

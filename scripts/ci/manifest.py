@@ -215,7 +215,8 @@ def main():
         "signature": None,
     }
 
-    manifest_path = os.path.join(REPO_ROOT, "PRODUCTION_QUALIFIED.json")
+    manifest_path = os.path.join(REPO_ROOT, "reference-evidence", "PRODUCTION_QUALIFIED.json")
+    os.makedirs(os.path.dirname(manifest_path), exist_ok=True)
     with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(manifest_data, f, indent=2)
 

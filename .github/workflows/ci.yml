@@ -215,8 +215,8 @@ jobs:
         with:
           name: software-evidence-dossiers
           path: |
-            PRODUCTION_QUALIFIED.json
-            SOVEREIGN_CAPABILITY_ATTESTATION.json
+            reference-evidence/PRODUCTION_QUALIFIED.json
+            reference-evidence/SOVEREIGN_CAPABILITY_ATTESTATION.json
 
   dressing-gates:
     name: Evidence-first wording, test reality and quantum naming

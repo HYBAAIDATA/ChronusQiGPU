@@ -26,7 +26,7 @@ APPROVED_MINIMUM_EVIDENCE = (
 
 def test_production_qualification_register_is_valid_json_and_fail_closed():
     repo_root = Path(__file__).resolve().parents[1]
-    with (repo_root / "PRODUCTION_QUALIFIED.json").open(encoding="utf8") as f:
+    with (repo_root / "manifests" / "historical" / "PRODUCTION_QUALIFIED.json").open(encoding="utf8") as f:
         manifest=json.load(f)
     assert manifest["status"]=="NOT_QUALIFIED"
     assert manifest["external_release_evidence"]["status"]=="MISSING"

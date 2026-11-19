@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import audit_manifest  # noqa: E402  (sibling module, path set above)
 
 ROOT = Path(__file__).resolve().parents[2]
-ROOT_MANIFEST = ROOT / "PRODUCTION_QUALIFIED.json"
+ROOT_MANIFEST = ROOT / "manifests" / "historical" / "PRODUCTION_QUALIFIED.json"
 MANIFEST_DIR = ROOT / "manifests"
 
 
