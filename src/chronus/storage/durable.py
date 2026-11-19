@@ -144,6 +144,8 @@ class DurableTheseusService:
                     detail TEXT NOT NULL,
                     timestamp_ns INTEGER NOT NULL
                 );
+                CREATE INDEX IF NOT EXISTS self_heal_events_object
+                    ON self_heal_events(object_id, event_id);
                 """
             )
             row = db.execute(
@@ -208,6 +210,12 @@ class DurableTheseusService:
     def store(self, tenant_id: str, payload: bytes, scale_index: int = 0) -> TheseusRecord:
         self._validate_payload(tenant_id, payload, scale_index)
         object_id = hashlib.sha256(payload).hexdigest()
+        # Encode parity before taking the write lock so writers are not stalled.
+        parity = (
+            self_heal.encode_parity(payload)
+            if self.self_healing and len(payload) <= self.self_healing_max_bytes
+            else None
+        )
         with self._lock, self._connect(immediate=True) as db:
             existing = db.execute(
                 "SELECT * FROM records WHERE tenant_id=? AND object_id=?",
@@ -221,7 +229,7 @@ class DurableTheseusService:
                     raise StorageIntegrityError(
                         f"authoritative content for {object_id} failed equality verification"
                     )
-                self._ensure_parity(db, object_id, payload)
+                self._ensure_parity(db, object_id, payload, parity)
                 return self._record_from_row(existing)
 
             object_row = db.execute(
@@ -236,7 +244,7 @@ class DurableTheseusService:
                 raise StorageIntegrityError(
                     f"existing content for {object_id} failed digest verification"
                 )
-            self._ensure_parity(db, object_id, payload)
+            self._ensure_parity(db, object_id, payload, parity)
 
             seq = int(
                 db.execute(
@@ -311,7 +319,10 @@ class DurableTheseusService:
     # Bounded self-healing (see chronus.storage.self_heal)
     # ------------------------------------------------------------------
 
-    def _ensure_parity(self, db: sqlite3.Connection, object_id: str, payload: bytes) -> None:
+    def _ensure_parity(
+        self, db: sqlite3.Connection, object_id: str, payload: bytes,
+        precomputed: bytes | None = None,
+    ) -> None:
         """Write the Reed-Solomon parity sidecar for a verified payload."""
         if not self.self_healing:
             return
@@ -327,7 +338,7 @@ class DurableTheseusService:
         limit = self_heal.encoder_max_bytes() if row is not None else self.self_healing_max_bytes
         if len(payload) > limit:
             return
-        parity = self_heal.encode_parity(payload)
+        parity = precomputed if precomputed is not None else self_heal.encode_parity(payload)
         db.execute(
             "INSERT OR REPLACE INTO object_parity(object_id,scheme,n,k,parity,parity_sha256) "
             "VALUES(?,?,?,?,?,?)",
