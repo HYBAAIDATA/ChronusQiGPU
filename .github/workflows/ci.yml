@@ -36,6 +36,21 @@ jobs:
       - name: Runner doctor
         run: python scripts/ci/runner_doctor.py
       - run: python -m pip install -e '.[dev]'
+      - name: Provision exact GL2 proof toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v elan >/dev/null 2>&1; then
+            if [ "$(uname -s)" = Linux ]; then
+              sudo apt-get update -qq
+              sudo apt-get install -y -qq elan
+            else
+              echo 'Install elan on the configured runner before qualification' >&2
+              exit 1
+            fi
+          fi
+          elan toolchain install leanprover/lean4:v4.36.0
+          elan run leanprover/lean4:v4.36.0 lean --version
       - name: Test and measure coverage
         env:
           CHRONUS_WORKLOAD_DB_PATH: ${{ runner.temp }}/chronus-tests.sqlite3

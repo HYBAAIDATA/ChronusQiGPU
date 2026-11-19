@@ -116,6 +116,74 @@ class ProductionTriad:
         """Reopen custodied shards and reconstruct at most one unavailable shard."""
         return ProtectedTheseusService(self.theseus, shard_root).reconstruct(receipt)
 
+    def exact_grover_search(
+        self, tenant_id: str, header_prefix: bytes, target: int, window_base: int,
+        *, num_generators: int = 12, k: int = 32, epoch_step: int | None = None,
+        artifact_id: str | None = None,
+    ) -> dict:
+        """Exact two-amplitude Grover over 2^num_generators nonces from window_base
+        (1 <= num_generators <= scheduler MAX_ACTIVE_DIM = 24).
+
+        CHRONUS builds FoldedRegisterN over (Z/2^32)^2 (lane 0 = header ntime,
+        lane 1 = nonce), OVID folds/materialises the GL2 frames with this
+        triad's OvidTransformService, THESEUS custodies every version and
+        receipt in this triad's DurableTheseusService (SQLite WAL).  The
+        SHA-256d oracle is evaluated on every materialised state (counted)."""
+        from chronus.kernels.gl2_transform import FoldedRegisterN
+        from chronus.ovid.folded_custody import OvidAdapter, OvidFoldedAdapter, TheseusAdapter
+        from chronus.execution.sha256d_oracle import Sha256dTargetOracle
+        from chronus.quantum.triad_grover import run_triad_exact_grover_search
+
+        from chronus.geodesic.scheduler import MAX_ACTIVE_DIM
+
+        if k != 32:
+            raise ValueError("header search packs (ntime, nonce) in (Z/2^32)^2: k must be 32")
+        if (isinstance(num_generators, bool) or not isinstance(num_generators, int)
+                or not 1 <= num_generators <= MAX_ACTIVE_DIM):
+            # Checked before staging so an unsupported search leaves no custody artifact.
+            raise ValueError(f"num_generators must be in 1..{MAX_ACTIVE_DIM} (scheduler limit)")
+        oracle = Sha256dTargetOracle(header_prefix, target)
+        register = FoldedRegisterN.from_domain_offset(
+            (oracle.ntime << 32) | (window_base & 0xFFFFFFFF), num_generators=num_generators, k=32,
+        )
+        theseus = TheseusAdapter(self.theseus, tenant_id)
+        adapter = OvidFoldedAdapter(OvidAdapter(self.ovid), theseus)
+        if artifact_id is None:
+            # One identity per (header, window, width, schedule epoch, target): runs that
+            # can select different winners never share versioned shard ids.
+            artifact_id = (f"grover/{hashlib.sha256(oracle.prefix).hexdigest()[:32]}/"
+                           f"{window_base & 0xFFFFFFFF:08x}/n{num_generators}/"
+                           f"e{0 if epoch_step is None else epoch_step}/t{oracle.target:064x}")
+        handle = adapter.stage_domain(artifact_id, register)
+        # Fresh full-header SHA-256d check runs before any collapse commit or
+        # GROVER_TARGET_VERIFIED receipt is written.
+        checked: dict = {}
+
+        def fresh_check(value: int) -> bool:
+            ok, digest = oracle.verify(value)
+            checked[value] = (ok, digest)
+            return ok
+
+        result = run_triad_exact_grover_search(
+            adapter=adapter, handle=handle, oracle_predicate=oracle, epoch_step=epoch_step,
+            winner_verifier=fresh_check,
+        )
+        verified, digest_hex = (False, None)
+        if result.found:
+            verified, digest_hex = checked[result.winner_value]
+            if not verified:
+                raise ArithmeticError("winner failed fresh SHA-256d verification")
+        return {
+            "result": result,
+            "nonce": None if result.winner_value is None else result.winner_value & 0xFFFFFFFF,
+            "verified": verified,
+            "digest": digest_hex,
+            "oracle_evaluations": oracle.evaluations,
+            "oracle_compressions": oracle.compressions,
+            "confirm_compressions": 3 if result.found else 0,
+            "custody": theseus.counters,
+        }
+
     def production_posture(self) -> dict:
         evidence = self.theseus.evidence()
         return {
