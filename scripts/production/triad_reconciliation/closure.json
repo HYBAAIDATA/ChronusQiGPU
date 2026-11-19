@@ -47,5 +47,12 @@
   "mc": "5f620b10ff7c23e0c9d6ede1777470a283f8cda9",
   "merged": "2026-11-19 02:40:13",
   "checks": "54 success, 2 skipped (head 2c469703)"
+ },
+ {
+  "n": 191,
+  "title": "chore: retire BLOCKER_MILLENIEIEUM patches and docs_readme.txt; record ci-required ruleset (other stream)",
+  "mc": "1f8d1a26b890ca4fd29d064333533b2c41effea3",
+  "merged": "2026-11-19 02:58:36",
+  "checks": "54 success, 2 skipped (head 21db52ef)"
  }
 ]
