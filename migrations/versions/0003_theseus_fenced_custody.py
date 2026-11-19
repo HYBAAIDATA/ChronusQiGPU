@@ -76,7 +76,10 @@ def downgrade() -> None:
                     op.execute(sa.text(f'LOCK TABLE "{table.name}" IN ACCESS EXCLUSIVE MODE'))
         elif context.dialect.name == "sqlite":
             # Acquire the SQLite write lock before any emptiness checks.
-            bind.exec_driver_sql("UPDATE theseus_local_fences SET epoch = epoch WHERE 0") if fences.name in existing else None
+            for table in tables:
+                if table.name in existing:
+                    bind.execute(sa.delete(table).where(sa.false()))
+                    break
         else:
             raise RuntimeError("Unsupported custody downgrade dialect")
         for table in tables:

@@ -63,7 +63,7 @@ class DeterministicTestSigner:
 
     def __init__(self, key_id: str = "ci-ephemeral-key-01", secret: bytes = b"A" * 32) -> None:
         if len(secret) != 32:
-            raise ValueError("BLAKE3 keyed mode requires exactly 32-byte key")
+            raise ValueError("Ed25519 requires exactly 32-byte seed")
         self._key_id = key_id
         self._key = Ed25519PrivateKey.from_private_bytes(secret)
 
@@ -497,6 +497,8 @@ def test_gate_g2_crash_tail_recovery_and_wal_tamper_detection(tmp_path: Path) ->
     )
 
     # Fail-closed before recovery runs.
+    with pytest.raises(CustodyError, match="reconcile_recovery_tail"):
+        store_2.seal_pending_epoch()
     with pytest.raises(CustodyError, match="reconcile_recovery_tail"):
         store_2.append_receipt(
             tenant_id="tenant-g2",

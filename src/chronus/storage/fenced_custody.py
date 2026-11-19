@@ -940,6 +940,11 @@ class FencedTheseusEdgeStore:
         with self._write_lock:
             self._conn.executescript(
                 """
+                CREATE TABLE IF NOT EXISTS theseus_local_fences (
+                    slot_key TEXT PRIMARY KEY,
+                    epoch INTEGER NOT NULL
+                );
+
                 CREATE TABLE IF NOT EXISTS theseus_fenced_receipts (
                     seq INTEGER PRIMARY KEY,
                     node_id TEXT NOT NULL,
@@ -1174,9 +1179,11 @@ class FencedTheseusEdgeStore:
 
     def seal_pending_epoch(self, max_batch_size: int = 10_000) -> Optional[EpochAnchor]:
         """Build, sign, and commit a BLAKE3 Merkle epoch anchor for pending WAL rows."""
-        if max_batch_size <= 0:
-            raise ValueError("max_batch_size must be > 0")
+        if type(max_batch_size) is not int or max_batch_size <= 0:
+            raise ValueError("max_batch_size must be a positive integer")
         with self._write_lock:
+            if not self._recovery_complete:
+                raise CustodyError("Must call reconcile_recovery_tail() before sealing")
             token = self._valid_token()
             last_anchored = self._last_local_anchored_seq_locked()
             rows = self._conn.execute(

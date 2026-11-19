@@ -1,6 +1,5 @@
 """Regression of the policy / qualification manifest boundary."""
 
-import json
 import subprocess
 import sys
 from pathlib import Path
