@@ -20,12 +20,13 @@ from pydantic import BaseModel, Field
 from chronus.tensor.enhanced_representation import EnhancedTensorRepresentation
 from chronus.tensor.adaptive_contraction import AdaptiveTensorContractionPathway
 from chronus.tensor.causal_intelligence import CausalInterferenceEngine
+from chronus import __version__ as _CHRONUS_VERSION
 
 logger = logging.getLogger("ProductionHRAPI")
 
 app = FastAPI(
     title="Chronus HYBA Production HR API & Quantum Tensor Engine",
-    version="36.0.0",
+    version=_CHRONUS_VERSION,
     description="Hardware-agnostic first-principles quantum mathematics and causal HR intelligence API.",
 )
 

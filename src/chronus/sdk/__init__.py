@@ -13,7 +13,7 @@ from chronus.sdk.models import (
 )
 from chronus.sdk.standalone import ALHarasSecurityError, ChronusClient
 
-__version__ = "36.0.0"
+from chronus import __version__ as __version__  # single source: chronus.__version__
 __all__ = [
     "ChronusAPISDK",
     "ChronusClient",

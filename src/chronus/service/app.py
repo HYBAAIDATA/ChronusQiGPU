@@ -34,6 +34,7 @@ from chronus.service.routers import (
     verify_router,
     workloads_router,
 )
+from chronus import __version__ as _CHRONUS_VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 def create_app() -> FastAPI:
     app = FastAPI(
         title="Chronus Quantum iGPU API",
-        version="36.0.1",
+        version=_CHRONUS_VERSION,
         description=(
             "Chronus is a mathematics-first, representation-aware computational "
             "substrate. Its execution model is designed to operate on a native "
