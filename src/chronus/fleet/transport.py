@@ -20,7 +20,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Callable, Mapping
 from urllib.parse import urlsplit
 
-from chronus.fleet.auth import FleetAuth, ReplayCache, tls_client_context, H_NODE
+from chronus.fleet.auth import DEFAULT_REPLAY_CAPACITY, FleetAuth, ReplayCache, tls_client_context, H_NODE
 from chronus.fleet.canonical import canonical_json
 from chronus.fleet.errors import AuthenticationError, TransportError
 
@@ -55,6 +55,7 @@ class FleetHTTPServer(ThreadingHTTPServer):
         auth_resolver=None,
         connection_timeout: int = 15,
         max_connections: int = 64,
+        replay_capacity: int = DEFAULT_REPLAY_CAPACITY,
     ) -> None:
         if tls_context is None and not _loopback(address[0]):
             raise TransportError("non-loopback fleet listeners require TLS")
@@ -65,7 +66,7 @@ class FleetHTTPServer(ThreadingHTTPServer):
         self._connection_slots = threading.BoundedSemaphore(max_connections)
         self.fleet_handler = handler
         self.fleet_auth = auth
-        self.replay = ReplayCache()
+        self.replay = ReplayCache(replay_capacity)
         self.tls_context = tls_context
         self.max_body = max_body
         super().__init__(address, _RequestHandler)

@@ -34,6 +34,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterator, Mapping
 
+if os.name == "nt":
+    import msvcrt
+
 from chronus.fleet.canonical import canonical_json, is_hex_digest, iso_utc, sha256_hex
 from chronus.fleet.errors import LedgerError
 
@@ -46,6 +49,17 @@ try:
     import fcntl as _fcntl
 except ImportError:
     _fcntl = None
+
+
+def _file_stamp(stat: os.stat_result) -> tuple[int, int, int, int, int]:
+    return stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns
+
+
+def _path_stamp(path: Path) -> tuple[int, int, int, int, int] | None:
+    try:
+        return _file_stamp(path.stat())
+    except FileNotFoundError:
+        return None
 
 
 def entry_hash(entry: Mapping[str, Any]) -> str:
@@ -126,7 +140,11 @@ class AnchorLedger:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.Lock()
+        before = _path_stamp(self.path)
         check = verify_ledger(self.path)
+        self._stamp = _path_stamp(self.path)
+        if before != self._stamp:
+            raise LedgerError("ledger changed while opening; reopen and verify")
         if not check.valid:
             raise LedgerError(f"ledger {self.path} fails verification at line {check.first_bad_seq}: {check.reason}")
         self._seq = check.entries
@@ -152,7 +170,15 @@ class AnchorLedger:
             with self.path.open("a+", encoding="utf-8") as handle:
                 if _fcntl is not None:
                     _fcntl.flock(handle.fileno(), _fcntl.LOCK_EX)
+                elif os.name == "nt":
+                    handle.seek(0)
+                    msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
+                else:
+                    raise LedgerError("cross-process ledger lock unavailable")
                 try:
+                    current = _file_stamp(os.fstat(handle.fileno()))
+                    if current != _path_stamp(self.path) or (self._stamp is None and current[2] != 0) or (self._stamp is not None and current != self._stamp):
+                        raise LedgerError("ledger changed since opening; stale writer refused")
                     handle.seek(0, os.SEEK_END)
                     entry = {
                         "schema": LEDGER_SCHEMA,
@@ -167,12 +193,16 @@ class AnchorLedger:
                     handle.write(json.dumps(entry, sort_keys=True, separators=(",", ":")) + "\n")
                     handle.flush()
                     os.fsync(handle.fileno())
+                    self._stamp = _file_stamp(os.fstat(handle.fileno()))
                 except BaseException:
                     self._failed = True
                     raise
                 finally:
                     if _fcntl is not None:
                         _fcntl.flock(handle.fileno(), _fcntl.LOCK_UN)
+                    elif os.name == "nt":
+                        handle.seek(0)
+                        msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
             self._seq += 1
             self._head = entry["entry_hash"]
             return entry
