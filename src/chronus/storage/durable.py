@@ -655,6 +655,7 @@ class DurableTheseusService:
                 )
         if self.self_healing:
             self._verify_parity_sidecars()
+            self._backfill_parity()
         with self._connect() as db:
             records = db.execute(
                 "SELECT r.*, o.size_bytes AS object_size "
@@ -693,6 +694,48 @@ class DurableTheseusService:
                 ).fetchone()
                 if row is not None and hashlib.sha256(bytes(row["payload"])).hexdigest() == object_id:
                     self._ensure_parity(db, object_id, bytes(row["payload"]))
+
+    def _backfill_parity(self, batch: int = 256) -> int:
+        """Give verified objects written without parity (older stores) a sidecar.
+
+        Objects are read and encoded outside the write lock; each batch is
+        written in one ``BEGIN IMMEDIATE`` transaction that re-checks the
+        payload digest and that no sidecar appeared meanwhile. Returns the
+        number of sidecars written.
+        """
+        written = 0
+        after = ""
+        while True:
+            with self._connect() as db:
+                rows = db.execute(
+                    "SELECT o.object_id, o.payload FROM objects AS o "
+                    "LEFT JOIN object_parity AS p USING (object_id) "
+                    "WHERE p.object_id IS NULL AND o.size_bytes <= ? AND o.object_id > ? "
+                    "ORDER BY o.object_id LIMIT ?",
+                    (self.self_healing_max_bytes, after, batch),
+                ).fetchall()
+            if not rows:
+                return written
+            after = str(rows[-1]["object_id"])
+            candidates = [
+                (str(r["object_id"]), bytes(r["payload"]))
+                for r in rows
+                if hashlib.sha256(bytes(r["payload"])).hexdigest() == r["object_id"]
+            ]
+            encoded = [(oid, payload, self_heal.encode_parity(payload)) for oid, payload in candidates]
+            with self._lock, self._connect(immediate=True) as db:
+                for oid, payload, parity in encoded:
+                    if db.execute("SELECT 1 FROM object_parity WHERE object_id=?", (oid,)).fetchone():
+                        continue
+                    now = db.execute("SELECT payload FROM objects WHERE object_id=?", (oid,)).fetchone()
+                    if now is None or bytes(now["payload"]) != payload:
+                        continue
+                    self._ensure_parity(db, oid, payload, parity)
+                    self._log_heal(db, oid, "PARITY_BACKFILLED", 0,
+                                   "verified object written before parity existed")
+                    written += 1
+            if len(rows) < batch:
+                return written
 
     def checkpoint(self) -> dict:
         # sqlite3's connection context manager commits or rolls back the
