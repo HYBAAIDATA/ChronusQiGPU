@@ -17,12 +17,13 @@ from chronus.research.paradigm_seal import seal, validate_findings, verify_seal
 ROOT = Path(__file__).resolve().parents[2]
 SOURCES = (
     "src/chronus/storage/chrn_frame.py",
+    "src/chronus/storage/chrn_rs257.py",
     "src/chronus/storage/positional_codec.py",
     "src/chronus/math/fold_ledger.py",
     "src/chronus/research/torus_certificate.py",
     "src/chronus/research/paradigm_seal.py",
 )
-TESTS = ("tests/test_chrn_frame.py", "tests/test_paradigm_closure.py")
+TESTS = ("tests/test_chrn_frame.py", "tests/test_paradigm_closure.py", "tests/test_chrn_rs257.py")
 FINDINGS = "evidence/storage/paradigm_findings.json"
 
 
@@ -61,7 +62,8 @@ def main():
                      for c in cases)
         names = [c.attrib.get("name","") for c in cases]
         sentinels = ("test_sentinel_positional_total", "test_sentinel_group_law_and_inverse",
-                     "test_sentinel_torus", "test_sentinel_content_only_digest")
+                     "test_sentinel_torus", "test_sentinel_content_only_digest",
+                     "test_recovery_known_answer_and_boundary")
         present = all(any(n==s or n.startswith(s+"[") for n in names) for s in sentinels)
         tests_ok = proc.returncode==0 and bool(cases) and passed==len(cases) and present
     software_ok = tests_ok and not violations

@@ -1,0 +1,24 @@
+{
+  "classification": "study inputs only",
+  "benefits": {
+    "value": null,
+    "status": "UNAVAILABLE",
+    "required": "customer measured avoided cost"
+  },
+  "costs": {
+    "value": null,
+    "status": "UNAVAILABLE",
+    "required": "customer invoices, fees, integration costs"
+  },
+  "flexibility": {
+    "value": null,
+    "status": "UNAVAILABLE",
+    "required": "customer-approved opportunity evidence"
+  },
+  "risk": {
+    "value": null,
+    "status": "UNAVAILABLE",
+    "required": "analyst-reviewed uncertainty and incident evidence"
+  },
+  "projections": []
+}

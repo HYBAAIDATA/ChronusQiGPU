@@ -1,0 +1,2 @@
+# Restricted contribution policy
+This repository is governed by the proprietary [LICENSE](LICENSE). Access is not permission to use or redistribute the Software. Only authorised contributors operating under a signed agreement may contribute. Read [AGENTS.md](AGENTS.md) before any change; retain exact-source evidence, test receipts and independent acceptance where required. Do not submit customer secrets, personal data or proprietary customer invoices. Production status is [STATUS.md](STATUS.md).

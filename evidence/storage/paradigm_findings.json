@@ -11,7 +11,10 @@
       "id": "CHRN-RECOVERY",
       "status": "OPEN",
       "requirement": "Specify CHRN recovery profile and measure real fault recovery",
-      "owner": "OVID / THESEUS"
+      "owner": "OVID / THESEUS",
+      "evidence_path_pending": "scripts/benchmarks/chrn_recovery_drill.py",
+      "implementation": "src/chronus/storage/chrn_rs257.py",
+      "blocker": "Corrected profile ratification, measured exact-source artifact and independent QC pending"
     },
     {
       "id": "FOLDED-RESIDENCY",
