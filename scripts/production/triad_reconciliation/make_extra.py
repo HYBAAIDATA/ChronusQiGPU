@@ -80,12 +80,16 @@ if sys.argv[1] == "post":
     tri["basis"] += ". Mandatory physical-device, deployment and release evidence is missing (PRODUCTION_QUALIFIED.json says NOT_QUALIFIED)."
     verdicts.append(tri)
     # qualification verdict artifact for the candidate
-    q = None
-    f = next(qvd.rglob("ci-verdict.json"), None)
-    if f:
-        d = json.loads(f.read_text())
-        q = {"run_id": cfg["ci"].get("Chronus V2 evidence qualification", {}).get("run_id"), "status": d["status"],
-             "deployment_profile": d.get("deployment_profile"), "gates": d.get("gates"), "blockers": d.get("blockers"), "claims": d.get("claims")}
+    # the verdict must be unique and bound to the qualification run and candidate SHA
+    qrun = cfg["ci"].get("Chronus V2 evidence qualification", {}).get("run_id")
+    vfiles = list(qvd.rglob("ci-verdict.json"))
+    if len(vfiles) != 1:
+        sys.exit(f"make_extra: expected exactly one ci-verdict.json under {qvd}, found {len(vfiles)}")
+    d = json.loads(vfiles[0].read_text())
+    if not qrun or d.get("run_id") != qrun or d.get("candidate_sha", d.get("head_sha")) != CAND:
+        sys.exit(f"make_extra: {vfiles[0]} does not match qualification run {qrun} / candidate {CAND}")
+    q = {"run_id": qrun, "status": d["status"],
+         "deployment_profile": d.get("deployment_profile"), "gates": d.get("gates"), "blockers": d.get("blockers"), "claims": d.get("claims")}
     # artifacts
     arts = []
     for l in (D / "dist/SHA256SUMS").read_text().splitlines():
