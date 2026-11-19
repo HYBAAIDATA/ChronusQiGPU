@@ -23,6 +23,7 @@ import time
 from fractions import Fraction
 from typing import Dict, Any, Tuple, Optional
 
+from chronus.execution.asic_sha256 import sha256d_unrolled
 from chronus.stratum.bip310 import apply_version_rolling
 from chronus.stratum.endian_engine import swap_prevhash_words, compute_merkle_root_stratum, build_header80, sha256d
 
@@ -215,6 +216,11 @@ class LocalPreSubmitGatekeeper:
 
         # Compute SHA-256d hash and compare against targets
         raw_digest = sha256d(header_80b)
+        # Cross-check the digest using the independent existing full-header
+        # round implementation. Never allow a backend/candidate hash or
+        # shared library fault to be the only pre-submit proof.
+        if raw_digest != sha256d_unrolled(header_80b):
+            raise ArithmeticError("Independent SHA-256d implementations disagree")
         hash_int = int.from_bytes(raw_digest, byteorder="little")
         block_hash_be_hex = raw_digest[::-1].hex()
 

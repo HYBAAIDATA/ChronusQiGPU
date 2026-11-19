@@ -92,8 +92,7 @@ class StratumGateway:
     async def connect(self):
         """Opens outbound TCP socket connection and increments connection generation."""
         MiningSubmissionPolicy.check_endpoint(PoolEndpoint(self.host, self.port, self.tls))
-        self.submission_policy.disarm("DISARMED_NEW_CONNECTION")
-        self.submission_policy.pending.clear()
+        self.submission_policy.end_connection("DISARMED_NEW_CONNECTION")
         self._submission_ledger.clear()
         self.connection_generation += 1
         self.is_connected = False
@@ -162,6 +161,8 @@ class StratumGateway:
             raise PermissionError("Independent pre-submit verification rejected share")
         self.submission_policy.authorize(rpc_id, {
             "job_id": job["job_id"], "generation": self.connection_generation,
+            "job_revision": job.get("revision"),
+            "submission_params": list(params),
             "header_sha256d": block_hash, "hash_int": str(hash_int),
             "target_int": str(target_int), "is_block_candidate": is_block,
             "independent_verification": "PASS",
@@ -202,13 +203,12 @@ class StratumGateway:
             if not line:
                 raise ConnectionError("Pool closed TCP socket unexpectedly.")
 
-            line_str = line.decode("utf-8", errors="replace").replace("\r", "").strip()
-            if not line_str:
-                continue
-
             try:
+                line_str = line.decode("utf-8").strip()
+                if not line_str:
+                    continue
                 response = json.loads(line_str, parse_float=Decimal)
-            except json.JSONDecodeError as exc:
+            except (UnicodeDecodeError, json.JSONDecodeError) as exc:
                 logger.warning(f"Malformed JSON from pool, dropping line: {exc}")
                 continue
 
@@ -216,7 +216,7 @@ class StratumGateway:
                 logger.warning(f"Non-dict JSON payload from pool, dropping line: {response}")
                 continue
 
-            self.submission_policy.observe(response)
+            self.submission_policy.observe(response, wire_frame=line)
             if response.get("id") == rpc_id:
                 return response
             if "method" in response:
@@ -251,16 +251,16 @@ class StratumGateway:
         line = await self.read_line(timeout_sec=self.session_idle_timeout_sec)
         if not line:
             return None
-        line_str = line.decode("utf-8", errors="replace").replace("\r", "").strip()
-        if not line_str:
-            return None
         try:
+            line_str = line.decode("utf-8").strip()
+            if not line_str:
+                return None
             msg = json.loads(line_str, parse_float=Decimal)
             if isinstance(msg, dict):
-                self.submission_policy.observe(msg)
+                self.submission_policy.observe(msg, wire_frame=line)
                 return msg
             return None
-        except json.JSONDecodeError as exc:
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             logger.warning(f"Malformed JSON from pool, dropping line: {exc}")
             return None
 
@@ -475,7 +475,7 @@ class StratumGateway:
     async def close(self):
         """Close the socket even when durable shutdown evidence cannot be written."""
         try:
-            self.submission_policy.disarm("DISARMED_CONNECTION_CLOSED")
+            self.submission_policy.end_connection("DISARMED_CONNECTION_CLOSED")
         finally:
             self.is_connected = False
             if self.writer:

@@ -4,8 +4,10 @@ This policy is an operator configuration boundary, not remote attestation.
 """
 from __future__ import annotations
 
+import base64
 import json
 import hashlib
+from decimal import Decimal
 import os
 from collections import deque
 from pathlib import Path
@@ -22,6 +24,7 @@ class MiningSubmissionPolicy:
         self.accepted_share_target = None
         self.accepted = 0
         self.pending: set[int] = set()
+        self._last_authorized_rpc_id = 0
         self.events = deque(maxlen=256)
         self._custody = None
         self._key = None
@@ -75,22 +78,48 @@ class MiningSubmissionPolicy:
     def authorize(self, rpc_id: int, evidence: dict | None = None) -> None:
         if not self.armed:
             raise PermissionError("Share submission is not armed")
+        if type(rpc_id) is not int or rpc_id <= self._last_authorized_rpc_id:
+            raise PermissionError("Submission RPC id must be new and increasing")
         if self.accepted + len(self.pending) >= self.accepted_share_target:
             raise PermissionError("Share target capacity is exhausted or awaiting acknowledgement")
         self._record("MINING_SUBMIT_AUTHORIZED", {"rpc_id": rpc_id, "candidate": evidence})
         self.pending.add(rpc_id)
+        self._last_authorized_rpc_id = rpc_id
 
-    def observe(self, response: dict) -> None:
+    def observe(self, response: dict, *, wire_frame: bytes | None = None) -> None:
+        """Persist a correlated verdict before advancing local counters.
+
+        The gateway supplies the original bounded frame. Direct policy callers
+        without a wire frame have decoded-record evidence only.
+        """
         rpc_id = response.get("id")
         if type(rpc_id) is not int or rpc_id not in self.pending:
             return
         if response.get("result") is not True and response.get("result") is not False and not response.get("error"):
             return
-        self._record("MINING_POOL_ACKNOWLEDGEMENT", {
+        if "method" in response:
+            return
+        decoded = json.dumps(response, sort_keys=True, default=str, allow_nan=False)
+        record = {
             "rpc_id": rpc_id, "accepted": response.get("result") is True and not response.get("error"),
-            "response_sha256": hashlib.sha256(
-                json.dumps(response, sort_keys=True, default=str).encode()).hexdigest(),
-        })
+            "response_sha256": hashlib.sha256(decoded.encode()).hexdigest(),
+            "decoded_response_json": decoded,
+            "response_evidence_class": "DECODED_RESPONSE_ONLY",
+        }
+        if wire_frame is not None:
+            if (not isinstance(wire_frame, bytes) or not wire_frame.endswith(b"\n")
+                    or len(wire_frame) > 1024 * 1024):
+                raise ValueError("Invalid bounded pool response frame")
+            literal = json.loads(wire_frame.decode("utf-8"), parse_float=Decimal)
+            if not isinstance(literal, dict) or json.dumps(
+                    literal, sort_keys=True, default=str, allow_nan=False) != decoded:
+                raise ValueError("Pool response frame does not match decoded response")
+            record.update({
+                "response_evidence_class": "RECEIVED_STRATUM_FRAME",
+                "wire_frame_b64": base64.b64encode(wire_frame).decode("ascii"),
+                "wire_frame_sha256": hashlib.sha256(wire_frame).hexdigest(),
+            })
+        self._record("MINING_POOL_ACKNOWLEDGEMENT", record)
         self.pending.remove(rpc_id)
         if response.get("result") is True and not response.get("error"):
             self.accepted += 1
@@ -102,6 +131,16 @@ class MiningSubmissionPolicy:
         self.events.append(reason)
         if self._custody is not None:
             self._record(reason, {"shares_accepted": self.accepted, "pending_submissions": len(self.pending)})
+
+    def end_connection(self, reason: str) -> None:
+        """Never reclassify or silently erase unanswered submissions."""
+        self.disarm(reason)
+        if self.pending:
+            self._record("MINING_SUBMISSIONS_UNRESOLVED", {
+                "rpc_ids": sorted(self.pending), "reason": reason,
+                "verdict": "UNRESOLVED",
+            })
+            self.pending.clear()
 
     def status(self) -> dict:
         return {"share_submit_armed": self.armed,

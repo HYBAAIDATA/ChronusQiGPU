@@ -79,3 +79,25 @@ def test_missing_custody_cannot_arm(monkeypatch):
     with pytest.raises(PermissionError, match="custody"):
         policy.arm("operator-reference", 1)
     assert not policy.armed
+
+
+def test_duplicate_rpc_id_cannot_be_authorized_again():
+    policy = MiningSubmissionPolicy()
+    policy.arm("operator-reference", 3)
+    policy.authorize(1)
+    with pytest.raises(PermissionError, match="RPC id"):
+        policy.authorize(1)
+    policy.observe({"id": 1, "result": False})
+    with pytest.raises(PermissionError, match="RPC id"):
+        policy.authorize(1)
+    policy.authorize(2)
+    assert policy.pending == {2}
+
+
+def test_tampered_wire_frame_never_advances_verdict():
+    policy = MiningSubmissionPolicy()
+    policy.arm("operator-reference", 2)
+    policy.authorize(1)
+    with pytest.raises(ValueError, match="does not match"):
+        policy.observe({"id": 1, "result": True}, wire_frame=b'{"id":1,"result":false}\n')
+    assert policy.accepted == 0 and policy.pending == {1}
