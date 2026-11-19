@@ -20,3 +20,7 @@ The supplied sample implementation would not be safe to copy directly. It materi
 The positional codec is not the same as an integer entropy coder followed by a variable-width fold; it does not fill the missing owner-approved parameter 1. The candidate header conventions and wire profile remain provisional. The existing root research prototypes include stale codec and benchmark claims; those paths require separate caller reconciliation before promotion. Neither actual folded-residency counters on customer workloads nor measured savings have been established by eligibility classification.
 
 Prior findings stay open until exact-commit evidence and independent acceptance exist. This branch does not grant a production seal merely because four unit tests pass.
+
+## Executable gate
+
+Run `python scripts/ci/check_paradigm_closure.py --output reference-evidence/paradigm-closure.json` from a clean tracked checkout. The gate runs both focused test files, requires all four sentinels and no skips, checks source purity, validates the commit-bound findings register and writes a verifiable content-only envelope. It exits nonzero while any closure findings remain open. `--report-only` permits open findings in a CI evidence artifact, but still fails any missing/skipped/failing test or purity violation. The envelope is not production qualification.

@@ -53,7 +53,22 @@ def test_sentinel_group_law_and_inverse(bits):
     assert FoldLedger(bits).stage(29).materialize(FoldLedger(bits).stage(13).materialize(words))==result
     assert a.unfold(result)==words
     period = pisano_period(bits)
-    assert phi_matrix(period,bits)==((1,0),(0,1))
+    # Independently exponentiate the companion matrix without period reduction.
+    def raw_power(n):
+        a,b,c,d = 1,0,0,1
+        e,f,g,h = 1,1,1,0
+        while n:
+            if n & 1:
+                a,b,c,d = ((a*e+b*g)%modulus,(a*f+b*h)%modulus,
+                           (c*e+d*g)%modulus,(c*f+d*h)%modulus)
+            e,f,g,h = ((e*e+f*g)%modulus,(e*f+f*h)%modulus,
+                       (g*e+h*g)%modulus,(g*f+h*h)%modulus)
+            n >>= 1
+        return ((a,b),(c,d))
+    assert raw_power(period)==((1,0),(0,1))
+    assert raw_power(period//2)!=((1,0),(0,1))
+    assert raw_power(period//3)!=((1,0),(0,1))
+    assert phi_matrix(period,bits)==raw_power(period)
     assert phi_matrix(period//2,bits)!=((1,0),(0,1))
     assert phi_matrix(period//3,bits)!=((1,0),(0,1))
     assert FoldLedger(bits).stage(period*1000+42).materialize(words)==result
@@ -118,6 +133,8 @@ def test_sentinel_content_only_digest():
     content={"modules":["units","ledger","codec","topology"]}
     a,b=seal(content,sealed_at="2026-11-19"),seal(content,sealed_at="2099-01-01")
     assert a["digest"]==b["digest"] and verify_seal(a) and verify_seal(b)
+    assert not verify_seal(dict(a,digest="é"*64))
+    assert not verify_seal(dict(a,digest="0"*63))
     content["modules"].append("new")
     assert verify_seal(a)
     a["content"]["modules"].append("tampered")

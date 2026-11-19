@@ -89,7 +89,7 @@ def seal(content: dict, *, sealed_at: str):
 def verify_seal(envelope: dict) -> bool:
     if type(envelope) is not dict or set(envelope) != {"schema","content","digest","sealed_at"}:
         return False
-    if envelope["schema"] != "chronus.closure/1" or type(envelope["digest"]) is not str:
+    if envelope["schema"] != "chronus.closure/1" or type(envelope["digest"]) is not str or not _DIGEST.fullmatch(envelope["digest"]):
         return False
     try:
         expected = seal(envelope["content"],sealed_at=envelope["sealed_at"])
