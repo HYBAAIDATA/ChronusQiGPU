@@ -1,0 +1,60 @@
+{
+  "schema": "chronus.five-lens.findings/1",
+  "assignment": "FIVE-LENS-CLOSURE",
+  "assignment_sha256": "4d40275ca00705f35b53491e531df57616af21024c7edfa9f5596841d229872f",
+  "main": "93d6068f2c668f3f1106a9e6df204f37033fc163",
+  "dependency": "f7fa3002c272c80d9055443fed652e3bb2dccc79",
+  "working_ref": "implementation/five-lens-closure",
+  "qualification": "HOLD",
+  "qc": "PENDING",
+  "items": [
+    {
+      "id": "MV-INPUTS",
+      "status": "OPEN",
+      "owner": "customer finance",
+      "requirement": "Customer source invoices, tenant monetary telemetry, adjustments and approved M&V plan"
+    },
+    {
+      "id": "MV-OPTION-D",
+      "status": "OPEN",
+      "owner": "customer finance / OVID",
+      "requirement": "Committed calibrated simulation model and calibration evidence"
+    },
+    {
+      "id": "CLAIM-PURGE",
+      "status": "OPEN",
+      "owner": "Chronus",
+      "requirement": "Full claim catalogue reconciliation"
+    },
+    {
+      "id": "TEI-CONSENT",
+      "status": "OPEN",
+      "owner": "CEO",
+      "requirement": "Budget and written customer consents"
+    },
+    {
+      "id": "FOLDED-RESIDENCY",
+      "status": "OPEN",
+      "owner": "Chronus",
+      "requirement": "Pre-registered executed equal-work campaign"
+    },
+    {
+      "id": "ANALYST-PACKAGE",
+      "status": "OPEN",
+      "owner": "Chronus",
+      "requirement": "Digest-bound showcases and metadata reconciliation"
+    },
+    {
+      "id": "OPERATING-ROSTER",
+      "status": "OPEN",
+      "owner": "CEO",
+      "requirement": "Named consenting humans and validated reference architectures"
+    },
+    {
+      "id": "PARADIGM-QC",
+      "status": "OPEN",
+      "owner": "independent QC",
+      "requirement": "Replay and acceptance at exact reviewed revision"
+    }
+  ]
+}
