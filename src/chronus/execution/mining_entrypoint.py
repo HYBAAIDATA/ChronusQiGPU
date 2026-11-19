@@ -15,7 +15,7 @@ import threading
 from typing import Optional, Tuple
 
 from chronus.execution.geometric_galois_miner import GeometricGaloisMiner
-from chronus.execution.lifecycle import LifecycleState, ShutdownSignals
+from chronus.execution.lifecycle import LifecycleState, OwnedWorkerGroup, ShutdownSignals
 from chronus.storage.fenced_custody import EdgeAnchorSidecar, FencedTheseusEdgeStore
 from chronus.execution.hashrate_cap import apply_published_limit, process_cap
 from chronus.execution.mining_scheduler import TuringMiningScheduler
@@ -206,6 +206,10 @@ class ChronusRealMiningEngine:
         self._deadline_ns = None
         self._stop_requested = threading.Event()
         self._terminal_status = None
+        self._alive_workers: list[str] = []
+        self._workers = OwnedWorkerGroup()
+        self._shutdown_budget_ns = 5_000_000_000
+        self._custody_started = False
         if custody_store is not None and not custody_tenant_id:
             raise ValueError("Fenced custody requires an explicit tenant identity")
         self._custody_tenant_id = custody_tenant_id
@@ -227,60 +231,72 @@ class ChronusRealMiningEngine:
                     or (self._deadline_ns is not None and time.monotonic_ns() >= self._deadline_ns)):
                 self.request_stop()
                 break
-            await asyncio.sleep(0.05)
+            remaining = (50_000_000 if self._deadline_ns is None else
+                         min(50_000_000, max(0, self._deadline_ns - time.monotonic_ns())))
+            await asyncio.sleep(remaining / 1_000_000_000)
+
+    def _start_custody(self) -> None:
+        self._custody.start()
+        with self._lifecycle_lock:
+            late_start = self._stop_requested.is_set()
+            self._custody_started = not late_start
+        if late_start:
+            self._custody.stop()
 
     async def run(self, max_seconds: Optional[int] = None):
-        """Run one session; enforce deadline before dispatch and drain executing workers."""
+        """Run one session with a shared wall-clock shutdown budget."""
         if max_seconds is not None and (type(max_seconds) is not int or max_seconds < 0):
             raise ValueError("max_seconds must be a nonnegative integer")
         from chronus.execution.mining_selftest import run as run_selftest
 
-        with self._lifecycle_lock:
-            if self._state is not LifecycleState.INIT or self._started_at_ns is not None:
-                raise RuntimeError("Mining session cannot be started twice")
-            self._started_at_ns = time.monotonic_ns()
-            self._deadline_ns = (None if max_seconds is None else
-                                 self._started_at_ns + max_seconds * 1_000_000_000)
-        tasks = []
-        sidecar_started = False
+        tasks: list[asyncio.Task] = []
         terminal_error = None
         with ShutdownSignals() as signals:
-            watcher = asyncio.create_task(self._wait_for_stop(signals))
+            with self._lifecycle_lock:
+                if self._state is not LifecycleState.INIT:
+                    raise RuntimeError("Mining session cannot be started twice")
+                self._started_at_ns = time.monotonic_ns()
+                self._deadline_ns = (None if max_seconds is None else
+                                     self._started_at_ns + max_seconds * 1_000_000_000)
+                selftest = None
+                if max_seconds != 0 and not self._stop_requested.is_set():
+                    selftest = asyncio.create_task(
+                        self._workers.call("mining-selftest", run_selftest), name="selftest")
+                    tasks.append(selftest)
+                # RUNNING denotes the session lifecycle, not successful hashing.
+                self._state = LifecycleState.RUNNING
+                watcher = asyncio.create_task(self._wait_for_stop(signals), name="shutdown-watcher")
+
+            async def stage(task):
+                done, _ = await asyncio.wait([task, watcher], return_when=asyncio.FIRST_COMPLETED)
+                if watcher in done:
+                    watcher.result()
+                    return False
+                task.result()
+                return not self._stop_requested.is_set()
+
             try:
-                if max_seconds == 0 or self._stop_requested.is_set():
+                if selftest is None or not await stage(selftest):
                     return
-                selftest = asyncio.create_task(asyncio.to_thread(run_selftest))
-                try:
-                    report = await asyncio.shield(selftest)
-                except asyncio.CancelledError:
-                    self.request_stop()
-                    await selftest
-                    raise
-                if report.get("bist") != "PASS":
+                if selftest.result().get("bist") != "PASS":
                     raise RuntimeError("Mining self-test failed; refusing pool connection")
                 if signals.requested or self._stop_requested.is_set():
                     return
                 if self._custody is not None:
-                    sidecar_start = asyncio.create_task(asyncio.to_thread(self._custody.start))
-                    try:
-                        await asyncio.shield(sidecar_start)
-                        sidecar_started = True
-                    except asyncio.CancelledError:
-                        await sidecar_start
-                        sidecar_started = True
-                        raise
-                if self._stop_requested.is_set():
-                    return
+                    sidecar = asyncio.create_task(
+                        self._workers.call("custody-start", self._start_custody), name="custody-startup")
+                    tasks.append(sidecar)
+                    if not await stage(sidecar):
+                        return
+
                 async def connect():
                     await self.gateway.connect()
                     await self.gateway.execute_handshake()
-                startup = asyncio.create_task(connect())
+
+                startup = asyncio.create_task(connect(), name="pool-connect")
                 tasks.append(startup)
-                done, _ = await asyncio.wait([startup, watcher], return_when=asyncio.FIRST_COMPLETED)
-                if watcher in done:
-                    watcher.result()
+                if not await stage(startup):
                     return
-                startup.result()
                 self._custody_check()
                 if self._stop_requested.is_set():
                     return
@@ -292,13 +308,17 @@ class ChronusRealMiningEngine:
                 self._nonce_context = None
                 self._pending_submits.clear()
                 self._submission_changed = asyncio.Event()
-                self.running = True
-                tasks.extend([asyncio.create_task(self._listen_pool_events()),
-                              asyncio.create_task(self._mining_loop()),
-                              asyncio.create_task(self._monitor_submissions())])
                 with self._lifecycle_lock:
-                    self._state = LifecycleState.RUNNING
-                done, _ = await asyncio.wait(tasks[1:] + [watcher], return_when=asyncio.FIRST_COMPLETED)
+                    if self._stop_requested.is_set():
+                        return
+                    workers = [
+                        asyncio.create_task(self._listen_pool_events(), name="pool-listener"),
+                        asyncio.create_task(self._mining_loop(), name="mining-loop"),
+                        asyncio.create_task(self._monitor_submissions(), name="submission-monitor"),
+                    ]
+                    tasks.extend(workers)
+                    self.running = True
+                done, _ = await asyncio.wait(workers + [watcher], return_when=asyncio.FIRST_COMPLETED)
                 for task in done:
                     task.result()
             except BaseException as exc:
@@ -307,40 +327,47 @@ class ChronusRealMiningEngine:
             finally:
                 with self._lifecycle_lock:
                     self._state = LifecycleState.STOPPING
-                self.running = False
-                self.request_stop()
-                for task in [watcher] + tasks:
+                    self.running = False
+                    self.request_stop()
+                    custody_started = self._custody_started
+                    self._custody_started = False
+                deadline_ns = time.monotonic_ns() + self._shutdown_budget_ns
+                draining = [watcher] + tasks
+                for task in draining:
                     if not task.done():
                         task.cancel()
+
+                # The stop token prevents new dispatch/submission. Close the
+                # transport and seal custody while draining under the same budget.
+                draining.append(asyncio.create_task(self.gateway.close(), name="pool-close"))
+                if custody_started:
+                    draining.append(asyncio.create_task(
+                        self._workers.call("custody-stop", self._custody.stop), name="custody-shutdown"))
                 try:
-                    results = await asyncio.gather(watcher, *tasks, return_exceptions=True)
-                    failures = [v for v in results if isinstance(v, BaseException)
-                                and not isinstance(v, asyncio.CancelledError)]
+                    remaining = max(0, deadline_ns - time.monotonic_ns()) / 1_000_000_000
+                    done, pending = await asyncio.wait(draining, timeout=remaining)
+                    failures = [task.exception() for task in done
+                                if not task.cancelled() and task.exception() is not None]
+                    for task in pending:
+                        task.cancel()
+                    # Native threads are explicitly owned, not the default asyncio
+                    # executor; account for any survivors even after task cancellation.
+                    alive = self._workers.join_until(deadline_ns)
+                    self._alive_workers = sorted(set(alive + [task.get_name() for task in pending]))
                     if failures and terminal_error is None:
                         raise RuntimeError("Mining worker failed during drain") from failures[0]
+                    if self._alive_workers and terminal_error is None:
+                        raise RuntimeError(f"Shutdown deadline exceeded; alive_workers={self._alive_workers}")
                 except BaseException as exc:
                     terminal_error = exc
                     raise
                 finally:
-                    try:
-                        await self.gateway.close()
-                    except BaseException as exc:
-                        terminal_error = exc
-                        raise
-                    finally:
-                        try:
-                            if sidecar_started:
-                                await asyncio.to_thread(self._custody.stop)
-                        except BaseException as exc:
-                            terminal_error = exc
-                            raise
-                        finally:
-                            with self._lifecycle_lock:
-                                self._state = LifecycleState.STOPPED
-                                self._terminal_status = "STOP" if terminal_error is None else "STOP_DEGRADED"
-                            logger.info("Session terminal=%s uptime_ns=%d unresolved_submissions=%d",
-                                        self._terminal_status, time.monotonic_ns() - self._started_at_ns,
-                                        len(self._pending_submits))
+                    with self._lifecycle_lock:
+                        self._state = LifecycleState.STOPPED
+                        self._terminal_status = "STOP" if terminal_error is None and not self._alive_workers else "STOP_DEGRADED"
+                    logger.info("Session terminal=%s uptime_ns=%d unresolved_submissions=%d alive_workers=%s",
+                                self._terminal_status, time.monotonic_ns() - self._started_at_ns,
+                                len(self._pending_submits), self._alive_workers)
 
     async def _listen_pool_events(self):
         """Only responses to outstanding mining.submit requests count as shares."""
@@ -543,8 +570,8 @@ class ChronusRealMiningEngine:
                 if self._stop_requested.is_set():
                     self._cancel_token.set()
                     return
-                batch = asyncio.create_task(asyncio.to_thread(
-                    self._search_nonce_batch,
+                batch = asyncio.create_task(self._workers.call(
+                    "nonce-search", self._search_nonce_batch,
                     job,
                     merkle_root_bytes,
                     pool_mask_hex,

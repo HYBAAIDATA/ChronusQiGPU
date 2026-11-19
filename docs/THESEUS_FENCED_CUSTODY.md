@@ -12,8 +12,16 @@ shutdown seal/release. Existing default constructor and admission/target gates
 remain intact. A sidecar fault requests stop; locally verified candidate evidence
 is written before submission. No default etcd URL, credentials, trust registry or
 tenant is inferred. Fleet CLI avoids lock-taking signal handlers and checks worker
-and heartbeat survivors under one join budget. Native hung kernels cannot be
-preempted by Python thread cancellation; no hard total shutdown-time claim.
+and heartbeat survivors under one join budget. The async mining session owns
+its native workers rather than relying on asyncio's implicit default executor.
+Its startup and teardown use an independent monotonic deadline and a shared
+five-second drain budget; a non-terminating native worker is reported in
+`alive_workers` and the session records STOP_DEGRADED. Native hung kernels
+cannot be preempted by Python thread cancellation; no physical worker termination
+or hard kernel execution-time claim is made. The signal handler is a scalar
+notification only: threading.Event.set() acquires a condition lock and is not
+a reentrant signal-handler primitive. The event loop translates the scalar
+notification into the shared stop and cancellation events outside the handler.
 
 In production, inject an authenticated etcd client and authority-approved
 EpochSigner and verify_anchor policy. A callable is not hardware attestation.
