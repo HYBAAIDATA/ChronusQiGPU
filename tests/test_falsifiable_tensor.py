@@ -358,6 +358,38 @@ def test_api_e3_policy_refusal_is_422_not_500():
     assert "honest refusal" in response.json()["detail"]
 
 
+def test_cached_e3_refusal_is_raised_fresh_without_retaining_tracebacks():
+    """A cached refusal answers 422 every time without keeping solver frames alive."""
+    from chronus.service.routers import tensor as tensor_router
+
+    previous = os.environ.get("CHRONUS_MAX_DMRG_LOCAL_DIM")
+    os.environ["CHRONUS_MAX_DMRG_LOCAL_DIM"] = "3"
+    try:
+        raised = []
+        for _ in range(3):
+            with pytest.raises((UntrustedApproximation, UntrustedResult)) as excinfo:
+                tensor_router._run_e3()
+            raised.append(excinfo.value)
+        cached = tensor_router._E3_OUTCOMES[3]
+        statuses = [client.get("/v1/tensor/experiments/E3").status_code for _ in range(2)]
+    finally:
+        if previous is None:
+            os.environ.pop("CHRONUS_MAX_DMRG_LOCAL_DIM", None)
+        else:
+            os.environ["CHRONUS_MAX_DMRG_LOCAL_DIM"] = previous
+    assert not isinstance(cached, BaseException)
+    assert len({id(e) for e in raised}) == 3
+    assert len({str(e) for e in raised}) == 1
+    depths = []
+    for e in raised:
+        depth, tb = 0, e.__traceback__
+        while tb is not None:
+            depth, tb = depth + 1, tb.tb_next
+        depths.append(depth)
+    assert depths[1] == depths[2]  # re-raising does not accumulate frames
+    assert statuses == [422, 422]
+
+
 def test_api_e3_concurrent_request_gets_503_instead_of_waiting():
     from chronus.service.routers import tensor as tensor_router
 

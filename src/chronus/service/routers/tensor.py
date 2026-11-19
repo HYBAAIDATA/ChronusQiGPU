@@ -149,7 +149,9 @@ def build_tensor_network(request: NetworkBuildRequest) -> dict[str, Any]:
 # refusal) is deterministic per solver policy and is reused, so repeated GETs
 # cannot multiply the cost.
 _E3_LOCK = threading.Lock()
-_E3_OUTCOMES: dict[int, ExperimentResult | Exception] = {}
+# A refusal is cached as (type, args), never as the exception instance: re-raising one
+# instance would keep its traceback (solver frames and tensors) alive and grow it per request.
+_E3_OUTCOMES: dict[int, ExperimentResult | tuple[type[Exception], tuple[Any, ...]]] = {}
 
 
 class _E3Busy(Exception):
@@ -170,12 +172,13 @@ def _run_e3() -> ExperimentResult:
                 try:
                     outcome = E3_honest_1000_node_claim()
                 except (UntrustedApproximation, UntrustedResult) as refusal:
-                    outcome = refusal
+                    outcome = (type(refusal), refusal.args)
                 _E3_OUTCOMES[policy] = outcome
         finally:
             _E3_LOCK.release()
-    if isinstance(outcome, Exception):
-        raise outcome
+    if isinstance(outcome, tuple):
+        refusal_type, refusal_args = outcome
+        raise refusal_type(*refusal_args)
     return outcome
 
 
