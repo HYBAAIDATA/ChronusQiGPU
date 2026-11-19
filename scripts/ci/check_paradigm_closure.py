@@ -27,6 +27,17 @@ TESTS = ("tests/test_chrn_frame.py", "tests/test_paradigm_closure.py", "tests/te
 FINDINGS = "evidence/storage/paradigm_findings.json"
 
 
+# Established finding IDs. CLOSED entries stay in the registry with evidence,
+# so these must always be present; deleting one must not seal the closure.
+TRACKED_FINDING_IDS = (
+    "CHRN-PARAM-1",
+    "CHRN-RECOVERY",
+    "FOLDED-RESIDENCY",
+    "ROOT-CODEC-RECONCILIATION",
+    "PARADIGM-QC",
+)
+
+
 def git(*args):
     return subprocess.check_output(["git", *args], cwd=ROOT)
 
@@ -51,6 +62,10 @@ def main():
     registry = json.loads(git("show", f"{commit}:{FINDINGS}"))
     if registry.get("schema") != "chronus.closure-findings/1":
         raise SystemExit("unsupported findings schema")
+    present_ids = {item.get("id") for item in registry["items"]}
+    missing = [fid for fid in TRACKED_FINDING_IDS if fid not in present_ids]
+    if missing:
+        raise SystemExit(f"tracked findings removed from registry: {', '.join(missing)}")
     pending = validate_findings(ROOT, registry["items"], commit)
     with tempfile.TemporaryDirectory() as tmp:
         xml = Path(tmp) / "junit.xml"
