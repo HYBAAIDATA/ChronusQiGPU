@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 import os
+import threading
 
 import numpy as np
 from starlette.concurrency import run_in_threadpool
@@ -142,13 +143,31 @@ def build_tensor_network(request: NetworkBuildRequest) -> dict[str, Any]:
     }
 
 
+# E3 is a deterministic ~1 CPU-minute 1,000-site DMRG. Runs are serialised and
+# a certified result is reused per solver policy, so repeated GETs cannot
+# multiply that cost; refusals are never cached and are recomputed honestly.
+_E3_LOCK = threading.Lock()
+_E3_RESULTS: dict[int, ExperimentResult] = {}
+
+
+def _run_e3() -> ExperimentResult:
+    from chronus.config import runtime_bounds
+
+    policy = int(runtime_bounds()["max_dmrg_local_dim"])
+    with _E3_LOCK:
+        if policy not in _E3_RESULTS:
+            _E3_RESULTS[policy] = E3_honest_1000_node_claim()
+        return _E3_RESULTS[policy]
+
+
 @router.get("/experiments/{exp_id}", response_model=dict[str, Any])
 def run_or_inspect_experiment(exp_id: str) -> dict[str, Any]:
     """Executes or retrieves one of the three consortium acceptance experiments:
 
     - E1: Exactness Oracle (reproduces reference statevector at n <= 32)
     - E2: Symmetry Stress Test (Z2, U(1), SU(2) block-sparse memory savings match theory within 5%)
-    - E3: Honest 1,000-Node Claim (1D TFIM DMRG, global_bound < 1e-6, n=32 cross-check)
+    - E3: Honest 1,000-Node Claim (Z2 charge-aware DMRG on the critical TFIM; ledger bound and
+      relative error vs the exact Jordan-Wigner energy < 1e-6; n=32 cross-check)
     """
     exp_key = exp_id.upper()
     try:
@@ -157,7 +176,7 @@ def run_or_inspect_experiment(exp_id: str) -> dict[str, Any]:
         elif exp_key == "E2":
             result = E2_symmetry_stress_test()
         elif exp_key == "E3":
-            result = E3_honest_1000_node_claim()
+            result = _run_e3()
         else:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

@@ -13,6 +13,8 @@ Verifies:
 import math
 
 import numpy as np
+import os
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -251,6 +253,11 @@ def test_experiment_e3_honest_1000_node_claim():
     assert telemetry["group"] == "Z2"
     assert telemetry["global_error_bound"] < 1e-6
     assert telemetry["cross_check_diff"] < 0.05
+    # Independent of the truncation ledger: the energy is variational (never
+    # below the exact Jordan-Wigner value) and within 1e-6 relative of it.
+    assert telemetry["variational_energy_error"] >= -1e-9 * abs(telemetry["exact_open_chain_energy"])
+    assert telemetry["relative_energy_error"] <= 1e-6
+    assert telemetry["max_bond_dimension_used"] <= telemetry["chi_max"]
     assert telemetry["publication_record"]["publication_status"] == "APPROVED_BY_SCIENTIFIC_INTEGRITY_LEAD"
 
 
@@ -336,16 +343,24 @@ def test_api_network_build():
     assert data["theoretical_saving_factor"] == 2.0
 
 
-def test_api_e3_refuses_while_charge_aware_dmrg_is_unimplemented():
-    """E3 needs charge-aware DMRG; until it exists the API refuses with 501, not 500."""
-    response = client.get("/v1/tensor/experiments/E3")
-    assert response.status_code == 501
-    assert "charge-aware DMRG" in response.json()["detail"]
+def test_api_e3_policy_refusal_is_422_not_500():
+    """A solver-policy refusal is an honest 422 with the measured reason, never a 500."""
+    previous = os.environ.get("CHRONUS_MAX_DMRG_LOCAL_DIM")
+    os.environ["CHRONUS_MAX_DMRG_LOCAL_DIM"] = "4"
+    try:
+        response = client.get("/v1/tensor/experiments/E3")
+    finally:
+        if previous is None:
+            os.environ.pop("CHRONUS_MAX_DMRG_LOCAL_DIM", None)
+        else:
+            os.environ["CHRONUS_MAX_DMRG_LOCAL_DIM"] = previous
+    assert response.status_code == 422
+    assert "honest refusal" in response.json()["detail"]
 
 
 @pytest.mark.parametrize("exp_id", ["E1", "E2"])
 def test_api_run_experiments(exp_id):
-    """Test GET /v1/tensor/experiments/{exp_id} for E1 and E2 (E3: see the 501 test above)."""
+    """Test GET /v1/tensor/experiments/{exp_id} for E1 and E2 (E3: see the E3 tests above)."""
     response = client.get(f"/v1/tensor/experiments/{exp_id}")
     assert response.status_code == 200
     data = response.json()
