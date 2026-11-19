@@ -387,7 +387,7 @@ def E3_honest_1000_node_claim(
         summary=(
             "1,000-node claim meets the numerical acceptance threshold: Z2 charge-aware DMRG on "
             f"the critical TFIM, relative energy error {relative_error:.2e} <= {ledger.claim_bound:.0e} "
-            "against the closed-form Jordan-Wigner energy (a numerical tolerance, not exact "
+            "against the closed-form Jordan-Wigner energy (a numerical threshold, not exact "
             "equivalence), truncation ledger bound < 1e-6, n=32 density cross-check."
         ),
         telemetry=telemetry,
