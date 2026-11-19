@@ -46,7 +46,7 @@ def test_correlated_wire_acknowledgements_and_unresolved_reopen(mining_custody, 
                     if i == 0:
                         frame = ('{ "id": %d, "result": true, "error": null }\r\n' % req["id"]).encode()
                     elif i == 1:
-                        frame = ('{"id":%d,"result":false,"error":[21,"stale",null]}\n' % req["id"]).encode()
+                        frame = ('{"id":%d,"result":false,"error":[21,"%s",null]}\n' % (req["id"], "s" * (1024 * 1024 - 128))).encode()
                     else:
                         done.set()
                         break
@@ -96,7 +96,19 @@ def test_correlated_wire_acknowledgements_and_unresolved_reopen(mining_custody, 
             assert acks[1]["rpc_id"] == reject_id
             for ack, frame in zip(acks, frames):
                 assert ack["response_evidence_class"] == "RECEIVED_STRATUM_FRAME"
-                assert base64.b64decode(ack["wire_frame_b64"], validate=True) == frame
+                if "wire_frame_parts" in ack:
+                    rebuilt = []
+                    offset = 0
+                    for oid in ack["wire_frame_parts"]:
+                        part = _unseal(store.reconstruct(tenant, oid), key, tenant)
+                        assert part["offset"] == offset and part["rpc_id"] == ack["rpc_id"]
+                        assert part["frame_sha256"] == ack["wire_frame_sha256"]
+                        fragment = base64.b64decode(part["data_b64"], validate=True)
+                        rebuilt.append(fragment)
+                        offset += len(fragment)
+                    assert b"".join(rebuilt) == frame and offset == ack["wire_frame_bytes"]
+                else:
+                    assert base64.b64decode(ack["wire_frame_b64"], validate=True) == frame
                 assert ack["wire_frame_sha256"] == hashlib.sha256(frame).hexdigest()
             unanswered = [r for e, r in records if e == "MINING_SUBMISSIONS_UNRESOLVED"]
             assert len(unanswered) == 1

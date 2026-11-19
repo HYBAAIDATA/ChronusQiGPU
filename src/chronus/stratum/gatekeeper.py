@@ -182,6 +182,17 @@ class LocalPreSubmitGatekeeper:
             self.last_verification_ns = time.perf_counter_ns() - t0
             return False, DropReason.BAD_HEX, "", 0, 0, False
 
+        # Independently hash the coinbase and every branch, then verify the
+        # full header below. Matching header digests alone cannot detect an
+        # erroneous shared Merkle root.
+        independent_root = sha256d_unrolled(bytes.fromhex(
+            job_data["coinb1_hex"] + extranonce1_hex + extranonce2_hex + job_data["coinb2_hex"]
+        ))
+        for branch in job_data["merkle_branches"]:
+            independent_root = sha256d_unrolled(independent_root + bytes.fromhex(branch))
+        if independent_root != merkle_root_bytes:
+            raise ArithmeticError("Independent Merkle root implementations disagree")
+
         # Version-rolling mask constraint check
         try:
             rolled_bits_int = int(version_bits_hex, 16)

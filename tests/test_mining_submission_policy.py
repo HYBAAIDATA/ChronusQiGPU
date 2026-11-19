@@ -101,3 +101,25 @@ def test_tampered_wire_frame_never_advances_verdict():
     with pytest.raises(ValueError, match="does not match"):
         policy.observe({"id": 1, "result": True}, wire_frame=b'{"id":1,"result":false}\n')
     assert policy.accepted == 0 and policy.pending == {1}
+
+def test_typed_wire_verdict_cannot_disagree():
+    from decimal import Decimal
+    policy = MiningSubmissionPolicy()
+    policy.arm("operator-reference", 1)
+    policy.authorize(1)
+    with pytest.raises(ValueError, match="does not match"):
+        policy.observe({"id": 1, "result": True, "error": Decimal("0.0")},
+                       wire_frame=b'{"id":1,"result":true,"error":"0.0"}\n')
+    assert policy.accepted == 0 and policy.pending == {1}
+
+
+@pytest.mark.parametrize("frame", [
+    b'{"id":1,"result":true,"extra":NaN}\n',
+    b'{"id":1,"result":true,"id":2}\n',
+    b'\xc2\xa0{"id":1,"result":true}\n',
+    b'{"id":1,"result":false,"error":"\xff"}\n',
+])
+def test_strict_shared_decoder_rejects_malformed_frame(frame):
+    from chronus.security.mining_policy import parse_pool_frame
+    with pytest.raises(ValueError):
+        parse_pool_frame(frame)

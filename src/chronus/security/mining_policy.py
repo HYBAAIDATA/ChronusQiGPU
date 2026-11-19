@@ -17,6 +17,43 @@ from uuid import uuid4
 from chronus.stratum.endpoint import PoolEndpoint, parse_endpoint
 
 
+MAX_POOL_FRAME_BYTES = 1024 * 1024 + 1  # stream limit excludes the terminating LF
+
+
+def _reject_constant(value):
+    raise ValueError("non-finite JSON constant")
+
+
+def _unique_object(pairs):
+    obj = {}
+    for key, value in pairs:
+        if key in obj:
+            raise ValueError("duplicate JSON key")
+        obj[key] = value
+    return obj
+
+
+def parse_pool_frame(frame: bytes) -> dict:
+    """One strict UTF-8 and JSON decoder for admission and custody."""
+    if not isinstance(frame, bytes) or not frame.endswith(b"\n") or len(frame) > MAX_POOL_FRAME_BYTES:
+        raise ValueError("invalid bounded pool response frame")
+    value = json.loads(frame.decode("utf-8"), parse_float=Decimal,
+                       parse_constant=_reject_constant, object_pairs_hook=_unique_object)
+    if not isinstance(value, dict):
+        raise ValueError("pool response must be an object")
+    return value
+
+
+def _same_json(left, right):
+    if type(left) is not type(right):
+        return False
+    if isinstance(left, dict):
+        return left.keys() == right.keys() and all(_same_json(left[k], right[k]) for k in left)
+    if isinstance(left, list):
+        return len(left) == len(right) and all(_same_json(a, b) for a, b in zip(left, right))
+    return left == right
+
+
 class MiningSubmissionPolicy:
     def __init__(self):
         self.armed = False
@@ -73,7 +110,7 @@ class MiningSubmissionPolicy:
         record = {"producer": "CHRONUS", "schema_version": 1, "timestamp_ns": time.time_ns(),
                   "session_id": self.session_id, "tenant_id": self._tenant, **record}
         sealed = _seal(record, self._key, self._tenant)
-        self._custody.append_journal_event(self._tenant, event, sealed)
+        return self._custody.append_journal_event(self._tenant, event, sealed)
 
     def authorize(self, rpc_id: int, evidence: dict | None = None) -> None:
         if not self.armed:
@@ -107,18 +144,37 @@ class MiningSubmissionPolicy:
             "response_evidence_class": "DECODED_RESPONSE_ONLY",
         }
         if wire_frame is not None:
-            if (not isinstance(wire_frame, bytes) or not wire_frame.endswith(b"\n")
-                    or len(wire_frame) > 1024 * 1024):
-                raise ValueError("Invalid bounded pool response frame")
-            literal = json.loads(wire_frame.decode("utf-8"), parse_float=Decimal)
-            if not isinstance(literal, dict) or json.dumps(
-                    literal, sort_keys=True, default=str, allow_nan=False) != decoded:
+            literal = parse_pool_frame(wire_frame)
+            if not _same_json(literal, response):
                 raise ValueError("Pool response frame does not match decoded response")
             record.update({
                 "response_evidence_class": "RECEIVED_STRATUM_FRAME",
-                "wire_frame_b64": base64.b64encode(wire_frame).decode("ascii"),
                 "wire_frame_sha256": hashlib.sha256(wire_frame).hexdigest(),
             })
+            # Small frames preserve the existing record shape. Large frames are
+            # encrypted in independently content-addressed chunks; the final
+            # acknowledgement commits the ordered chunk object IDs and full hash.
+            from chronus.config import runtime_bounds
+            max_payload = runtime_bounds()["max_payload_bytes"]
+            chunk_size = min(128 * 1024, max_payload // 8)
+            if chunk_size < 1024:
+                raise ValueError("custody payload budget too small for pool evidence")
+            if len(wire_frame) <= chunk_size and len(decoded.encode()) <= chunk_size:
+                record["wire_frame_b64"] = base64.b64encode(wire_frame).decode("ascii")
+            else:
+                # Retain the original bytes, not a second expanded decoded copy.
+                record.pop("decoded_response_json")
+                parts = []
+                for offset in range(0, len(wire_frame), chunk_size):
+                    fragment = wire_frame[offset:offset + chunk_size]
+                    entry = self._record("MINING_POOL_RESPONSE_FRAGMENT", {
+                        "rpc_id": rpc_id, "offset": offset,
+                        "frame_sha256": record["wire_frame_sha256"],
+                        "data_b64": base64.b64encode(fragment).decode("ascii"),
+                    })
+                    parts.append(entry.object_id)
+                record["wire_frame_parts"] = parts
+                record["wire_frame_bytes"] = len(wire_frame)
         self._record("MINING_POOL_ACKNOWLEDGEMENT", record)
         self.pending.remove(rpc_id)
         if response.get("result") is True and not response.get("error"):

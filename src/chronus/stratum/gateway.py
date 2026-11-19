@@ -24,7 +24,7 @@ from typing import Dict, Any, List, Optional
 from chronus.stratum.bip310 import DEFAULT_CLIENT_MASK_HEX, parse_and_intersect_version_mask
 from chronus.stratum.sharding import DedupLedger, WorkPartitioner
 from chronus.stratum.gatekeeper import decode_nbits_target, LocalPreSubmitGatekeeper
-from chronus.security.mining_policy import MiningSubmissionPolicy
+from chronus.security.mining_policy import MiningSubmissionPolicy, parse_pool_frame
 from chronus.stratum.endpoint import PoolEndpoint
 
 logger = logging.getLogger("ChronusStratumGateway")
@@ -204,11 +204,8 @@ class StratumGateway:
                 raise ConnectionError("Pool closed TCP socket unexpectedly.")
 
             try:
-                line_str = line.decode("utf-8").strip()
-                if not line_str:
-                    continue
-                response = json.loads(line_str, parse_float=Decimal)
-            except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+                response = parse_pool_frame(line)
+            except (UnicodeDecodeError, ValueError) as exc:
                 logger.warning(f"Malformed JSON from pool, dropping line: {exc}")
                 continue
 
@@ -252,17 +249,12 @@ class StratumGateway:
         if not line:
             return None
         try:
-            line_str = line.decode("utf-8").strip()
-            if not line_str:
-                return None
-            msg = json.loads(line_str, parse_float=Decimal)
-            if isinstance(msg, dict):
-                self.submission_policy.observe(msg, wire_frame=line)
-                return msg
-            return None
-        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            msg = parse_pool_frame(line)
+        except (UnicodeDecodeError, ValueError) as exc:
             logger.warning(f"Malformed JSON from pool, dropping line: {exc}")
             return None
+        self.submission_policy.observe(msg, wire_frame=line)
+        return msg
 
     async def execute_handshake(self):
         """
