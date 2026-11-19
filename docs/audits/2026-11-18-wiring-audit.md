@@ -22,14 +22,22 @@ from docs. Release posture is unchanged: **NOT QUALIFIED**.
    `ciaas_capacity_ledger`, but `0001_initial_schema` never created them, so an
    `alembic upgrade head` database lacked tables the CIaaS paths use. Added
    `0002_ciaas_tenancy_tables`; a test replays all revisions on SQLite and
-   asserts table/column parity with the metadata (fails on `main`).
+   asserts table/column parity with the metadata (fails on `main`). The
+   revision skips tables/indexes that already exist, because
+   `PostgresWorkloadStore.init_db()` runs `metadata.create_all` and may have
+   created them on databases stamped at 0001; a second test covers that path
+   and checks existing rows survive.
 2. **Stale `.env.example`.** None of its keys (`TENANT_ID`, `ACCESS_TOKEN`,
    `REGION`, `LOG_LEVEL`, `LOG_FILE`, `SKIP_HEAVY_BENCHMARKS`,
    `ENABLE_MUTATION_TESTING`) are read from the environment by any code, while
    the variables the API and miner actually require (`CHRONUS_JWT_SECRET`,
    `CHRONUS_TENANT_TOKENS`, mining admission, `MINING_<POOL>_*`) were absent.
-   Rewritten from the real `os.getenv` reads; a test fails if a key is not
-   read under `src/`.
+   Rewritten from the real `os.getenv` reads (optional keys commented out so an
+   empty value never overrides a code default; tenant tokens documented as
+   `{"<tenant_id>": "<bearer-token>"}`, matching `AuthService`); a test fails
+   if a key is not read under `src/`. `docker-compose.yml` now passes
+   `CHRONUS_JWT_SECRET` from `.env` to the `api` container, which previously
+   always fell back to a random per-process key.
 3. **Import-time side effect in the wheel.** `src/chronus/consortium/fix_refs.py`
    opened and rewrote a hard-coded `c:/Users/leonn/...` path at import time and
    was imported by nothing. Moved to `scripts/dev/consortium_fix_refs.py`; a

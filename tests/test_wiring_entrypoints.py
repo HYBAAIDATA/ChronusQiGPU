@@ -70,12 +70,17 @@ def test_console_scripts_resolve() -> None:
         assert callable(getattr(module, attr)), f"{name} -> {target} is not callable"
 
 
-def test_dockerfile_api_target_serves_health() -> None:
+def test_dockerfile_api_target_serves_health(monkeypatch: pytest.MonkeyPatch) -> None:
     dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
     m = re.search(r'CMD \["uvicorn", "([\w.]+):(\w+)"', dockerfile)
     assert m, "api-runtime CMD no longer launches uvicorn"
     app = getattr(importlib.import_module(m.group(1)), m.group(2))
     from fastapi.testclient import TestClient
+
+    from chronus.service.dependencies import service_config
+
+    # Probe the in-process app only; never a configured remote execution adapter.
+    monkeypatch.setattr(service_config, "execution_backend_url", None)
 
     with TestClient(app) as client:
         # Same probe as the Dockerfile/compose HEALTHCHECK.
@@ -98,44 +103,83 @@ def test_miner_wrapper_targets_exist() -> None:
         )
 
 
-def test_alembic_head_matches_store_metadata(tmp_path: Path) -> None:
+def _alembic_revisions():
     pytest.importorskip("alembic")
-    import sqlalchemy as sa
     from alembic.config import Config
-    from alembic.migration import MigrationContext
-    from alembic.operations import Operations
     from alembic.script import ScriptDirectory
-
-    from chronus.service.postgres_store import metadata
 
     cfg = Config(str(ROOT / "alembic.ini"))
     cfg.set_main_option("script_location", str(ROOT / "migrations"))
     script = ScriptDirectory.from_config(cfg)
     assert len(script.get_heads()) == 1, "alembic history has multiple heads"
-    revisions = list(reversed(list(script.walk_revisions())))
+    return list(reversed(list(script.walk_revisions())))
 
-    engine = sa.create_engine(f"sqlite:///{tmp_path / 'migrate.sqlite3'}")
-    with engine.begin() as conn:
-        ops = Operations(MigrationContext.configure(conn))
-        import alembic.op as op_proxy
 
-        op_proxy._proxy = ops  # bind the module-level ``op`` used by scripts
-        try:
-            for rev in revisions:
-                rev.module.upgrade()
-        finally:
-            op_proxy._proxy = None
-        inspector = sa.inspect(conn)
-        migrated = {
-            t: {c["name"] for c in inspector.get_columns(t)}
-            for t in inspector.get_table_names()
-        }
+def _run_upgrades(conn, revisions) -> None:
+    import alembic.op as op_proxy
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+
+    op_proxy._proxy = Operations(MigrationContext.configure(conn))
+    try:
+        for rev in revisions:
+            rev.module.upgrade()
+    finally:
+        op_proxy._proxy = None
+
+
+def _schema(conn) -> dict:
+    import sqlalchemy as sa
+
+    inspector = sa.inspect(conn)
+    return {
+        t: {c["name"] for c in inspector.get_columns(t)}
+        for t in inspector.get_table_names()
+    }
+
+
+def _assert_matches_metadata(migrated: dict) -> None:
+    from chronus.service.postgres_store import metadata
 
     expected = {t.name: {c.name for c in t.columns} for t in metadata.sorted_tables}
     missing_tables = sorted(set(expected) - set(migrated))
     assert not missing_tables, f"tables in store metadata but not in migrations: {missing_tables}"
     for table, cols in expected.items():
         assert cols == migrated[table], f"column drift in {table}: {cols ^ migrated[table]}"
+
+
+def test_alembic_head_matches_store_metadata(tmp_path: Path) -> None:
+    revisions = _alembic_revisions()
+    import sqlalchemy as sa
+
+    engine = sa.create_engine(f"sqlite:///{tmp_path / 'migrate.sqlite3'}")
+    with engine.begin() as conn:
+        _run_upgrades(conn, revisions)
+        _assert_matches_metadata(_schema(conn))
+
+
+def test_alembic_upgrade_over_runtime_created_schema(tmp_path: Path) -> None:
+    """A DB stamped at 0001 whose store already ran metadata.create_all upgrades cleanly."""
+    revisions = _alembic_revisions()
+    import sqlalchemy as sa
+
+    from chronus.service.postgres_store import metadata
+
+    engine = sa.create_engine(f"sqlite:///{tmp_path / 'runtime.sqlite3'}")
+    with engine.begin() as conn:
+        _run_upgrades(conn, revisions[:1])
+        metadata.create_all(conn)  # what PostgresWorkloadStore.init_db() does
+        conn.execute(
+            sa.text(
+                "INSERT INTO ciaas_capacity_ledger (event_id, tenant_id, previous_warps, "
+                "new_active_warps, previous_storage_gb, new_storage_gb, reason) "
+                "VALUES ('e1', 't1', 1, 2, 3, 4, 'keep')"
+            )
+        )
+        _run_upgrades(conn, revisions[1:])
+        _assert_matches_metadata(_schema(conn))
+        kept = conn.execute(sa.text("SELECT reason FROM ciaas_capacity_ledger")).scalar_one()
+        assert kept == "keep"
 
 
 # Pre-existing spec dump whose path is pinned by historical qualification
@@ -158,6 +202,6 @@ def test_packaged_modules_have_no_import_time_side_effect_scripts() -> None:
     offenders = []
     for p in (SRC / "chronus").rglob("*.py"):
         text = p.read_text(encoding="utf-8", errors="replace")
-        if re.search(r"^[a-z_]+ = ['\"][a-zA-Z]:[/\\\\]Users", text, re.M):
+        if re.search(r"^[a-z_]+ = ['\"][a-zA-Z]:[/\\]Users", text, re.M):
             offenders.append(p.relative_to(ROOT).as_posix())
     assert not offenders, f"hardcoded developer-machine paths at module level: {offenders}"
