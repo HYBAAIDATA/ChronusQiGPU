@@ -4,13 +4,6 @@
   "entries": [
     {
       "category": "exact_arithmetic",
-      "path": "src/chronus/acceleration/chronos_gpu.py",
-      "word": "float(",
-      "line_sha256_16": "ca22d38012275b76",
-      "count": 1
-    },
-    {
-      "category": "exact_arithmetic",
       "path": "src/chronus/acceleration/state.py",
       "word": "atol",
       "line_sha256_16": "6282dbd6f6335a15",
@@ -2253,20 +2246,6 @@
       "category": "exact_arithmetic",
       "path": "src/chronus/tensor/dmrg.py",
       "word": "float(",
-      "line_sha256_16": "90ccf980c4b2c00c",
-      "count": 1
-    },
-    {
-      "category": "exact_arithmetic",
-      "path": "src/chronus/tensor/dmrg.py",
-      "word": "float(",
-      "line_sha256_16": "942deb867d527526",
-      "count": 1
-    },
-    {
-      "category": "exact_arithmetic",
-      "path": "src/chronus/tensor/dmrg.py",
-      "word": "float(",
       "line_sha256_16": "bce44d7d081b1141",
       "count": 1
     },
@@ -2275,13 +2254,6 @@
       "path": "src/chronus/tensor/dmrg.py",
       "word": "rtol",
       "line_sha256_16": "4dc22ce3f5731d49",
-      "count": 1
-    },
-    {
-      "category": "exact_arithmetic",
-      "path": "src/chronus/tensor/dmrg.py",
-      "word": "tolerance",
-      "line_sha256_16": "139511a7c78c7e18",
       "count": 1
     },
     {
@@ -2710,20 +2682,6 @@
       "word": "float(",
       "line_sha256_16": "c024be966d81f435",
       "count": 2
-    },
-    {
-      "category": "heuristic",
-      "path": "src/chronus/acceleration/chronos_gpu.py",
-      "word": "approximate",
-      "line_sha256_16": "dc1b33a1029b5667",
-      "count": 1
-    },
-    {
-      "category": "heuristic",
-      "path": "src/chronus/acceleration/chronos_gpu.py",
-      "word": "heuristic",
-      "line_sha256_16": "53f681be050aa2ca",
-      "count": 1
     },
     {
       "category": "heuristic",
@@ -3588,55 +3546,6 @@
     },
     {
       "category": "simulation",
-      "path": "src/chronus/acceleration/chronos_gpu.py",
-      "word": "placeholder",
-      "line_sha256_16": "173328646809a14b",
-      "count": 1
-    },
-    {
-      "category": "simulation",
-      "path": "src/chronus/acceleration/chronos_gpu.py",
-      "word": "placeholder",
-      "line_sha256_16": "4aaf2510e18c917d",
-      "count": 1
-    },
-    {
-      "category": "simulation",
-      "path": "src/chronus/acceleration/chronos_gpu.py",
-      "word": "placeholder",
-      "line_sha256_16": "743fc252ae807f6b",
-      "count": 1
-    },
-    {
-      "category": "simulation",
-      "path": "src/chronus/acceleration/chronos_gpu.py",
-      "word": "placeholder",
-      "line_sha256_16": "8f64c2cf2bbfac3f",
-      "count": 1
-    },
-    {
-      "category": "simulation",
-      "path": "src/chronus/acceleration/chronos_gpu.py",
-      "word": "placeholder",
-      "line_sha256_16": "9f2a56dff9ce5f63",
-      "count": 1
-    },
-    {
-      "category": "simulation",
-      "path": "src/chronus/acceleration/chronos_gpu.py",
-      "word": "placeholder",
-      "line_sha256_16": "d9bd84fd4d661659",
-      "count": 1
-    },
-    {
-      "category": "simulation",
-      "path": "src/chronus/acceleration/chronos_gpu.py",
-      "word": "placeholder",
-      "line_sha256_16": "f056af5d917d4eb8",
-      "count": 1
-    },
-    {
-      "category": "simulation",
       "path": "src/chronus/access_control.py",
       "word": "simulated",
       "line_sha256_16": "2ad24b6bd735da3e",
@@ -3836,20 +3745,6 @@
       "path": "src/chronus/core/enums.py",
       "word": "stub",
       "line_sha256_16": "3fc93f991b58fb69",
-      "count": 1
-    },
-    {
-      "category": "simulation",
-      "path": "src/chronus/core/types_part1.py",
-      "word": "stub",
-      "line_sha256_16": "3fc93f991b58fb69",
-      "count": 1
-    },
-    {
-      "category": "simulation",
-      "path": "src/chronus/core/types_part2.py",
-      "word": "simulation",
-      "line_sha256_16": "431b1a33b51513fd",
       "count": 1
     },
     {
@@ -4712,41 +4607,6 @@
       "word": "simulate_adversarial",
       "line_sha256_16": "e62e1d0e5f4a8114",
       "count": 2
-    },
-    {
-      "category": "simulation",
-      "path": "src/chronus/stratum/stratum_v2.py",
-      "word": "placeholder",
-      "line_sha256_16": "883790d3c716585e",
-      "count": 1
-    },
-    {
-      "category": "simulation",
-      "path": "src/chronus/stratum/stratum_v2.py",
-      "word": "placeholder",
-      "line_sha256_16": "b88077b75f7928d9",
-      "count": 1
-    },
-    {
-      "category": "simulation",
-      "path": "src/chronus/stratum/stratum_v2.py",
-      "word": "simulated",
-      "line_sha256_16": "5d0048a4c6f8bdde",
-      "count": 1
-    },
-    {
-      "category": "simulation",
-      "path": "src/chronus/stratum/stratum_v2.py",
-      "word": "stub",
-      "line_sha256_16": "5d0048a4c6f8bdde",
-      "count": 1
-    },
-    {
-      "category": "simulation",
-      "path": "src/chronus/stratum/stratum_v2.py",
-      "word": "stub",
-      "line_sha256_16": "facb2ed55a4e1475",
-      "count": 1
     },
     {
       "category": "simulation",

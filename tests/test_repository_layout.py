@@ -28,11 +28,44 @@ ARCHIVED_ROOT_FILES = (
     "qudit_qec.py",
     "production_hr_api.py",
     "production_hr_api-v2.py",
+    # Scratch scripts, captured outputs, superseded patches and a saved internal
+    # page removed in the 2026-11-19 wiring closeout.
+    "_fix3.py",
+    "_fix6.py",
+    "_fix7.py",
+    "_fix_claims.py",
+    "_add_constants.py",
+    "_add_mask64.py",
+    "_find_multiline_defs.py",
+    "_test_ga_import.py",
+    "apply_ovid_patch.py",
+    "al_haras_scenarios_output.txt",
+    "al_haras_test_output.txt",
+    "temp_pytest_output.txt",
+    "chronus_dirs.txt",
+    "chronus_files.txt",
+    "hendrix.mhtml",
+    ".pytest_temp_ga_handover",
 )
 
 
+def _tracked(names):
+    """Names tracked by git; falls back to on-disk presence outside a checkout."""
+    import shutil
+    import subprocess
+
+    git = shutil.which("git")
+    if git and (ROOT / ".git").exists():
+        out = subprocess.run([git, "ls-files", "-z", "--", *names], cwd=ROOT,
+                             capture_output=True, check=True).stdout.decode()
+        return sorted({entry.split("/")[0] for entry in out.split("\0") if entry})
+    return [name for name in names if (ROOT / name).exists()]
+
+
 def test_archived_root_files_stay_out_of_the_root():
-    assert [name for name in ARCHIVED_ROOT_FILES if (ROOT / name).exists()] == []
+    # Checks what is committed: an ignored local file such as
+    # `pytest > temp_pytest_output.txt` must not fail the suite.
+    assert _tracked(ARCHIVED_ROOT_FILES) == []
 
 
 def test_one_turing_source_tree():

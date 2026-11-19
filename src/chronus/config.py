@@ -67,6 +67,7 @@ def runtime_bounds() -> dict[str, int]:
         "storage_lanes": _int_env("CHRONUS_STORAGE_LANES", 32),
         "max_trinity_index": _int_env("CHRONUS_MAX_TRINITY_INDEX", (1 << 53) - 1),
         "max_payload_bytes": _int_env("CHRONUS_MAX_PAYLOAD_BYTES", 1024 * 1024),
+        "max_dmrg_local_dim": _int_env("CHRONUS_MAX_DMRG_LOCAL_DIM", 8192),
     }
 
 

@@ -38,17 +38,18 @@ All other workflow jobs remain on `ubuntu-latest`. Do **not** attach the
 self-hosted label to the full 50+ check matrix — one machine serialises those
 jobs and turns every PR into a long queue.
 
-Each critical-path job also has:
+Each critical-path job selects its runner with:
 
 ```yaml
-if: >-
-  github.event_name != 'pull_request'
-  || github.event.pull_request.head.repo.full_name == github.repository
+runs-on: ${{ fromJSON((github.event_name == 'pull_request'
+  && github.event.pull_request.head.repo.full_name != github.repository)
+  && '["ubuntu-latest"]' || vars.CHRONUS_CRITICAL_RUNNER || '["ubuntu-latest"]') }}
 ```
 
-so **fork PRs never run on the self-hosted machine**, while `push` and
-`workflow_dispatch` still do (the left clause short-circuits before
-`pull_request` is read). Jobs also set `timeout-minutes` and the workflow uses
+so **fork PRs never run on the self-hosted machine** but still execute the
+suite on GitHub-hosted `ubuntu-latest` (a skipped critical job is not passing
+evidence; `ci-required` fails on any non-success result), while `push`,
+`workflow_dispatch` and same-repository PRs use the configured runner. Jobs also set `timeout-minutes` and the workflow uses
 `concurrency.cancel-in-progress` so a hung or stale run cannot occupy the only
 slot forever.
 
