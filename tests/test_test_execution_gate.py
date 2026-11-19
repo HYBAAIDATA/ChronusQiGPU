@@ -96,3 +96,32 @@ def test_policy_floors_match_the_ci_suites():
         assert f"--suite {suite} " in workflow
     assert policy["main"]["min_passed"] >= 2500
     assert "ci-required:" in workflow
+
+
+def _ci_required():
+    import yaml
+
+    jobs = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text())["jobs"]
+    return jobs, jobs["ci-required"]
+
+
+def test_ci_required_depends_on_every_gating_job():
+    jobs, required = _ci_required()
+    # provenance attests release pushes only (skipped on pull requests by design).
+    assert set(required["needs"]) == set(jobs) - {"ci-required", "provenance"}
+    assert required["if"] == "always()"  # it still reports when a dependency fails or is cancelled
+
+
+@pytest.mark.parametrize("result,ok", [("success", True), ("failure", False), ("skipped", False),
+                                       ("cancelled", False)])
+def test_ci_required_script_accepts_only_success(result, ok):
+    import subprocess
+    import sys
+
+    _, required = _ci_required()
+    script = required["steps"][0]["run"]
+    body = script.split("<<'PY'\n", 1)[1].rsplit("PY", 1)[0]
+    needs = {"tests": {"result": "success"}, "other": {"result": result}}
+    run = subprocess.run([sys.executable, "-c", body], env={"NEEDS": json.dumps(needs)},
+                         capture_output=True, text=True)
+    assert (run.returncode == 0) is ok, run.stderr

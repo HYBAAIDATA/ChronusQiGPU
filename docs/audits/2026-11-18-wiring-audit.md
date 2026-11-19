@@ -191,3 +191,63 @@ cancelled or never-started jobs are not passing evidence). On 2026-11-19
 Actions app 15368) was added to the required status checks of the `main-production`
 ruleset (id 27423249). The strict up-to-date policy is kept and there are no bypass
 actors.
+
+Verified with the throw-away PR #192, which was closed unmerged:
+
+- **Skipped job:** skipping `pinned-dataset-tests` made `ci-required` fail with
+  `{'pinned-dataset-tests': 'skipped'}` while the 14 other required checks
+  passed. The merge API refused: *Required status check "CI required (every job
+  executed and succeeded)" is failing.*
+- **Pending (not yet reported):** during a re-run, the merge API refused with *9
+  of 15 required status checks have not succeeded: 1 expected.* A check that
+  never starts stays in this expected state.
+- **Cancelled run:** cancelling the run made `ci-required` fail with every
+  cancelled dependency listed, and the merge API refused.
+
+`tests/test_test_execution_gate.py` pins `ci-required` to depend on every gating
+job and to accept only `success`.
+
+### Production execution paths of the five wired modules (2026-11-19)
+
+Importability is not reachability. `tests_installed/test_production_paths.py`
+installs the wheel built by the CI "Lint, compile and package" job into a clean
+venv. That venv has no `PYTHONPATH`, no user site-packages and no source tree;
+the test asserts that `chronus.__file__` is under `site-packages`. Each module is
+then exercised the way it runs in production. The CI job is "Installed wheel
+production paths (clean venv)": its JUnit is gated as suite `installed` (at least
+5 passed, no skips), and `ci-required` depends on it.
+
+| Module | Intended production path | Exercised by |
+|---|---|---|
+| `chronus.durable.DurableChain` | An evaluator process appends signed receipts durably (fsynced journal); after a restart it resumes only through signed replay | Two separate evaluator processes: append 2 receipts, exit, restart, resume and append 1. The exported bundle is accepted by the installed `chronus-verify-chain` (exit 0, 3 receipts), and a tampered receipt is rejected (exit 2) |
+| `chronus.verify_cli` | Installed console script `chronus-verify-chain` | As above, the binary from the venv's `bin/` |
+| `chronus.crypto.verify_bundle` | Installed console script `chronus-verify-bundle` | A valid dual-signed bundle exits 0 with `VALID`; a tampered one exits 1 with `INVALID_OR_UNAVAILABLE` |
+| `chronus.service.production_hr_api` | New console script `chronus-hr-api` (start-up `main()` runs uvicorn; loopback by default, `--host`/`--port` or `CHRONUS_HR_API_HOST`/`PORT`) | A real server process on a free TCP port; `/health`, tensor init, optimize-query, causal analyze/counterfactual return 200, and attrition-risk returns an explicit 501 |
+| `chronus.math.padovan_folded` | Library API of the installed package | Fold/unfold of a 16-byte record and the exact period in the installed package. **It has no runtime caller**: no service, CLI or job uses it yet, so it is a shipped library capability, not a runtime path |
+
+The HR API is a separate application. It is **not** mounted in the main Chronus
+API (`chronus.service.app`), and no deployment manifest (compose, Bicep)
+starts it. That gives it a production start-up path, but no deployment is
+established.
+
+### Why the four other modules stay
+
+- **`chronus.hermes`** is the documented canonical import path for the bounded
+  acceleration modules (`chronus.hermes.fourier`, `chronus.hermes.state` are the
+  same module objects as `chronus.acceleration.*`). `chronus.fleet.scheduler`
+  refers to it, and `tests/test_repository_layout.py::test_hermes_exports_the_acceleration_modules`
+  pins it. Removing it would break the published namespace. It was never truly
+  orphaned.
+- **`chronus.pulvini.recovered.{geodesic_tensor_engine, quantum_formalism, quantum_optimizer}`**
+  are the byte-recovered PULVINI V3 sources (`PULVINI_V3_HERMES_COMPLETION_20260724.zip`).
+  They are the provenance for the `benchmarks/recovered/*.json` results, which
+  `tests/test_recovered_merge.py` pins as `RECOVERED_MEASURED` with the source
+  archive SHA-256 and `re_measured_on_head: false`. Deleting them would leave
+  those recorded results without their source. They are quarantined by design:
+  the package docstring states that nothing in production imports them, and
+  `test_recovered_reference_modules_not_imported_by_engine` enforces that.
+  `geodesic_tensor_engine` also needs an `euclid` package that is not a
+  dependency, so it cannot run as engine code. **Finding:** all three are still
+  packaged in the wheel. Excluding `chronus/pulvini/recovered` from the
+  distribution, while keeping it in the repository, would reduce the shipped
+  surface. This is recommended but not done here.
