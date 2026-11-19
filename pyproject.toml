@@ -63,6 +63,8 @@ dev = [
     "pandas>=2.0",
     "scikit-learn>=1.3",
     "statsmodels>=0.14",
+    # Lets tests/test_wiring_entrypoints.py replay migrations against store metadata.
+    "alembic>=1.13",
 ]
 ml = [
     "joblib>=1.3",

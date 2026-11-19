@@ -77,6 +77,7 @@ dmypy.json
 # Common secrets / environment files
 .env
 .env.local
+.env.miner
 *.pem
 *.key
 *.pfx
