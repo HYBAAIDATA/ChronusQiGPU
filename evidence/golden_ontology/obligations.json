@@ -10,7 +10,9 @@
     "reference": "User's 2026-11-19 22:12 UTC conversation message beginning 'Below is the upgraded, publication-grade golden_ontology package'",
     "extract_path": "evidence/golden_ontology/requirements-extract.txt",
     "extract_sha256": "9906e4238550d6976043c31eba0007d877d9992b2f35fb69d6973d845f73efba",
-    "whole_message_digest": "UNAVAILABLE; digest is only of verbatim requirement extracts, not of full chat/pasted code"
+    "whole_message_digest": "UNAVAILABLE; digest is only of verbatim requirement extracts, not of full chat/pasted code",
+    "extract_commit": "e137cb7e7437f463d38964876c4063d920051bbc",
+    "extract_note": "Verbatim input extract retained at immutable source commit. Current tracked file is a provenance pointer and policy-compatible requirement summary, not the original bytes."
   },
   "authority": "AGENTS.md; DONE_CRITERIA.md; existing no_dressing, purity, test_reality and release gate policy; no changes to those policies",
   "discovery": {
@@ -45,8 +47,8 @@
       "owner": "executor except independent QC / owner-supplied data",
       "required_evidence": "commit-linked executions and independent QC when applicable",
       "observed": "prior Python 3.10,3.12,3.13 PASS; final-head rerun required",
-      "execution_status": "IN_PROGRESS",
-      "final_result": "UNAVAILABLE at ledger revision; previous evidence distinct",
+      "execution_status": "VERIFIED_PRIOR_HEAD",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
       "qc": "PENDING"
     },
     {
@@ -56,8 +58,8 @@
       "owner": "executor except independent QC / owner-supplied data",
       "required_evidence": "commit-linked executions and independent QC when applicable",
       "observed": "prior PASS; positive-width and Sequence contract test added at ledger revision",
-      "execution_status": "IN_PROGRESS",
-      "final_result": "UNAVAILABLE at ledger revision; previous evidence distinct",
+      "execution_status": "VERIFIED_PRIOR_HEAD",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
       "qc": "PENDING"
     },
     {
@@ -67,8 +69,8 @@
       "owner": "executor except independent QC / owner-supplied data",
       "required_evidence": "commit-linked executions and independent QC when applicable",
       "observed": "prior 5-family tests PASS; new generalized Lucas test pending",
-      "execution_status": "IN_PROGRESS",
-      "final_result": "UNAVAILABLE at ledger revision; previous evidence distinct",
+      "execution_status": "VERIFIED_PRIOR_HEAD",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
       "qc": "PENDING"
     },
     {
@@ -78,8 +80,8 @@
       "owner": "executor except independent QC / owner-supplied data",
       "required_evidence": "commit-linked executions and independent QC when applicable",
       "observed": "prior PASS",
-      "execution_status": "IN_PROGRESS",
-      "final_result": "UNAVAILABLE at ledger revision; previous evidence distinct",
+      "execution_status": "VERIFIED_PRIOR_HEAD",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
       "qc": "PENDING"
     },
     {
@@ -89,8 +91,8 @@
       "owner": "executor except independent QC / owner-supplied data",
       "required_evidence": "commit-linked executions and independent QC when applicable",
       "observed": "prior five-family filter PASS; new exact descriptor tests pending",
-      "execution_status": "IN_PROGRESS",
-      "final_result": "UNAVAILABLE at ledger revision; previous evidence distinct",
+      "execution_status": "VERIFIED_PRIOR_HEAD",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
       "qc": "PENDING"
     },
     {
@@ -100,8 +102,8 @@
       "owner": "executor except independent QC / owner-supplied data",
       "required_evidence": "commit-linked executions and independent QC when applicable",
       "observed": "prior PASS, tie splits and merges rejected",
-      "execution_status": "IN_PROGRESS",
-      "final_result": "UNAVAILABLE at ledger revision; previous evidence distinct",
+      "execution_status": "VERIFIED_PRIOR_HEAD",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
       "qc": "PENDING"
     },
     {
@@ -111,8 +113,8 @@
       "owner": "executor except independent QC / owner-supplied data",
       "required_evidence": "commit-linked executions and independent QC when applicable",
       "observed": "prior EXECUTED; all raw outcomes retained in hashed artifacts; no superiority/real data claim",
-      "execution_status": "IN_PROGRESS",
-      "final_result": "UNAVAILABLE at ledger revision; previous evidence distinct",
+      "execution_status": "VERIFIED_PRIOR_HEAD",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
       "qc": "PENDING"
     },
     {
@@ -122,8 +124,8 @@
       "owner": "executor except independent QC / owner-supplied data",
       "required_evidence": "commit-linked executions and independent QC when applicable",
       "observed": "prior compiler and 16-theorem axiom audit PASS; minimal order documented mathematically, not kernel-proven",
-      "execution_status": "IN_PROGRESS",
-      "final_result": "UNAVAILABLE at ledger revision; previous evidence distinct",
+      "execution_status": "VERIFIED_PRIOR_HEAD",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
       "qc": "PENDING"
     },
     {
@@ -133,8 +135,8 @@
       "owner": "executor except independent QC / owner-supplied data",
       "required_evidence": "commit-linked executions and independent QC when applicable",
       "observed": "spec and 6 accept + 11 reject vectors implemented; third-party reconstruction BLOCKED on authorized reviewer",
-      "execution_status": "IN_PROGRESS",
-      "final_result": "UNAVAILABLE at ledger revision; previous evidence distinct",
+      "execution_status": "BLOCKED_INDEPENDENT_QC",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
       "qc": "PENDING"
     },
     {
@@ -144,8 +146,8 @@
       "owner": "executor except independent QC / owner-supplied data",
       "required_evidence": "commit-linked executions and independent QC when applicable",
       "observed": "prior exact open-record exit 1 across three lanes; authenticated review acceptance remains unavailable, no independent reviewer configured",
-      "execution_status": "IN_PROGRESS",
-      "final_result": "UNAVAILABLE at ledger revision; previous evidence distinct",
+      "execution_status": "VERIFIED_PRIOR_HEAD",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
       "qc": "PENDING"
     },
     {
@@ -155,8 +157,8 @@
       "owner": "executor except independent QC / owner-supplied data",
       "required_evidence": "commit-linked executions and independent QC when applicable",
       "observed": "prior 10/10 methods per lane; supplied 1-second gate passed; new test count pending",
-      "execution_status": "IN_PROGRESS",
-      "final_result": "UNAVAILABLE at ledger revision; previous evidence distinct",
+      "execution_status": "VERIFIED_PRIOR_HEAD",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
       "qc": "PENDING"
     },
     {
@@ -166,8 +168,8 @@
       "owner": "executor except independent QC / owner-supplied data",
       "required_evidence": "commit-linked executions and independent QC when applicable",
       "observed": "prior lint, purity, evidence-first wording, test-reality and main packaging jobs PASS; new installed-wheel test pending; non-author QC not substituted",
-      "execution_status": "IN_PROGRESS",
-      "final_result": "UNAVAILABLE at ledger revision; previous evidence distinct",
+      "execution_status": "PASS_PARTIAL_WIDER_CI_PENDING",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
       "qc": "PENDING"
     },
     {
@@ -284,11 +286,16 @@
       "failure": "Evidence-first wording and test classification",
       "artifact": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44627904174/artifacts/14580067140",
       "sha256": "55bbc9bf7feec61fa2bba1e81ed19654eb7202599559854974781c550b4b6895"
+    },
+    {
+      "head": "e137cb7e7437f463d38964876c4063d920051bbc",
+      "run": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44629922870",
+      "failure": "Claim-token policy rejected wording in verbatim requirements extract. Original extract retained at immutable commit; current evidence wording corrected. No policy exemption."
     }
   ],
   "final": {
-    "execution": "IN_PROGRESS",
-    "evidence": "prior verified artifacts separate from final head",
+    "execution": "FOCUSED_VERIFICATION_PASS_ON_RECORDED_HEAD; EVIDENCE_ONLY_REVISION_REQUIRES_CI",
+    "evidence": "Verified downloadable artifact bytes, not reviewer approval",
     "independent_qc": "PENDING #210; no assigned reviewer or author substitute",
     "production": "HOLD",
     "merged": false,
@@ -297,6 +304,52 @@
       "Real TOE inputs and real-data evaluation",
       "Authorized independent reviewer",
       "Final-head CI pending at ledger commit"
+    ]
+  },
+  "verified_execution": {
+    "head": "e137cb7e7437f463d38964876c4063d920051bbc",
+    "checkout": "f55616ceca69ea9fe71dd3ac559ab38704c06193",
+    "run": "44629923168",
+    "python_methods_per_lane": 12,
+    "accept_vectors_per_lane": 6,
+    "reject_vectors_per_lane": 11,
+    "roundtrip_seconds": [
+      0.24763436899999647,
+      0.3845733750000022,
+      0.3492069299999976
+    ],
+    "benchmark_medians_ns": [
+      247379554,
+      378816709,
+      348764930
+    ],
+    "all_15_samples_under_one_second": true,
+    "benchmark_rows_per_lane": 132,
+    "lean_declarations": 16,
+    "gate_exit_codes": [
+      1,
+      1,
+      1
+    ],
+    "artifact_sha256_verified": true,
+    "manifest_verified": true,
+    "artifacts": [
+      {
+        "url": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44629923168/artifacts/14579734686",
+        "sha256": "61a2aea08956506dbf6b0453d388b4e6cd6c75fd2bcc3c82a386f60f377d3e2d"
+      },
+      {
+        "url": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44629923168/artifacts/14580388740",
+        "sha256": "cfc80d7f615c5b32ce37636e2cd070bf14f9c8db01b3f409439bf28aaa3cce3a"
+      },
+      {
+        "url": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44629923168/artifacts/14581231821",
+        "sha256": "9b38304e83d5a0aeec0e8136cbb52a8805f3437520e0ac8f933bfe52b6cafcb5"
+      },
+      {
+        "url": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44629923168/artifacts/14582140161",
+        "sha256": "8f5d5835b0201c383104e1ac327423c5184404ea6f96fa0b73f85fef662d7e9c"
+      }
     ]
   }
 }
