@@ -62,16 +62,19 @@ def test_env_example_keys_are_read_by_code(template: str) -> None:
 
 
 def test_miner_credentials_stay_out_of_the_api_environment() -> None:
+    import yaml
+
     api_keys = set(_env_example_keys(".env.example"))
     miner_keys = set(_env_example_keys(".env.miner.example"))
     assert not api_keys & miner_keys
     assert not any(k.startswith("MINING_") for k in api_keys)
-    compose = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
-    api_block = compose.split("\n  web:")[0]
-    miner_block = compose.split("\n  miner:")[1]
-    assert "path: .env\n" in api_block.replace("\r\n", "\n")
-    assert ".env.miner" not in api_block.replace("pool credentials live in .env.miner", "")
-    assert "path: .env.miner" in miner_block
+    services = yaml.safe_load((ROOT / "docker-compose.yml").read_text(encoding="utf-8"))["services"]
+    api_files = [f["path"] if isinstance(f, dict) else f for f in services["api"]["env_file"]]
+    miner_files = [f["path"] if isinstance(f, dict) else f for f in services["miner"]["env_file"]]
+    assert api_files == [".env"]
+    assert miner_files == [".env.miner"]
+    # An `environment:` entry would shadow keys the operator sets in .env.miner.
+    assert not set(services["miner"].get("environment") or {}) & miner_keys
 
 
 def _console_scripts() -> dict[str, str]:

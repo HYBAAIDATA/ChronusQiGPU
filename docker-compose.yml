@@ -77,8 +77,8 @@ services:
     env_file:
       - path: .env.miner
         required: true
-    environment:
-      MINING_MAX_SECONDS: ${MINING_MAX_SECONDS:-}
+    # MINING_MAX_SECONDS comes from .env.miner; an `environment:` entry here
+    # would override it (empty unless also exported in the shell).
     restart: "no"
 
 volumes:
