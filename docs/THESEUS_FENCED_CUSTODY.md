@@ -29,3 +29,12 @@ The single-node fencer is not an alternative to distributed consensus.
 No live etcd or signer deployment was performed. Physical 1,000-GPU capacity is
 Unavailable. Gate G2 tests with deterministic doubles are simulated tests, not
 deployment qualification. The release gate is unchanged.
+
+A pre-write quorum read outage is distinguished from an uncertain write outcome.
+The former retains the unanchored WAL and retries within the lease and watermark
+bounds; the latter invalidates write readiness until authenticated recovery
+reconciles the remote anchor. Etcd adapters must expose transport connectivity
+failures as ConnectionError or TimeoutError for the pre-write retry path;
+unclassified exceptions fail closed. No local watermark advances on a missing
+acknowledgement. SQLite storage classes, indexed epoch floor and read-back
+anchor fields are checked without coercion.

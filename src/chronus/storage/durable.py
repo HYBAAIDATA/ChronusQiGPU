@@ -37,6 +37,8 @@ from chronus.storage.fenced_custody import (
     ChainIntegrityError as ChainIntegrityError,
     StaleFencingEpochError as StaleFencingEpochError,
     LeaseLostError as LeaseLostError,
+    QuorumUnavailableError as QuorumUnavailableError,
+    AnchorCommitUncertainError as AnchorCommitUncertainError,
     merkle_leaf_hash as merkle_leaf_hash,
     merkle_node_hash as merkle_node_hash,
 )

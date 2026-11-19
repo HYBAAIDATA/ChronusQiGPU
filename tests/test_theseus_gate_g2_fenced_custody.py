@@ -19,7 +19,9 @@ import pytest
 pytestmark = pytest.mark.simulated
 
 from chronus.storage.durable import (
+    AnchorCommitUncertainError,
     Blake3MerkleTree,
+    QuorumUnavailableError,
     ChainIntegrityError,
     CustodyError,
     CustodyHaltError,
@@ -781,3 +783,72 @@ def test_merkle_rejects_malformed_step_without_throwing() -> None:
     proof = tree.proof_for(0)
     for steps in (((),), ((tree.root,),), ((tree.root, "R", "extra"),)):
         assert not dataclasses.replace(proof, steps=steps).verify(b"A", tree.root)
+
+
+def test_quorum_outage_and_lost_acknowledgement_are_distinct(tmp_path: Path) -> None:
+    class AckLossCluster(FakeEtcdCluster):
+        drop_ack = False
+
+        def transaction(self, compare, success, failure):
+            result = super().transaction(compare, success, failure)
+            if self.drop_ack:
+                self.drop_ack = False
+                raise ConnectionError("Injected loss after committed CAS")
+            return result
+
+    clock = VirtualClock()
+    etcd = AckLossCluster(clock)
+    signer = DeterministicTestSigner()
+    quorum = EtcdAnchorQuorumClient(etcd, verify_anchor=lambda a: signer.verify(a.signing_preimage(), a.signature))
+    fencer = EtcdLeaseFencer(etcd_client=etcd, node_id="n", slot_id="s", clock_ns=clock.now_ns)
+    fencer.acquire()
+    store = FencedTheseusEdgeStore(db_path=tmp_path / "uncertain.db", node_id="n", slot_id="s",
+        fencer=fencer, signer=signer, quorum=quorum,
+        clock_ns=clock.now_ns, monotonic_ns=clock.now_ns)
+    try:
+        store.reconcile_recovery_tail()
+        store.append_receipt(tenant_id="t", event_type="r", payload={"i": 1})
+        etcd.partitioned = True
+        try:
+            with pytest.raises(QuorumUnavailableError):
+                store.seal_pending_epoch()
+            store.append_receipt(tenant_id="t", event_type="r", payload={"i": 2})
+        finally:
+            etcd.partitioned = False
+        etcd.drop_ack = True
+        with pytest.raises(AnchorCommitUncertainError):
+            store.seal_pending_epoch()
+        assert quorum.last_anchored_seq("n", "s") == 2
+        with pytest.raises(CustodyError, match="reconcile_recovery_tail"):
+            store.append_receipt(tenant_id="t", event_type="r", payload={"i": 3})
+        assert store.reconcile_recovery_tail() is None
+        env, anchor, proof = store.inclusion_proof_for_seq(2)
+        assert proof.verify(env.canonical_leaf_bytes(), anchor.merkle_root)
+        assert store.append_receipt(tenant_id="t", event_type="r", payload={"i": 3}).seq == 3
+    finally:
+        store.close()
+        fencer.release()
+
+
+def test_persisted_anchor_timestamp_cannot_be_coerced(tmp_path: Path) -> None:
+    clock = VirtualClock(0)
+    etcd = FakeEtcdCluster(clock)
+    signer = DeterministicTestSigner()
+    quorum = EtcdAnchorQuorumClient(etcd, verify_anchor=lambda a: signer.verify(a.signing_preimage(), a.signature))
+    fencer = EtcdLeaseFencer(etcd_client=etcd, node_id="n", slot_id="s", clock_ns=clock.now_ns)
+    fencer.acquire()
+    db = tmp_path / "anchor.db"
+    store = FencedTheseusEdgeStore(db_path=db, node_id="n", slot_id="s",
+        fencer=fencer, signer=signer, quorum=quorum,
+        clock_ns=clock.now_ns, monotonic_ns=clock.now_ns)
+    try:
+        store.reconcile_recovery_tail()
+        store.append_receipt(tenant_id="t", event_type="r", payload={"i": 1})
+        store.seal_pending_epoch()
+        with sqlite3.connect(db) as conn:
+            conn.execute("UPDATE theseus_epoch_anchors SET anchored_ts_ns = ?", (0.5,))
+        with pytest.raises(ChainIntegrityError, match="field type"):
+            store.inclusion_proof_for_seq(1)
+    finally:
+        store.close()
+        fencer.release()

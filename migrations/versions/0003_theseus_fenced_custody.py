@@ -44,12 +44,14 @@ fences = sa.Table(
     sa.Column("epoch", _int, nullable=False),
 )
 index = sa.Index("idx_theseus_tenant_seq", receipts.c.tenant_id, receipts.c.seq)
+fence_index = sa.Index("idx_theseus_fencing_epoch", receipts.c.fencing_epoch)
 _tables = (receipts, anchors, fences)
 
 def upgrade() -> None:
     for table in _tables:
         op.execute(sa.schema.CreateTable(table, if_not_exists=True))
     op.execute(sa.schema.CreateIndex(index, if_not_exists=True))
+    op.execute(sa.schema.CreateIndex(fence_index, if_not_exists=True))
 
 def downgrade() -> None:
     context = op.get_context()
@@ -85,6 +87,7 @@ def downgrade() -> None:
         for table in tables:
             if table.name in existing and bind.execute(sa.select(sa.func.count()).select_from(table)).scalar_one():
                 raise RuntimeError(f"refusing to downgrade 0003: {table.name} contains rows")
+    op.execute(sa.schema.DropIndex(fence_index, if_exists=True))
     op.execute(sa.schema.DropIndex(index, if_exists=True))
     for table in tables:
         op.execute(sa.schema.DropTable(table, if_exists=True))

@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import dataclasses
 from contextlib import closing
-from dataclasses import dataclass
 from enum import Enum
 import hmac
 import json
@@ -70,6 +69,14 @@ class LeaseLostError(CustodyError):
 
 class CustodyHaltError(CustodyError):
     """Raised when unanchored backlog exceeds the hard custody watermark."""
+
+
+class QuorumUnavailableError(CustodyError):
+    """A quorum read failed before an anchoring write was attempted."""
+
+
+class AnchorCommitUncertainError(CustodyError):
+    """A quorum write may have succeeded without a usable acknowledgement."""
 
 
 class CustodyHealth(Enum):
@@ -153,7 +160,7 @@ def hash_payload(payload: Dict[str, Any]) -> Tuple[bytes, bytes]:
 # ---------------------------------------------------------------------------
 # 1. FencedReceiptEnvelope
 # ---------------------------------------------------------------------------
-@dataclass(frozen=True, slots=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class FencedReceiptEnvelope:
     """Immutable, fencing-token-stamped, BLAKE3-chained custody record."""
 
@@ -300,7 +307,7 @@ class FencedReceiptEnvelope:
 # ---------------------------------------------------------------------------
 # 2. Fencing Providers: LocalSingleNodeFencer & EtcdLeaseFencer
 # ---------------------------------------------------------------------------
-@dataclass(frozen=True, slots=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class FencingToken:
     slot_key: str
     node_id: str
@@ -354,7 +361,11 @@ class LocalSingleNodeFencer:
                     "SELECT epoch FROM theseus_local_fences WHERE slot_key = ?;",
                     (self._slot_key,),
                 ).fetchone()
-                next_epoch = 1 if row is None else int(row[0]) + 1
+                if row is not None and (type(row[0]) is not int or row[0] < 1):
+                    raise ChainIntegrityError("Invalid persisted local fencing epoch")
+                next_epoch = 1 if row is None else row[0] + 1
+                if next_epoch > 0x7FFFFFFFFFFFFFFF:
+                    raise CustodyError("Local fencing epoch exhausted")
                 conn.execute(
                     """
                     INSERT INTO theseus_local_fences(slot_key, epoch)
@@ -485,11 +496,14 @@ class EtcdLeaseFencer:
                 lease.revoke()
                 raise CustodyError(f"etcd returned invalid ModRevision: {revision!r}")
 
+            if type(lease.id) is not int or lease.id == 0:
+                lease.revoke()
+                raise CustodyError("Invalid etcd lease identity")
             token = FencingToken(
                 slot_key=self._slot_key,
                 node_id=self._node_id,
                 epoch=revision,
-                lease_id=int(lease.id),
+                lease_id=lease.id,
                 ttl_s=self._ttl_s,
                 acquired_monotonic_ns=before_ns,
             )
@@ -517,10 +531,14 @@ class EtcdLeaseFencer:
             return 0
         resp = responses[0]
         if hasattr(resp, "header") and hasattr(resp.header, "revision"):
-            return int(resp.header.revision)
-        if hasattr(resp, "response_put") and hasattr(resp.response_put, "header"):
-            return int(resp.response_put.header.revision)
-        raise CustodyError(f"Cannot extract Raft revision from etcd response: {type(resp).__name__}")
+            revision = resp.header.revision
+        elif hasattr(resp, "response_put") and hasattr(resp.response_put, "header"):
+            revision = resp.response_put.header.revision
+        else:
+            raise CustodyError(f"Cannot extract Raft revision from etcd response: {type(resp).__name__}")
+        if type(revision) is not int or not 1 <= revision <= 0x7FFFFFFFFFFFFFFF:
+            raise CustodyError("Invalid Raft revision")
+        return revision
 
     def _keepalive_loop(self) -> None:
         while not self._stop_event.wait(timeout=self._refresh_interval_s):
@@ -533,8 +551,8 @@ class EtcdLeaseFencer:
                 # refresh() yields LeaseKeepAliveResponse in python-etcd3; consume one tick.
                 refreshed = lease.refresh()
                 resp = next(iter(refreshed)) if not hasattr(refreshed, "TTL") else refreshed
-                granted_ttl = int(getattr(resp, "TTL", 0))
-                if granted_ttl <= 0:
+                granted_ttl = getattr(resp, "TTL", 0)
+                if type(granted_ttl) is not int or granted_ttl <= 0:
                     raise LeaseLostError("etcd keepalive returned TTL <= 0 (lease expired)")
                 with self._lock:
                     if self._stop_event.is_set() or not self._lease_healthy.is_set():
@@ -611,7 +629,8 @@ def _largest_power_of_two_less_than(n: int) -> int:
 
 
 def _expected_proof_sides(leaf_index: int, leaf_count: int) -> List[Side]:
-    if type(leaf_index) is not int or type(leaf_count) is not int or leaf_count <= 0 or leaf_index < 0 or leaf_index >= leaf_count:
+    if (type(leaf_index) is not int or type(leaf_count) is not int
+            or not 1 <= leaf_count <= 0xFFFFFFFFFFFFFFFF or not 0 <= leaf_index < leaf_count):
         raise ValueError(f"Invalid leaf_index={leaf_index} for leaf_count={leaf_count}")
     if leaf_count == 1:
         return []
@@ -621,7 +640,7 @@ def _expected_proof_sides(leaf_index: int, leaf_count: int) -> List[Side]:
     return _expected_proof_sides(leaf_index - k, leaf_count - k) + ["L"]
 
 
-@dataclass(frozen=True, slots=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class MerkleInclusionProof:
     leaf_index: int
     leaf_count: int
@@ -714,7 +733,7 @@ class EpochSigner(Protocol):
     def verify(self, message: bytes, signature: bytes) -> bool: ...
 
 
-@dataclass(frozen=True, slots=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class EpochAnchor:
     node_id: str
     slot_id: str
@@ -798,6 +817,23 @@ class EtcdAnchorQuorumClient:
     def _anchor_log_key(self, node_id: str, slot_id: str, seq_end: int) -> str:
         return f"{self._anchor_prefix}/{node_id}/{slot_id}/epochs/{seq_end:020d}"
 
+    def _read(self, key: str):
+        try:
+            return self._etcd.get(key)
+        except (ConnectionError, TimeoutError) as exc:
+            raise QuorumUnavailableError("Quorum read unavailable before write") from exc
+
+    @staticmethod
+    def _decode_head(value: bytes | None) -> int:
+        if value is None:
+            return 0
+        if type(value) is not bytes or not value.isdigit() or len(value) > 19:
+            raise ChainIntegrityError("Invalid quorum anchor watermark")
+        seq = int(value)
+        if not 1 <= seq <= 0x7FFFFFFFFFFFFFFF or str(seq).encode("ascii") != value:
+            raise ChainIntegrityError("Noncanonical quorum anchor watermark")
+        return seq
+
     def commit_anchor(self, anchor: EpochAnchor) -> int:
         if not anchor.signature or not self._verify_anchor(anchor):
             raise ChainIntegrityError("Anchor signature or signer authority refused")
@@ -826,8 +862,8 @@ class EtcdAnchorQuorumClient:
         )
 
         tx = self._etcd.transactions
-        head, head_meta = self._etcd.get(head_key)
-        last_seq = 0 if head is None else int(head.decode("ascii"))
+        head, head_meta = self._read(head_key)
+        last_seq = self._decode_head(head)
         if last_seq >= anchor.seq_end:
             stored, rev = self.read_anchor(anchor.node_id, anchor.slot_id, anchor.seq_end)
             if stored != anchor:
@@ -842,19 +878,22 @@ class EtcdAnchorQuorumClient:
         if last_seq != anchor.seq_start - 1:
             raise ChainIntegrityError("Quorum anchor would create a sequence gap")
         # Atomic CAS: commit ONLY if this node STILL holds the exact ModRevision fence.
-        succeeded, responses = self._etcd.transaction(
-            compare=[
-                tx.mod(fence_key) == anchor.fencing_epoch,
-                tx.value(fence_key) == anchor.node_id.encode("ascii"),
-                tx.mod(head_key) == (0 if head_meta is None else head_meta.mod_revision),
-                tx.create(log_key) == 0,
-            ],
-            success=[
-                tx.put(log_key, serialized),
-                tx.put(head_key, str(anchor.seq_end)),
-            ],
-            failure=[],
-        )
+        try:
+            succeeded, responses = self._etcd.transaction(
+                compare=[
+                    tx.mod(fence_key) == anchor.fencing_epoch,
+                    tx.value(fence_key) == anchor.node_id.encode("ascii"),
+                    tx.mod(head_key) == (0 if head_meta is None else head_meta.mod_revision),
+                    tx.create(log_key) == 0,
+                ],
+                success=[
+                    tx.put(log_key, serialized),
+                    tx.put(head_key, str(anchor.seq_end)),
+                ],
+                failure=[],
+            )
+        except (ConnectionError, TimeoutError) as exc:
+            raise AnchorCommitUncertainError("Anchor CAS acknowledgement unavailable; recover before writing") from exc
         if not succeeded:
             raise StaleFencingEpochError(
                 f"Quorum rejected anchor for {anchor.node_id}/{anchor.slot_id}: "
@@ -863,28 +902,33 @@ class EtcdAnchorQuorumClient:
         return EtcdLeaseFencer._extract_revision(responses)
 
     def read_anchor(self, node_id: str, slot_id: str, seq_end: int) -> Tuple[EpochAnchor, int]:
-        value, meta = self._etcd.get(self._anchor_log_key(node_id, slot_id, seq_end))
+        value, meta = self._read(self._anchor_log_key(node_id, slot_id, seq_end))
         if value is None or meta is None:
             raise ChainIntegrityError("Missing quorum anchor")
-        data = json.loads(value)
-        for key in ("merkle_root", "head_record_hash", "signature"):
-            data[key] = bytes.fromhex(data[key])
-        anchor = EpochAnchor(**data)
+        try:
+            data = json.loads(value)
+            for key in ("merkle_root", "head_record_hash", "signature"):
+                data[key] = bytes.fromhex(data[key])
+            anchor = EpochAnchor(**data)
+        except (ValueError, TypeError, KeyError, UnicodeError) as exc:
+            raise ChainIntegrityError("Invalid quorum anchor record") from exc
         if (anchor.node_id, anchor.slot_id, anchor.seq_end) != (node_id, slot_id, seq_end):
             raise ChainIntegrityError("Quorum anchor identity mismatch")
         if not anchor.signature or not self._verify_anchor(anchor):
             raise ChainIntegrityError("Quorum anchor signature refused")
-        return anchor, int(meta.mod_revision)
+        if type(meta.mod_revision) is not int or not 1 <= meta.mod_revision <= 0x7FFFFFFFFFFFFFFF:
+            raise ChainIntegrityError("Invalid quorum anchor revision")
+        return anchor, meta.mod_revision
 
     def last_anchored_seq(self, node_id: str, slot_id: str) -> int:
-        value, _meta = self._etcd.get(self._anchor_head_key(node_id, slot_id))  # type: ignore[attr-defined]
-        return 0 if value is None else int(value.decode("ascii"))
+        value, _meta = self._read(self._anchor_head_key(node_id, slot_id))
+        return self._decode_head(value)
 
 
 # ---------------------------------------------------------------------------
 # 5. Tier-1 SQLite WAL Store + EpochAnchorer (with Watermarks & Gate G2)
 # ---------------------------------------------------------------------------
-@dataclass(frozen=True, slots=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class CustodyWatermarks:
     warn_unanchored_s: int = 10
     halt_unanchored_s: int = 30
@@ -969,6 +1013,8 @@ class FencedTheseusEdgeStore:
 
                 CREATE INDEX IF NOT EXISTS idx_theseus_tenant_seq
                     ON theseus_fenced_receipts(tenant_id, seq);
+                CREATE INDEX IF NOT EXISTS idx_theseus_fencing_epoch
+                    ON theseus_fenced_receipts(fencing_epoch);
 
                 CREATE TABLE IF NOT EXISTS theseus_epoch_anchors (
                     seq_end INTEGER PRIMARY KEY,
@@ -989,6 +1035,8 @@ class FencedTheseusEdgeStore:
 
     def _valid_token(self) -> FencingToken:
         token = self._fencer.current_valid_token()
+        if type(token.epoch) is not int or not 1 <= token.epoch <= 0x7FFFFFFFFFFFFFFF:
+            raise StaleFencingEpochError("Invalid fence epoch")
         if token.node_id != self._node_id or token.slot_key.rsplit("/", 1)[-1] != self._slot_id:
             raise LeaseLostError("Fence does not match custody stream")
         return token
@@ -1020,7 +1068,10 @@ class FencedTheseusEdgeStore:
                 or len(row[1]) != DIGEST_LEN or type(row[2]) is not int
                 or row[0] < 1 or row[2] < 1):
             raise ChainIntegrityError("Invalid stored custody head")
-        return row[0], row[1], row[2]
+        max_epoch = self._conn.execute("SELECT MAX(fencing_epoch) FROM theseus_fenced_receipts").fetchone()[0]
+        if type(max_epoch) is not int or max_epoch != row[2]:
+            raise ChainIntegrityError("Nonmonotonic stored custody epoch floor")
+        return row[0], row[1], max_epoch
 
     def _last_local_anchored_seq_locked(self) -> int:
         row = self._conn.execute(
@@ -1035,7 +1086,9 @@ class FencedTheseusEdgeStore:
             head_seq, _, _ = self._head_state_locked()
             anchored_seq = self._last_local_anchored_seq_locked()
             backlog = head_seq - anchored_seq
-            if backlog <= 0:
+            if backlog < 0:
+                raise ChainIntegrityError("Local anchor watermark exceeds receipt head")
+            if backlog == 0:
                 return CustodyHealth.HEALTHY
             elapsed_s = (self._monotonic_ns() - self._last_anchor_monotonic_ns) // 1_000_000_000
             if (
@@ -1226,6 +1279,8 @@ class FencedTheseusEdgeStore:
 
     def inclusion_proof_for_seq(self, seq: int) -> Tuple[FencedReceiptEnvelope, EpochAnchor, MerkleInclusionProof]:
         """Rebuild an anchored batch and return its logarithmic-size inclusion proof."""
+        if type(seq) is not int or seq < 1:
+            raise TypeError("Receipt sequence must be a positive exact integer")
         with self._write_lock:
             anchor_row = self._conn.execute(
                 """
@@ -1241,7 +1296,11 @@ class FencedTheseusEdgeStore:
             if anchor_row is None:
                 raise CustodyError(f"Receipt seq={seq} has not been anchored yet")
 
-            seq_start, seq_end = int(anchor_row[0]), int(anchor_row[1])
+            expected_types = (int, int, int, str, int, bytes, bytes, int, str, int, bytes)
+            if (any(type(value) is not expected for value, expected in zip(anchor_row, expected_types))
+                    or anchor_row[9] not in (0, 1)):
+                raise ChainIntegrityError("Invalid stored anchor field type")
+            seq_start, seq_end = anchor_row[0], anchor_row[1]
             rows = self._conn.execute(
                 """
                 SELECT seq, node_id, slot_id, tenant_id, fencing_epoch, ts_ns,
@@ -1261,17 +1320,17 @@ class FencedTheseusEdgeStore:
             anchor = EpochAnchor(
                 node_id=self._node_id,
                 slot_id=self._slot_id,
-                fencing_epoch=int(anchor_row[2]),
+                fencing_epoch=anchor_row[2],
                 anchor_kind=anchor_row[3],
                 seq_start=seq_start,
                 seq_end=seq_end,
-                leaf_count=int(anchor_row[4]),
-                merkle_root=bytes(anchor_row[5]),
-                head_record_hash=bytes(anchor_row[6]),
-                anchored_ts_ns=int(anchor_row[7]),
-                signer_key_id=str(anchor_row[8]),
+                leaf_count=anchor_row[4],
+                merkle_root=anchor_row[5],
+                head_record_hash=anchor_row[6],
+                anchored_ts_ns=anchor_row[7],
+                signer_key_id=anchor_row[8],
                 hardware_backed=bool(anchor_row[9]),
-                signature=bytes(anchor_row[10]),
+                signature=anchor_row[10],
             )
             remote, _ = self._quorum.read_anchor(self._node_id, self._slot_id, anchor.seq_end)
             if remote != anchor or tree.root != anchor.merkle_root or tree.leaf_count != anchor.leaf_count:
@@ -1317,7 +1376,15 @@ class FencedTheseusEdgeStore:
         # Commit to Tier-2 Raft quorum FIRST; local anchor watermark advances only after quorum ack.
         if not self._signer.verify(anchor.signing_preimage(), anchor.signature):
             raise ChainIntegrityError("Signer returned an invalid signature")
-        quorum_rev = self._quorum.commit_anchor(anchor)
+        try:
+            quorum_rev = self._quorum.commit_anchor(anchor)
+        except QuorumUnavailableError:
+            # No write attempted; preserve the unanchored backlog and its age.
+            raise
+        except Exception:
+            # A write may have committed, or the fence may have changed.
+            self._recovery_complete = False
+            raise
         try:
             self._persist_anchor_locked(anchor, quorum_rev)
         except Exception:
@@ -1365,7 +1432,9 @@ class FencedTheseusEdgeStore:
         ).fetchone()
         if row is None:
             raise ChainIntegrityError(f"Missing baseline record at seq={seq}")
-        return bytes(row[0])
+        if type(row[0]) is not bytes or len(row[0]) != DIGEST_LEN:
+            raise ChainIntegrityError("Invalid stored baseline digest")
+        return row[0]
 
     @staticmethod
     def _row_to_envelope(row: Tuple[Any, ...]) -> FencedReceiptEnvelope:
@@ -1444,6 +1513,11 @@ class EdgeAnchorSidecar:
             try:
                 self.assert_healthy()
                 self.store.seal_pending_epoch()
+            except QuorumUnavailableError:
+                # A pre-write outage is not an acknowledgement. Retry while
+                # the independently checked lease and hard watermark permit.
+                logger.warning("THESEUS quorum read unavailable; retaining unanchored WAL")
+                continue
             except Exception as exc:
                 self.error = exc
                 self._fault.set()
