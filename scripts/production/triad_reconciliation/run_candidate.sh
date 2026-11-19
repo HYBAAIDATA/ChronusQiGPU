@@ -24,6 +24,7 @@ $PY -m twine check $D/dist/* >> $D/build.log 2>&1; echo "twine exit=$?" >> $D/ga
 (cd packages/turing && $PY -m build --outdir $D/dist . >> $D/build.log 2>&1); echo "turing build exit=$?" >> $D/gates.txt
 (cd $D/dist && sha256sum * > SHA256SUMS)
 # clean install of the built wheel into a fresh venv (dependency resolution + installed provenance)
+unset PYTHONPATH
 rm -rf /tmp/cand-install && python3 -m venv /tmp/cand-install && /tmp/cand-install/bin/pip install -q $D/dist/hyba_chronus-*.whl > $D/install.log 2>&1; echo "clean install exit=$?" >> $D/gates.txt
 /tmp/cand-install/bin/pip check >> $D/install.log 2>&1; echo "pip check exit=$?" >> $D/gates.txt
 (cd /tmp && /tmp/cand-install/bin/python -c "import chronus,sys;print('installed', chronus.__version__, chronus.__file__)" >> $D/install.log 2>&1); echo "installed import exit=$?" >> $D/gates.txt
