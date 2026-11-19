@@ -136,10 +136,48 @@ Removed one-off edit scripts (`_fix*.py`, `_add_*.py`, `_find_multiline_defs.py`
 `chronus_files.txt`), the committed `.pytest_temp_ga_handover/` and
 `hendrix.mhtml` (a saved internal page with personal data; the repository is
 public). `hendrix.mhtml` **remains in git history**; purging it needs a history
-rewrite and force-push, which is an owner decision. Kept: `BLOCKER_TOE_1.patch`
-(instruction), `BLOCKER_MILLENIEIEUM_1/2.patch` (they apply in neither direction
-to current code; owner decision), and `docs_readme.txt` (1.9 MB of corrupted
-UTF-16 text; needs an owner decision on whether a readable source exists).
+rewrite and force-push. The owner decided (2026-11-19) to leave history intact, so
+there will be no rewrite and no force-push. `BLOCKER_TOE_1.patch` is kept on
+instruction.
+
+### Legacy root files retired (2026-11-19)
+
+Before deleting them, each file was compared with the current tree and with git
+history (4,380 commits). They are not lost: each file stays in history at the
+commit before its removal, with blobs `f785714a` (`BLOCKER_MILLENIEIEUM_1.patch`),
+`db9405ad` (`BLOCKER_MILLENIEIEUM_2.patch`) and `8cab95aa` (`docs_readme.txt`).
+
+- **`BLOCKER_MILLENIEIEUM_2.patch`** (commit `e410c72f`, "max_seconds blocker")
+  passes `MINING_MAX_SECONDS` into `engine.run(max_seconds=...)`. That change is
+  already on main in `src/chronus/execution/mining_entrypoint.py` (`async_main`
+  reads `MINING_MAX_SECONDS`, and `run()` validates a positive integer). The patch
+  only adds a comment to `chronus_live_miner.py`, so nothing in it is unique.
+- **`BLOCKER_MILLENIEIEUM_1.patch`** rewrites `scripts/ci/manifest.py`. Both sides
+  of the patch belong to the withdrawn "fabricated manifest" generator. The patch
+  adds a hard-coded HMAC key (`SECRET_BUILD_KEY`), `shell=True` command strings,
+  an unconditional `PRODUCTION_QUALIFIED` status and constant metrics
+  (`mypy_strict: PASS`, `submit_rate_achieved_sec: 15`). The maintained
+  `scripts/ci/manifest.py` replaced that design: it runs literal argv without a
+  shell, writes unsigned diagnostics and stays `NOT_QUALIFIED` without an external
+  release-evidence packet. Applying the patch would be a security and honesty
+  regression. It holds no implementation or evidence to keep.
+- **`docs_readme.txt`** is not random corruption. It is a 968,227-character UTF-16
+  concatenation of 170 Markdown documents that had already been mojibaked
+  (UTF-8 read as cp1252). After decoding and repairing it, 7,115 substantive lines
+  (≥ 40 characters) were checked against every tracked text file. 6,978 are in the
+  current tree verbatim, and 76 of the 137 others are in git history. After
+  matching on alphanumeric content only, 14 lines remain unmatched. They are
+  (a) two rows of a "claim audit" table whose withdrawals are already stated in
+  `STATUS.md` ("historical qualification manifests and benchmark claims remain
+  provenance only") and in `docs/executive/executive-architecture-and-project-summary.md`;
+  (b) the header block of a "v36.0 Irrefutable CI System Audit" certificate. That
+  block claims `PRODUCTION_QUALIFIED`, "370 passed" and a verified zk-STARK at
+  commit `21f69805`, which are the fabricated-manifest claims withdrawn by
+  `e410c72f`; and (c) one ASCII-art line showing a configured "10.0 EH/s" cap.
+  None of these is research, implementation or reproducible evidence, so the file
+  holds nothing unique to preserve.
+
+All three files are deleted in this PR.
 
 ### CI execution evidence
 
@@ -148,5 +186,8 @@ passed counts below the suite floor, skips outside the hardware/platform/pinned
 dependency allowlist, and xfails missing from `tests/known-failures.txt`. The main
 tests, OpenCL reference and new pinned scikit-learn 1.8.0 dataset jobs run it, and
 `ci-required` fails unless every required job concluded `success` (skipped,
-cancelled or never-started jobs are not passing evidence). Making `ci-required` the
-required status check is a repository-settings change left to the owner.
+cancelled or never-started jobs are not passing evidence). On 2026-11-19
+`ci-required` (context `CI required (every job executed and succeeded)`, GitHub
+Actions app 15368) was added to the required status checks of the `main-production`
+ruleset (id 27423249). The strict up-to-date policy is kept and there are no bypass
+actors.

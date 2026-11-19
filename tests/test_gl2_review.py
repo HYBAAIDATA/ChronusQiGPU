@@ -276,11 +276,10 @@ def test_folded_register7_fold_roundtrip_and_commutation() -> None:
 def test_folded_register7_exhaustive_128(k: int) -> None:
     mask = (1 << k) - 1
     mk = hensellift_m15(k)
-    rows = [{"nonce_api": 2083236893}]
-    if os.path.exists(HEADERS):
-        with open(HEADERS, encoding="utf-8") as fh:
-            rows = json.load(fh)
-    for nonce in [2083236893] + [r["nonce_api"] for r in rows[:20]]:
+    with open(HEADERS, encoding="utf-8") as fh:
+        rows = json.load(fh)["blocks"]
+    assert len(rows) == 500
+    for nonce in [2083236893] + [r["fields"]["nonce"] for r in rows[:20]]:
         base = nonce & ~0x7F
         r = FoldedRegister7.from_domain_offset(base, k=k)
         f = r.fold_mk()
