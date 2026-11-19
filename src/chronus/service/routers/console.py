@@ -14,6 +14,17 @@ from chronus.service.routers.workloads import workload_counts
 
 router = APIRouter(prefix="/console", tags=["console"])
 
+# Characters that could end the inline <script> element or open an HTML
+# comment/CDATA section when JSON is embedded in a script block.
+_SCRIPT_JSON_ESCAPES = {ord("<"): "\\u003c", ord(">"): "\\u003e", ord("&"): "\\u0026",
+                        0x2028: "\\u2028", 0x2029: "\\u2029"}
+
+
+def _script_json(value: object) -> str:
+    """Serialise ``value`` as JSON that is safe inside an inline ``<script>``."""
+    return json.dumps(value).translate(_SCRIPT_JSON_ESCAPES)
+
+
 _PAGE = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -90,6 +101,6 @@ async def console(
             lane_count=storage["lane_count"],
             total_workloads=total_workloads,
             active_workloads=active_workloads,
-            telemetry=json.dumps(telemetry),
+            telemetry=_script_json(telemetry),
         )
     )
