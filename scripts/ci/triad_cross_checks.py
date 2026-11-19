@@ -232,8 +232,13 @@ def check_readiness_and_console(tmp: Path) -> None:
     con.execute("UPDATE objects SET payload=? WHERE object_id=?", (b"corrupted", rec.object_id))
     con.commit(); con.close()
     custody_env = ("CHRONUS_MINING_CUSTODY_PATH", "CHRONUS_MINING_ADMIN_CUSTODY_PATH")
-    saved = {k: os.environ.get(k) for k in custody_env}
+    # Isolate the probe from inherited execution-adapter configuration: an adapter outage
+    # also yields 503 and must not be mistaken for custody-derived readiness.
+    isolated_env = ("CHRONUS_EXECUTION_BASE_URL",)
+    saved = {k: os.environ.get(k) for k in custody_env + isolated_env}
     try:
+        for k in isolated_env:
+            os.environ.pop(k, None)
         for k in custody_env:
             os.environ[k] = str(custody)
         client = TestClient(create_app())
@@ -245,10 +250,14 @@ def check_readiness_and_console(tmp: Path) -> None:
             else:
                 os.environ[k] = v
     body = ready.json() if ready.headers.get("content-type", "").startswith("application/json") else {}
-    if ready.status_code >= 500 and ready.status_code != 503:
-        status = "FAIL"
-    elif ready.status_code == 503:
+    reason = json.dumps(body).lower()
+    custody_reason = any(k in reason for k in ("custody", "theseus", "storage", "integrity"))
+    if ready.status_code == 503 and custody_reason:
         status = "PASS"
+    elif ready.status_code >= 500:
+        # Any other 5xx (including a 503 for an unrelated reason) is not evidence of
+        # custody-derived readiness.
+        status = "FAIL"
     else:
         status = "GAP"
     record("X6", "Readiness derived from component health (THESEUS custody)", status,
@@ -301,6 +310,28 @@ def check_storage_self_healing(tmp: Path) -> None:
            f"materialised bytes equal original: {out == payload}; stored payload re-hashes to the unchanged "
            f"content address: {hashlib.sha256(healed).hexdigest() == r.representation_object_id}; "
            f"self_heal_events: {events}; reopen+materialise {elapsed * 1000:.1f} ms (single local run, box CPU)")
+
+    # Out-of-bound damage must fail closed: 9 corrupted bytes in one 32-byte block exceeds t = 8.
+    db2 = tmp / "selfheal_bound.sqlite3"
+    triad2 = ProductionTriad(str(db2))
+    payload2 = os.urandom(4096)
+    r2 = triad2.put("tenant-a", payload2)
+    con = sqlite3.connect(db2)
+    stored2 = bytearray(con.execute("SELECT payload FROM objects WHERE object_id=?",
+                                    (r2.representation_object_id,)).fetchone()[0])
+    for i in range(9):
+        stored2[i] ^= 0xFF
+    tampered = bytes(stored2)
+    con.execute("UPDATE objects SET payload=? WHERE object_id=?", (tampered, r2.representation_object_id))
+    con.commit(); con.close()
+    err = _raises(lambda: ProductionTriad(str(db2)).materialise(r2))
+    con = sqlite3.connect(db2)
+    after = con.execute("SELECT payload FROM objects WHERE object_id=?", (r2.representation_object_id,)).fetchone()[0]
+    con.close()
+    unchanged = after == tampered
+    record("X8b", "Self-healing beyond the RS bound (9 bad bytes in one 32-byte block) fails closed",
+           "PASS" if (err and unchanged) else "FAIL",
+           f"reopen/materialise raised: {err}; stored payload left unmodified: {unchanged}")
 
 
 def main() -> int:
