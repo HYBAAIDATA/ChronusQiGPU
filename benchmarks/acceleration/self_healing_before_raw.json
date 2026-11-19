@@ -1,0 +1,135 @@
+{
+  "benchmark": "theseus-self-healing (before: PR #176 head, pure-Python Berlekamp-Welch)",
+  "hardware": {
+    "cpu": "Intel(R) Xeon(R) Processor",
+    "logical_cpus": 8,
+    "machine": "x86_64",
+    "os": "Linux-6.12.113+-x86_64-with-glibc2.41",
+    "python": "3.13.5",
+    "numpy": "2.5.5",
+    "sqlite": "3.46.1",
+    "git_commit": "8c20391769498f8e631b0e64975bb8fcd5ab0d1e",
+    "accelerator": "none used (CPU numpy int64; OpenCL/CUDA tensor backends need a provisioned GPU)"
+  },
+  "store_reads": {
+    "4KiB": {
+      "healthy_read_self_healing_on": {
+        "count": 30,
+        "median_ms": 0.5,
+        "p95_ms": 0.641,
+        "min_ms": 0.394,
+        "max_ms": 0.641
+      },
+      "healthy_read_self_healing_off": {
+        "count": 30,
+        "median_ms": 0.473,
+        "p95_ms": 0.581,
+        "min_ms": 0.412,
+        "max_ms": 0.67
+      },
+      "corrupted_read_worst_case": {
+        "count": 3,
+        "median_ms": 834.496,
+        "p95_ms": 895.257,
+        "min_ms": 677.779,
+        "max_ms": 895.257
+      },
+      "corrupted_read_one_byte": {
+        "count": 3,
+        "median_ms": 10.744,
+        "p95_ms": 19.38,
+        "min_ms": 8.939,
+        "max_ms": 19.38
+      }
+    },
+    "64KiB": {
+      "healthy_read_self_healing_on": {
+        "count": 30,
+        "median_ms": 0.49,
+        "p95_ms": 0.58,
+        "min_ms": 0.439,
+        "max_ms": 0.659
+      },
+      "healthy_read_self_healing_off": {
+        "count": 30,
+        "median_ms": 0.491,
+        "p95_ms": 0.585,
+        "min_ms": 0.436,
+        "max_ms": 0.679
+      },
+      "corrupted_read_worst_case": {
+        "count": 3,
+        "median_ms": 10514.543,
+        "p95_ms": 10538.105,
+        "min_ms": 10343.093,
+        "max_ms": 10538.105
+      },
+      "corrupted_read_one_byte": {
+        "count": 3,
+        "median_ms": 68.486,
+        "p95_ms": 120.744,
+        "min_ms": 60.662,
+        "max_ms": 120.744
+      }
+    },
+    "256KiB": {
+      "healthy_read_self_healing_on": {
+        "count": 30,
+        "median_ms": 0.773,
+        "p95_ms": 1.032,
+        "min_ms": 0.602,
+        "max_ms": 1.124
+      },
+      "healthy_read_self_healing_off": {
+        "count": 30,
+        "median_ms": 0.682,
+        "p95_ms": 0.861,
+        "min_ms": 0.578,
+        "max_ms": 1.015
+      },
+      "corrupted_read_worst_case": {
+        "count": 3,
+        "median_ms": 43456.701,
+        "p95_ms": 44529.026,
+        "min_ms": 42872.513,
+        "max_ms": 44529.026
+      },
+      "corrupted_read_one_byte": {
+        "count": 3,
+        "median_ms": 237.398,
+        "p95_ms": 242.488,
+        "min_ms": 217.655,
+        "max_ms": 242.488
+      }
+    }
+  },
+  "startup_recovery": {
+    "objects": 200,
+    "object_bytes": 65536,
+    "damaged_objects": 20,
+    "damage": "8 bytes in every 32-byte block of each damaged object",
+    "open_clean_s": 0.094,
+    "open_with_recovery_s": 216.982,
+    "repairs_recorded": 20
+  },
+  "concurrent_repair": {
+    "threads": {
+      "workers": 8,
+      "reads": 32,
+      "wall_s": 41.539,
+      "repairs_recorded": 1
+    },
+    "processes": {
+      "workers": 8,
+      "wall_s": 61.715,
+      "per_process_open_and_read": {
+        "count": 8,
+        "median_ms": 60107.548,
+        "p95_ms": 61676.267,
+        "min_ms": 57570.703,
+        "max_ms": 61676.267
+      },
+      "repairs_recorded": 1
+    }
+  }
+}
