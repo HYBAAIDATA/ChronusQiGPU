@@ -98,14 +98,14 @@ chronus-hr-api = "chronus.service.production_hr_api:main"
 ga-api = "ga.cli:main"
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = {"" = "src", golden_ontology = "golden_ontology"}
 
 [tool.setuptools.dynamic]
 version = {attr = "chronus.__version__"}
 
 [tool.setuptools.packages.find]
-where = ["src"]
-include = ["chronus*", "ga*"]
+where = ["src", "."]
+include = ["chronus", "chronus.*", "ga", "ga.*", "golden_ontology", "golden_ontology.*"]
 
 [tool.setuptools.package-data]
 "chronus.kernels" = ["*.cl"]
