@@ -142,6 +142,13 @@ def test_plan_semantics_cannot_be_reinterpreted(field, value):
         a.require_context(replace(p, **{field: value}), GENESIS, b"\x00" * 32)
 
 
+def test_expired_plan_is_refused_by_resident_context():
+    plan, artifact = issue()
+    expired = replace(plan, created_at=plan.created_at - 1, expires_at=plan.created_at)
+    with pytest.raises(ValueError, match="expired SearchPlan"):
+        artifact.require_context(expired, GENESIS, bytes(32))
+
+
 def test_header_target_and_tampering_refused():
     p, a = issue()
     detached = p.evidence_refs["resident_hendrix"]["shards"]
@@ -254,7 +261,7 @@ def test_all_evidence_is_detached_and_keeps_plan_digest():
     artifact.require_context(plan, GENESIS, bytes(32))
 
 
-def test_execution_snapshots_inputs_before_validation(monkeypatch):
+def test_execution_snapshots_inputs_before_validation(monkeypatch):  # mock-ok: inject caller mutation while exercising real validation and hashing
     from chronus.execution.resident_hendrix import execute_resident
     from chronus.pythia.search_plan import WorkIdentity
     header, target = bytearray(GENESIS), bytearray(b"\xff" * 32)
@@ -268,7 +275,7 @@ def test_execution_snapshots_inputs_before_validation(monkeypatch):
         header[:] = bytes(80)
         target[:] = bytes(32)
 
-    monkeypatch.setattr(ResidentHendrix, "require_context", validate_then_mutate)
+    monkeypatch.setattr(ResidentHendrix, "require_context", validate_then_mutate)  # mock-ok: wrapper calls real validation before mutating caller inputs
     result = execute_resident(plan, artifact, header, target, identity, 0, 1)
     assert result["nonce"] == plan.base_step
     from chronus.execution.asic_sha256 import sha256d_unrolled

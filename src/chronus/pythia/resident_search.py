@@ -75,7 +75,7 @@ def compile_hendrix_plan(plan, header, target_be, state, *, use_hilbert=True):
         raise ValueError("SearchPlan references a different mathematical substrate")
     if not isinstance(state, ExactSearchState):
         raise ValueError(
-            "exact first-principles substrate required; no approximate fallback"
+            "expected an exact search substrate"
         )
     if tuple(plan.lane_order) != exact_face_order(header, state):
         raise ValueError(

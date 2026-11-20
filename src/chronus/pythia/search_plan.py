@@ -340,6 +340,10 @@ class SearchPlan:
                 raise ValueError("toe_frame_id must match evidence_refs.toe_frame_digest")
         object.__setattr__(self, "evidence_refs", _EvidenceSnapshot(refs))
 
+    def is_expired(self) -> bool:
+        """Check the deadline in the issuing clock's monotonic seconds."""
+        return self.expires_at is not None and time.monotonic() >= self.expires_at
+
     def is_valid_for(self, identity: WorkIdentity | None) -> bool:
         """False unless session, Stratum generation and fingerprint all match."""
         if identity is None:
@@ -350,6 +354,4 @@ class SearchPlan:
             or self.job_fingerprint != identity.job_fingerprint
         ):
             return False
-        if self.expires_at is not None and time.monotonic() >= self.expires_at:
-            return False
-        return True
+        return not self.is_expired()

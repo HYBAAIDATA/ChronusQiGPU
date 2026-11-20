@@ -13,7 +13,6 @@ import math
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-import time
 from collections.abc import Mapping
 from enum import Enum
 
@@ -229,13 +228,13 @@ class ResidentHendrix:
             "state": "EXCLUDED_BY_EXACT_CONTRACT",
             "heuristics_used": False,
         }:
-            raise ValueError("advisory heuristic cannot enter exact execution profile")
+            raise ValueError("advisory input cannot enter exact execution profile")
         return True
 
     def require_context(self, plan, header, target_be):
         self.validate()
         v = self.as_dict()
-        if plan.expires_at is not None and time.monotonic() >= plan.expires_at:
+        if plan.is_expired():
             raise ValueError("expired SearchPlan")
         if v["geometry"]["precompute_digest"] != plan.evidence_refs.get(
             "search_precompute_digest"
