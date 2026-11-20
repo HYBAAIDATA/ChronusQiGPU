@@ -1,0 +1,97 @@
+name: Golden Ontology verification
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: read
+  pull-requests: read
+concurrency:
+  group: golden-ontology-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  stdlib:
+    name: Golden Ontology Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.10', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Execute conformance and gate regression
+        run: |
+          set -euo pipefail
+          mkdir -p golden-evidence
+          git rev-parse HEAD | tee golden-evidence/commit.txt
+          python --version | tee golden-evidence/python.txt
+          python -m unittest discover -s tests -p test_golden_ontology.py -v 2>&1 | tee golden-evidence/unittest.log
+      - name: Execute paired fixture benchmark
+        run: |
+          set -euo pipefail
+          python -m verify.benchmark > golden-evidence/benchmark.json
+          python -c 'import json; assert json.load(open("golden-evidence/benchmark.json"))["fold"]["all_under_supplied_one_second"]'
+      - name: Record refusal or authenticated QC acceptance
+        env:
+          GOLDEN_QC_REVIEWER: ${{ vars.GOLDEN_QC_REVIEWER }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          set +e
+          python governance/gate.py > golden-evidence/qc-gate.log 2>&1
+          rc=$?
+          set -e
+          cat golden-evidence/qc-gate.log
+          echo "$rc" > golden-evidence/qc-exit-code.txt
+          state=$(python -c 'import json; print(next(f["status"] for f in json.load(open("FINDINGS.json"))["findings"] if f["id"]=="QC-001"))')
+          if [ "$state" = OPEN ]; then
+            test "$rc" -eq 1
+            grep -F 'open findings: QC-001' golden-evidence/qc-gate.log
+          elif [ "$state" = CLOSED ]; then
+            test "$rc" -eq 0
+          else
+            exit 1
+          fi
+      - name: Hash execution evidence
+        if: always()
+        run: |
+          cd golden-evidence
+          sha256sum *.txt *.log *.json > manifest.sha256
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: golden-ontology-python-${{ matrix.python }}
+          path: golden-evidence/
+          if-no-files-found: error
+  lean:
+    name: Golden Fold Lean kernel and axiom audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Provision pinned core Lean
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq elan
+          elan toolchain install leanprover/lean4:v4.36.0
+      - name: Check proof and axioms
+        run: |
+          set -euo pipefail
+          mkdir -p golden-lean-evidence
+          git rev-parse HEAD > golden-lean-evidence/commit.txt
+          elan run leanprover/lean4:v4.36.0 lean --version | tee golden-lean-evidence/toolchain.txt
+          elan run leanprover/lean4:v4.36.0 lean formal/GoldenFold.lean 2>&1 | tee golden-lean-evidence/compile.log
+          bash formal/check_golden_fold.sh 2>&1 | tee golden-lean-evidence/lean.log
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: golden-ontology-lean
+          path: golden-lean-evidence/
+          if-no-files-found: error

@@ -1,0 +1,355 @@
+{
+  "assignment_id": "GO-20261119-2212-v2",
+  "repository": "HYBAAIDATA/ChronusQiGPU",
+  "baseline": "93d6068f2c668f3f1106a9e6df204f37033fc163",
+  "prior_pr_head": "a2d3c0d0edd22f78c2e085cf98479643cc3cd137",
+  "working_ref": "implementation/golden-nature-exact-verifier",
+  "pr": "https://github.com/HYBAAIDATA/ChronusQiGPU/pull/207",
+  "ledger_parent": "f97c3c91351bd4c266ecfe33d7b36937211384e5",
+  "source": {
+    "reference": "User's 2026-11-19 22:12 UTC conversation message beginning 'Below is the upgraded, publication-grade golden_ontology package'",
+    "extract_path": "evidence/golden_ontology/requirements-extract.txt",
+    "extract_sha256": "9906e4238550d6976043c31eba0007d877d9992b2f35fb69d6973d845f73efba",
+    "whole_message_digest": "UNAVAILABLE; digest is only of verbatim requirement extracts, not of full chat/pasted code",
+    "extract_commit": "e137cb7e7437f463d38964876c4063d920051bbc",
+    "extract_note": "Verbatim input extract retained at immutable source commit. Current tracked file is a provenance pointer and policy-compatible requirement summary, not the original bytes."
+  },
+  "authority": "AGENTS.md; DONE_CRITERIA.md; existing no_dressing, purity, test_reality and release gate policy; no changes to those policies",
+  "discovery": {
+    "reviewed": [
+      "PR #207 initial CodeRabbit findings",
+      "PR #201 and #202 dependency/qualification status from prior assignment",
+      "theory_of_everything.py GoldenArithmetic and rank methods (prior repository discovery)",
+      "src/chronus/backends/metallic.py",
+      "src/chronus/math/golden_nature.py",
+      "scripts/fold_verify.py",
+      "formal/GL2Mod256.lean",
+      "formal/check_gl2.sh",
+      ".github/workflows/ci.yml",
+      "scripts/ci/purity_gate.py",
+      "scripts/ci/no_dressing.py",
+      "scripts/ci/dressing_policy.json",
+      "scripts/ci/test_reality.py",
+      "tests_installed/test_production_paths.py",
+      "pyproject.toml"
+    ],
+    "excluded": [
+      "Protected mining, custody, recovery and accelerator internals unchanged; no claim of production qualification",
+      "TOE maintained consumer integration remains a separately open prior-PR obligation, not inferred from the standalone package",
+      "Real-telemetry data unavailable, generated benchmark fixtures explicitly controlled and not live evidence"
+    ]
+  },
+  "obligations": [
+    {
+      "id": "GO-01",
+      "requirement": "All core modules use the Python standard library exclusively.",
+      "implementation": "golden_ontology/; stdlib unittest",
+      "owner": "executor except independent QC / owner-supplied data",
+      "required_evidence": "commit-linked executions and independent QC when applicable",
+      "observed": "prior Python 3.10,3.12,3.13 PASS; final-head rerun required",
+      "execution_status": "VERIFIED_PRIOR_HEAD",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
+      "qc": "PENDING"
+    },
+    {
+      "id": "GO-02",
+      "requirement": "performing modular reduction inside every fast-doubling iteration; Eliminates silent truncation (% m on inputs).",
+      "implementation": "substrate.py; fold.py; normative vectors and 4096-bit tests",
+      "owner": "executor except independent QC / owner-supplied data",
+      "required_evidence": "commit-linked executions and independent QC when applicable",
+      "observed": "prior PASS; positive-width and Sequence contract test added at ledger revision",
+      "execution_status": "VERIFIED_PRIOR_HEAD",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
+      "qc": "PENDING"
+    },
+    {
+      "id": "GO-03",
+      "requirement": "full unimodular Pisot-Vijayaraghavan (PV) registry (golden, silver, plastic, supergolden, tribonacci)",
+      "implementation": "substrate.py; exact determinant/characteristic polynomial/root bounds; Lucas traces and finite matrix orders",
+      "owner": "executor except independent QC / owner-supplied data",
+      "required_evidence": "commit-linked executions and independent QC when applicable",
+      "observed": "prior 5-family tests PASS; new generalized Lucas test pending",
+      "execution_status": "VERIFIED_PRIOR_HEAD",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
+      "qc": "PENDING"
+    },
+    {
+      "id": "GO-04",
+      "requirement": "Exact algebraic certificates before any floating-point evaluation.",
+      "implementation": "resonance.py; norm and distinct-index irrationality tests",
+      "owner": "executor except independent QC / owner-supplied data",
+      "required_evidence": "commit-linked executions and independent QC when applicable",
+      "observed": "prior PASS",
+      "execution_status": "VERIFIED_PRIOR_HEAD",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
+      "qc": "PENDING"
+    },
+    {
+      "id": "GO-05",
+      "requirement": "Wires all 5 PV families into PisotFilter",
+      "implementation": "filter.py; exact conjugate-power symbolic descriptor and rational upper bound; numerical kernel",
+      "owner": "executor except independent QC / owner-supplied data",
+      "required_evidence": "commit-linked executions and independent QC when applicable",
+      "observed": "prior five-family filter PASS; new exact descriptor tests pending",
+      "execution_status": "VERIFIED_PRIOR_HEAD",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
+      "qc": "PENDING"
+    },
+    {
+      "id": "GO-06",
+      "requirement": "ZeckendorfMap with strict monotonicity verification.",
+      "implementation": "filter.py; tests/test_golden_ontology.py",
+      "owner": "executor except independent QC / owner-supplied data",
+      "required_evidence": "commit-linked executions and independent QC when applicable",
+      "observed": "prior PASS, tie splits and merges rejected",
+      "execution_status": "VERIFIED_PRIOR_HEAD",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
+      "qc": "PENDING"
+    },
+    {
+      "id": "GO-07",
+      "requirement": "Adversarial Classical Benchmarks (verify/benchmark.py)",
+      "implementation": "11 methods, 4 controlled fixtures, 3 seeds; 132 records per Python lane; four warps; five 4096-bit measurements",
+      "owner": "executor except independent QC / owner-supplied data",
+      "required_evidence": "commit-linked executions and independent QC when applicable",
+      "observed": "prior EXECUTED; all raw outcomes retained in hashed artifacts; no superiority/real data claim",
+      "execution_status": "VERIFIED_PRIOR_HEAD",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
+      "qc": "PENDING"
+    },
+    {
+      "id": "GO-08",
+      "requirement": "Machine-Checked Formal Proof (formal/GoldenFold.lean); General Pisano Periodicity Proof",
+      "implementation": "formal/GoldenFold.lean; check_golden_fold.sh",
+      "owner": "executor except independent QC / owner-supplied data",
+      "required_evidence": "commit-linked executions and independent QC when applicable",
+      "observed": "prior compiler and 16-theorem axiom audit PASS; minimal order documented mathematically, not kernel-proven",
+      "execution_status": "VERIFIED_PRIOR_HEAD",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
+      "qc": "PENDING"
+    },
+    {
+      "id": "GO-09",
+      "requirement": "Normative Third-Party QC Specification",
+      "implementation": "spec/GOLDEN_ONTOLOGY.md; spec/test_vectors.json; #210",
+      "owner": "executor except independent QC / owner-supplied data",
+      "required_evidence": "commit-linked executions and independent QC when applicable",
+      "observed": "spec and 6 accept + 11 reject vectors implemented; third-party reconstruction BLOCKED on authorized reviewer",
+      "execution_status": "BLOCKED_INDEPENDENT_QC",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
+      "qc": "PENDING"
+    },
+    {
+      "id": "GO-10",
+      "requirement": "Fail-Closed Governance Gate",
+      "implementation": "FINDINGS.json; governance/gate.py; workflow",
+      "owner": "executor except independent QC / owner-supplied data",
+      "required_evidence": "commit-linked executions and independent QC when applicable",
+      "observed": "prior exact open-record exit 1 across three lanes; authenticated review acceptance remains unavailable, no independent reviewer configured",
+      "execution_status": "VERIFIED_PRIOR_HEAD",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
+      "qc": "PENDING"
+    },
+    {
+      "id": "GO-11",
+      "requirement": "Loads spec/test_vectors.json directly, enforces every accept and reject vector, verifies 4096-bit modular fast-doubling latency/bijectivity, and checks all five PV families and Q(5) norm certificates.",
+      "implementation": "tests/test_golden_ontology.py; workflow",
+      "owner": "executor except independent QC / owner-supplied data",
+      "required_evidence": "commit-linked executions and independent QC when applicable",
+      "observed": "prior 10/10 methods per lane; supplied 1-second gate passed; new test count pending",
+      "execution_status": "VERIFIED_PRIOR_HEAD",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
+      "qc": "PENDING"
+    },
+    {
+      "id": "GO-12",
+      "requirement": "Preserve previous PR #207 implementation and acceptance boundaries",
+      "implementation": "Chronus exact producer; research adapter; installed-wheel test; prior eight CodeRabbit review findings",
+      "owner": "executor except independent QC / owner-supplied data",
+      "required_evidence": "commit-linked executions and independent QC when applicable",
+      "observed": "prior lint, purity, evidence-first wording, test-reality and main packaging jobs PASS; new installed-wheel test pending; non-author QC not substituted",
+      "execution_status": "PASS_PARTIAL_WIDER_CI_PENDING",
+      "final_result": "See verified_execution; current evidence-only revision requires rerun. Independent QC remains pending.",
+      "qc": "PENDING"
+    },
+    {
+      "id": "GO-13",
+      "requirement": "Previous PR #207 TOE integration and real paired evidence",
+      "implementation": "maintained TOEBridge and actual dataset need upstream coordination",
+      "owner": "executor except independent QC / owner-supplied data",
+      "required_evidence": "commit-linked executions and independent QC when applicable",
+      "observed": "BLOCKED; no production routing or claimant authority expanded",
+      "execution_status": "BLOCKED",
+      "final_result": "UNAVAILABLE at ledger revision; previous evidence distinct",
+      "qc": "PENDING"
+    }
+  ],
+  "prior_verified_execution": {
+    "head": "1fe7b4d07e1058e42621af56be75a1d8c29a002a",
+    "checkout": "9206096176d270c1ae30c4985cd657ea4bb10f8f",
+    "run": "44628810329",
+    "commands": [
+      "python -m unittest discover -s tests -p test_golden_ontology.py -v",
+      "python -m verify.benchmark",
+      "python governance/gate.py",
+      "elan run leanprover/lean4:v4.36.0 lean formal/GoldenFold.lean",
+      "bash formal/check_golden_fold.sh"
+    ],
+    "environment": "GitHub-hosted Ubuntu Linux x86-64, Python versions as recorded; Lean 4.36.0",
+    "python_methods_per_lane": 10,
+    "unit_roundtrip_seconds": [
+      0.2608017480000058,
+      0.29405440000000027,
+      0.2999182740000208
+    ],
+    "benchmark_medians_ns": [
+      263278319,
+      293681970,
+      294884564
+    ],
+    "benchmark_rows_per_lane": 132,
+    "wire_gate_exit": 1,
+    "lean_declarations": 16,
+    "lean_axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "all_digests_verified_by_executor": true,
+    "manifest_checks": "All three Python artifact file manifests matched; Lean archive hash matched",
+    "artifacts": [
+      {
+        "name": "Python 3.10.22",
+        "url": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44628810329/artifacts/14580138155",
+        "sha256": "3fd2b5175858d0b6aab8d4dd9942c43865445c177b734c996cfeb2959da30307"
+      },
+      {
+        "name": "Python 3.12.16",
+        "url": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44628810329/artifacts/14579014420",
+        "sha256": "dd9ca532979d908e9a8ae055f8e858c657312b127513374793d258694de1152c"
+      },
+      {
+        "name": "Python 3.13.18",
+        "url": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44628810329/artifacts/14579898716",
+        "sha256": "fe4800d2d98c4c03392be175f83356e48450a69cfbdafa939bae9fc37aa3b582"
+      },
+      {
+        "name": "Lean",
+        "url": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44628810329/artifacts/14580832150",
+        "sha256": "645a68b0ad75347624cc9c1ebeec66fcf52f321f4fd89a4d1f1a83edeff7ef5d"
+      }
+    ],
+    "fixture_results": {
+      "mean_rmse": {
+        "pisot_golden": 0.04530666,
+        "pisot_silver": 0.04399294,
+        "pisot_plastic": 0.05008048,
+        "pisot_supergolden": 0.04730369,
+        "pisot_tribonacci": 0.0437851,
+        "raw": 0.07787705,
+        "savgol_5": 0.05481662,
+        "savgol_9": 0.04122962,
+        "sma_5": 0.04225682,
+        "sma_9": 0.06114652,
+        "causal_ema_035": 0.12769125
+      },
+      "lowest_rmse_case_counts": {
+        "sma_5": 2,
+        "sma_9": 3,
+        "pisot_tribonacci": 3,
+        "savgol_9": 4
+      },
+      "rank_drift": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "classification": "controlled generated test fixtures, no live telemetry, classical SG9 lowest mean RMSE; rounded aggregate from verified raw files"
+    }
+  },
+  "retained_failures": [
+    {
+      "run": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44627904238",
+      "head": "145aea05a087b19d092f2d369e82aed90184fa88",
+      "checkout": "4d865d7f56b61504f7b50bf3900d74678fb935ed",
+      "failure": "Lean audit exited 1; original wrapper suppressed compiler diagnostics",
+      "artifact_sha256": "6dada6c10ff2e2f7034e50763f5f6cf31516a54c76a6553ccea480ad40ed4649"
+    },
+    {
+      "run": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44628202484",
+      "head": "7bf0f2891cab63264b668d45b0b94c6a64a0f878",
+      "failure": "Lean unsolved goal 1 % m = 1; mod_lift proof remediated at 1fe7b4d"
+    },
+    {
+      "run": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44627904174",
+      "failure": "Evidence-first wording and test classification",
+      "artifact": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44627904174/artifacts/14580067140",
+      "sha256": "55bbc9bf7feec61fa2bba1e81ed19654eb7202599559854974781c550b4b6895"
+    },
+    {
+      "head": "e137cb7e7437f463d38964876c4063d920051bbc",
+      "run": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44629922870",
+      "failure": "Claim-token policy rejected wording in verbatim requirements extract. Original extract retained at immutable commit; current evidence wording corrected. No policy exemption."
+    }
+  ],
+  "final": {
+    "execution": "FOCUSED_VERIFICATION_PASS_ON_RECORDED_HEAD; EVIDENCE_ONLY_REVISION_REQUIRES_CI",
+    "evidence": "Verified downloadable artifact bytes, not reviewer approval",
+    "independent_qc": "PENDING #210; no assigned reviewer or author substitute",
+    "production": "HOLD",
+    "merged": false,
+    "publication": false,
+    "unavailable": [
+      "Real TOE inputs and real-data evaluation",
+      "Authorized independent reviewer",
+      "Final-head CI pending at ledger commit"
+    ]
+  },
+  "verified_execution": {
+    "head": "e137cb7e7437f463d38964876c4063d920051bbc",
+    "checkout": "f55616ceca69ea9fe71dd3ac559ab38704c06193",
+    "run": "44629923168",
+    "python_methods_per_lane": 12,
+    "accept_vectors_per_lane": 6,
+    "reject_vectors_per_lane": 11,
+    "roundtrip_seconds": [
+      0.24763436899999647,
+      0.3845733750000022,
+      0.3492069299999976
+    ],
+    "benchmark_medians_ns": [
+      247379554,
+      378816709,
+      348764930
+    ],
+    "all_15_samples_under_one_second": true,
+    "benchmark_rows_per_lane": 132,
+    "lean_declarations": 16,
+    "gate_exit_codes": [
+      1,
+      1,
+      1
+    ],
+    "artifact_sha256_verified": true,
+    "manifest_verified": true,
+    "artifacts": [
+      {
+        "url": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44629923168/artifacts/14579734686",
+        "sha256": "61a2aea08956506dbf6b0453d388b4e6cd6c75fd2bcc3c82a386f60f377d3e2d"
+      },
+      {
+        "url": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44629923168/artifacts/14580388740",
+        "sha256": "cfc80d7f615c5b32ce37636e2cd070bf14f9c8db01b3f409439bf28aaa3cce3a"
+      },
+      {
+        "url": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44629923168/artifacts/14581231821",
+        "sha256": "9b38304e83d5a0aeec0e8136cbb52a8805f3437520e0ac8f933bfe52b6cafcb5"
+      },
+      {
+        "url": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44629923168/artifacts/14582140161",
+        "sha256": "8f5d5835b0201c383104e1ac327423c5184404ea6f96fa0b73f85fef662d7e9c"
+      }
+    ]
+  }
+}

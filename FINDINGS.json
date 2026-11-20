@@ -1,0 +1,13 @@
+{
+  "package": "golden_ontology",
+  "version": "2.0.0",
+  "findings": [
+    {
+      "id": "QC-001",
+      "title": "Independent third-party QC verification against spec/test_vectors.json",
+      "status": "OPEN",
+      "owner": "independent_auditor",
+      "issue": "https://github.com/HYBAAIDATA/ChronusQiGPU/issues/210"
+    }
+  ]
+}

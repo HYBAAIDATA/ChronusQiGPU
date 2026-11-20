@@ -1,0 +1,19 @@
+Golden Ontology v2.0 requirements: provenance pointer and normalized summary.
+Original verbatim extract (unchanged historical bytes): https://github.com/HYBAAIDATA/ChronusQiGPU/blob/e137cb7e7437f463d38964876c4063d920051bbc/evidence/golden_ontology/requirements-extract.txt
+Original extract SHA-256: 9906e4238550d6976043c31eba0007d877d9992b2f35fb69d6973d845f73efba
+The original quotation is not a validated capability claim. See the obligation ledger for each requirement, acceptance evidence, and unresolved items.
+
+All core modules use the Python standard library exclusively.
+Reduce modulo the supplied modulus within every fast-doubling iteration to bound intermediate integer widths.
+Implement the full unimodular Pisot-Vijayaraghavan (PV) registry (golden, silver, plastic, supergolden, tribonacci)
+Eliminates silent truncation (% m on inputs).
+before any floating-point evaluation.
+Wires all 5 PV families into PisotFilter
+ZeckendorfMap with strict monotonicity verification.
+Adversarial Classical Benchmarks (verify/benchmark.py)
+Machine-Checked Formal Proof (formal/GoldenFold.lean)
+Normative Third-Party QC Specification
+Fail-Closed Governance Gate
+Loads `spec/test_vectors.json` directly, enforces every `accept` and `reject` vector, verifies 4096-bit modular fast-doubling latency/bijectivity, and checks all five PV families and Q(5) norm certificates.
+General Pisano Periodicity Proof (`formal/GoldenFold.lean`)
+self.assertLess(elapsed, 1.0, f"4096-bit fold too slow: {elapsed:.3f}s")
