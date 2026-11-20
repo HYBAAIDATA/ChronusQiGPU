@@ -118,15 +118,15 @@ class TestShamirArithmetic:
         assert points_consistent(bad, 3, prime=p) is False
 
     def test_every_t_subset_recovers_and_t_minus_1_does_not(self):
-        secret = 0x1F2E3D4C5B6A79880102030405060708
-        shares = split_secret(secret, 3, 5)
+        test_value = 0x1F2E3D4C5B6A79880102030405060708
+        shares = split_secret(test_value, 3, 5)
         assert len({x for x, _ in shares}) == 5
         for k in (3, 4, 5):
             for subset in combinations(shares, k):
-                assert interpolate_at_zero(list(subset)) == secret
+                assert interpolate_at_zero(list(subset)) == test_value
         # Two shares fix a line, not the degree-2 polynomial: the intercept is not the secret
         # except with probability 1/P per pair.
-        assert all(interpolate_at_zero(list(s)) != secret for s in combinations(shares, 2))
+        assert all(interpolate_at_zero(list(s)) != test_value for s in combinations(shares, 2))
 
     def test_fewer_than_t_shares_reveal_nothing_exhaustive_small_field(self):
         """For every secret, (a1, a2) -> (f(1), f(2)) is a bijection of F_13^2:

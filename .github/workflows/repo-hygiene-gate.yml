@@ -1,0 +1,87 @@
+name: Repo Hygiene, IP Boundary and Gate G2
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  root-allowlist-and-ip-hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Execute hygiene gate with raw command evidence
+        run: python scripts/ci/capture_command.py "$RUNNER_TEMP/hygiene-logs" hygiene -- python scripts/ci/check_repo_hygiene.py --report artifacts/repo_hygiene_report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: repo-hygiene-report-${{ github.sha }}
+          path: artifacts/repo_hygiene_report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hygiene-raw-logs-${{ github.sha }}
+          path: ${{ runner.temp }}/hygiene-logs/
+          if-no-files-found: error
+  gitleaks-secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install pinned open-source Gitleaks CLI (no action licence required)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/gitleaks"
+          archive="$RUNNER_TEMP/gitleaks/gitleaks.tar.gz"
+          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --tlsv1.2 \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz \
+            --output "$archive"
+          printf '%s  %s\n' '551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb' "$archive" | sha256sum -c -
+          tar -xzf "$archive" -C "$RUNNER_TEMP/gitleaks" gitleaks
+          "$RUNNER_TEMP/gitleaks/gitleaks" version
+      - name: Scan fetched history and working tree (no raw public report)
+        shell: bash
+        run: |
+          set -uo pipefail
+          history_rc=0
+          tree_rc=0
+          "$RUNNER_TEMP/gitleaks/gitleaks" git --log-opts="--all" --redact=100 --exit-code 1 --no-banner . || history_rc=$?
+          "$RUNNER_TEMP/gitleaks/gitleaks" dir --redact=100 --exit-code 1 --no-banner . || tree_rc=$?
+          printf 'history_exit=%s working_tree_exit=%s\n' "$history_rc" "$tree_rc"
+          test "$history_rc" -eq 0 && test "$tree_rc" -eq 0
+
+  theseus-gate-g2-custody:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: python scripts/ci/capture_command.py "$RUNNER_TEMP/theseus-logs" install -- python -m pip install -e ".[dev]" blake3
+      - name: Gate G2 deterministic fault tests
+        if: always()
+        run: python scripts/ci/capture_command.py "$RUNNER_TEMP/theseus-logs" gate-g2 -- python -m pytest -v --strict-markers tests/test_theseus_gate_g2_fenced_custody.py
+      - name: Lifecycle and schema regressions
+        if: always()
+        run: python scripts/ci/capture_command.py "$RUNNER_TEMP/theseus-logs" lifecycle-schema -- python -m pytest -v --strict-markers tests/test_theseus_lifecycle.py tests/test_wiring_entrypoints.py tests/test_repo_hygiene_manifest_boundary.py
+      - name: Regression qualification
+        if: always()
+        run: |
+          python scripts/ci/capture_command.py "$RUNNER_TEMP/theseus-logs" qualification -- python -m pytest -q tests/test_triad_production.py tests/test_triad_capability_manifest.py tests/test_geodesic_tensor_migration.py tests/test_qualification.py tests/test_product_gates.py tests/test_release_gate.py
+      - name: Working tree
+        if: always()
+        run: python scripts/ci/capture_command.py "$RUNNER_TEMP/theseus-logs" git-status -- git status --short
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: theseus-verification-raw-logs-${{ github.sha }}
+          path: ${{ runner.temp }}/theseus-logs/
+          if-no-files-found: error

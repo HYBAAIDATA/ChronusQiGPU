@@ -1,0 +1,108 @@
+{
+  "schema_version": "1.0.0",
+  "policy": "fail_closed_public_surface",
+  "allowed_root_dirs": [
+    ".github",
+    "benchmarks",
+    "capabilities",
+    "cpp",
+    "deploy",
+    "docs",
+    "evidence",
+    "formal",
+    "frontend",
+    "infra",
+    "lean",
+    "manifests",
+    "migrations",
+    "monitoring",
+    "packages",
+    "packaging",
+    "rules",
+    "scripts",
+    "src",
+    "tests",
+    "tools",
+    "trust",
+    "vectors"
+  ],
+  "allowed_root_files": [
+    ".coderabbit.yaml",
+    ".dockerignore",
+    ".env.example",
+    ".env.miner.example",
+    ".gitattributes",
+    ".gitignore",
+    "AGENTS.md",
+    "DONE_CRITERIA.md",
+    "Dockerfile",
+    "LICENSE",
+    "Makefile",
+    "PRODUCTION_QUALIFIED.json",
+    "README.md",
+    "SECURITY.md",
+    "SOVEREIGN_CAPABILITY_ATTESTATION.json",
+    "STATUS.md",
+    "alembic.ini",
+    "azure-pipelines.yml",
+    "chronus-k8s-deployment.yaml",
+    "docker-compose.yml",
+    "pyproject.toml",
+    "setup.py"
+  ],
+  "content_scan_exclude_paths": [
+    "manifests/public_root_allowlist.json",
+    "scripts/ci/check_repo_hygiene.py"
+  ],
+  "forbidden_path_globs": [
+    "_*.py",
+    "**/_fix*.py",
+    "**/_add_*.py",
+    "**/*.mhtml",
+    "**/*.patch",
+    "**/temp_*output*.txt",
+    "**/.pytest_temp_*",
+    "funding/**",
+    "audit/**",
+    "claims/**",
+    "reviews/**",
+    "work_orders/**",
+    "vendor/**",
+    "chronus_source_backup/**",
+    "port-review/**",
+    "recovery_merge/**",
+    "hyba-mine/**",
+    "hardware/rtl/**",
+    "qigpu_*tour_de_force*.py",
+    "theory_of_everything.py",
+    "RELEASE_DECISION_MCKINSEY_TECH.md",
+    "FORENSIC_ANALYSIS.md",
+    ".pytest_temp*",
+    "**/.pytest_temp*",
+    "qigpu_*.py",
+    "al_haras_*",
+    "temp_*.txt",
+    "RELEASE_DECISION_*.md",
+    "**/.env",
+    "**/.env.local",
+    "**/.env.miner"
+  ],
+  "forbidden_content_regexes": [
+    {
+      "id": "INTERNAL_CONFIDENTIAL_MARKER",
+      "pattern": "(?i)(DO\\s+NOT\\s+PUBLISH|STRICTLY\\s+PRIVATE\\s+AND\\s+CONFIDENTIAL|INTERNAL\\s+INVESTOR\\s+MEMO)"
+    },
+    {
+      "id": "LIVE_POOL_WORKER_CREDENTIAL",
+      "pattern": "(?i)stratum\\+(?:tcp|ssl)://[^\\s\"']+:[^\\s\"']+@"
+    },
+    {
+      "id": "HARDCODED_CHRONUS_JWT_SECRET",
+      "pattern": "CHRONUS_JWT_SECRET[\"']?\\s*[:=]\\s*['\"]?(?!replace|changeme|example|\\$\\{)[A-Za-z0-9_\\-]{20,}"
+    },
+    {
+      "id": "CONFIDENTIAL_VALUATION_VALUE",
+      "pattern": "(?i)(?:pre[- ]money|post[- ]money|confidential|internal|private|investor|company|equity)\\s+valuation\\s*(?:[:=]|of)?\\s*(?:[$£€]|\\b(?:USD|GBP|EUR)\\s*)\\s*\\d"
+    }
+  ]
+}

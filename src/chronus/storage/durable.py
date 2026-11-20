@@ -16,6 +16,32 @@ from pathlib import Path
 from typing import Iterator
 
 from chronus.config import runtime_bounds
+from chronus.storage.fenced_custody import (
+    FencedReceiptEnvelope as FencedReceiptEnvelope,
+    FencingProvider as FencingProvider,
+    FencingToken as FencingToken,
+    LocalSingleNodeFencer as LocalSingleNodeFencer,
+    EtcdLeaseFencer as EtcdLeaseFencer,
+    EtcdAnchorQuorumClient as EtcdAnchorQuorumClient,
+    Blake3MerkleTree as Blake3MerkleTree,
+    MerkleInclusionProof as MerkleInclusionProof,
+    EpochAnchor as EpochAnchor,
+    EpochSigner as EpochSigner,
+    FencedTheseusEdgeStore as FencedTheseusEdgeStore,
+    EdgeAnchorSidecar as EdgeAnchorSidecar,
+    CustodyError as CustodyError,
+    CustodyDependencyError as CustodyDependencyError,
+    CustodyHaltError as CustodyHaltError,
+    CustodyHealth as CustodyHealth,
+    CustodyWatermarks as CustodyWatermarks,
+    ChainIntegrityError as ChainIntegrityError,
+    StaleFencingEpochError as StaleFencingEpochError,
+    LeaseLostError as LeaseLostError,
+    QuorumUnavailableError as QuorumUnavailableError,
+    AnchorCommitUncertainError as AnchorCommitUncertainError,
+    merkle_leaf_hash as merkle_leaf_hash,
+    merkle_node_hash as merkle_node_hash,
+)
 from chronus.storage import self_heal
 from chronus.storage.phyllotaxis import PhyllotaxisCoordinate, phyllotaxis_coordinate
 from chronus.storage.theseus import StorageIntegrityError, TenantStateJournalEntry, TheseusRecord

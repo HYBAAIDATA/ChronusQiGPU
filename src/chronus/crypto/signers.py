@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric import ed25519
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey as PrivateKey
 from cryptography.hazmat.primitives import serialization
 try:
     from cryptography.hazmat.primitives.asymmetric import mldsa as ml_dsa
@@ -30,15 +31,15 @@ class Signer(Protocol):
 class Ed25519Signer:
     algorithm: str
     key_id: str
-    _key: ed25519.Ed25519PrivateKey
+    _key: PrivateKey
 
     @classmethod
     def generate(cls, key_id: str) -> "Ed25519Signer":
-        return cls("Ed25519", key_id, ed25519.Ed25519PrivateKey.generate())
+        return cls("Ed25519", key_id, PrivateKey.generate())
 
     @classmethod
     def from_private_bytes(cls, key_id: str, raw: bytes) -> "Ed25519Signer":
-        return cls("Ed25519", key_id, ed25519.Ed25519PrivateKey.from_private_bytes(raw))
+        return cls("Ed25519", key_id, PrivateKey.from_private_bytes(raw))
 
     def sign(self, message: bytes) -> bytes:
         return self._key.sign(message)

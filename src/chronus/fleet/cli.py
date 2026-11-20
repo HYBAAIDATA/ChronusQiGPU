@@ -26,13 +26,14 @@ import json
 import logging
 import math
 import os
-import signal
+import time
 import socket
 import sys
 import threading
 from pathlib import Path
 from typing import Any
 
+from chronus.execution.lifecycle import ShutdownSignals, join_until
 from chronus.fleet.backends import BACKEND_CHOICES, DEFAULT_PREFERENCE, PREFERENCES
 from chronus.fleet.canonical import deterministic_bytes
 from chronus.fleet.errors import FleetError
@@ -131,11 +132,12 @@ def cmd_coordinator(args: argparse.Namespace) -> int:
     print(f"  receipts: ML-DSA-65, key id {status['signer']['key_id']}")
     print(f"  ledger: {status['ledger']['path']}")
     print("  waiting for workers; Ctrl-C to stop", flush=True)
-    stop = threading.Event()
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        signal.signal(sig, lambda *_: stop.set())
-    stop.wait()
-    coordinator.stop()
+    with ShutdownSignals() as notification:
+        try:
+            while not notification.requested:
+                time.sleep(0.1)
+        finally:
+            coordinator.stop()
     return 0
 
 
@@ -174,21 +176,27 @@ def cmd_join(args: argparse.Namespace) -> int:
             stop.set()
 
     thread = threading.Thread(target=run, name="fleet-worker", daemon=True)
-    thread.start()
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        def shutdown(*_):
-            stop.set()
-            worker.stop(leave=False)
-        signal.signal(sig, shutdown)
-    if worker.wait_joined(timeout=120):
-        if worker.state == "waiting":
-            print(f"joined as {worker.node_id}; waiting for the fleet to scale (see: chronus-fleet tier status). "
-                  "Ctrl-C to leave", flush=True)
-        else:
-            print(f"joined as {worker.node_id}; working. Ctrl-C to leave the fleet", flush=True)
-    stop.wait()
-    worker.stop(leave=True)
-    thread.join(timeout=10)
+    with ShutdownSignals() as notification:
+        thread.start()
+        joined = False
+        while not stop.is_set() and not notification.requested:
+            if worker.node_id is not None and not joined:
+                print(f"joined as {worker.node_id} (state={worker.state})", flush=True)
+                joined = True
+            stop.wait(0.1)
+        worker.stop(leave=False)
+        deadline = time.monotonic_ns() + 10_000_000_000
+        survivors = join_until([thread], deadline)
+        if worker._heartbeat_thread is not None:
+            survivors.extend(join_until([worker._heartbeat_thread], deadline))
+        if not survivors:
+            leave = threading.Thread(target=worker.stop, kwargs={"leave": True},
+                                     name="fleet-leave", daemon=True)
+            leave.start()
+            survivors.extend(join_until([leave], deadline))
+        if survivors:
+            print(f"worker STOP_DEGRADED; live threads: {survivors}", file=sys.stderr)
+            return 1
     if errors:
         print(f"worker stopped: {errors[0]}", file=sys.stderr)
         return 1

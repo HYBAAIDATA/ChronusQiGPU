@@ -4,8 +4,9 @@ Runs the manifest auditor over the committed manifest set and reports one
 aggregate number: how many manifests carry a blocking finding.
 
 The set is the root qualification manifest plus every file in manifests/.
-A file in that directory that cannot be parsed is itself a defect: it is
-catalogued as a manifest but is not one, so it is reported and counted.
+Every JSON file is checked. The single explicitly named public-root policy
+is validated against its policy schema rather than treated as release evidence.
+Unreadable JSON remains a blocking defect.
 
 Exit codes: 0 no blocking findings, 2 one or more blocking findings, 1 the
 manifest set could not be located.
@@ -20,6 +21,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import audit_manifest  # noqa: E402  (sibling module, path set above)
+from check_repo_hygiene import validate_policy  # noqa: E402
+import re
 
 ROOT = Path(__file__).resolve().parents[2]
 ROOT_MANIFEST = ROOT / "PRODUCTION_QUALIFIED.json"
@@ -46,6 +49,12 @@ def audit_file(path: Path) -> tuple[int, list[str], list[str]]:
         return 1, ["manifest is not a JSON object"], []
 
     relative = path.relative_to(ROOT).as_posix()
+    if relative == "manifests/public_root_allowlist.json":
+        try:
+            validate_policy(doc)
+        except (ValueError, TypeError, re.error) as exc:
+            return 1, [f"invalid repository hygiene policy: {exc}"], []
+        return 0, [], ["validated repository hygiene policy (not qualification evidence)"]
     blocking = audit_manifest.blocking_findings(doc, relative)
     catalogued = audit_manifest.findings(doc)
     notes: list[str] = []
