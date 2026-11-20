@@ -242,6 +242,8 @@ class TestMiningReadiness(unittest.IsolatedAsyncioTestCase):
         with patch.dict(sys.modules, {"bist": SimpleNamespace(run=lambda: {"bist": "FAIL"})}):
             spec.loader.exec_module(runner)
         with patch.object(sys, "path", [str(runner_path.parent), *sys.path]), \
+             patch.object(runner.engine_module, "load_env_config", side_effect=AssertionError("must not configure engine")), \
+             patch("chronus.fleet.capacity.discover_host", side_effect=AssertionError("must not discover host")), \
              patch("hyba_mine.campaign.run_campaign", side_effect=AssertionError("must not run campaign")), \
              patch("hyba_mine.lanes.open_lanes", side_effect=AssertionError("must not open lanes")):
             assert await runner.main() == 1
