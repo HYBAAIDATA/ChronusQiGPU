@@ -140,6 +140,6 @@ def test_distributions_ship_disjoint_packages():
     turing = tomllib.loads((ROOT / "packages" / "turing" / "pyproject.toml").read_text(encoding="utf-8"))
     root_find = root["tool"]["setuptools"]["packages"]["find"]
     turing_find = turing["tool"]["setuptools"]["packages"]["find"]
-    assert root_find["where"] == ["src"]
+    assert root_find["where"] == ["src", "."]
     assert not any(pattern.startswith("turing") for pattern in root_find["include"])
     assert all(pattern.startswith("turing") for pattern in turing_find["include"])

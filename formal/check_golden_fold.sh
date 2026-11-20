@@ -71,7 +71,7 @@ for n in $(grep -Eo '^\s*(@\[[^]]*\]\s*)*((private|protected|noncomputable)\s+)*
     exit 1
   fi
 done
-if printf '%s\n' "$output" | grep -E '^GOLDENDECL ' | grep -Ev 'AXIOMS \[((propext|Classical\.choice|Quot\.sound)(, )?)*\]$'; then
+if printf '%s\n' "$output" | grep -E '^GOLDENDECL ' | grep -Ev 'AXIOMS \[((propext|Classical\.choice|Quot\.sound)(, (propext|Classical\.choice|Quot\.sound))*)?\]$'; then
   echo 'A theorem depends on a non-standard axiom (sorryAx, Lean.ofReduceBool or a declared axiom)' >&2
   exit 1
 fi
