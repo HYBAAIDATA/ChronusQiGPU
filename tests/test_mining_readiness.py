@@ -228,7 +228,8 @@ class TestMiningReadiness(unittest.IsolatedAsyncioTestCase):
 
         # Execute the actual BIST, including its nested asyncio.run checks.
         # Stop at lane discovery before any campaign or socket is started.
-        with patch.object(bist, "run", wraps=bist.run) as run, \
+        with patch.object(sys, "path", [str(deploy), *sys.path]), \
+             patch.object(bist, "run", wraps=bist.run) as run, \
              patch("chronus.fleet.capacity.discover_host", side_effect=ReachedPostBist):
             with pytest.raises(ReachedPostBist):
                 await runner.main()
@@ -240,7 +241,8 @@ class TestMiningReadiness(unittest.IsolatedAsyncioTestCase):
         runner = importlib.util.module_from_spec(spec)
         with patch.dict(sys.modules, {"bist": SimpleNamespace(run=lambda: {"bist": "FAIL"})}):
             spec.loader.exec_module(runner)
-        with patch("hyba_mine.campaign.run_campaign", side_effect=AssertionError("must not run campaign")), \
+        with patch.object(sys, "path", [str(runner_path.parent), *sys.path]), \
+             patch("hyba_mine.campaign.run_campaign", side_effect=AssertionError("must not run campaign")), \
              patch("hyba_mine.lanes.open_lanes", side_effect=AssertionError("must not open lanes")):
             assert await runner.main() == 1
 
