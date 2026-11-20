@@ -6,6 +6,8 @@ import pytest
 
 from scripts.benchmarks.fold_residency_campaign import DATA, run_trace
 
+pytestmark = pytest.mark.simulated
+
 
 @pytest.mark.parametrize("name", ["event_log", "object_store", "analytics"])
 def test_equal_work_and_egress(name):
