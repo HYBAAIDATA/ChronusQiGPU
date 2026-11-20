@@ -162,7 +162,7 @@ def hash_payload(payload: Dict[str, Any]) -> Tuple[bytes, bytes]:
 # ---------------------------------------------------------------------------
 @dataclasses.dataclass(frozen=True, slots=True)
 class FencedReceiptEnvelope:
-    """Immutable, fencing-token-stamped, BLAKE3-chained custody record."""
+    """Immutable custody record with a fencing token and a BLAKE3 hash chain."""
 
     node_id: str
     slot_id: str
