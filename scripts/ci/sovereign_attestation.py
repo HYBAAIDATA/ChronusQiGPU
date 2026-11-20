@@ -387,7 +387,8 @@ def main(output_path=None):
         "external_attestation": False,
     }
 
-    out_file = output_path or os.path.join(REPO_ROOT, "SOVEREIGN_CAPABILITY_ATTESTATION.json")
+    out_file = output_path or os.path.join(REPO_ROOT, "reference-evidence", "SOVEREIGN_CAPABILITY_ATTESTATION.json")
+    os.makedirs(os.path.dirname(os.path.abspath(out_file)), exist_ok=True)
     with open(out_file, "w", encoding="utf-8") as f:
         json.dump(dossier, f, indent=2)
 

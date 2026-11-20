@@ -1,0 +1,15 @@
+{
+  "schema": "chronus.five-lens.execution-receipt/1",
+  "source_commit": "0f94d2d6ae917eb819943dda6cb7d58baa99a08c",
+  "run_id": 44595627811,
+  "job_id": 135812975433,
+  "run_url": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44595627811",
+  "artifact_id": 14565122604,
+  "artifact_sha256": "5fb18469e846c25818ef7471e423340c72a416e9dba31b815fed28ffbf848243",
+  "campaign_sha256": "95da6c4d659c8795765ac14512840423bfa6559824777b5835c6e72ae2d396c9",
+  "focused_tests": "11 passed; gate reruns 7 settlement and 4 residency tests",
+  "gate_exit": 1,
+  "gate_content_digest": "14b103cb62c2f637ccbc23d1c6a0f40ef7274e454492b01553d996f8555e682d",
+  "scope": "GitHub-hosted CI; committed synthetic operation traces, no production telemetry",
+  "campaign_recovery": "Exact JSON bytes extracted from hosted job log and independently SHA-256 checked against runner sha256sum."
+}

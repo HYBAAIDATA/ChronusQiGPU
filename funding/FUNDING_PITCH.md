@@ -30,4 +30,4 @@ Complete and substantiate the following before presenting an investment case:
 - Reproducible performance, security, reliability, and compliance evidence for any claims made.
 - Funding amount, use of funds, milestones, and governance.
 
-Do not fill gaps with estimates or historical assertions presented as facts. Current Chronus release posture and evidence limitations are recorded in the [release decision](../RELEASE_DECISION_MCKINSEY_TECH.md) and [claim audit](../docs/claim-audit.md).
+Do not fill gaps with estimates or historical assertions presented as facts. Current Chronus release posture and evidence limitations are recorded in the [release decision](../STATUS.md) and [claim audit](../docs/claim-audit.md).

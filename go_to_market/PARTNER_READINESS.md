@@ -1,0 +1,2 @@
+# Alliance readiness — HOLD
+Proposed hyperscaler wedge: attestation INTO marketplace listings, not a claimed partnership, certification or listing. Integrate OVID transformation evidence, THESEUS custody and AL HARAS authority into buyer-operated verification. Acceptance requires marketplace partner approval, licence review, named support and escalation, independently replayed exact-head evidence and explicit owner sign-off. No commercial listing, partner approval or deployment has been verified.

@@ -265,7 +265,7 @@ Not run: independent CI, Apple Metal silicon, OpenCL GPU silicon, CUDA/ROCm/oneA
 - [Fleet architecture and evidence rules](fleet/FLEET.md)
 - [Fleet design decisions](fleet/DECISIONS.md)
 - [Repository claim audit](claim-audit.md)
-- [Current release decision: NOT QUALIFIED](../RELEASE_DECISION_MCKINSEY_TECH.md)
+- [Current release decision: NOT QUALIFIED](../STATUS.md)
 - [Quantum package taxonomy and TURING boundary](system-update/quantum-package-taxonomy.md)
 - [HYBA packaging boundaries](directives/PACKAGING.md)
 

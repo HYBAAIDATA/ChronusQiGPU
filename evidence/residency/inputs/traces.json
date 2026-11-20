@@ -1,0 +1,78 @@
+{
+  "schema": "chronus.fold-traces/1",
+  "classification": "Committed synthetic operation traces, not customer data",
+  "classes": {
+    "event_log": {
+      "prediction": "high",
+      "words": [
+        11,
+        22,
+        33,
+        44
+      ],
+      "other": [
+        5,
+        6,
+        7,
+        8
+      ],
+      "ops": [
+        "add",
+        "add",
+        "scale",
+        "add",
+        "equals",
+        "add",
+        "gram_dot",
+        "sort"
+      ]
+    },
+    "object_store": {
+      "prediction": "high",
+      "words": [
+        11,
+        22,
+        33,
+        44
+      ],
+      "other": [
+        5,
+        6,
+        7,
+        8
+      ],
+      "ops": [
+        "dedup",
+        "keyed_lookup",
+        "equals",
+        "dedup",
+        "keyed_lookup",
+        "equals",
+        "sort"
+      ]
+    },
+    "analytics": {
+      "prediction": "low",
+      "words": [
+        11,
+        22,
+        33,
+        44
+      ],
+      "other": [
+        22,
+        33,
+        7,
+        8
+      ],
+      "ops": [
+        "sort",
+        "threshold",
+        "topk",
+        "magnitude_join",
+        "sort",
+        "equals"
+      ]
+    }
+  }
+}

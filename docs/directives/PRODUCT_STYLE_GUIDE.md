@@ -78,7 +78,7 @@ Design loading, empty, stale, error, permission-denied, offline, and degraded st
 - Treat quantum as a capability, not a separate market proposition.
 - Treat Bitcoin mining as internal treasury activity, never as a product or customer use case.
 - Do not present Stripe, Revolut, NVIDIA, Google, McKinsey, or Accenture as customers, partners, endorsers, or joint-venture parties without explicit, verifiable authorization.
-- Do not imply production readiness, certification, security assurance, customer deployment, performance advantage, or market validation without current evidence. Follow the repository’s [claim audit](../claim-audit.md) and [release decision](../../RELEASE_DECISION_MCKINSEY_TECH.md).
+- Do not imply production readiness, certification, security assurance, customer deployment, performance advantage, or market validation without current evidence. Follow the repository’s [claim audit](../claim-audit.md) and [release decision](../../STATUS.md).
 
 ## Review checklist
 

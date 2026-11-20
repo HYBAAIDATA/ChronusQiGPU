@@ -1,0 +1,99 @@
+{
+  "schema": "chronus.five-lens.artifacts/1",
+  "source_commit": "9d16926c64f7df222e18937e2c30d4767c2799de",
+  "artifacts": [
+    {
+      "path": "docs/settlement/IPMVP_CONFORMITY.md",
+      "sha256": "f5da28588a652ea51bef8a6e3d85f73b7b8d3d8610a784bab6f9dd8b58bc0285"
+    },
+    {
+      "path": "tests/test_ipmvp.py",
+      "sha256": "0b0076ec371d1033709e8eeb4025dee1935af26f65c7163101182ca638df1c88"
+    },
+    {
+      "path": "docs/executive/CEO_STAKE_MEMO.md",
+      "sha256": "16df7c2ec1737dd211aaae2e7313cf90ed5575f2567607495fa04ee8f171c6b8"
+    },
+    {
+      "path": "docs/analysts/TEI_INITIATION.md",
+      "sha256": "86879ef708e2192b9191ef8ea0a0946bea1b481da74234e33ec8353d7fc5f888"
+    },
+    {
+      "path": "scripts/benchmarks/fold_residency_campaign.py",
+      "sha256": "7b96eb8adc70da95ea6dad0b3271058bd1783b471d74c30bb5216f638aeea667"
+    },
+    {
+      "path": "docs/analysts/ANALYST_PACKAGE.md",
+      "sha256": "9b126eb208c28e9864df7b26a48e533f8c8794f2664dc5cde5b1f3ed156f2803"
+    },
+    {
+      "path": "go_to_market/NAMED_ROSTER.md",
+      "sha256": "faa2905e7cd32c14edf4444f8207934b952886fd94686d942c6750d7dd434c91"
+    },
+    {
+      "path": "go_to_market/PARTNER_READINESS.md",
+      "sha256": "898c8cd95fd6468d7a7d60caad4d8858194ba94b0ba758abba80d291ae305b43"
+    },
+    {
+      "path": "deploy/reference_architectures/financial_records_archive.md",
+      "sha256": "258121dcd2a1b1fd34bda61390161dbdec8c321728c925641094c25d65705df2"
+    },
+    {
+      "path": "deploy/reference_architectures/medical_imaging_pacs.md",
+      "sha256": "10d9169a96d713124145946661f4d5446c11a877a8b1943db85b4f71c7f3dba1"
+    },
+    {
+      "path": "deploy/reference_architectures/regulated_ai_checkpointing.md",
+      "sha256": "31f9eac580417f584865fd44a6e919ceaa1e8e428483f060f6624fb9546b6e94"
+    },
+    {
+      "path": "evidence/residency/0f94d2d6ae917eb819943dda6cb7d58baa99a08c/campaign.json",
+      "sha256": "95da6c4d659c8795765ac14512840423bfa6559824777b5835c6e72ae2d396c9"
+    },
+    {
+      "path": "evidence/five_lens/runs/0f94d2d6ae917eb819943dda6cb7d58baa99a08c/receipt.json",
+      "sha256": "6b5f266bd1d1326ca162c27ee2ff2c033ee8c622c4412ecf3fc747347b44ca4a"
+    },
+    {
+      "path": "evidence/five_lens/findings.json",
+      "sha256": "b55264f56dcb9a1068eecbba44f0682b428753cf67cee813699fc75d85173a78"
+    },
+    {
+      "path": "STATUS.md",
+      "sha256": "572366c0d8a405320ee0be2b4ed8898c0e354910dc7df37415e57a7ea8c95f3f"
+    },
+    {
+      "path": "docs/analysts/FIVE_LENS_QC_HANDOVER.md",
+      "sha256": "174ed9306c996dbc1d6414301dc282457ca0c3067605bea8f4d3929ec87342b5"
+    },
+    {
+      "path": "evidence/five_lens/runs/9d16926c64f7df222e18937e2c30d4767c2799de/closure.json",
+      "sha256": "06f70ba9f3b2dac76f6d7362c9e1fe670f7433153dfb4ba8c2003d0c5bd45f80"
+    },
+    {
+      "path": "evidence/five_lens/reviewer_scope.json",
+      "sha256": "4656ea277256b670e2f3cb610de6d85bea2b21f39c983e731d3a9f714700bc81"
+    },
+    {
+      "path": "tests/test_fold_residency_campaign.py",
+      "sha256": "b5d7b4fc26f5eca07dd8b75981c8c5751873e456c3cea0ddc2ea4203c09cd0a7"
+    },
+    {
+      "path": "claims/archive_uncited/register.json",
+      "sha256": "d5825646a472a56e5b74b4b2242a36fb95663088170be6e64a0a146ecfcf336d"
+    },
+    {
+      "path": "tests/test_claim_archive.py",
+      "sha256": "caebc5158a6ab46abc5efd85bb5cbd146ae1e3daafb4a9c4893cc20d89cd2592"
+    },
+    {
+      "path": "evidence/residency/inputs/traces.json",
+      "sha256": "ae47d1649bd2b087f4057efcd68b16b5aa3d1e2357c229f7ebde2f8e61cf9060"
+    },
+    {
+      "path": "claims/register.json",
+      "sha256": "0091b692ce587801f09e8676e4680821b23de038686836f419cb51ad3a5bf858"
+    }
+  ],
+  "note": "Reviewed baseline plus correction content digests; current-head CI verifies the resulting bytes."
+}

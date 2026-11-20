@@ -34,7 +34,7 @@ def main():
 
     # H1: PRODUCTION_QUALIFIED.json
     print("\n[H1] Inspecting PRODUCTION_QUALIFIED.json:")
-    h1_path = os.path.join(REPO_ROOT, "PRODUCTION_QUALIFIED.json")
+    h1_path = os.path.join(REPO_ROOT, "manifests", "historical", "PRODUCTION_QUALIFIED.json")
     if os.path.exists(h1_path):
         with open(h1_path, "r", encoding="utf-8") as f:
             print(f.read())

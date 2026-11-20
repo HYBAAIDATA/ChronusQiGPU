@@ -15,8 +15,19 @@ def check(site:Path, register:Path)->list[str]:
     if not html:
         return ["site has no HTML; cannot qualify"]
     blocked=[]
-    for claim in data["claims"]:
-        if claim["state"]=="publishable" and not claim.get("gates"):
+    claims = list(data["claims"])
+    if "archive" in data:
+        archive = Path(data["archive"])
+        root = register.resolve().parent.parent
+        target = (root / archive).resolve()
+        if not target.is_relative_to(root / "claims" / "archive_uncited"):
+            raise ValueError("claim archive must remain under archive_uncited")
+        archived = json.loads(target.read_text())["claims"]
+        if any(c.get("state") == "publishable" for c in archived):
+            raise ValueError("uncited archive cannot contain publishable claims")
+        claims.extend(archived)
+    for claim in claims:
+        if claim["state"]=="publishable" and (not claim.get("gates") or not claim.get("evidence")):
             blocked.append("unbacked publishable claim: "+claim["code"])
         if claim["state"]!="publishable":
             phrase=normalise(claim["text"])

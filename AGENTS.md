@@ -47,7 +47,7 @@ Before product or UX work, read:
 - [`docs/directives/PRODUCT_STYLE_GUIDE.md`](docs/directives/PRODUCT_STYLE_GUIDE.md) — canonical product design and HYBA positioning standard.
 - [`docs/directives/FRONTEND.md`](docs/directives/FRONTEND.md) — frontend implementation rules.
 - [`docs/directives/PACKAGING.md`](docs/directives/PACKAGING.md) — product and market boundaries.
-- [`docs/claim-audit.md`](docs/claim-audit.md) and [`RELEASE_DECISION_MCKINSEY_TECH.md`](RELEASE_DECISION_MCKINSEY_TECH.md) — current evidence and release limits.
+- [`docs/claim-audit.md`](docs/claim-audit.md) and [`STATUS.md`](STATUS.md) — current evidence and release limits.
 
 If older project notes conflict with these current instructions, follow the current style guide and release/evidence documents. Do not silently revive superseded claims.
 

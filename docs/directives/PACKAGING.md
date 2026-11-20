@@ -40,4 +40,4 @@ Before presenting a commercial offer, document:
 - Evidence for any performance, security, reliability, compliance, customer, or financial claim.
 - Known limitations, operating responsibilities, and support boundaries.
 
-Do not invent market size, pricing, savings, customer traction, certifications, or production status. Follow the repository’s [claim audit](../claim-audit.md) and [release decision](../../RELEASE_DECISION_MCKINSEY_TECH.md).
+Do not invent market size, pricing, savings, customer traction, certifications, or production status. Follow the repository’s [claim audit](../claim-audit.md) and [release decision](../../STATUS.md).
