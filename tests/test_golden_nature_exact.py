@@ -139,3 +139,96 @@ def test_reference_edge_cases_and_exact_basis(tmp_path):
     right=gn.ranked_zeckendorf_bits([[1],[2],[3]])[0]
     with pytest.raises(ValueError,match="basis"):
         gn.ranked_fidelity(left,right)
+
+
+def test_fold_digest_binds_width_and_requires_all_supplied_anchors():
+    import hashlib
+
+    # Independent wire-format fixture: tag, uint16 width, then uint16 words.
+    digest = hashlib.sha256(b"golden-fold/1:\x00\x10\x00\x01\x00\x02").hexdigest()
+    assert fv.original_digest([1, 2], 16) == digest
+    assert fv.verify([3, 1], 1, 16, digest=digest)["verdict"] == "VALID"
+    assert fv.verify([3, 1], 1, 8, digest=digest)["verdict"] == "INVALID"
+    assert fv.verify([3, 1], 1, 16, [1, 2], digest="0" * 64)["verdict"] == "INVALID"
+    assert fv.verify([3, 1], 1, 16, [2, 1], digest=digest)["verdict"] == "INVALID"
+
+
+def test_fold_witness_is_not_an_integrity_anchor_and_preserves_integer_types():
+    witness = fv.certificate(1, 8)
+    assert fv.verify([3, 1], 1, 8, witness=witness)["verdict"] == "UNBOUND"
+    assert fv.verify([3, 1], 1, 8, [1, 2], witness={**witness, "steps": True})[
+        "verdict"
+    ] == "INVALID"
+
+
+@pytest.mark.parametrize(
+    "originals, exit_code, verdict",
+    [(None, 2, "UNBOUND"), ("1,2", 0, "VALID"), ("1,3", 1, "INVALID")],
+)
+def test_fold_cli_reports_verdict_and_matching_exit_code(originals, exit_code, verdict, capsys):
+    import json
+
+    args = ["--folded", "3,1", "--steps", "1", "--bits", "8"]
+    if originals is not None:
+        args += ["--originals", originals]
+    assert fv.main(args) == exit_code
+    report = json.loads(capsys.readouterr().out)
+    assert report["verdict"] == verdict
+    assert bool(report["failures"]) == (exit_code == 1)
+
+
+@pytest.mark.parametrize("seed", [Fraction(-7, 3), Fraction(3 * 2**80 + 2, 3)])
+def test_kronecker_wraps_rational_seed_exactly(seed):
+    points = gn.kronecker_golden_exact(2, seed)
+    assert points[0] == gn.Q5(Fraction(2, 3))
+    assert points[1] == gn.Q5(Fraction(-5, 6), Fraction(1, 2))
+
+
+def test_exact_minimum_bracket_at_tolerance_does_not_evaluate_objective():
+    def unexpected_evaluation(_):
+        pytest.fail("already narrow enough; objective should not be called")
+
+    result = gn.golden_section_exact(unexpected_evaluation, -1, 1, tol=Fraction(2))
+    assert result == gn.MinimumBracket(gn.Q5(-1), gn.Q5(1), 0, True)
+
+
+def test_ranked_fidelity_exact_overlap_and_same_length_basis_mismatch():
+    assert gn.ranked_fidelity((1, 1, 0), (1, 0, 1)) == Fraction(1, 4)
+    assert gn.ranked_fidelity((1, 0), (0, 1)) == 0
+    left = gn.ranked_zeckendorf_bits([[1, 1], [1, 2]])[0]
+    right = gn.ranked_zeckendorf_bits([[1, 1], [2, 1]])[0]
+    assert tuple(left) == tuple(right)
+    assert left.basis == (1, 2)
+    assert right.basis == (2, 1)
+    with pytest.raises(ValueError, match="basis"):
+        gn.ranked_fidelity(left, right)
+
+
+def test_numeric_minimizer_counts_calls_and_rejects_unmet_tolerance():
+    evaluations = []
+
+    def objective(x):
+        evaluations.append(x)
+        return (x - 0.25) ** 2
+
+    x, value, count = reference.golden_section_minimize(objective, -1, 2, tol=1e-6)
+    assert x == pytest.approx(0.25, abs=1e-6)
+    assert value == (x - 0.25) ** 2
+    assert count == len(evaluations)
+    with pytest.raises(ArithmeticError, match="tolerance"):
+        reference.golden_section_minimize(objective, -1, 2, max_iter=0)
+    with pytest.raises(ValueError, match="nonfinite objective"):
+        reference.golden_section_minimize(lambda _: math.nan, -1, 2)
+
+
+def test_research_adapters_project_known_turns_and_frequency():
+    assert reference.kronecker_golden_1d(2, seed=0.75) == pytest.approx([
+        0.75, 0.75 + (math.sqrt(5) - 1) / 2 - 1,
+    ])
+    omega = 0.2 * (1 + (1 + math.sqrt(5)) / 2)
+    assert reference.anti_resonant_frequencies(1, base_omega=0.2) == pytest.approx([omega])
+    out, residual = reference.evolve_anti_resonant([1, 0], time_step=2, base_omega=0.2)
+    assert out == pytest.approx([math.cos(2 * omega), -1j * math.sin(2 * omega)])
+    assert residual < 1e-15
+    with pytest.raises(ValueError, match="nonfinite state"):
+        reference.evolve_anti_resonant([complex(0, math.inf), 0])

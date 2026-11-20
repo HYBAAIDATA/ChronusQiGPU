@@ -3,6 +3,7 @@ import json
 import math
 import time
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from fractions import Fraction
 from types import SimpleNamespace
@@ -159,6 +160,90 @@ class TestGovernance(unittest.TestCase):
                     {**good,"findings":[{**good["findings"][0],"status":"CLOSED"}]}):
             with self.assertRaises(ValueError):
                 validate(bad)
+
+class TestOntologyBoundaries(unittest.TestCase):
+    def test_fold_known_odd_width_pair_order_and_large_step_count(self):
+        words = (7, 1, 2, 3)
+        steps = 24 * 10**100 + 2  # Width 3 has period 12.
+        self.assertEqual(fold_words(words, steps, 3, 12), [7, 0, 7, 5])
+        self.assertEqual(unfold_words([7, 0, 7, 5], steps, 3, 12), list(words))
+        with self.assertRaises(PeriodError):
+            unfold_words([7, 0, 7, 5], steps, 3, 12.0)
+        with self.assertRaises(RangeError):
+            unfold_words([7, 8], steps, 3)
+
+    def test_bounded_order_accepts_last_step_and_reports_exhaustion(self):
+        # The silver companion swaps the two basis vectors modulo 2.
+        self.assertEqual(generalized_pisano_period("silver", 2, max_steps=2), 2)
+        with self.assertRaisesRegex(RuntimeError, "search bound"):
+            generalized_pisano_period("silver", 2, max_steps=1)
+        # Golden modulo 3 uses enumeration rather than the power-of-two formula.
+        self.assertEqual(generalized_pisano_period("golden", 3, max_steps=8), 8)
+        with self.assertRaisesRegex(RuntimeError, "search bound"):
+            generalized_pisano_period("golden", 3, max_steps=7)
+        self.assertEqual(generalized_pisano_period("silver", 1, max_steps=1), 1)
+
+    def test_lucas_uv_with_non_golden_coefficients(self):
+        # For P=3, Q=2 the characteristic roots are 1 and 2.
+        for n in (0, 1, 2, 19):
+            with self.subTest(n=n):
+                u, v = 2**n - 1, 2**n + 1
+                self.assertEqual(lucas_uv(n, 3, 2), (u, v))
+                self.assertEqual(lucas_uv(n, 3, 2, 7), (u % 7, v % 7))
+
+    def test_root_brackets_refine_and_invalid_companion_is_rejected(self):
+        for name, family in PV_REGISTRY.items():
+            with self.subTest(family=name):
+                lo, hi = family.root_interval(8)
+                refined_lo, refined_hi = family.root_interval(16)
+                self.assertTrue(lo <= refined_lo < refined_hi <= hi)
+                self.assertLess(refined_hi - refined_lo, hi - lo)
+                for x, sign in ((refined_lo, -1), (refined_hi, 1)):
+                    value = sum(
+                        c * x**(family.degree - i) for i, c in enumerate(family.polynomial)
+                    )
+                    self.assertGreater(sign * value, 0)
+        with self.assertRaisesRegex(ArithmeticError, "unimodular"):
+            replace(get_family("golden"), companion=((1, 0), (0, 0))).certify()
+
+    def test_projection_rejects_forged_norm_consistent_certificate(self):
+        cert = phi_neg_power_cert(7)
+        forged = replace(cert, q=-cert.q)
+        self.assertTrue(forged.norm_certified)  # A norm alone cannot select the root.
+        with self.assertRaisesRegex(ValueError, "invalid algebraic certificate"):
+            forged.to_float()
+        self.assertEqual(certify_pairwise_irrationality([5, 0, 2]), [
+            (5, 0, 5), (5, 2, 2), (0, 2, 1),
+        ])
+
+    def test_filter_clamps_endpoints_and_rejects_nonfinite_samples(self):
+        filt = PisotFilter("golden", 1)
+        inv_phi = (math.sqrt(5) - 1) / 2
+        first, last = filt.apply([0, 1])
+        self.assertAlmostEqual(first, inv_phi / (1 + 2 * inv_phi))
+        self.assertAlmostEqual(last, (1 + inv_phi) / (1 + 2 * inv_phi))
+        for sample in (math.inf, -math.inf, math.nan, True):
+            with self.subTest(sample=sample), self.assertRaises(ValueError):
+                filt.apply([0, sample])
+
+    def test_dense_ranks_distinguish_values_that_round_to_same_float(self):
+        base = 2**53
+        values = [base + 3, base, Fraction(base + 1), base + 1, base + 2]
+        self.assertEqual(
+            ZeckendorfMap.encode_ranks(values), [(3, 1), (1,), (2,), (2,), (3,)]
+        )
+
+    def test_matched_benchmark_baselines_have_expected_impulse_response(self):
+        from verify.benchmark import causal_ema, impulse_asymmetry, rmse, savgol_9, zero_phase_sma
+
+        impulse = [0] * 4 + [1] + [0] * 4
+        for actual, expected in zip(savgol_9(impulse), (-21, 14, 39, 54, 59, 54, 39, 14, -21)):
+            self.assertAlmostEqual(actual, expected / 231)
+        self.assertEqual(zero_phase_sma(impulse), [1 / 9] * 9)
+        self.assertEqual(impulse_asymmetry(savgol_9), 0)
+        self.assertAlmostEqual(impulse_asymmetry(lambda x: causal_ema(x, 0.5), n=5), 0.375)
+        self.assertAlmostEqual(rmse([0, 0], [3, 4]), math.sqrt(25 / 2))
+
 
 if __name__=="__main__":
     unittest.main(verbosity=2)
