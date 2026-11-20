@@ -1,6 +1,9 @@
 """Exact witnesses and negative controls for golden nature and fold verification."""
+from dataclasses import replace
 from fractions import Fraction
+import hashlib
 import importlib.util
+import json
 import math
 from pathlib import Path
 
@@ -8,6 +11,7 @@ import pytest
 
 from chronus.math import golden_nature as gn
 from chronus.research import golden_nature_reference as reference
+from golden_ontology import numeric_reference
 
 pytestmark = pytest.mark.real
 
@@ -139,3 +143,121 @@ def test_reference_edge_cases_and_exact_basis(tmp_path):
     right=gn.ranked_zeckendorf_bits([[1],[2],[3]])[0]
     with pytest.raises(ValueError,match="basis"):
         gn.ranked_fidelity(left,right)
+
+
+def test_fold_digest_uses_width_bound_big_endian_encoding():
+    expected = hashlib.sha256(b"golden-fold/1:\x00\x10\x00\x01\x01\x00").hexdigest()
+    assert fv.original_digest([1, 256], 16) == expected
+    assert fv.original_digest([0, 1], 8) != fv.original_digest([0, 1], 16)
+    assert fv.verify([257, 1], 1, 16, digest=expected)["verdict"] == "VALID"
+    bad = fv.verify([257, 1], 1, 16, [1, 256], digest="0" * 64)
+    assert bad["verdict"] == "INVALID"
+    assert "trusted original digest mismatch" in bad["failures"]
+
+
+def test_fold_witness_requires_exact_json_types():
+    witness = fv.certificate(1, 8)
+    witness["matrix"][0] = True  # Python equality treats True and 1 as equal.
+    result = fv.verify([3, 1], 1, 8, [1, 2], witness=witness)
+    assert result["verdict"] == "INVALID"
+    assert "supplied certificate differs from recomputation" in result["failures"]
+
+
+@pytest.mark.parametrize("extra, code, verdict", [
+    ([], 2, "UNBOUND"),
+    (["--originals", "1,2"], 0, "VALID"),
+    (["--originals", "2,1"], 1, "INVALID"),
+    (["--originals", "1,"], 1, "INVALID"),
+])
+def test_fold_cli_maps_verdict_to_exit_code(extra, code, verdict, capsys):
+    args = ["--folded", "3,1", "--steps", "1", "--bits", "8"]
+    assert fv.main(args + extra) == code
+    result = json.loads(capsys.readouterr().out)
+    assert result["verdict"] == verdict
+    assert bool(result["failures"]) == (code == 1)
+
+
+def test_exact_kronecker_wraps_negative_fractional_seed():
+    seed = Fraction(-7, 4)
+    turns = gn.kronecker_golden_exact(3, seed)
+    assert turns == [
+        gn.Q5(Fraction(1, 4)),
+        gn.Q5(Fraction(-1, 4), Fraction(1, 2)),
+        gn.Q5(Fraction(-7, 4), Fraction(1)),
+    ]
+    assert turns == gn.kronecker_golden_exact(3, seed + 10**50)
+    assert gn.kronecker_golden_exact(0, seed) == []
+
+
+def test_exact_minimizer_at_symmetric_probe_tie():
+    result = gn.golden_section_exact(lambda x: x * x, -1, 1, tol=Fraction(1, 10**6))
+    assert result.converged
+    assert result.lower.sign() <= 0 <= result.upper.sign()
+    assert (result.upper - result.lower - Fraction(1, 10**6)).sign() <= 0
+
+
+def test_exact_minimizer_does_not_sample_bracket_already_at_tolerance():
+    def unexpected_sample(_):
+        pytest.fail("an already converged bracket needs no objective evaluations")
+
+    result = gn.golden_section_exact(unexpected_sample, 2, 3, tol=1, max_iter=0)
+    assert result == gn.MinimumBracket(gn.Q5(2), gn.Q5(3), 0, True)
+
+
+@pytest.mark.parametrize("left,right,error", [
+    ([], [], "matching binary vectors"),
+    ([1], [1, 0], "matching binary vectors"),
+    ([True], [1], "matching binary vectors"),
+    ([0, 0], [1, 0], "zero state"),
+])
+def test_ranked_fidelity_rejects_invalid_states(left, right, error):
+    with pytest.raises(ValueError, match=error):
+        gn.ranked_fidelity(left, right)
+
+
+def test_ranked_fidelity_returns_exact_squared_overlap():
+    assert gn.ranked_fidelity([1, 1, 0], [0, 1, 1]) == Fraction(1, 4)
+    assert gn.ranked_fidelity([1, 0], [0, 1]) == 0
+    ranked, _ = gn.ranked_zeckendorf_bits([[1], [2]])
+    with pytest.raises(ValueError, match="basis"):
+        gn.ranked_fidelity(ranked, tuple(ranked))
+
+
+def test_numeric_frequency_matches_known_quadratic_root_and_block_action():
+    frequency = gn.AlgebraicFrequency("silver", Fraction(1, 8), 2)
+    omega = (3 + 2 * math.sqrt(2)) / 8
+    assert numeric_reference.numeric_frequency(frequency) == pytest.approx(omega)
+    evolved, residual = numeric_reference.evolve_blocks([1, 0], [frequency], math.pi / (2 * omega))
+    assert evolved == pytest.approx([0j, -1j])
+    assert residual < 1e-15
+    unrepresentable = replace(frequency, base=Fraction(10**400))
+    with pytest.raises(ValueError, match="nonfinite projected phase"):
+        numeric_reference.numeric_frequency(unrepresentable)
+
+
+@pytest.mark.parametrize("state,n_frequencies,time,error", [
+    ([1, 0], 0, 1, "shape mismatch"),
+    ([1, 0], 1, math.inf, "finite time"),
+    ([1, complex(0, math.nan)], 1, 1, "nonfinite state"),
+])
+def test_numeric_evolution_rejects_invalid_boundaries(state, n_frequencies, time, error):
+    frequencies = gn.anti_resonant_frequencies_exact(n_frequencies)
+    with pytest.raises(ValueError, match=error):
+        numeric_reference.evolve_blocks(state, frequencies, time)
+
+
+def test_research_adapter_projects_nondefault_frequency_and_seed():
+    phi = (1 + math.sqrt(5)) / 2
+    frequencies = reference.anti_resonant_frequencies(6, base_omega=0.25)
+    assert frequencies[0] == pytest.approx((1 + phi) / 4)
+    assert frequencies[5] == pytest.approx((1 + 2 * phi) / 4)
+    assert reference.kronecker_golden_1d(2, seed=-0.25) == pytest.approx(
+        [0.75, 1 / phi - 0.25]
+    )
+
+
+def test_numeric_minimizer_rejects_nonfinite_objective_and_exhausted_budget():
+    with pytest.raises(ValueError, match="nonfinite objective"):
+        reference.golden_section_minimize(lambda _: math.inf, -1, 1)
+    with pytest.raises(ArithmeticError, match="tolerance not reached"):
+        reference.golden_section_minimize(abs, -1, 1, max_iter=0)
