@@ -8,9 +8,11 @@ instanton vocabulary; that vocabulary is a naming metaphor, and the mechanism
 is the classical code below.
 
 Code: systematic RS(n, k) with evaluation points 1..n in GF(257). It corrects up
-to t = floor((n - k) / 2) symbol errors per block and detects heavier
-corruption as uncorrectable. All arithmetic is exact integer arithmetic modulo
-257.
+to t = floor((n - k) / 2) symbol errors per block. Beyond that bound, some
+patterns are undetected or decode to another codeword. The ``decode_blocks``
+``ok`` flag confirms codeword validity; ``heal_blocks`` also verifies the
+reconstructed bytes against the expected SHA-256 digest. All arithmetic is
+exact integer arithmetic modulo 257.
 
 Two decoders implement the same code:
 
@@ -37,6 +39,8 @@ P = 257
 DEFAULT_N = 48
 DEFAULT_K = 32
 MAX_TRACE_BYTES = 1 << 20
+# Bound expanded decoder work to that of a maximum-size default trace.
+_MAX_DECODE_SYMBOLS = ((MAX_TRACE_BYTES + DEFAULT_K - 1) // DEFAULT_K) * DEFAULT_N
 
 
 class ReedSolomonError(ValueError):
@@ -50,9 +54,11 @@ def _inv(a: int) -> int:
     return pow(a, P - 2, P)
 
 
-def _check_params(n: int, k: int) -> None:
-    if not (1 <= k < n <= P - 1):
-        raise ReedSolomonError("require 1 <= k < n <= 256")
+def _check_params(n: int, k: int) -> tuple[int, int]:
+    if (not all(isinstance(v, (int, np.integer)) and not isinstance(v, bool) for v in (n, k))
+            or not (1 <= k < n <= P - 1)):
+        raise ReedSolomonError("require integer dimensions with 1 <= k < n <= 256")
+    return int(n), int(k)
 
 
 @lru_cache(maxsize=32)
@@ -76,7 +82,7 @@ def _parity_weights(n: int, k: int) -> Tuple[Tuple[int, ...], ...]:
 
 def encode_block(data: Sequence[int], n: int, k: int) -> List[int]:
     """Parity symbols for one block of ``k`` data symbols (values 0..256)."""
-    _check_params(n, k)
+    n, k = _check_params(n, k)
     if len(data) != k:
         raise ReedSolomonError("block must contain exactly k symbols")
     return [sum(w * d for w, d in zip(row, data)) % P for row in _parity_weights(n, k)]
@@ -134,7 +140,7 @@ def _solve_mod_p(rows: List[List[int]], rhs: List[int], ncols: int) -> Optional[
 
 def decode_block(codeword: Sequence[int], n: int, k: int) -> Dict[str, Any]:
     """Berlekamp-Welch decoding of one received block (data + parity)."""
-    _check_params(n, k)
+    n, k = _check_params(n, k)
     if len(codeword) != n:
         raise ReedSolomonError("codeword must contain n symbols")
     received = [int(v) % P for v in codeword]
@@ -207,13 +213,36 @@ def _data_blocks(trace: bytes, k: int) -> np.ndarray:
 
 def encode_blocks(trace: bytes, n: int = DEFAULT_N, k: int = DEFAULT_K) -> np.ndarray:
     """Parity for every block of ``trace`` as a (blocks, n - k) array; same values as ``encode_block``."""
-    _check_params(n, k)
+    n, k = _check_params(n, k)
     if len(trace) > MAX_TRACE_BYTES:
         raise ReedSolomonError("trace exceeds the supported size")
     data = _data_blocks(trace, k)
     if not len(data):
         return np.zeros((0, n - k), dtype=np.int64)
     return (data @ _tables(n, k)["weights"].T) % P
+
+
+def _check_decode_size(blocks: int, n: int) -> None:
+    if blocks * n > _MAX_DECODE_SYMBOLS:
+        raise ReedSolomonError("expanded words exceed the supported decoder size")
+
+
+def _repair_block_count(length: int, n: int, k: int) -> int:
+    if length > MAX_TRACE_BYTES:
+        raise ReedSolomonError("trace exceeds the supported size")
+    blocks = (length + k - 1) // k
+    _check_decode_size(blocks, n)
+    return blocks
+
+
+def _field_symbols(values: np.ndarray) -> np.ndarray:
+    """Validate symbols without letting a cast truncate or wrap them."""
+    if values.dtype.kind not in "iuf":
+        raise ReedSolomonError("symbols must be integers in GF(257)")
+    if values.size and (values.min() < 0 or values.max() >= P
+                        or (values.dtype.kind == "f" and not (values == np.floor(values)).all())):
+        raise ReedSolomonError("symbols must be integers in GF(257)")
+    return values.astype(np.int64, copy=False)
 
 
 def decode_blocks(words: np.ndarray, n: int, k: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -223,15 +252,15 @@ def decode_blocks(words: np.ndarray, n: int, k: int) -> Tuple[np.ndarray, np.nda
     the word is a codeword (as received or after correcting at most t symbols),
     and a per-block flag that the received word was not a codeword.
     """
-    _check_params(n, k)
+    n, k = _check_params(n, k)
+    words = np.asarray(words)
+    if words.ndim != 2 or words.shape[1] != n:
+        raise ReedSolomonError("words must have shape (blocks, n)")
+    _check_decode_size(words.shape[0], n)
+    words = _field_symbols(words)
     tab = _tables(n, k)
     r = n - k
     t = r // 2
-    words = np.asarray(words, dtype=np.int64)
-    if words.ndim != 2 or words.shape[1] != n:
-        raise ReedSolomonError("words must have shape (blocks, n)")
-    if words.size and (words.min() < 0 or words.max() >= P):
-        raise ReedSolomonError("symbol outside GF(257)")
     syn = (words @ tab["h"]) % P
     damaged = syn.any(axis=1)
     corrected = words.copy()
@@ -306,12 +335,13 @@ def protect(trace: bytes, n: int = DEFAULT_N, k: int = DEFAULT_K) -> Dict[str, A
 
 def heal_blocks(received: bytes, parity: np.ndarray, n: int, k: int, expected_sha256: str) -> Dict[str, Any]:
     """Batched repair of ``received`` from a (blocks, n - k) parity array."""
-    _check_params(n, k)
-    parity = np.asarray(parity, dtype=np.int64)
+    n, k = _check_params(n, k)
     length = len(received)
-    blocks = (length + k - 1) // k
+    blocks = _repair_block_count(length, n, k)
+    parity = np.asarray(parity)
     if parity.shape != (blocks, n - k):
         raise ReedSolomonError("parity block count does not match the envelope")
+    parity = _field_symbols(parity)
     data = _data_blocks(received, k)
     words = np.concatenate([data, parity], axis=1) if blocks else np.zeros((0, n), dtype=np.int64)
     corrected, ok, damaged = decode_blocks(words, n, k)
@@ -342,12 +372,13 @@ def heal_blocks(received: bytes, parity: np.ndarray, n: int, k: int, expected_sh
 def heal(received: bytes, envelope: Dict[str, Any], received_parity: Optional[List[List[int]]] = None) -> Dict[str, Any]:
     """Detect and correct corrupted symbols in ``received`` using ``envelope``."""
     n, k = int(envelope["n"]), int(envelope["k"])
-    _check_params(n, k)
+    n, k = _check_params(n, k)
     length = int(envelope["length"])
     parity = received_parity if received_parity is not None else envelope["parity"]
     if len(received) != length:
         raise ReedSolomonError("received trace length differs from the protected length")
-    if len(parity) != int(envelope["blocks"]):
+    blocks = _repair_block_count(length, n, k)
+    if len(parity) != blocks or len(parity) != int(envelope["blocks"]):
         raise ReedSolomonError("parity block count does not match the envelope")
     # Same acceptance as the reference path (``int(v) % P``); arbitrary-size
     # integers are reduced in Python before they reach int64 arrays.

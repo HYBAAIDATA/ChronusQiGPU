@@ -315,3 +315,60 @@ def test_quarantined_journal_object_that_becomes_unrepairable_fails_continuity(t
     assert store.diagnose_object(entry.object_id)["status"] == "UNREPAIRABLE"
     with pytest.raises(StorageIntegrityError):
         store.verify_journal_continuity("tenant-a")
+
+
+def test_concurrent_repairs_report_only_one_commit(tmp_path):
+    path = tmp_path / "t.sqlite3"
+    stores = [DurableTheseusService(str(path)) for _ in range(2)]
+    record = stores[0].store("tenant-a", PAYLOAD)
+    _corrupt(path, record.object_id, [9])
+
+    def repair(store):
+        return store.repair_object(record.object_id, authority="operator:test")
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(repair, stores))
+    assert all(result["status"] == "HEALTHY" for result in results)
+    assert sum(result["repaired"] for result in results) == 1
+    assert len(_events(path, "REPAIRED")) == 1
+
+
+def test_backfill_does_not_count_oversize_or_ignored_sidecars(tmp_path, monkeypatch):
+    path = tmp_path / "legacy.sqlite3"
+    small = [b"first", b"second"]
+    oversize, ignored, good = _legacy_store(path, [bytes(4096), *small])
+    monkeypatch.setenv("CHRONUS_SELF_HEALING_BACKFILL_LIMIT", "0")  # mock-ok: config only
+    monkeypatch.setenv("CHRONUS_SELF_HEALING_MAX_BYTES", "64")  # mock-ok: config only
+    store = DurableTheseusService(str(path))
+    with closing(sqlite3.connect(path)) as db, db:
+        db.execute("UPDATE objects SET size_bytes=1 WHERE object_id=?", (oversize.object_id,))
+        db.execute(f"""
+            CREATE TRIGGER ignore_sidecar BEFORE INSERT ON object_parity
+            WHEN NEW.object_id = '{ignored.object_id}'
+            BEGIN SELECT RAISE(IGNORE); END
+        """)
+    for invalid in (-1, 0, True, 1.5):
+        with pytest.raises(ValueError, match="positive integer"):
+            store.backfill_parity(batch=invalid)
+    assert store.backfill_parity(limit=1) == 1
+    assert _events(path, "PARITY_BACKFILLED") == [(good.object_id, "PARITY_BACKFILLED", 0)]
+    assert store.backfill_parity() == 0
+
+
+def test_startup_accepts_repair_committed_after_detection(tmp_path):
+    path = tmp_path / "t.sqlite3"
+    worker = DurableTheseusService(str(path))
+    record = worker.store("tenant-a", PAYLOAD)
+    _corrupt(path, record.object_id, [9])
+
+    class Store(DurableTheseusService):
+        # Deterministically place the other worker's real commit between detection and recheck.
+        def _try_heal(self, object_id, corrupted):  # mock-ok: schedules a real concurrent repair
+            result = super()._try_heal(object_id, corrupted)
+            assert result is None
+            assert worker.repair_object(object_id, authority="operator:test")["repaired"]
+            return result
+
+    reopened = Store(str(path), repair_authority="salamander")
+    assert reopened.reconstruct("tenant-a", record.object_id) == PAYLOAD
+    assert [e[1] for e in _events(path)] == ["DETECTED", "REPAIRED"]

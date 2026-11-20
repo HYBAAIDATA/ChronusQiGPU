@@ -3907,7 +3907,8 @@ class ExpandedSpectralGapPrefill:
         }
 
 
-def run_invariant_tests(prebuilt_pipeline: "UnifiedFullStackPipeline" = None) -> bool:
+def run_invariant_tests(prebuilt_pipeline: "UnifiedFullStackPipeline" = None, *,
+                        skipped_checks: list[str] | None = None) -> bool | None:
     print("\n" + "=" * 80)
     print("INVARIANT TEST CONTRACT  (I1 – I41)")
     print("=" * 80)
@@ -4090,16 +4091,19 @@ def run_invariant_tests(prebuilt_pipeline: "UnifiedFullStackPipeline" = None) ->
 
     # I27 — Donaldson-Seiberg-Witten Instanton Monopole Cobordism Trace Self-Healing
     healed_trace, k_inst, cob_ok = DSWInstantonSelfHealer.heal_execution_trace(b"execution_trace_data", injected_fault=True)
+    skipped = []
     if cob_ok is None:
+        skipped.append("I27")
         print("I27 NOT RUN — chronus.security.al_haras.reed_solomon not importable; no repair was checked")
     else:
-        assert cob_ok and healed_trace == b"execution_trace_data", "I27 FAIL: Reed-Solomon trace repair did not verify"
+        assert cob_ok and k_inst == 1 and healed_trace == b"execution_trace_data", "I27 FAIL: Reed-Solomon trace repair did not verify"
         print("I27 PASS — trace fault corrected by Reed-Solomon RS(48,32)/GF(257), SHA-256 verified (DSW naming is a metaphor)")
 
     # I28 — All Seven Millennium Problems Operationalized Invariance
-    all_7_ok = MillenniumProblemsMatrix.verify_all_seven_millennium_problems()
+    all_7_ok = None if cob_ok is None else MillenniumProblemsMatrix.verify_all_seven_millennium_problems()
     if all_7_ok is None:
-        print("I28 NOT RUN — depends on the I27 trace check, which did not run")
+        skipped.append("I28")
+        print("I28 NOT RUN — required trace repair check did not run")
     else:
         assert all_7_ok, "I28 FAIL: Millennium Problems Operationalization Matrix failed"
         print("I28 PASS — All Seven Millennium Problems Operationalized Invariance (Yang-Mills to DSW Verified)")
@@ -4433,7 +4437,17 @@ def run_invariant_tests(prebuilt_pipeline: "UnifiedFullStackPipeline" = None) ->
     print("I94 PASS — Hermiten 9-Condition Contractual Net Savings Settlement Invariance ($1,375 fee on $5,500 savings)")
 
 
-    print("\n✓  All 46 invariants passed.")
+    if skipped:
+        if skipped_checks is not None:
+            skipped_checks.extend(skipped)
+        print("\nInvariant suite incomplete. Not run: " + ", ".join(skipped))
+        return None
+    if skipped:
+        if skipped_checks is not None:
+            skipped_checks.extend(skipped)
+        print("\nInvariant suite incomplete. Not run: " + ", ".join(skipped))
+        return None
+    print("\n✓  All checks in the invariant suite passed.")
     return True
 
 
@@ -4504,13 +4518,16 @@ class InvariantContractSuite:
     def execute_all_invariants(cls, pipeline: Optional[Any] = None) -> dict:
         import time
         t0 = time.perf_counter()
-        inv_ok = run_invariant_tests(prebuilt_pipeline=pipeline)
+        skipped_checks = []
+        inv_ok = run_invariant_tests(prebuilt_pipeline=pipeline, skipped_checks=skipped_checks)
         t1 = time.perf_counter()
+        tested = 94 - len(skipped_checks)
         return {
             "family": "INVARIANT_CONTRACT_SUITE",
-            "total_invariants_tested": 94,
-            "invariants_passed": 94 if inv_ok else 0,
-            "status": "PASS" if inv_ok else "FAIL",
+            "total_invariants_tested": tested,
+            "invariants_passed": tested if inv_ok is not False else 0,
+            "invariants_not_run": skipped_checks,
+            "status": "INCOMPLETE" if inv_ok is None else "PASS" if inv_ok else "FAIL",
             "execution_time_ms": (t1 - t0) * 1000.0
         }
 
@@ -5986,7 +6003,7 @@ class ChronusVerificationOrchestrator:
         print(f"[TEST FAMILY 2] Property-Based & Mathematical Tests     : {p_res['status']}")
 
         i_res = InvariantContractSuite.execute_all_invariants()
-        print(f"[TEST FAMILY 3] Invariant Contract Suite (I1 - I46)   : {i_res['status']} ({i_res['invariants_passed']}/46 Passed)")
+        print(f"[TEST FAMILY 3] Invariant Contract Suite (I1 - I94)   : {i_res['status']} ({i_res['invariants_passed']}/94 Passed)")
 
         a_res = AdversarialSecurityTestSuite.run_adversarial_security_tests()
         print(f"[TEST FAMILY 4] Adversarial & Security Tests          : {a_res['status']}")
@@ -6022,7 +6039,7 @@ class ChronusVerificationOrchestrator:
         gate_results = [
             u_res,
             p_res,
-            {"gate": QualificationGate.GATE_3_INVARIANT_PRESERVATION.value, "status": "PASS"},
+            {"gate": QualificationGate.GATE_3_INVARIANT_PRESERVATION.value, "status": i_res["status"]},
             a_res,
             g5,
             g6,
@@ -6030,14 +6047,22 @@ class ChronusVerificationOrchestrator:
             e_res
         ]
 
-        manifest = QualificationManifest.generate_manifest(gate_results, [f"I{i}" for i in range(1, 47)])
+        not_run = i_res["invariants_not_run"]
+        passed = [f"I{i}" for i in range(1, 95) if f"I{i}" not in not_run]
+        manifest = QualificationManifest.generate_manifest(gate_results, passed)
+        manifest["invariants_not_run"] = not_run
+        manifest["invariant_summary"] = (
+            "Invariant suite incomplete. Not run: " + ", ".join(not_run)
+            if not_run else "All checks in the invariant suite passed."
+        )
+        if not_run:
+            manifest["qualification_status"] = "INCOMPLETE"
         
         fi_res = VerificationFrameworkIntegritySuite.verify_framework_integrity(manifest)
         print(f"[FAMILY 12] Framework Integrity & Self-Verification   : {fi_res['status']}")
 
         t1 = time.perf_counter()
         manifest["verification_suite_total_latency_ms"] = (t1 - t0) * 1000.0
-        manifest["qualification_status"] = "PRODUCTION_QUALIFIED"
         manifest["v23_verification_assurance"] = {
             "mutation_testing": m_res,
             "differential_reference": d_res,
@@ -6051,14 +6076,15 @@ class ChronusVerificationOrchestrator:
             
         print("\n" + "=" * 80)
         print(f"QUALIFICATION RESULT: {manifest['qualification_status']}")
-        print(f"ALL 8/8 MANDATORY GATES QUALIFIED | ALL 46/46 INVARIANTS GREEN")
+        print(manifest["invariant_summary"])
         print("Exported qualification_manifest_v36.json")
         print("=" * 80 + "\n")
 
         return manifest
 
 
-def run_invariant_tests(prebuilt_pipeline: "UnifiedFullStackPipeline" = None) -> bool:
+def run_invariant_tests(prebuilt_pipeline: "UnifiedFullStackPipeline" = None, *,
+                        skipped_checks: list[str] | None = None) -> bool | None:
     print("\n" + "=" * 80)
     print("INVARIANT TEST CONTRACT  (I1 – I41)")
     print("=" * 80)
@@ -6241,16 +6267,19 @@ def run_invariant_tests(prebuilt_pipeline: "UnifiedFullStackPipeline" = None) ->
 
     # I27 — Donaldson-Seiberg-Witten Instanton Monopole Cobordism Trace Self-Healing
     healed_trace, k_inst, cob_ok = DSWInstantonSelfHealer.heal_execution_trace(b"execution_trace_data", injected_fault=True)
+    skipped = []
     if cob_ok is None:
+        skipped.append("I27")
         print("I27 NOT RUN — chronus.security.al_haras.reed_solomon not importable; no repair was checked")
     else:
-        assert cob_ok and healed_trace == b"execution_trace_data", "I27 FAIL: Reed-Solomon trace repair did not verify"
+        assert cob_ok and k_inst == 1 and healed_trace == b"execution_trace_data", "I27 FAIL: Reed-Solomon trace repair did not verify"
         print("I27 PASS — trace fault corrected by Reed-Solomon RS(48,32)/GF(257), SHA-256 verified (DSW naming is a metaphor)")
 
     # I28 — All Seven Millennium Problems Operationalized Invariance
-    all_7_ok = MillenniumProblemsMatrix.verify_all_seven_millennium_problems()
+    all_7_ok = None if cob_ok is None else MillenniumProblemsMatrix.verify_all_seven_millennium_problems()
     if all_7_ok is None:
-        print("I28 NOT RUN — depends on the I27 trace check, which did not run")
+        skipped.append("I28")
+        print("I28 NOT RUN — required trace repair check did not run")
     else:
         assert all_7_ok, "I28 FAIL: Millennium Problems Operationalization Matrix failed"
         print("I28 PASS — All Seven Millennium Problems Operationalized Invariance (Yang-Mills to DSW Verified)")
@@ -6493,7 +6522,12 @@ def run_invariant_tests(prebuilt_pipeline: "UnifiedFullStackPipeline" = None) ->
     assert herm_settle["hermiten_value_share_fee_usd"] == 1375.0, f"I94 FAIL: Expected $1,375 fee, got {herm_settle['hermiten_value_share_fee_usd']}"
     print("I94 PASS — Hermiten 9-Condition Contractual Net Savings Settlement Invariance ($1,375 fee on $5,500 savings)")
 
-    print("\n✓  All 94 invariants passed.")
+    if skipped:
+        if skipped_checks is not None:
+            skipped_checks.extend(skipped)
+        print("\nInvariant suite incomplete. Not run: " + ", ".join(skipped))
+        return None
+    print("\n✓  All checks in the invariant suite passed.")
     return True
 
 
@@ -6564,13 +6598,16 @@ class InvariantContractSuite:
     def execute_all_invariants(cls, pipeline: Optional[Any] = None) -> dict:
         import time
         t0 = time.perf_counter()
-        inv_ok = run_invariant_tests(prebuilt_pipeline=pipeline)
+        skipped_checks = []
+        inv_ok = run_invariant_tests(prebuilt_pipeline=pipeline, skipped_checks=skipped_checks)
         t1 = time.perf_counter()
+        tested = 94 - len(skipped_checks)
         return {
             "family": "INVARIANT_CONTRACT_SUITE",
-            "total_invariants_tested": 94,
-            "invariants_passed": 94 if inv_ok else 0,
-            "status": "PASS" if inv_ok else "FAIL",
+            "total_invariants_tested": tested,
+            "invariants_passed": tested if inv_ok is not False else 0,
+            "invariants_not_run": skipped_checks,
+            "status": "INCOMPLETE" if inv_ok is None else "PASS" if inv_ok else "FAIL",
             "execution_time_ms": (t1 - t0) * 1000.0
         }
 
@@ -7045,7 +7082,7 @@ class ChronusVerificationOrchestrator:
 
         # Family 3: Invariant Contract Suite (I1 - I41)
         i_res = InvariantContractSuite.execute_all_invariants()
-        print(f"[TEST FAMILY 3] Invariant Contract Suite (I1 - I41)   : {i_res['status']} ({i_res['invariants_passed']}/41 Passed)")
+        print(f"[TEST FAMILY 3] Invariant Contract Suite (I1 - I94)   : {i_res['status']} ({i_res['invariants_passed']}/94 Passed)")
 
         # Family 4: Adversarial & Security Tests
         a_res = AdversarialSecurityTestSuite.run_adversarial_security_tests()
@@ -7091,7 +7128,7 @@ class ChronusVerificationOrchestrator:
         gate_results = [
             u_res,
             p_res,
-            {"gate": QualificationGate.GATE_3_INVARIANT_PRESERVATION.value, "status": "PASS"},
+            {"gate": QualificationGate.GATE_3_INVARIANT_PRESERVATION.value, "status": i_res["status"]},
             a_res,
             g5,
             g6,
@@ -7099,16 +7136,21 @@ class ChronusVerificationOrchestrator:
             e_res
         ]
 
-        manifest = QualificationManifest.generate_manifest(gate_results, [f"I{i}" for i in range(1, 95)])
+        not_run = i_res["invariants_not_run"]
+        passed = [f"I{i}" for i in range(1, 95) if f"I{i}" not in not_run]
+        manifest = QualificationManifest.generate_manifest(gate_results, passed)
+        manifest["invariants_not_run"] = not_run
+        manifest["invariant_summary"] = (
+            "Invariant suite incomplete. Not run: " + ", ".join(not_run)
+            if not_run else "All checks in the invariant suite passed."
+        )
+        if not_run:
+            manifest["qualification_status"] = "INCOMPLETE"
         
         t1 = time.perf_counter()
         manifest["verification_suite_total_latency_ms"] = (t1 - t0) * 1000.0
-        manifest["qualification_status"] = "PRODUCTION_QUALIFIED"
         
         # Save exported manifest v36
-        manifest["total_invariants_evaluated"] = 94
-        manifest["invariants_passed"] = 94
-        manifest["invariant_summary"] = "All 94 Architectural Invariants (I1-I94) Green"
 
         # The release manifest is written to the repository by default.
         # CHRONUS_MANIFEST_OUT_DIR redirects it, which lets a caller collect
@@ -7135,7 +7177,7 @@ class ChronusVerificationOrchestrator:
             
         print("\n" + "=" * 80)
         print(f"QUALIFICATION RESULT: {manifest['qualification_status']}")
-        print(f"ALL 8/8 MANDATORY GATES QUALIFIED | ALL 94/94 INVARIANTS GREEN")
+        print(manifest["invariant_summary"])
         print("Exported qualification_manifest_v36.json")
         print("=" * 80 + "\n")
 
@@ -8085,7 +8127,7 @@ if __name__ == "__main__":
     print(f"          oVID ID    : {token_store['oVID_id']}")
     print(f"          Verify URL : {token_store['verify_url']}")
 
-    run_invariant_tests(prebuilt_pipeline=pipeline)
+    inv_ok = run_invariant_tests(prebuilt_pipeline=pipeline)
     
     print("\n" + "=" * 80)
     print("POST-QUANTUM GOLDEN RATIO SUBSTRATE BENCHMARK SUITE")
@@ -8106,5 +8148,7 @@ if __name__ == "__main__":
 
 
     print("\n" + "=" * 80)
-    print("CHRONUS GPIU v16.0 — ALL PIPELINES COMPLETE, ALL 82 INVARIANTS GREEN")
+    print("CHRONUS GPIU v16.0 — ALL PIPELINES COMPLETE")
+    if inv_ok is True:
+        print("ALL CHECKS IN THE INVARIANT SUITE PASSED")
     print("=" * 80)

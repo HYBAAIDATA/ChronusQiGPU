@@ -36,6 +36,7 @@ import json
 import sqlite3
 import time
 from contextlib import closing
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Mapping
@@ -121,6 +122,7 @@ class SalamanderTheseusRemediation:
         self.clock_ns = clock_ns
         self._snapshots: dict[str, str | None] = {}
         self._in_flight: set[tuple[str, str]] = set()
+        self._cycle_repair: ContextVar[tuple[str, bool] | None] = ContextVar("cycle_repair", default=None)
         self.retained_evidence: list[str] = []
         sink = self._retain_in_theseus if retain_evidence_in_theseus else None
         self.ledger = self._s["EvidenceLedger"](sink=sink)
@@ -159,6 +161,9 @@ class SalamanderTheseusRemediation:
             result = self.store.repair_object(request.target, authority=authority)
         finally:
             self._in_flight.discard(token)
+        cycle_repair = self._cycle_repair.get()
+        if cycle_repair is not None and cycle_repair[0] == request.action_id and result["repaired"]:
+            self._cycle_repair.set((request.action_id, True))
         return {"handler_reported": result}
 
     def _execute_confirm(self, request) -> Mapping[str, Any]:
@@ -237,13 +242,20 @@ class SalamanderTheseusRemediation:
                 steps=(s["RecoveryStep"]("repair", repair, rollback=confirm),),
                 max_actions=2, deadline_ns=self.clock_ns() + 60_000_000_000,
             )
+            # Track this invocation only: a replayed result can still verify
+            # without this cycle's handler having committed any write.
+            context = self._cycle_repair.set((repair.action_id, False))
             try:
                 results = self.plane.recover(plan)  # Authorise + Execute + Verify + accept/rollback
             except s["FailClosed"] as exc:
                 report.rejected.append({"object_id": object_id, "reason": str(exc)})
                 continue
+            finally:
+                _, committed = self._cycle_repair.get()
+                self._cycle_repair.reset(context)
             if results and results[0].verified:
-                report.repaired.append(object_id)
+                if committed:
+                    report.repaired.append(object_id)
             else:
                 report.rejected.append({"object_id": object_id,
                                         "reason": results[0].error if results else "no result"})

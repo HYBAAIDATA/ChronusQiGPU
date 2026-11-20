@@ -146,3 +146,27 @@ def test_legacy_invariant_matrix_is_not_run_when_the_decoder_is_unavailable(monk
     monkeypatch.delattr(al_haras_pkg, "reed_solomon")  # mock-ok: drops the cached submodule so the import really fails
     assert module.DSWInstantonSelfHealer.heal_execution_trace(b"t", True)[2] is None
     assert module.MillenniumProblemsMatrix.verify_all_seven_millennium_problems() is None
+
+
+@pytest.mark.parametrize("invalid", [1.5, -0.5, np.nan, np.inf, 257, 2**64 - 1, "1", 1 + 0j])
+def test_batched_entry_points_reject_invalid_symbols_before_cast(invalid):
+    with pytest.raises(rs.ReedSolomonError, match="symbols"):
+        rs.decode_blocks(np.full((1, N), invalid), N, K)
+    with pytest.raises(rs.ReedSolomonError, match="symbols"):
+        rs.heal_blocks(bytes(K), np.full((1, N - K), invalid), N, K, "")
+
+
+def test_batched_decoder_accepts_field_residue_256():
+    words = np.full((1, N), 256, dtype=np.uint16)  # constant polynomial
+    corrected, ok, _ = rs.decode_blocks(words, N, K)
+    assert ok.all() and np.array_equal(corrected, words)
+    out = rs.heal_blocks(bytes(K), np.full((1, N - K), 256), N, K, "")
+    assert not out["integrity_verified"]
+
+
+def test_repair_rejects_excessive_expansion_before_reading_parity():
+    trace = bytes(8_000)  # within the trace cap, but 8,000 × 256 symbols
+    with pytest.raises(rs.ReedSolomonError, match="expanded words"):
+        rs.heal_blocks(trace, None, 256, 1, "")
+    with pytest.raises(rs.ReedSolomonError, match="expanded words"):
+        rs.heal(trace, {"n": 256, "k": 1, "length": len(trace), "blocks": len(trace), "parity": None})

@@ -335,31 +335,34 @@ class DurableTheseusService:
     def _ensure_parity(
         self, db: sqlite3.Connection, object_id: str, payload: bytes,
         precomputed: bytes | None = None,
-    ) -> None:
-        """Write the Reed-Solomon parity sidecar for a verified payload."""
+    ) -> bool:
+        """Write parity for a verified payload; return whether a sidecar was written."""
         if not self.self_healing:
-            return
+            return False
         row = db.execute(
             "SELECT scheme, n, k, parity, parity_sha256 FROM object_parity WHERE object_id=?",
             (object_id,),
         ).fetchone()
         if row is not None and self._sidecar_intact(row):
-            return
+            return False
         # New protection honours the configured limit; an existing sidecar is
         # maintained regardless (up to the encoder limit) so lowering the limit
         # never strands a damaged sidecar that is still used for repair.
         limit = self_heal.encoder_max_bytes() if row is not None else self.self_healing_max_bytes
         if len(payload) > limit:
-            return
+            return False
         parity = precomputed if precomputed is not None else self_heal.encode_parity(payload)
-        db.execute(
+        write = db.execute(
             "INSERT OR REPLACE INTO object_parity(object_id,scheme,n,k,parity,parity_sha256) "
             "VALUES(?,?,?,?,?,?)",
             (object_id, self_heal.SCHEME, self_heal.RS_N, self_heal.RS_K,
              sqlite3.Binary(parity), hashlib.sha256(parity).hexdigest()),
         )
+        if write.rowcount != 1:
+            return False
         if row is not None:
             self._log_heal(db, object_id, "PARITY_REGENERATED", 0, "parity sidecar failed verification")
+        return True
 
     @staticmethod
     def _sidecar_intact(row: sqlite3.Row) -> bool:
@@ -395,9 +398,10 @@ class DurableTheseusService:
         if not self.self_healing:
             return None
         commit = self.repair_authority == "theseus"
-        return self._heal_serialised(object_id, commit=commit, authority="theseus-inline")
+        payload, _ = self._heal_serialised(object_id, commit=commit, authority="theseus-inline")
+        return payload
 
-    def _heal_serialised(self, object_id: str, *, commit: bool, authority: str) -> bytes | None:
+    def _heal_serialised(self, object_id: str, *, commit: bool, authority: str) -> tuple[bytes | None, bool]:
         # One decode per object per process: concurrent callers wait, then see
         # the repaired row (or the recorded failure) instead of re-decoding.
         with self._heal_locks_guard:
@@ -444,36 +448,37 @@ class DurableTheseusService:
                 "code": "RS(%d,%d) over GF(257)" % (parity_row["n"], parity_row["k"])}
 
     def _try_heal_locked(self, object_id: str, *, commit: bool = True,
-                         authority: str = "theseus-inline") -> bytes | None:
+                         authority: str = "theseus-inline") -> tuple[bytes | None, bool]:
+        """Return verified bytes (if available) and whether this call wrote them."""
         # 1-2. Snapshot and decode outside any write transaction.
         diag = self._diagnose_locked(object_id)
         if diag["status"] == "MISSING":
-            return None
+            return None, False
         if diag["status"] == "HEALTHY":
-            return diag["payload"]  # healed concurrently
+            return diag["payload"], False  # healed concurrently
         # 3. Short write transaction: recheck, then commit repair or audit row.
         with self._lock, self._connect(immediate=True) as db:
             now = db.execute(
                 "SELECT payload FROM objects WHERE object_id=?", (object_id,)
             ).fetchone()
             if now is None:
-                return None
+                return None, False
             now_payload = bytes(now["payload"])
             if hashlib.sha256(now_payload).hexdigest() == object_id:
-                return now_payload  # healed concurrently
+                return now_payload, False  # healed concurrently
             if diag["status"] == "UNREPAIRABLE":
                 self._log_heal(db, object_id, "UNREPAIRABLE", 0, diag["reason"])
-                return None
+                return None, False
             if not commit:
                 self._log_heal(db, object_id, "DETECTED", diag["corrected_bytes"],
                                "repairable within bound; awaiting authorised remediation")
-                return None
+                return None, False
             now_parity = db.execute(
                 "SELECT parity_sha256 FROM object_parity WHERE object_id=?", (object_id,)
             ).fetchone()
             if (now_payload != diag["payload"] or now_parity is None
                     or now_parity["parity_sha256"] != diag["parity_sha256"]):
-                return None  # changed underneath us; caller fails closed, a retry re-decodes
+                return None, False  # changed underneath us; caller fails closed, a retry re-decodes
             db.execute(
                 "UPDATE objects SET payload=? WHERE object_id=?",
                 (sqlite3.Binary(diag["repaired"]), object_id),
@@ -482,7 +487,7 @@ class DurableTheseusService:
                 db, object_id, "REPAIRED", diag["corrected_bytes"],
                 "Reed-Solomon %s; SHA-256 verified; authority=%s" % (diag["code"], authority),
             )
-            return diag["repaired"]
+            return diag["repaired"], True
 
     # Public surface for the remediation authority (Salamander) ----------
 
@@ -502,9 +507,10 @@ class DurableTheseusService:
         """
         if not callable(check):
             raise ValueError("repair authority check must be callable")
-        if self._repair_authority_check is not None and self._repair_authority_check != check:
-            raise PermissionError("this store is already bound to a remediation authority")
-        self._repair_authority_check = check
+        with self._lock:
+            if self._repair_authority_check is not None and self._repair_authority_check != check:
+                raise PermissionError("this store is already bound to a remediation authority")
+            self._repair_authority_check = check
 
     def tenants_for_object(self, object_id: str) -> list[str]:
         """Tenants holding a record for ``object_id`` (custody scope of a repair)."""
@@ -530,6 +536,8 @@ class DurableTheseusService:
 
         ``authority`` names who authorised the action and is kept in the
         REPAIRED evidence row. Unrepairable objects are left untouched.
+        An already healthy object is a successful no-op: status HEALTHY,
+        with repaired=False because this call did not commit a repair.
         """
         if not authority or not isinstance(authority, str):
             raise ValueError("authority is required")
@@ -541,11 +549,11 @@ class DurableTheseusService:
                 raise PermissionError(
                     "repair requires an in-flight AL HARAS-authorised Salamander action"
                 )
-        repaired = self._heal_serialised(object_id, commit=True, authority=authority)
-        if repaired is not None:
+        payload, committed = self._heal_serialised(object_id, commit=True, authority=authority)
+        if payload is not None:
             self._quarantined.discard(object_id)
         diag = self.diagnose_object(object_id)
-        return {"object_id": object_id, "repaired": repaired is not None, "status": diag["status"],
+        return {"object_id": object_id, "repaired": committed, "status": diag["status"],
                 "reason": diag["reason"]}
 
     def self_heal_events(self) -> list[dict]:
@@ -786,7 +794,11 @@ class DurableTheseusService:
             if self.self_healing and self.repair_authority == "salamander":
                 # Detected and diagnosed; repairable objects stay quarantined
                 # (reads fail closed) until the authorised repair runs.
-                if self.diagnose_object(object_id)["status"] == "REPAIRABLE":
+                status = self.diagnose_object(object_id)["status"]
+                if status == "HEALTHY":
+                    self._quarantined.discard(object_id)
+                    continue
+                if status == "REPAIRABLE":
                     self._quarantined.add(object_id)
                     continue
             raise StorageIntegrityError(
@@ -846,18 +858,22 @@ class DurableTheseusService:
         payload digest and that no sidecar appeared meanwhile. Returns the
         number of sidecars written.
         """
+        if not isinstance(batch, int) or isinstance(batch, bool) or batch <= 0:
+            raise ValueError("batch must be a positive integer")
         written = 0
         after = ""
         if not self.self_healing or (limit is not None and limit <= 0):
             return 0  # parity is not written when self-healing is disabled; report nothing
         while True:
+            read_batch = batch if limit is None else min(batch, limit - written)
             with self._connect() as db:
                 rows = db.execute(
                     "SELECT o.object_id, o.payload FROM objects AS o "
                     "LEFT JOIN object_parity AS p USING (object_id) "
-                    "WHERE p.object_id IS NULL AND o.size_bytes <= ? AND o.object_id > ? "
+                    "WHERE p.object_id IS NULL AND o.size_bytes <= ? "
+                    "AND length(o.payload) <= ? AND o.object_id > ? "
                     "ORDER BY o.object_id LIMIT ?",
-                    (self.self_healing_max_bytes, after, batch),
+                    (self.self_healing_max_bytes, self.self_healing_max_bytes, after, read_batch),
                 ).fetchall()
             if not rows:
                 return written
@@ -867,8 +883,6 @@ class DurableTheseusService:
                 for r in rows
                 if hashlib.sha256(bytes(r["payload"])).hexdigest() == r["object_id"]
             ]
-            if limit is not None:
-                candidates = candidates[: max(0, limit - written)]
             encoded = [(oid, payload, self_heal.encode_parity(payload)) for oid, payload in candidates]
             with self._lock, self._connect(immediate=True) as db:
                 for oid, payload, parity in encoded:
@@ -877,13 +891,14 @@ class DurableTheseusService:
                     now = db.execute("SELECT payload FROM objects WHERE object_id=?", (oid,)).fetchone()
                     if now is None or bytes(now["payload"]) != payload:
                         continue
-                    self._ensure_parity(db, oid, payload, parity)
+                    if not self._ensure_parity(db, oid, payload, parity):
+                        continue
                     self._log_heal(db, oid, "PARITY_BACKFILLED", 0,
                                    "verified object written before parity existed")
                     written += 1
                     if limit is not None and written >= limit:
                         return written
-            if len(rows) < batch:
+            if len(rows) < read_batch:
                 return written
 
     def checkpoint(self) -> dict:

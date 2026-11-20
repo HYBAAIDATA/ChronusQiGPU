@@ -167,6 +167,8 @@ def heal_payload(received: bytes, object_id: str, parity: bytes,
     """
     if len(received) != expected_length:
         return HealOutcome(None, (), "length differs from the recorded size")
+    if expected_length > encoder_max_bytes():
+        return HealOutcome(None, (), "payload exceeds the supported decoder size")
     if not sidecar_metadata_valid(SCHEME, n, k):
         return HealOutcome(None, (), "unsupported parity dimensions")
     try:
