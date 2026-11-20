@@ -2,7 +2,11 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from scripts.claim_gate import check
+
+pytestmark = pytest.mark.real
 
 
 def test_archived_claims_still_block(tmp_path):
@@ -15,7 +19,6 @@ def test_archived_claims_still_block(tmp_path):
 
 
 def test_archive_missing_fails_closed(tmp_path):
-    from pytest import raises
     claims = tmp_path / "claims"
     claims.mkdir()
     register = claims / "register.json"
@@ -23,7 +26,7 @@ def test_archive_missing_fails_closed(tmp_path):
     site = tmp_path / "site"
     site.mkdir()
     (site / "index.html").write_text("placeholder")
-    with raises(OSError):
+    with pytest.raises(OSError):
         check(site, register)
 
 
