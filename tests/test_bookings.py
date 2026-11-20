@@ -1,11 +1,12 @@
 """Controlled receipts test the software contract; not customer or deployment evidence."""
 from dataclasses import asdict
-from fractions import Fraction
 from hashlib import sha256
 
 import pytest
 
 from chronus.accounting.bookings import Rider, canonical, cash_movements, replay, settlement, unit_economics
+
+pytestmark = pytest.mark.simulated  # The fixture supplies an in-memory receipt reader.
 
 
 @pytest.fixture
