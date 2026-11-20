@@ -1,0 +1,23 @@
+{
+  "spec_version": "1.0.0",
+  "status": "PROVISIONAL_FRAMING_ONLY",
+  "param_id": 4294967294,
+  "block_size": 256,
+  "flags": 0,
+  "vectors": [
+    {
+      "id": "frame_empty",
+      "input_hex": "",
+      "input_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "expected_encoded_hex": "4348524e01000000000000000000000000000100fffffffee3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85569718958",
+      "expected_encoded_sha256": "dcdadea28bce9b706c54bce6b5db8879fa50711e96891ddcab0d53a7018848e3"
+    },
+    {
+      "id": "frame_three_octets",
+      "input_hex": "000102",
+      "input_sha256": "ae4b3280e56e2faf83f414a6e3dabe9d5fbe18976544c05fed121accb85b53fc",
+      "expected_encoded_hex": "4348524e01000000000000000000000300000100fffffffeae4b3280e56e2faf83f414a6e3dabe9d5fbe18976544c05fed121accb85b53fc8211097f000200030005",
+      "expected_encoded_sha256": "00e08ca22be9abe2ec6054e7cdb4bf51cd881b246db1b40078e120f77fe5cf29"
+    }
+  ]
+}

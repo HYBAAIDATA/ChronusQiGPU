@@ -1,0 +1,187 @@
+{
+  "assignment_id": "CHRN-STORAGE-CLOSEOUT-20261119",
+  "baseline_sha": "93d6068f2c668f3f1106a9e6df204f37033fc163",
+  "working_ref": "fix/chrn-v1-closure",
+  "original_brief": {
+    "work_order_sha256": "a14deab10a721e87de4354d75bd93be5b39d6bf562fe33c67412113b3dd88d1f",
+    "spec": "Owner draft Chronus Prime-Based Encoding Specification 1.0.0, supplied 2026-11-19"
+  },
+  "inventory": [
+    "src/chronus/storage/prime_codec.py",
+    "src/chronus/storage/prime_product.py",
+    "src/chronus/quantum/ring_codec.py",
+    "src/chronus/storage/erasure.py",
+    "src/chronus/storage/protected.py",
+    "harness/capacity.py",
+    "scripts/ci/verify_capacity_artifacts.py",
+    "artifacts/capacity/INDEX.md",
+    ".github/workflows/ci.yml",
+    ".github/workflows/storage-reference.yml",
+    "PR 18",
+    "PR 121",
+    "PR 134",
+    "PR 178",
+    "src/chronus/security/al_haras/reed_solomon.py",
+    "src/chronus/storage/chrn_rs257.py",
+    "tests/test_chrn_rs257.py",
+    "tests/vectors/chrn_rs257_v11.json",
+    "scripts/benchmarks/chrn_recovery_drill.py",
+    "evidence/capacity/chrn_recovery_e00b29a57362e6a5812f11e9b1462808cb38e7c3eddb4e3ef2e3bd66b2c9a120.json"
+  ],
+  "obligations": [
+    {
+      "id": "A1",
+      "requirement": "Encoding module (prime-based, per team's discovery)",
+      "execution": "BLOCKED",
+      "technical": "UNAVAILABLE",
+      "owner": "OVID / discovery owner",
+      "evidence": "src/chronus/storage/chrn_frame.py",
+      "blocker": "No authoritative basis, E/D, block size, parameter 1 or serialization supplied."
+    },
+    {
+      "id": "A2",
+      "requirement": "Decode module (with integrity check)",
+      "execution": "IN_PROGRESS",
+      "technical": "UNAVAILABLE",
+      "owner": "Chronus",
+      "evidence": "src/chronus/storage/chrn_frame.py; tests/test_chrn_frame.py",
+      "blocker": "Framing implementation present; canonical transform and test execution pending."
+    },
+    {
+      "id": "A3",
+      "requirement": "Recovery module (corrupt-block recovery, tested)",
+      "execution": "IN_PROGRESS",
+      "technical": "PASS",
+      "owner": "OVID / THESEUS",
+      "blocker": "Spec frozen and measured extended drill passed; formal owner ratification, independent non-author QC (issue 205), final-head CI pending.",
+      "evidence": "docs/storage/CHRN_RS257_PROFILE.md; src/chronus/storage/chrn_rs257.py; tests/test_chrn_rs257.py; scripts/benchmarks/chrn_recovery_drill.py",
+      "technical_scope": "RS257 proposed parameter 2 software fault model only",
+      "measurement": {
+        "source_commit": "a83f5f0b892e1bac9e818bcc4b525b12f502d113",
+        "evidence_path": "evidence/capacity/chrn_recovery_e00b29a57362e6a5812f11e9b1462808cb38e7c3eddb4e3ef2e3bd66b2c9a120.json",
+        "evidence_sha256": "e00b29a57362e6a5812f11e9b1462808cb38e7c3eddb4e3ef2e3bd66b2c9a120",
+        "workflow_run": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44594052261",
+        "job": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44594052261/job/135807458725",
+        "focused_tests_passed": 49,
+        "measured_trials": 131,
+        "successful_verified_recoveries": 67,
+        "expected_rejections": 64,
+        "scope": "deterministic software fault injection; no physical qualification",
+        "independent_qc": "PENDING",
+        "profile_ratification": "PENDING"
+      },
+      "addendum_receipt": {
+        "source_commit": "6f8b8c3c67483b7548c4c3e4e12a6ca1655fcd09",
+        "workflow_run": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44598372731",
+        "job": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44598372731/job/135822732165",
+        "evidence_path": "evidence/capacity/chrn_recovery_f4ceb66cf6d7108fbe4f369b4802358f1b8851bdedb39580b84bf7af5b478832.json",
+        "evidence_sha256": "f4ceb66cf6d7108fbe4f369b4802358f1b8851bdedb39580b84bf7af5b478832",
+        "focused_tests_passed": 51,
+        "measured_trials": 133,
+        "successful_verified_recoveries": 69,
+        "expected_rejections": 64,
+        "latency_ns": {
+          "p50": 57172464,
+          "p95": 60083739,
+          "p99": 60971960
+        },
+        "environment": {
+          "machine": "x86_64",
+          "platform": "Linux-7.0.0-1019-azure-x86_64-with-glibc2.43",
+          "processor": "",
+          "python": "3.13.18"
+        },
+        "scope": "software fault injection on GitHub-hosted Linux x86-64, Python 3.13.18; not physical media",
+        "spec_sha256": "31e847888a4118cd3952b018eeb7af08cf3076006f1cc7a5ee04d3694b88e32b",
+        "reconstruction_path": "evidence/storage/chrn_rs257_spec_reconstruction.json",
+        "independent_qc": "PENDING"
+      }
+    },
+    {
+      "id": "A4",
+      "requirement": "Measurement harness (customer-runnable, produces artifact)",
+      "execution": "BLOCKED",
+      "technical": "UNAVAILABLE",
+      "owner": "Chronus",
+      "blocker": "Existing harness measures CPRM only; cannot measure absent discovery parameter."
+    },
+    {
+      "id": "A5",
+      "requirement": "Artifact store (content-addressed, committed)",
+      "execution": "IN_PROGRESS",
+      "technical": "UNAVAILABLE",
+      "owner": "THESEUS",
+      "evidence": "artifacts/capacity/INDEX.md",
+      "blocker": "Existing reference artifacts only; no CHRN measurement."
+    },
+    {
+      "id": "A6",
+      "requirement": "artifact INDEX.md",
+      "execution": "IN_PROGRESS",
+      "technical": "UNAVAILABLE",
+      "owner": "THESEUS",
+      "blocker": "No CHRN artifact to index."
+    },
+    {
+      "id": "A7",
+      "requirement": "CI job: harness runs on every commit, artifact committed",
+      "execution": "BLOCKED",
+      "technical": "UNAVAILABLE",
+      "owner": "Engineering / AL HARAS",
+      "blocker": "Canonical codec absent; existing workflow uploads rather than commits runner output."
+    },
+    {
+      "id": "B",
+      "execution": "BLOCKED",
+      "technical": "UNAVAILABLE",
+      "owner": "Product / engineering",
+      "blocker": "Ordered Phase A gate not met; later-phase requirements not independently audited or executed."
+    },
+    {
+      "id": "C",
+      "execution": "BLOCKED",
+      "technical": "UNAVAILABLE",
+      "owner": "Product / engineering",
+      "blocker": "Ordered Phase A gate not met; later-phase requirements not independently audited or executed."
+    },
+    {
+      "id": "D",
+      "execution": "BLOCKED",
+      "technical": "UNAVAILABLE",
+      "owner": "Product / engineering",
+      "blocker": "Ordered Phase A gate not met; later-phase requirements not independently audited or executed."
+    },
+    {
+      "id": "E",
+      "execution": "BLOCKED",
+      "technical": "UNAVAILABLE",
+      "owner": "Product / engineering",
+      "blocker": "Ordered Phase A gate not met; later-phase requirements not independently audited or executed."
+    },
+    {
+      "id": "F",
+      "execution": "BLOCKED",
+      "technical": "UNAVAILABLE",
+      "owner": "Product / engineering",
+      "blocker": "Ordered Phase A gate not met; later-phase requirements not independently audited or executed."
+    },
+    {
+      "id": "G",
+      "execution": "BLOCKED",
+      "technical": "UNAVAILABLE",
+      "owner": "Product / engineering",
+      "blocker": "Ordered Phase A gate not met; later-phase requirements not independently audited or executed."
+    }
+  ],
+  "source_access": {
+    "notion": "FORBIDDEN restricted_resource",
+    "local_clone": "Could not resolve host github.com"
+  },
+  "verdicts": {
+    "assignment": "INCOMPLETE",
+    "evidence": "INCOMPLETE",
+    "technical": "UNAVAILABLE",
+    "qc": "PENDING",
+    "production": "NOT_QUALIFIED"
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "schema": "chronus.closure-findings/1",
+  "items": [
+    {
+      "id": "CHRN-PARAM-1",
+      "status": "OPEN",
+      "requirement": "Authoritative prime-basis transform and canonical vectors",
+      "owner": "OVID / discovery owner"
+    },
+    {
+      "id": "CHRN-RECOVERY",
+      "status": "OPEN",
+      "requirement": "Specify CHRN recovery profile and measure real fault recovery",
+      "owner": "OVID / THESEUS",
+      "implementation": "src/chronus/storage/chrn_rs257.py",
+      "blocker": "Spec frozen and measured extended drill passed; formal owner ratification, independent non-author QC (issue 205), final-head CI pending.",
+      "measurement": {
+        "source_commit": "a83f5f0b892e1bac9e818bcc4b525b12f502d113",
+        "evidence_path": "evidence/capacity/chrn_recovery_e00b29a57362e6a5812f11e9b1462808cb38e7c3eddb4e3ef2e3bd66b2c9a120.json",
+        "evidence_sha256": "e00b29a57362e6a5812f11e9b1462808cb38e7c3eddb4e3ef2e3bd66b2c9a120",
+        "workflow_run": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44594052261",
+        "job": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44594052261/job/135807458725",
+        "focused_tests_passed": 49,
+        "measured_trials": 131,
+        "successful_verified_recoveries": 67,
+        "expected_rejections": 64,
+        "scope": "deterministic software fault injection; no physical qualification",
+        "independent_qc": "PENDING",
+        "profile_ratification": "PENDING"
+      },
+      "addendum_receipt": {
+        "source_commit": "6f8b8c3c67483b7548c4c3e4e12a6ca1655fcd09",
+        "workflow_run": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44598372731",
+        "job": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44598372731/job/135822732165",
+        "evidence_path": "evidence/capacity/chrn_recovery_f4ceb66cf6d7108fbe4f369b4802358f1b8851bdedb39580b84bf7af5b478832.json",
+        "evidence_sha256": "f4ceb66cf6d7108fbe4f369b4802358f1b8851bdedb39580b84bf7af5b478832",
+        "focused_tests_passed": 51,
+        "measured_trials": 133,
+        "successful_verified_recoveries": 69,
+        "expected_rejections": 64,
+        "latency_ns": {
+          "p50": 57172464,
+          "p95": 60083739,
+          "p99": 60971960
+        },
+        "environment": {
+          "machine": "x86_64",
+          "platform": "Linux-7.0.0-1019-azure-x86_64-with-glibc2.43",
+          "processor": "",
+          "python": "3.13.18"
+        },
+        "scope": "software fault injection on GitHub-hosted Linux x86-64, Python 3.13.18; not physical media",
+        "spec_sha256": "31e847888a4118cd3952b018eeb7af08cf3076006f1cc7a5ee04d3694b88e32b",
+        "reconstruction_path": "evidence/storage/chrn_rs257_spec_reconstruction.json",
+        "independent_qc": "PENDING"
+      },
+      "qc_issue": 205
+    },
+    {
+      "id": "FOLDED-RESIDENCY",
+      "status": "OPEN",
+      "requirement": "Measure native execution counters and equal-work baseline on declared workloads",
+      "owner": "Chronus"
+    },
+    {
+      "id": "ROOT-CODEC-RECONCILIATION",
+      "status": "OPEN",
+      "requirement": "Trace root research prototype callers and retire false or stale metrics",
+      "owner": "Chronus"
+    },
+    {
+      "id": "PARADIGM-QC",
+      "status": "OPEN",
+      "requirement": "Independent replay, acceptance and applicable CI at exact revision",
+      "owner": "QC"
+    }
+  ]
+}
