@@ -12,11 +12,27 @@ import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Mapping
+from urllib.parse import urlsplit
 
 from chronus.fleet.auth import H_BODY, H_MAC
 from chronus.fleet.errors import TransportError
 
 NATIVE_TRANSPORT_ENV = "CHRONUS_FLEET_NATIVE_TRANSPORT"
+
+
+def _request_url(base_url: str, path: str) -> bytes:
+    """Normalize the DNS authority only; preserve the authenticated path bytes."""
+    try:
+        parts = urlsplit(base_url)
+        host = parts.hostname
+        if (parts.scheme not in ("http", "https") or not host or parts.username is not None
+                or parts.path or parts.query or parts.fragment):
+            raise ValueError("invalid base URL")
+        authority = f"[{host}]" if ":" in host else host.encode("idna").decode("ascii")
+        port = f":{parts.port}" if parts.port is not None else ""
+        return f"{parts.scheme}://{authority}{port}{path}".encode("ascii")
+    except (ValueError, UnicodeError) as exc:
+        raise TransportError("invalid native fleet URL encoding") from exc
 
 
 class NativeHTTPTransport:
@@ -60,7 +76,7 @@ class NativeHTTPTransport:
                 raise TransportError("invalid native fleet header")
             rendered.append(line.encode("latin-1"))
         array = (ctypes.c_char_p * len(rendered))(*rendered)
-        url = (base_url + path).encode("ascii")
+        url = _request_url(base_url, path)
         ca = os.fsencode(Path(tls_ca).expanduser()) if tls_ca else None
         lib = self._lib
         response = lib.chronus_fleet_http(url, method.encode("ascii"), array, len(rendered),

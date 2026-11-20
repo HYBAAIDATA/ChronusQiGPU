@@ -156,7 +156,10 @@ API Reply* chronus_fleet_http(const char* url, const char* method,
         SET(CURLOPT_SSL_VERIFYPEER, 1L);
         SET(CURLOPT_SSL_VERIFYHOST, 2L);
         SET(CURLOPT_SSLVERSION, static_cast<long>(CURL_SSLVERSION_TLSv1_2));
-        if (ca && *ca) { SET(CURLOPT_CAINFO, ca); }
+        if (ca && *ca) {
+            SET(CURLOPT_CAINFO, ca);
+            SET(CURLOPT_CAPATH, static_cast<char*>(nullptr));
+        }
 #if LIBCURL_VERSION_NUM >= 0x075500
         SET(CURLOPT_PROTOCOLS_STR, "http,https");
 #else

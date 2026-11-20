@@ -56,7 +56,8 @@ def test_stale_ledger_cannot_corrupt_chain(tmp_path):
     with pytest.raises(LedgerError, match="stale writer"):
         b.append("note", "b" * 64)
     assert verify_ledger(path).valid
-    assert AnchorLedger(path).append("note", "b" * 64)["seq"] == 1
+    entry = AnchorLedger(path).append("note", "b" * 64)
+    assert entry["seq"] == 1
     with pytest.raises(LedgerError, match="stale writer"):
         a.append("note", "c" * 64)
     assert verify_ledger(path).entries == 2
