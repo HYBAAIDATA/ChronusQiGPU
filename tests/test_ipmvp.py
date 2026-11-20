@@ -7,6 +7,8 @@ import pytest
 
 from chronus.service.ipmvp import digest, issue_report, verify_report
 
+pytestmark = pytest.mark.real
+
 
 def fixture_inputs():
     boundary = "TEST-ONLY tenant"

@@ -8,7 +8,7 @@
     },
     {
       "path": "tests/test_ipmvp.py",
-      "sha256": "0b0076ec371d1033709e8eeb4025dee1935af26f65c7163101182ca638df1c88"
+      "sha256": "51d49fcea3dcd79dea63d74e4cdee94766bc7836ac57da13cb1eca791894d73f"
     },
     {
       "path": "docs/executive/CEO_STAKE_MEMO.md",
@@ -76,7 +76,7 @@
     },
     {
       "path": "tests/test_fold_residency_campaign.py",
-      "sha256": "b5d7b4fc26f5eca07dd8b75981c8c5751873e456c3cea0ddc2ea4203c09cd0a7"
+      "sha256": "cacbd52a17fc0f4456711eeb005eac6f84402f4dff50d3ffab86b8f5ce5282e6"
     },
     {
       "path": "claims/archive_uncited/register.json",
@@ -84,7 +84,7 @@
     },
     {
       "path": "tests/test_claim_archive.py",
-      "sha256": "caebc5158a6ab46abc5efd85bb5cbd146ae1e3daafb4a9c4893cc20d89cd2592"
+      "sha256": "b893707251cd1c327398811dd67745d856f47842ee534fdf6ec7dff6ee25feaf"
     },
     {
       "path": "evidence/residency/inputs/traces.json",
