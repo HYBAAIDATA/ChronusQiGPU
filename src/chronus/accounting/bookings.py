@@ -89,7 +89,12 @@ class Rider:
         value = (Fraction(self.base_minor_per_gb) * Fraction(integer(gb_num), positive(gb_den))
                  * Fraction(positive(index_num), positive(index_den))
                  / Fraction(self.base_index_num, self.base_index_den))
-        return round(value)  # exact, half-even at the minor-unit boundary
+        # Round to the nearest minor unit; at a tie, choose the even integer.
+        quotient, remainder = divmod(value.numerator, value.denominator)
+        twice_remainder = 2 * remainder
+        if twice_remainder > value.denominator or (twice_remainder == value.denominator and quotient % 2):
+            return quotient + 1
+        return quotient
 
 
 def settlement(contract: Rider, measurement: dict) -> dict:
