@@ -1,4 +1,8 @@
+import pytest
+
 from chronus.accounting.bookings import Posting, cash_movements
+
+pytestmark = pytest.mark.real
 
 def test_cash_movements_exclude_noncash():
     def p(dr, cr, amount):
