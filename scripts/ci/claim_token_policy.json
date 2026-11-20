@@ -161,6 +161,13 @@
       "note": "Retry back-off schedule (engineering term)"
     },
     {
+      "path": "scripts/production/triad_reconciliation/make_extra.py",
+      "token": 1,
+      "count": 1,
+      "basis": "refusal-or-denial",
+      "note": "Report identifies wording in PR #171 as failing the claim-token policy"
+    },
+    {
       "path": "src/chronus/service/production_hr_api_v2.py",
       "token": 3,
       "count": 2,
