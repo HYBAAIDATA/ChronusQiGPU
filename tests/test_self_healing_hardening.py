@@ -19,6 +19,7 @@ from pathlib import Path
 
 import pytest
 
+from chronus.integration.salamander_theseus import SalamanderTheseusRemediation, SalamanderUnavailable
 from chronus.storage.durable import DurableTheseusService
 from chronus.storage.theseus import StorageIntegrityError
 
@@ -280,3 +281,37 @@ def test_backfill_on_a_store_with_self_healing_disabled_writes_and_reports_nothi
     with closing(sqlite3.connect(path)) as db:
         assert db.execute("SELECT COUNT(*) FROM object_parity").fetchone()[0] == 0
     assert _events(path, "PARITY_BACKFILLED") == []
+
+
+def test_deferred_mode_fails_closed_without_salamander(tmp_path, monkeypatch):  # mock-ok: exercises the optional dependency being absent
+    monkeypatch.setitem(sys.modules, "salamander", None)  # mock-ok: blocks the optional import without substituting an implementation
+    path = tmp_path / "t.sqlite3"
+    store = DurableTheseusService(str(path), repair_authority="salamander")
+    record = store.store("tenant-a", PAYLOAD)
+    _corrupt(path, record.object_id, [0, 33, 700])
+    damaged = _raw(path, record.object_id)
+
+    store = DurableTheseusService(str(path), repair_authority="salamander")
+    with pytest.raises(SalamanderUnavailable, match="hyba-salamander-self-healing is not installed"):
+        SalamanderTheseusRemediation(
+            store, guardian=None, token_provider=pytest.fail, tenant_id="tenant-a", actor_id="operator",
+        )
+    with pytest.raises(StorageIntegrityError):
+        store.reconstruct("tenant-a", record.object_id)
+    with pytest.raises(PermissionError):
+        store.repair_object(record.object_id, authority="salamander:unbound")
+    assert [f["status"] for f in store.scan_integrity()] == ["REPAIRABLE"]
+    assert len(_events(path, "DETECTED")) == 1
+    assert not _events(path, "REPAIRED")
+    assert _raw(path, record.object_id) == damaged
+
+
+def test_quarantined_journal_object_that_becomes_unrepairable_fails_continuity(tmp_path):
+    path = tmp_path / "t.sqlite3"
+    entry = DurableTheseusService(str(path), repair_authority="salamander").append_journal_event("tenant-a", "state", PAYLOAD)
+    _corrupt(path, entry.object_id, [7, 900])
+    store = DurableTheseusService(str(path), repair_authority="salamander")  # quarantined: repairable at open
+    _corrupt(path, entry.object_id, range(0, 32))  # now beyond the bound in block 0
+    assert store.diagnose_object(entry.object_id)["status"] == "UNREPAIRABLE"
+    with pytest.raises(StorageIntegrityError):
+        store.verify_journal_continuity("tenant-a")

@@ -11,7 +11,7 @@ questions; a "yes" needs the named code or test.
 | Atomic, crash-safe, concurrent, restart-safe repair | yes | yes | yes | yes: real process crash before COMMIT, `os._exit` after COMMIT, 8 processes on one file, 24 concurrent writers | no |
 | Parity backfill for databases written before parity existed | yes | yes | yes: on open | yes | no |
 | Batched syndrome decoder (numpy, exact) | yes | yes: all `reed_solomon.heal` callers and THESEUS | yes | yes: cross-checked against the Berlekamp-Welch reference on 0-11, 16 and 24 errors per block | no |
-| Salamander-governed remediation of THESEUS faults (`chronus.integration.salamander_theseus`) | yes | yes, with the canonical Salamander package installed | no: `run_cycle()` is driven by the host or orchestrator schedule | yes, locally with the package (`test_salamander_theseus.py`); skipped in GitHub CI, which cannot install the private wheel | no |
+| Salamander-governed remediation of THESEUS faults (`chronus.integration.salamander_theseus`) | yes | yes, with the canonical Salamander package installed | no: `run_cycle()` is driven by the host or orchestrator schedule | yes, locally with the package (`tests_salamander/`); GitHub CI checks fail-closed behavior without the package | no |
 | Repository / CI healing | no (exists in HYBAEnterprise, not here; see below) | no | no | no | no |
 | Metadata, journal, SQLite page or whole-database repair | no | no | no | no | no |
 
@@ -165,8 +165,10 @@ Tested locally with the wheel built and verified by HYBAEnterprise's own
 `production_qualified: false`): authorised repair with full ledger and
 evidence in THESEUS, AL HARAS denial blocks execution, unrepairable damage is
 escalated without actuation, and the recovery budget stops repeated
-remediation. GitHub CI skips these tests because the private wheel cannot be
-installed there.
+remediation. In an environment with the verified private wheel installed, run
+`python -m pytest tests_salamander` for the closed-loop suite. GitHub CI cannot
+install the private wheel. Its default suite checks that THESEUS quarantines
+damaged objects and refuses remediation when Salamander is unavailable.
 
 ## 4. Repository and CI healing
 

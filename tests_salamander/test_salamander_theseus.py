@@ -1,9 +1,9 @@
 """Closed-loop THESEUS remediation through the canonical Salamander package.
 
 Needs the proprietary ``hyba-salamander-self-healing`` wheel (built from
-hybadatadevops1/HYBAEnterprise ``packaging/salamander``). Where it is not
-installed these tests are skipped and the module raises SalamanderUnavailable;
-nothing is substituted. The AL HARAS guardian and signed subscription token
+hybadatadevops1/HYBAEnterprise ``packaging/salamander``). Run explicitly with
+``python -m pytest tests_salamander`` after installing that wheel.
+The AL HARAS guardian and signed subscription token
 are real objects from the package's bundled ``al_haras``, with test-only key
 material.
 """
@@ -16,18 +16,16 @@ from contextlib import closing
 
 import pytest
 
+from al_haras import ALHaras, GuardianPolicy, HashChainAudit, SubscriptionAuthority, SubscriptionClaims
+
+from chronus.integration.salamander_theseus import (
+    EVIDENCE_TENANT,
+    SalamanderTheseusRemediation,
+)
 from chronus.storage.durable import DurableTheseusService
 from chronus.storage.theseus import StorageIntegrityError
 
 pytestmark = pytest.mark.real
-
-salamander = pytest.importorskip("salamander")
-al_haras = pytest.importorskip("al_haras")
-
-from chronus.integration.salamander_theseus import (  # noqa: E402
-    EVIDENCE_TENANT,
-    SalamanderTheseusRemediation,
-)
 
 PAYLOAD = bytes((i * 29 + 3) % 256 for i in range(2048))
 TENANT, ACTOR = "theseus-ops", "salamander-operator"
@@ -40,8 +38,6 @@ def _default_env(monkeypatch):  # mock-ok: sets environment configuration only; 
 
 
 def _guardian(operations=("salamander.restore_custody", "salamander.rollback"), actor=ACTOR):
-    from al_haras import ALHaras, GuardianPolicy, HashChainAudit, SubscriptionAuthority, SubscriptionClaims
-
     signer = SubscriptionAuthority({"unit": b"unit-only-theseus-remediation-key"}, issuer="unit")
     now = int(time.time())
     token = signer.issue(SubscriptionClaims(
@@ -68,18 +64,6 @@ def _deferred_store(path):
 
 def _kinds(ledger):
     return [r["kind"] for r in ledger.records]
-
-
-def test_deferred_mode_detects_but_does_not_repair_without_authority(tmp_path):
-    path = tmp_path / "t.sqlite3"
-    record = _deferred_store(path).store(TENANT, PAYLOAD)
-    _corrupt(path, record.object_id, [0, 33, 700])
-    store = _deferred_store(path)  # opens: damage is within bound, quarantined
-    with pytest.raises(StorageIntegrityError):
-        store.reconstruct(TENANT, record.object_id)
-    assert [f["status"] for f in store.scan_integrity()] == ["REPAIRABLE"]
-    assert "DETECTED" in [e["kind"] for e in store.self_heal_events()]
-    assert "REPAIRED" not in [e["kind"] for e in store.self_heal_events()]
 
 
 def test_closed_loop_repairs_through_al_haras_and_retains_evidence_in_theseus(tmp_path):
@@ -241,14 +225,3 @@ def test_independent_verifier_handles_uri_special_characters_in_path(tmp_path):
                                         tenant_id=TENANT, actor_id=ACTOR)
     assert loop.run_cycle().repaired == [record.object_id]
     assert store.reconstruct(TENANT, record.object_id) == PAYLOAD
-
-
-def test_quarantined_journal_object_that_becomes_unrepairable_fails_continuity(tmp_path):
-    path = tmp_path / "t.sqlite3"
-    entry = _deferred_store(path).append_journal_event(TENANT, "state", PAYLOAD)
-    _corrupt(path, entry.object_id, [7, 900])
-    store = _deferred_store(path)  # quarantined: repairable at open
-    _corrupt(path, entry.object_id, range(0, 32))  # now beyond the bound in block 0
-    assert store.diagnose_object(entry.object_id)["status"] == "UNREPAIRABLE"
-    with pytest.raises(StorageIntegrityError):
-        store.verify_journal_continuity(TENANT)
