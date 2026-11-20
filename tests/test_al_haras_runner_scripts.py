@@ -31,6 +31,7 @@ import hashlib
 import json
 import os
 import re
+import secrets
 import shutil
 import subprocess
 from pathlib import Path
@@ -710,7 +711,7 @@ printf '%s\0' "${CONFIG_ARGS[@]}"
 def test_register_builds_ephemeral_arguments_without_the_token(tmp_path):
     if not chmod_supported(tmp_path):
         pytest.skip("this filesystem ignores chmod; the settings file must be 0600")
-    token = "AABBCCDDEEFFGG0123456789"
+    token = secrets.token_hex(12)
     env_file = _write_env(
         tmp_path / "runner.env",
         f'# registration\nRUNNER_CFG_TOKEN={token}\n\nREPO_URL="https://github.com/example-org/example"\n',

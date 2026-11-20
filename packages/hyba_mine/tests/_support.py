@@ -19,6 +19,7 @@ import datetime
 import ipaddress
 import json
 import os
+import secrets
 import shutil
 import ssl
 import sys
@@ -51,7 +52,7 @@ PACKAGE_ROOT = _REPO / "packages" / "hyba_mine"
 GENESIS_NONCE = 2083236893
 GENESIS_EN2 = bytes.fromhex("00000001")
 SENTINEL_USER = "hybaSentinelAcctQ7Z.macbook"
-SENTINEL_PASSWORD = "pw-SENTINEL-kQ9Zt"
+SENTINEL_PASSWORD = secrets.token_urlsafe(18)
 
 
 def run(coro, timeout: float = 60.0):
