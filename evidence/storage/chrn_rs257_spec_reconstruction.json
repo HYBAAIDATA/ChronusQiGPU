@@ -1,0 +1,14 @@
+{
+  "actual_bytes": 460,
+  "actual_sha256": "027d6c5a9abc6e395e6cca533432af514212911180efdabdbb9f1447aee6e389",
+  "byte_mismatches": 0,
+  "expected_bytes": 460,
+  "expected_sha256": "027d6c5a9abc6e395e6cca533432af514212911180efdabdbb9f1447aee6e389",
+  "independent_qc": "PENDING",
+  "method": "stdlib Newton forward differences; author-run alternate implementation",
+  "pass": true,
+  "source_commit": "6f8b8c3c67483b7548c4c3e4e12a6ca1655fcd09",
+  "spec_sha256": "31e847888a4118cd3952b018eeb7af08cf3076006f1cc7a5ee04d3694b88e32b",
+  "provenance": "JSON result extracted from exact-head runner log; not independently authored",
+  "job": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44598372731/job/135822732165"
+}

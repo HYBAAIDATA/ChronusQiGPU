@@ -18,6 +18,7 @@ heartbeating, until a scale grant admits it.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import socket
 import threading
@@ -37,6 +38,11 @@ from chronus.fleet.lattice import DEFAULT_VIRTUAL_UNITS, require_rung
 from chronus.fleet.transport import FleetClient
 
 logger = logging.getLogger(__name__)
+
+
+def _phase(node_id: str) -> float:
+    """Stable phase in [0, 1), independent of Python's process hash salt."""
+    return int.from_bytes(hashlib.sha256(node_id.encode("utf-8")).digest()[:4], "big") / (1 << 32)
 
 
 @dataclass
@@ -195,7 +201,8 @@ class FleetWorker:
                 lease = response.get("lease")
                 self.state = response.get("state", self.state)
                 if not lease:
-                    self._stop.wait(response.get("retry_after_ms", self.config.poll_interval_ms) / 1000)
+                    delay = response.get("retry_after_ms", self.config.poll_interval_ms) / 1000
+                    self._stop.wait(delay * (1 + _phase(self.node_id) / 4))
                     continue
                 self._work(lease)
         finally:
@@ -217,8 +224,13 @@ class FleetWorker:
             self._stop.wait(self.config.retry_interval_ms / 1000)
 
     def _heartbeat_loop(self) -> None:
-        while not self._stop.wait(self.heartbeat_interval):
+        # Spread the first heartbeat without lengthening the heartbeat interval.
+        if self._stop.wait(self.heartbeat_interval * _phase(self.node_id or self.config.label)):
+            return
+        while not self._stop.is_set():
             if self._rejoin.is_set() or self.node_id is None:
+                if self._stop.wait(self.heartbeat_interval):
+                    return
                 continue
             with self._active_lock:
                 leases = sorted(self._active)
@@ -231,6 +243,8 @@ class FleetWorker:
                     self._rejoin.set()
             except FleetError as exc:
                 logger.warning("heartbeat failed: %s", exc)
+            if self._stop.wait(self.heartbeat_interval):
+                return
 
     # -------------------------------------------------------------- execution
     def _work(self, lease: dict[str, Any]) -> None:

@@ -41,6 +41,22 @@ AUTH_SCHEME = "chronus-fleet-hmac-v1"
 TOKEN_ENV = "CHRONUS_FLEET_TOKEN"
 MIN_TOKEN_CHARS = 32
 MAX_CLOCK_SKEW_NS = 300 * 1_000_000_000
+DEFAULT_REPLAY_CAPACITY = 200_000
+
+
+def replay_capacity_for_workers(workers: int, heartbeat_ms: int, idle_poll_ms: int) -> int:
+    """Planning floor, not measured capacity: reserve twice the idle request budget.
+
+    Keep the full existing replay window; never evict still-valid nonces.
+    Busy jobs and other clients may require additional operator provisioning.
+    """
+    if any(type(n) is not int or n < 1 for n in (workers, heartbeat_ms, idle_poll_ms)):
+        raise ValueError("worker count and request intervals must be positive integers")
+    window_ms = 2 * MAX_CLOCK_SKEW_NS // 1_000_000
+    # Waiting/quarantined workers receive a fixed 1 s retry hint.
+    poll_ms = min(idle_poll_ms, 1000)
+    per_worker = -(-window_ms // heartbeat_ms) + -(-window_ms // poll_ms) + 2
+    return max(DEFAULT_REPLAY_CAPACITY, 2 * workers * per_worker)
 H_NODE = "X-Chronus-Fleet-Node"
 H_TIME = "X-Chronus-Fleet-Timestamp"
 H_NONCE = "X-Chronus-Fleet-Nonce"
@@ -107,10 +123,18 @@ def body_digest(body: bytes) -> str:
 class ReplayCache:
     """Remembers nonces for the skew window; bounded so it cannot grow without end."""
 
-    def __init__(self, capacity: int = 200_000) -> None:
+    def __init__(self, capacity: int = DEFAULT_REPLAY_CAPACITY) -> None:
+        if type(capacity) is not int or capacity < 1:
+            raise ValueError("replay capacity must be a positive integer")
         self._seen: OrderedDict[str, int] = OrderedDict()
         self._capacity = capacity
         self._lock = threading.Lock()
+        self._capacity_rejections = 0
+
+    def status(self) -> dict[str, int]:
+        with self._lock:
+            return {"capacity": self._capacity, "retained_nonces": len(self._seen),
+                    "capacity_rejections": self._capacity_rejections}
 
     def check_and_add(self, nonce: str, now_ns: int) -> bool:
         with self._lock:
@@ -120,6 +144,7 @@ class ReplayCache:
             if nonce in self._seen:
                 return False
             if len(self._seen) >= self._capacity:
+                self._capacity_rejections += 1
                 return False  # Never evict a nonce while its request can still be valid.
             self._seen[nonce] = now_ns
             return True
