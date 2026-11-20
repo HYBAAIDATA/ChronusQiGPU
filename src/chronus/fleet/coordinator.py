@@ -38,7 +38,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from chronus.fleet.adapters import MODE_A, MODE_B
-from chronus.fleet.auth import FleetAuth, tls_server_context
+from chronus.fleet.auth import FleetAuth, replay_capacity_for_workers, tls_server_context
 from chronus.fleet.canonical import (
     b64decode,
     b64encode,
@@ -166,6 +166,10 @@ class CoordinatorConfig:
     max_lease_bytes: int = 8 * 1024 * 1024
     max_retained_jobs: int = 256
     kernels: KernelRegistry | None = None
+    expected_workers: int = 1
+    idle_poll_ms: int = 150
+    max_connections: int = 64
+    replay_capacity: int | None = None
 
 
 @dataclass
@@ -254,6 +258,12 @@ def _backend_record(selection: Any, routes: Mapping[str, Any]) -> dict[str, Any]
 class FleetCoordinator:
     def __init__(self, config: CoordinatorConfig) -> None:
         self.config = config
+        minimum_replay = replay_capacity_for_workers(config.expected_workers, config.heartbeat_interval_ms, config.idle_poll_ms)
+        self.replay_capacity = minimum_replay if config.replay_capacity is None else config.replay_capacity
+        if type(self.replay_capacity) is not int or self.replay_capacity < minimum_replay:
+            raise ValueError(f"replay capacity must be at least {minimum_replay} for the configured idle request budget")
+        if type(config.max_connections) is not int or config.max_connections < 1:
+            raise ValueError("max_connections must be a positive integer")
         self.state_dir = Path(config.state_dir).expanduser()
         self.state_dir.mkdir(parents=True, exist_ok=True)
         self.receipts_dir = self.state_dir / "receipts"
@@ -558,7 +568,9 @@ class FleetCoordinator:
     def start(self) -> "FleetCoordinator":
         context = tls_server_context(self.config.tls_cert, self.config.tls_key) if self.tls else None
         self._server = FleetHTTPServer(
-            (self.config.host, self.config.port), self.handle, self.auth, context, self.config.max_body_bytes, auth_resolver=self._request_auth
+            (self.config.host, self.config.port), self.handle, self.auth, context, self.config.max_body_bytes,
+            auth_resolver=self._request_auth, max_connections=self.config.max_connections,
+            replay_capacity=self.replay_capacity
         )
         self.verifier = ReferenceVerifier(self._on_verification, self.config.verifier_threads)
         self.ledger.append("note", sha256_hex(self.fleet_id.encode()), {"event": "coordinator-start", "tier": self.tier.name})
@@ -766,7 +778,7 @@ class FleetCoordinator:
 
             acquired = self.scheduler.acquire(node.node_id, usable, monotonic_ns())
             if acquired is None:
-                return 200, {"lease": None, "retry_after_ms": 150}
+                return 200, {"lease": None, "retry_after_ms": self.config.idle_poll_ms}
             lease, source = acquired
             job = self.jobs[lease.group.job_id]
             tiles = []
@@ -1540,6 +1552,15 @@ class FleetCoordinator:
                 "crossbar": {"graph": "H4 600-cell", "diameter": max_h4_diameter()},
                 "connectors": sorted(self.connectors),
                 "tls": self.tls,
+                "transport_budget": {
+                    "expected_workers": self.config.expected_workers,
+                    "idle_poll_ms": self.config.idle_poll_ms,
+                    "heartbeat_ms": self.config.heartbeat_interval_ms,
+                    "max_connections": self.config.max_connections,
+                    "replay": self._server.replay.status() if self._server else None,
+                    "configured_replay_capacity": self.replay_capacity,
+                    "physical_capacity_measured": False,
+                },
                 "signer": self.signer.describe(),
                 "nodes": [n.public() for n in sorted(self.nodes.values(), key=lambda n: n.node_id)],
                 "jobs": [j.progress() for j in sorted(self.jobs.values(), key=lambda j: j.submitted_ns)][-50:],

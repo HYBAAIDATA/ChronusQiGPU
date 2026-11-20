@@ -29,7 +29,8 @@ logger = logging.getLogger("HybaMine.runner")
 
 
 async def main() -> int:
-    report = bist.run()
+    # BIST includes asyncio.run checks; use the same off-loop pattern as the engine.
+    report = await asyncio.to_thread(bist.run)
     if report.get("bist") != "PASS":
         logger.error("Mining self-test failed; refusing pool connection")
         for check in report.get("checks", []):

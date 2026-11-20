@@ -117,6 +117,10 @@ def cmd_coordinator(args: argparse.Namespace) -> int:
         heartbeat_interval_ms=args.heartbeat_ms,
         node_timeout_ms=args.node_timeout_ms,
         lease_ttl_ms=args.lease_ttl_ms,
+        expected_workers=args.expected_workers,
+        idle_poll_ms=args.idle_poll_ms,
+        max_connections=args.max_connections,
+        replay_capacity=args.replay_capacity,
     )
     coordinator = FleetCoordinator(config).start()
     status = coordinator.status()
@@ -427,6 +431,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--heartbeat-ms", type=int, default=1000)
     p.add_argument("--node-timeout-ms", type=int, default=5000)
     p.add_argument("--lease-ttl-ms", type=int, default=15_000)
+    p.add_argument("--expected-workers", type=int, default=1, help="planning input, not a physical capacity claim")
+    p.add_argument("--idle-poll-ms", type=int, default=150)
+    p.add_argument("--max-connections", type=int, default=64)
+    p.add_argument("--replay-capacity", type=int, help="override replay budget above the calculated minimum")
     p.set_defaults(func=cmd_coordinator)
 
     p = sub.add_parser("join", help="lend this machine's verified backends to a fleet")

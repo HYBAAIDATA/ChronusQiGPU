@@ -10,3 +10,6 @@
 /tools/verify_pulvini_lock.py @hybadatadevops1
 /docs/research/PULVINI_V3_FOLD_AUTHORITY.md @hybadatadevops1
 /.github/CODEOWNERS @hybadatadevops1
+
+# Repository-wide mandatory agent execution policy; owner review required.
+/AGENTS.md @hybadatadevops1

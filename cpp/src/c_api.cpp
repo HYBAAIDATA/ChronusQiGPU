@@ -7,8 +7,12 @@
 #include <cstring>
 #include <new>
 
+#ifndef CHRONUS_VERSION_STRING
+#error "CHRONUS_VERSION_STRING must be defined by the build (cpp/CMakeLists.txt and cpp/Makefile read chronus.__version__)"
+#endif
+
 const char* chronus_get_version(void) {
-    return "36.0.1-cpp-igpu";
+    return CHRONUS_VERSION_STRING "-cpp-igpu";
 }
 
 int chronus_has_avx2(void) {

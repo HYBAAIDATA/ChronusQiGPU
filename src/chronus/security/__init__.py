@@ -52,7 +52,7 @@ from chronus.security.al_haras import (
     StrategicDefenseCoordinator,
 )
 
-__version__ = "36.0.1"
+from chronus import __version__ as __version__  # single source: chronus.__version__
 __all__ = [
     "MLDSASigner",
     "MlDsaSigner",

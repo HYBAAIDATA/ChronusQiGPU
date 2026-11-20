@@ -130,6 +130,10 @@ class TransportTests(unittest.TestCase):
             with Server(token, A.tls_server_context(cert, key)) as port:
                 client = FleetClient(f"https://127.0.0.1:{port}", A.FleetAuth(token), "node", tls_ca=str(cert))
                 self.assertEqual(client.get("/v1/ping")["path"], "/v1/ping")
+                other_cert, _ = A.generate_self_signed(Path(tmp) / "other-tls", ["127.0.0.1", "localhost"])
+                wrong_ca = FleetClient(f"https://127.0.0.1:{port}", A.FleetAuth(token), "node", tls_ca=str(other_cert))
+                with self.assertRaises(TransportError):
+                    wrong_ca.get("/v1/ping")
                 plain = FleetClient(f"https://127.0.0.1:{port}", A.FleetAuth(token), "node")
                 with self.assertRaises(TransportError):
                     plain.get("/v1/ping")
