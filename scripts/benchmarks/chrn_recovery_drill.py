@@ -71,9 +71,11 @@ def main():
         records.append(trial(source,wire,start,burst,"systematic"))
     for start in (224,256,336):
         records.append(trial(source,wire,start,64,"mixed" if start<256 else "parity"))
+    records.append(trial(source,wire,200,65,"mixed"))
+    records.append(trial(source,wire,256,72,"parity"))
     expected=[(r["status"]=="corrected" and r["integrity_verified"] and
                r["corrected_byte_positions"]==list(range(60+r["body_offset"],60+r["body_offset"]+r["burst_bytes"])))
-              if r["burst_bytes"]<=64 else
+              if r["burst_bytes"]<=64 or r["region"]!="systematic" else
               (r["status"]=="rejected" and not r["integrity_verified"]) for r in records]
     document={"schema":"chronus.chrn-rs257-recovery-drill/1",
               "source_commit":commit,"profile":"CHRN-RS257-INTERLEAVE","param_id":2,"seed":args.seed,

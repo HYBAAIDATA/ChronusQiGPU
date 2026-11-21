@@ -1,0 +1,135 @@
+{
+  "schema": "chronus.execution-obligations/1",
+  "assignment_id": "fleet-scale-hardening-2026-11-19",
+  "source": "Owner instruction in current conversation: Please implement the supplied four-workstream systems assessment of ChronusQiGPU.",
+  "baseline": {
+    "ref": "main",
+    "commit": "93d6068f2c668f3f1106a9e6df204f37033fc163"
+  },
+  "working_ref": "feat/fleet-scale-admission-hardening",
+  "evidence_reviewed_sha": "0e5213bf1a57e51581480e946d2f3baa51d49941",
+  "scope_inventory": {
+    "files": [
+      "AGENTS.md",
+      "src/chronus/fleet/{auth,transport,worker,coordinator,scheduler,ledger,receipts,cli,crossbar,executor,workunit}.py",
+      "docs/fleet/FLEET.md",
+      "tests/test_fleet_{auth_transport,ledger_signing,scheduler,review_repairs,multiprocess}.py",
+      "cpp/CMakeLists.txt",
+      ".github/workflows/ci.yml"
+    ],
+    "git_tree": "recursive tracked tree enumerated at baseline, not truncated",
+    "related_prs": [
+      187,
+      186,
+      178,
+      197,
+      169,
+      168
+    ],
+    "unexamined": [
+      "complete legacy dependency graph and all 366 hygiene findings",
+      "individual security alerts (API rejected)",
+      "live infrastructure, physical workers and distributed services"
+    ]
+  },
+  "obligations": [
+    {
+      "id": "F1",
+      "requirement": "Federate THESEUS: Keep local SQLite WAL per host only as an edge write-ahead buffer, and asynchronously anchor signed Merkle batch roots to a replicated distributed consensus store (Raft / etcd / Postgres HA) with lease-based fencing tokens per GPU slot.",
+      "owner": "THESEUS",
+      "status": "IN_PROGRESS",
+      "result": "UNAVAILABLE",
+      "evidence": [
+        "https://github.com/HYBAAIDATA/ChronusQiGPU/pull/187",
+        "https://github.com/HYBAAIDATA/ChronusQiGPU/blob/976c81bd5ffff8ee6f40c76871a4b7344e0dccdd/src/chronus/storage/fenced_custody.py"
+      ],
+      "remaining": "Merge and integrate distributed custody on actual fleet GPU slots; live etcd/quorum, authority-approved signer and replay tests. Local anchor stale writer guard is not a distributed fence."
+    },
+    {
+      "id": "F2",
+      "requirement": "Push the fleet hot path below Python: Move worker heartbeats, health leases, nonce/tensor shard dispatch, and RDMA/NCCL/gRPC transport into a thin Rust or C++ node daemon, keeping Python strictly for policy, qualification, and API orchestration.",
+      "owner": "CHRONUS",
+      "status": "IN_PROGRESS",
+      "result": "UNAVAILABLE",
+      "evidence": [
+        "https://github.com/HYBAAIDATA/ChronusQiGPU/pull/198",
+        "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44494260901/job/135457520801"
+      ],
+      "observed": "C++ HTTP/TLS transport wired for existing RPC; 16 local tests passed in 3.63 s on prior reviewed ref. Replay budget and local journal fence committed. No native daemon or speedup claim.",
+      "remaining": "Native process lifecycle/heartbeat scheduling, native lease and shard execution, RDMA/NCCL/gRPC migration, paired stress tests."
+    },
+    {
+      "id": "F3",
+      "requirement": "If this repo is meant to stay public, move internal funding/audit patches private and purge every scratch script, dump file, and unmaintained monolith out of root so src/, tests/, formal/, infra/, and docs/ are the only visible architecture.",
+      "owner": "AL HARAS / owner",
+      "status": "BLOCKED",
+      "result": "FAIL",
+      "evidence": [
+        "https://github.com/HYBAAIDATA/ChronusQiGPU/pull/187",
+        "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44452240397"
+      ],
+      "observed": "Scratch files listed in brief not present in baseline root; existing hygiene gate has 366 recorded findings on its inspected candidate.",
+      "remaining": "Verified private evidence vault, per-path dependency and research review, approved transfer/removal, owner visibility action after PR closeout."
+    },
+    {
+      "id": "F4",
+      "requirement": "For an AL HARAS–branded sovereign/enterprise stack, that badge needs to be at 0 High/Critical with every remaining informational item explicitly triaged before any external diligence touches the repo.",
+      "owner": "AL HARAS",
+      "status": "BLOCKED",
+      "result": "UNAVAILABLE",
+      "evidence": [
+        "https://github.com/HYBAAIDATA/ChronusQiGPU/security",
+        "https://github.com/HYBAAIDATA/ChronusQiGPU/pull/187"
+      ],
+      "observed": "Connector refused code-scanning alerts endpoint. Static security and dependency audit passed on reviewed SHA; these are not alert triage. Pinned Gitleaks binary replaces blocked action invocation in PR #187.",
+      "remaining": "Run scan, verify current severity inventory, remediate and independently triage; no high/critical count inferred."
+    },
+    {
+      "id": "F5",
+      "requirement": "Reproducible, commit-bound multi-node physical benchmark (even 8→64 GPUs first, scaling linearly to 1,000) reporting end-to-end kernel utilization and dispatch overhead (p50 / p99 / p99.9), fault-injection recovery time (kill 10% of GPU workers mid-epoch, verify zero lost receipts and bounded drain), and exact cryptographic verification overhead of THESEUS custody at full fleet write rate.",
+      "owner": "CHRONUS / THESEUS",
+      "status": "BLOCKED",
+      "result": "UNAVAILABLE",
+      "evidence": [
+        "https://github.com/HYBAAIDATA/ChronusQiGPU/pull/198"
+      ],
+      "observed": "Real-workload collector records exact client revision, latency and local signature verification; remote commit, physical device identity, GPU utilization and distributed custody unavailable.",
+      "remaining": "Deploy and independently attest remote SHA and physical GPUs; measure each scale point, instrument dispatch and kernel counters, inject faults against authorized test fleet, verify every receipt and distributed anchor."
+    }
+  ],
+  "changed_paths": [
+    "src/chronus/fleet/{auth,transport,worker,coordinator,ledger,cli,native_transport}.py",
+    "cpp/fleet_transport/{CMakeLists.txt,transport.cpp}",
+    "benchmarks/physical_fleet.py",
+    "tests/test_fleet_scale_budget.py",
+    "tests/test_fleet_native_transport_contract.py",
+    "tests/test_physical_fleet_collector.py",
+    ".github/workflows/ci.yml",
+    "docs/fleet/{SCALE_ADMISSION,NATIVE_TRANSPORT,PHYSICAL_BENCHMARK}.md"
+  ],
+  "execution_receipts": [
+    {
+      "sha": "0e5213bf1a57e51581480e946d2f3baa51d49941",
+      "run": 44494260901,
+      "job": 135457520801,
+      "command": "cmake build, then pytest test_fleet_auth_transport.py test_fleet_scale_budget.py test_fleet_native_transport_contract.py",
+      "result": "16 passed in 3.63 s",
+      "evidence": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44494260901/job/135457520801"
+    },
+    {
+      "sha": "0e5213bf1a57e51581480e946d2f3baa51d49941",
+      "run": 44494260901,
+      "job": 135457520906,
+      "result": "FAIL: test-reality classified two lines using environment fixture as mock; fixture replaced on successor, rerun pending",
+      "evidence": "https://github.com/HYBAAIDATA/ChronusQiGPU/actions/runs/44494260901/job/135457520906"
+    }
+  ],
+  "independent_qc": "PENDING",
+  "verdict": {
+    "assignment": "INCOMPLETE",
+    "implementation": "PARTIAL",
+    "evidence": "PARTIAL",
+    "technical_compliance": "UNAVAILABLE",
+    "production_qualification": "NOT_QUALIFIED"
+  }
+}
