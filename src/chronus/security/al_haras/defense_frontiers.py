@@ -371,7 +371,7 @@ class CNISelfHealingEngine:
             "fault_injection_drill": bool(simulated_cyber_physical_strike),
             "cyber_physical_strike_detected": detected,
             "trace_repair": {
-                "mechanism": "Reed-Solomon RS(n, k) over GF(257), Berlekamp-Welch decoding",
+                "mechanism": "Reed-Solomon RS(n, k) over GF(257), batched syndrome decoding (Berlekamp-Massey, Chien, Forney)",
                 "code_parameters": {
                     "n": envelope["n"],
                     "k": envelope["k"],

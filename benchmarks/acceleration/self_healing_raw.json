@@ -1,0 +1,217 @@
+{
+  "benchmark": "theseus-self-healing",
+  "code": "RS(48,32) over GF(257), SHA-256 verified",
+  "generated_utc": "2026-11-19T01:06:22Z",
+  "hardware": {
+    "cpu": "Intel(R) Xeon(R) Processor",
+    "logical_cpus": 8,
+    "machine": "x86_64",
+    "os": "Linux-6.12.113+-x86_64-with-glibc2.41",
+    "python": "3.13.5",
+    "numpy": "2.5.5",
+    "sqlite": "3.46.1",
+    "git_commit": "7a87ec10f88fcb9275088969c0a1af4a377cfd88",
+    "accelerator": "none used (CPU numpy int64; OpenCL/CUDA tensor backends need a provisioned GPU)"
+  },
+  "codec": {
+    "4KiB": {
+      "encode_batched": {
+        "count": 30,
+        "median_ms": 0.041,
+        "p95_ms": 0.044,
+        "min_ms": 0.04,
+        "max_ms": 0.056
+      },
+      "verify_healthy_batched": {
+        "count": 30,
+        "median_ms": 0.098,
+        "p95_ms": 0.134,
+        "min_ms": 0.088,
+        "max_ms": 0.143
+      },
+      "repair_worst_case_batched": {
+        "count": 30,
+        "median_ms": 1.59,
+        "p95_ms": 2.068,
+        "min_ms": 1.381,
+        "max_ms": 2.14
+      },
+      "corrected_bytes": 1024,
+      "repair_worst_case_reference_s": 0.665,
+      "speedup_worst_case": 418.2
+    },
+    "64KiB": {
+      "encode_batched": {
+        "count": 30,
+        "median_ms": 0.557,
+        "p95_ms": 0.623,
+        "min_ms": 0.523,
+        "max_ms": 0.651
+      },
+      "verify_healthy_batched": {
+        "count": 30,
+        "median_ms": 1.778,
+        "p95_ms": 2.1,
+        "min_ms": 1.666,
+        "max_ms": 2.144
+      },
+      "repair_worst_case_batched": {
+        "count": 30,
+        "median_ms": 19.318,
+        "p95_ms": 20.577,
+        "min_ms": 18.108,
+        "max_ms": 21.226
+      },
+      "corrected_bytes": 16384,
+      "repair_worst_case_reference_s": 10.896,
+      "speedup_worst_case": 564.0
+    },
+    "256KiB": {
+      "encode_batched": {
+        "count": 30,
+        "median_ms": 2.278,
+        "p95_ms": 2.405,
+        "min_ms": 2.131,
+        "max_ms": 2.472
+      },
+      "verify_healthy_batched": {
+        "count": 30,
+        "median_ms": 7.572,
+        "p95_ms": 7.99,
+        "min_ms": 7.025,
+        "max_ms": 9.794
+      },
+      "repair_worst_case_batched": {
+        "count": 30,
+        "median_ms": 84.686,
+        "p95_ms": 87.979,
+        "min_ms": 82.517,
+        "max_ms": 88.976
+      },
+      "corrected_bytes": 65536,
+      "repair_worst_case_reference_s": 41.573,
+      "speedup_worst_case": 490.9
+    }
+  },
+  "store_reads": {
+    "4KiB": {
+      "healthy_read_self_healing_on": {
+        "count": 30,
+        "median_ms": 0.486,
+        "p95_ms": 0.66,
+        "min_ms": 0.361,
+        "max_ms": 0.875
+      },
+      "healthy_read_self_healing_off": {
+        "count": 30,
+        "median_ms": 0.438,
+        "p95_ms": 0.534,
+        "min_ms": 0.385,
+        "max_ms": 0.545
+      },
+      "corrupted_read_worst_case": {
+        "count": 3,
+        "median_ms": 3.904,
+        "p95_ms": 4.808,
+        "min_ms": 3.883,
+        "max_ms": 4.808
+      },
+      "corrupted_read_one_byte": {
+        "count": 3,
+        "median_ms": 2.676,
+        "p95_ms": 3.53,
+        "min_ms": 2.336,
+        "max_ms": 3.53
+      }
+    },
+    "64KiB": {
+      "healthy_read_self_healing_on": {
+        "count": 30,
+        "median_ms": 0.49,
+        "p95_ms": 0.635,
+        "min_ms": 0.401,
+        "max_ms": 0.685
+      },
+      "healthy_read_self_healing_off": {
+        "count": 30,
+        "median_ms": 0.487,
+        "p95_ms": 0.596,
+        "min_ms": 0.396,
+        "max_ms": 0.656
+      },
+      "corrupted_read_worst_case": {
+        "count": 3,
+        "median_ms": 22.792,
+        "p95_ms": 27.495,
+        "min_ms": 21.695,
+        "max_ms": 27.495
+      },
+      "corrupted_read_one_byte": {
+        "count": 3,
+        "median_ms": 5.223,
+        "p95_ms": 5.832,
+        "min_ms": 3.948,
+        "max_ms": 5.832
+      }
+    },
+    "256KiB": {
+      "healthy_read_self_healing_on": {
+        "count": 30,
+        "median_ms": 0.649,
+        "p95_ms": 0.81,
+        "min_ms": 0.561,
+        "max_ms": 0.859
+      },
+      "healthy_read_self_healing_off": {
+        "count": 30,
+        "median_ms": 0.612,
+        "p95_ms": 0.807,
+        "min_ms": 0.559,
+        "max_ms": 3.353
+      },
+      "corrupted_read_worst_case": {
+        "count": 3,
+        "median_ms": 79.895,
+        "p95_ms": 96.933,
+        "min_ms": 79.062,
+        "max_ms": 96.933
+      },
+      "corrupted_read_one_byte": {
+        "count": 3,
+        "median_ms": 10.078,
+        "p95_ms": 10.192,
+        "min_ms": 9.059,
+        "max_ms": 10.192
+      }
+    }
+  },
+  "startup_recovery": {
+    "objects": 200,
+    "object_bytes": 65536,
+    "damaged_objects": 20,
+    "damage": "8 bytes in every 32-byte block of each damaged object",
+    "open_clean_s": 0.057,
+    "open_with_recovery_s": 0.476,
+    "repairs_recorded": 20
+  },
+  "concurrent_repair": {
+    "threads": {
+      "workers": 8,
+      "reads": 32,
+      "wall_s": 0.129,
+      "repairs_recorded": 1
+    },
+    "processes": {
+      "workers": 8,
+      "wall_s": 0.259,
+      "per_process_open_and_read": {
+        "count": 8,
+        "median_ms": 203.05,
+        "p95_ms": 235.084,
+        "min_ms": 193.967,
+        "max_ms": 235.084
+      },
+      "repairs_recorded": 1
+    }
+  }
+}

@@ -20,19 +20,27 @@ Bounds (what it cannot do)
   page-corrupted database (``PRAGMA integrity_check`` still fails closed) or a
   lost disk; that needs replication, which is a deployment concern.
 * Objects larger than ``CHRONUS_SELF_HEALING_MAX_BYTES`` (default 256 KiB,
-  capped at the encoder's 1 MiB limit) get no parity, because encoding is pure
-  Python. They keep fail-closed behaviour.
+  capped at the encoder's 1 MiB limit) get no parity. They keep fail-closed
+  behaviour. Encoding and decoding use the batched numpy decoder in
+  ``reed_solomon`` (measured numbers: ``benchmarks/acceleration/self_healing_raw.json``).
 * Metadata rows (records, journal) are verified but not repaired.
 
-This is the in-repo implementation of "bounded self-healing". The separate
-Salamander remediation package described in the architecture docs is not part
-of this checkout.
+THESEUS owns this storage integrity function. Remediation authority can be
+handed to Salamander (``CHRONUS_SELF_HEALING_REPAIR=salamander``; see
+``chronus.integration.salamander_theseus``), which uses the canonical
+Salamander package when it is installed.
 
 Configuration
 -------------
 ``CHRONUS_SELF_HEALING``: ``1`` (default) enables parity and repair; ``0``
 restores the previous strict fail-closed behaviour.
 ``CHRONUS_SELF_HEALING_MAX_BYTES``: largest payload that gets parity.
+``CHRONUS_SELF_HEALING_REPAIR``: ``theseus`` (default) repairs in place on
+open/read; ``salamander`` makes THESEUS detect and diagnose only, and the
+repair is executed through Salamander's AL HARAS-authorised control plane
+(``chronus.integration.salamander_theseus``).
+``CHRONUS_SELF_HEALING_BACKFILL_LIMIT``: most pre-parity objects given a
+sidecar per open (default 1024); later opens continue.
 """
 
 from __future__ import annotations
@@ -41,6 +49,8 @@ import hashlib
 import os
 from dataclasses import dataclass
 from typing import Optional
+
+import numpy as np
 
 SCHEME = "reed-solomon-gf257-systematic/1"
 RS_N = 48
@@ -61,6 +71,33 @@ def self_healing_enabled() -> bool:
     if value in _FALSE:
         return False
     raise ValueError("CHRONUS_SELF_HEALING must be 1/0, true/false, yes/no or on/off")
+
+
+REPAIR_AUTHORITIES = frozenset({"theseus", "salamander"})
+
+
+def repair_authority() -> str:
+    raw = os.getenv("CHRONUS_SELF_HEALING_REPAIR", "theseus").strip().lower()
+    if raw not in REPAIR_AUTHORITIES:
+        raise ValueError("CHRONUS_SELF_HEALING_REPAIR must be 'theseus' or 'salamander'")
+    return raw
+
+
+DEFAULT_BACKFILL_LIMIT = 1024
+
+
+def backfill_limit() -> int:
+    """Most legacy objects given parity per open (``CHRONUS_SELF_HEALING_BACKFILL_LIMIT``)."""
+    raw = os.getenv("CHRONUS_SELF_HEALING_BACKFILL_LIMIT")
+    if raw is None:
+        return DEFAULT_BACKFILL_LIMIT
+    try:
+        value = int(raw)
+    except ValueError as exc:
+        raise ValueError("CHRONUS_SELF_HEALING_BACKFILL_LIMIT must be an integer") from exc
+    if value < 0:
+        raise ValueError("CHRONUS_SELF_HEALING_BACKFILL_LIMIT must be >= 0")
+    return value
 
 
 def encoder_max_bytes() -> int:
@@ -96,23 +133,18 @@ def _rs():
 
 def encode_parity(payload: bytes, n: int = RS_N, k: int = RS_K) -> bytes:
     """Parity symbols (0..256) for ``payload``, packed as 2-byte big-endian."""
-    envelope = _rs().protect(payload, n=n, k=k)
-    out = bytearray()
-    for block in envelope["parity"]:
-        for symbol in block:
-            out += int(symbol).to_bytes(2, "big")
-    return bytes(out)
+    return _rs().encode_blocks(payload, n=n, k=k).astype(">u2").tobytes()
 
 
-def _decode_parity(blob: bytes, length: int, n: int, k: int) -> list[list[int]]:
+def _decode_parity(blob: bytes, length: int, n: int, k: int) -> np.ndarray:
     per_block = n - k
     blocks = (length + k - 1) // k
     if len(blob) != blocks * per_block * 2:
         raise ValueError("parity sidecar has the wrong size")
-    symbols = [int.from_bytes(blob[i:i + 2], "big") for i in range(0, len(blob), 2)]
-    if any(s > 256 for s in symbols):
+    symbols = np.frombuffer(blob, dtype=">u2").astype(np.int64)
+    if symbols.size and int(symbols.max()) > 256:
         raise ValueError("parity symbol outside GF(257)")
-    return [symbols[b * per_block:(b + 1) * per_block] for b in range(blocks)]
+    return symbols.reshape(blocks, per_block)
 
 
 @dataclass(frozen=True)
@@ -135,22 +167,16 @@ def heal_payload(received: bytes, object_id: str, parity: bytes,
     """
     if len(received) != expected_length:
         return HealOutcome(None, (), "length differs from the recorded size")
+    if expected_length > encoder_max_bytes():
+        return HealOutcome(None, (), "payload exceeds the supported decoder size")
     if not sidecar_metadata_valid(SCHEME, n, k):
         return HealOutcome(None, (), "unsupported parity dimensions")
     try:
         blocks = _decode_parity(parity, expected_length, n, k)
     except ValueError as exc:
         return HealOutcome(None, (), str(exc))
-    envelope = {
-        "n": n,
-        "k": k,
-        "length": expected_length,
-        "blocks": len(blocks),
-        "parity": blocks,
-        "sha256": object_id,
-    }
     try:
-        result = _rs().heal(received, envelope)
+        result = _rs().heal_blocks(received, blocks, n, k, object_id)
     except (ValueError, ZeroDivisionError) as exc:  # ReedSolomonError is a ValueError
         return HealOutcome(None, (), f"decoder rejected the sidecar: {exc}")
     repaired = result["repaired"]

@@ -148,7 +148,7 @@ async def get_al_haras_status() -> Dict[str, Any]:
         "self_tests": public_tests,
         "implemented_checks": {
             "state_consistency": "exact cellular-sheaf coboundary with residual location and nearest-section repair",
-            "trace_repair": "Reed-Solomon RS(48,32) over GF(257), Berlekamp-Welch decoding",
+            "trace_repair": "Reed-Solomon RS(48,32) over GF(257), batched syndrome decoding (Berlekamp-Massey, Chien, Forney)",
             "expander": {
                 "graph": expander["graph"],
                 "degree": expander["degree"],

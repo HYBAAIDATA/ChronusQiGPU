@@ -26,7 +26,7 @@ The repository now contains an initial executable security and qualification imp
 - **AL HARAS:** authentication, authorization, security policy.
 - **OVID:** exactness, transformation and equivalence contracts.
 - **THESEUS:** custody, provenance, recovery and replay.
-- **Salamander:** bounded self-healing and optimization. The Salamander package itself is not in this checkout; the implemented bounded self-healing is THESEUS Reed-Solomon parity repair, see `docs/SELF_HEALING.md`.
+- **Salamander:** bounded self-healing and optimization authority. The canonical package (`hyba-salamander-self-healing`, from `hybadatadevops1/HYBAEnterprise`) is proprietary and not vendored here; `chronus.integration.salamander_theseus` drives THESEUS repair through it under AL HARAS authorisation when it is installed. THESEUS Reed-Solomon parity repair runs inline by default. Status per capability: `docs/SELF_HEALING.md`.
 
 ## Engineering priorities
 
