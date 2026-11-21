@@ -333,7 +333,7 @@ def test_concurrent_repairs_report_only_one_commit(tmp_path):
     assert len(_events(path, "REPAIRED")) == 1
 
 
-def test_backfill_does_not_count_oversize_or_ignored_sidecars(tmp_path, monkeypatch):
+def test_backfill_does_not_count_oversize_or_ignored_sidecars(tmp_path, monkeypatch):  # mock-ok: pytest builtin fixture name in def signature only; env-var config injection, no behavioural mocking
     path = tmp_path / "legacy.sqlite3"
     small = [b"first", b"second"]
     oversize, ignored, good = _legacy_store(path, [bytes(4096), *small])
